@@ -8,4 +8,10 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.1.4", features = ["derive"] }
 serde = { version = "1.0.152", features = ["derive"] }
-nut = { path = "../nut" }
+sarzak = { path = "../sarzak" }
+snafu = "0.7.4"
+log = "0.4.17"
+heck = "0.4.0"
+
+[dev-dependencies]
+pretty_env_logger = "0.4.0"

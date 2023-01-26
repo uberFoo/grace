@@ -19,7 +19,7 @@ use std::any::Any;
 use clap::Args;
 use serde::{Deserialize, Serialize};
 
-use nut::sarzak::mc::ModelCompilerOptions;
+use sarzak::mc::ModelCompilerOptions;
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
 pub struct GraceCompilerOptions {}
