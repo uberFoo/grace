@@ -19,5 +19,5 @@ pretty_env_logger = "0.4.0"
 
 [net.ssh]
 known_hosts = [
-    "git.uberfoo.com]:30001 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLHKtv4ClrUNFI9YcF0dnHj1eOMH5fiud4bR9fMgzIYaG0H1GZEbKPkQLWU+y4FFYfuLaifZ9onAVDFALcFcF7U=",
+    "[git.uberfoo.com]:30001 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLHKtv4ClrUNFI9YcF0dnHj1eOMH5fiud4bR9fMgzIYaG0H1GZEbKPkQLWU+y4FFYfuLaifZ9onAVDFALcFcF7U=",
 ]
