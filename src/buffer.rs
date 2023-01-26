@@ -1,16 +1,9 @@
 //! A buffer for building files
 //!
-use std::{
-    fmt,
-    fs::File,
-    io,
-    path::{Path, PathBuf},
-};
+use std::{fmt, fs::File, io, path::Path};
 
 use sarzak::mc::{CompilerSnafu, FileSnafu, IOSnafu, Result};
 use snafu::prelude::*;
-
-use crate::types::Type;
 
 pub(crate) struct GeneratorBuilder<'a> {
     writer: Option<Box<dyn io::Write>>,
