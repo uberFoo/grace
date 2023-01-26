@@ -1,6 +1,6 @@
-use std::{path::PathBuf, process};
+use std::process::{self, ExitCode};
 
-use grace::{GraceCompilerOptions, ModelCompiler, ModelCompilerError, SarzakModelCompiler};
+use grace::{GraceCompilerOptions, ModelCompiler, SarzakModelCompiler};
 use sarzak::domain::DomainBuilder;
 
 /// Model Driven Development
@@ -8,7 +8,7 @@ use sarzak::domain::DomainBuilder;
 /// This function builds the domains in the mdd package and runs cargo test on
 /// the package.
 #[test]
-fn compile_and_test() -> Result<(), std::io::Error> {
+fn compile_and_test() -> Result<ExitCode, std::io::Error> {
     let options = GraceCompilerOptions::default();
     let grace = ModelCompiler::default();
 
@@ -31,14 +31,15 @@ fn compile_and_test() -> Result<(), std::io::Error> {
 
     // Run cargo test
     // Hopefully I can just pass the errors along...
-    match process::Command::new("cargo")
+    let mut child = process::Command::new("cargo")
         .arg("test")
         .arg("--")
         .arg("--nocapture")
         .current_dir("tests/mdd")
-        .spawn()
-    {
-        Ok(_) => Ok(()),
+        .spawn()?;
+
+    match child.wait() {
+        Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
         Err(e) => Err(e),
     }
 }
