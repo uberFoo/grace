@@ -1,0 +1,21 @@
+test-and-code-cov:
+  stage: build
+  script:
+    - CARGO_INCREMENTAL=0 RUSTFLAGS='-Cinstrument-coverage' LLVM_PROFILE_FILE='cargo-test-%p-%m.profraw' cargo test
+    - cargo test
+    - grcov . --binary-path ./target/debug/deps/ -s . -t html --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o ./coverage/
+    - grcov . --binary-path ./target/debug/deps/ -s . -t lcov --branch --ignore-not-existing --ignore '../*' --ignore "/*" -o coverage.lcov
+    - ~/.local/bin/lcov_cobertura coverage.lcov
+    - lcov --summary coverage.lcov
+
+  artifacts:
+    paths:
+      - 'coverage'
+      - 'coverage.lcov'
+      - 'crates/test_models/coverage'
+      - 'crates/test_models/test_models_coverage.lcov'
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+  coverage: '/\s*lines\.*:\s*([\d\.]+%)/'
