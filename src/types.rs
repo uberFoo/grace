@@ -10,7 +10,10 @@ use sarzak::{
 };
 use snafu::prelude::*;
 
-use crate::buffer::{Buffer, CodeWriter, TypeWriter};
+use crate::{
+    buffer::{Buffer, CodeWriter, TypeWriter},
+    codegen::RenderType,
+};
 
 pub(crate) struct TypeBuilder<'a> {
     object: &'a Object,
@@ -105,7 +108,7 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
         log::debug!("writing Struct Definition for {}", self.object.name);
         // We need a builder for this so that we can add privacy modifiers, as
         // well as derives, and attributes
-        write!(buffer, "pub struct {} {{", self.object.name);
+        write!(buffer, "pub struct {} {{", self.object.as_type());
         write!(buffer, "}}");
     }
 }
