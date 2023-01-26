@@ -2,13 +2,15 @@ use std::path::{Path, PathBuf};
 
 use sarzak::mc::ModelCompilerOptions;
 
-pub mod buffer;
+mod buffer;
 pub mod options;
+mod types;
 
 pub use options::GraceCompilerOptions;
 pub use sarzak::mc::{ModelCompilerError, SarzakModelCompiler};
 
-use buffer::BufferBuilder;
+use buffer::GeneratorBuilder;
+use types::{DefaultStructBuilder, TypeBuilder};
 
 #[derive(Default)]
 pub struct ModelCompiler {}
@@ -16,7 +18,7 @@ pub struct ModelCompiler {}
 impl SarzakModelCompiler for ModelCompiler {
     fn compile<P: AsRef<Path>>(
         &self,
-        _model: &sarzak::domain::Domain,
+        model: &sarzak::domain::Domain,
         module: &str,
         src_path: P,
         _options: Box<&dyn ModelCompilerOptions>,
@@ -27,21 +29,31 @@ impl SarzakModelCompiler for ModelCompiler {
         types.push(module);
         types.push("types.rs");
 
-        BufferBuilder::new().path(&types).build()?.write_file()?;
+        for (_id, obj) in model.sarzak().iter_object() {
+            GeneratorBuilder::new()
+                .path(&types)?
+                .add_type(
+                    TypeBuilder::new(&obj)
+                        .using_struct_defn(DefaultStructBuilder::new())?
+                        .build()?,
+                )
+                .build()?
+                .generate()?;
+        }
 
         // Generate macros.rs
         let mut types = PathBuf::from(src_path.as_ref());
         types.push(module);
         types.push("macros.rs");
 
-        BufferBuilder::new().path(&types).build()?.write_file()?;
+        GeneratorBuilder::new().path(&types)?.build()?.generate()?;
 
         // Generate store.rs
         let mut types = PathBuf::from(src_path.as_ref());
         types.push(module);
         types.push("store.rs");
 
-        BufferBuilder::new().path(&types).build()?.write_file()?;
+        GeneratorBuilder::new().path(&types)?.build()?.generate()?;
 
         Ok(())
     }

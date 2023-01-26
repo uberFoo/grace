@@ -1,6 +1,8 @@
 use std::process::{self, ExitCode};
 
 use grace::{GraceCompilerOptions, ModelCompiler, SarzakModelCompiler};
+use log;
+use pretty_env_logger;
 use sarzak::domain::DomainBuilder;
 
 /// Model Driven Development
@@ -9,10 +11,13 @@ use sarzak::domain::DomainBuilder;
 /// the package.
 #[test]
 fn compile_and_test() -> Result<ExitCode, std::io::Error> {
+    pretty_env_logger::init();
+
     let options = GraceCompilerOptions::default();
     let grace = ModelCompiler::default();
 
     // Build the domains
+    log::debug!("Testing everything domain.");
     let domain = DomainBuilder::new()
         .cuckoo_model("tests/mdd/models/everything.json")
         .unwrap()
@@ -30,7 +35,6 @@ fn compile_and_test() -> Result<ExitCode, std::io::Error> {
         .unwrap();
 
     // Run cargo test
-    // Hopefully I can just pass the errors along...
     let mut child = process::Command::new("cargo")
         .arg("test")
         .arg("--")

@@ -7,8 +7,8 @@ pub mod macros;
 pub mod store;
 pub mod types;
 
-// pub use store::ObjectStore;
 pub use macros::*;
+// pub use store::ObjectStore;
 pub use types::*;
 
 // everything
@@ -19,5 +19,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {}
+    fn test_structs() {
+        let e = Everything::new();
+    }
 }
