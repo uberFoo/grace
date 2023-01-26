@@ -9,7 +9,7 @@ edition = "2021"
 clap = { version = "4.1.4", features = ["derive"] }
 serde = { version = "1.0.152", features = ["derive"] }
 # sarzak = { path = "../sarzak" }
-sarzak = { git = "ssh://git@git.uberfoo.com:30001/sarzak/sarzak.git", branch = "develop" }
+sarzak = { git = "https://gitlab-runner:7kzem8nVeizSJQnLPWFY@git.uberfoo.com/sarzak/sarzak.git", branch = "develop" }
 snafu = "0.7.4"
 log = "0.4.17"
 heck = "0.4.0"
