@@ -8,11 +8,12 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.1.4", features = ["derive"] }
 serde = { version = "1.0.152", features = ["derive"] }
-# sarzak = { path = "../sarzak" }
-sarzak = { git = "https://gitlab-runner:7kzem8nVeizSJQnLPWFY@git.uberfoo.com/sarzak/sarzak.git", branch = "develop" }
+sarzak = { path = "../sarzak" }
+# sarzak = { git = "https://gitlab-runner:7kzem8nVeizSJQnLPWFY@git.uberfoo.com/sarzak/sarzak.git", branch = "develop" }
 snafu = "0.7.4"
 log = "0.4.17"
 heck = "0.4.0"
+uuid = { version = "1.2.2", features = ["v5"] }
 
 [dev-dependencies]
 pretty_env_logger = "0.4.0"
