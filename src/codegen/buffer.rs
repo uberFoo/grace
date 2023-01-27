@@ -1,6 +1,6 @@
 //! A buffer for building files
 //!
-use std::fmt;
+use std::{fmt, ops::AddAssign};
 
 pub(crate) struct Buffer {
     buffer: String,
@@ -25,5 +25,11 @@ impl fmt::Write for Buffer {
 
     fn write_char(&mut self, c: char) -> fmt::Result {
         self.buffer.write_char(c)
+    }
+}
+
+impl AddAssign for Buffer {
+    fn add_assign(&mut self, rhs: Self) {
+        self.buffer += rhs.buffer.as_str();
     }
 }

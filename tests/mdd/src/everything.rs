@@ -23,16 +23,17 @@ mod tests {
 
     #[test]
     fn test_structs() {
+        let r = RandoObject {
+            id: Uuid::new_v5(&UUID_NS, b"rando"),
+        };
+
         let e = Everything {
             id: Uuid::new_v5(&UUID_NS, b"everything"),
             string: "everything".to_owned(),
             float: 42.0,
             bool: true,
             int: 42,
-        };
-
-        let r = RandoObject {
-            id: Uuid::new_v5(&UUID_NS, b"rando"),
+            rando: &r,
         };
     }
 }

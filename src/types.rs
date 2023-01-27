@@ -8,8 +8,12 @@ use sarzak::{
     domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, IOSnafu, Result},
     sarzak::{
-        macros::{sarzak_get_many_as_across_r1, sarzak_get_one_t_across_r2},
-        types::Attribute,
+        macros::{
+            sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
+            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
+            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
+        },
+        types::{Attribute, Referrer},
     },
 };
 use snafu::prelude::*;
@@ -100,6 +104,10 @@ impl<'a> FileGenerator for DefaultStructGenerator<'a> {
 
 pub(crate) trait StructDefinition: CodeWriter {}
 
+/// Default Struct Generator / CodeWriter
+///
+/// We need a builder for this so that we can add privacy modifiers, as
+/// well as derives.
 pub(crate) struct DefaultStruct<'a> {
     obj_id: &'a Uuid,
 }
@@ -115,29 +123,57 @@ impl<'a> StructDefinition for DefaultStruct<'a> {}
 impl<'a> CodeWriter for DefaultStruct<'a> {
     fn write_code(&self, store: &Domain, buffer: &mut Buffer) -> Result<()> {
         let obj = store.sarzak().exhume_object(self.obj_id).unwrap();
-        writeln!(buffer, "use uuid::Uuid;");
+        let referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, store.sarzak());
+        let has_referential_attrs = referrers.len() > 0;
+
+        // Everything has an `id`, everything needs this.
+        writeln!(buffer, "use uuid::Uuid;").context(FormatSnafu)?;
+        writeln!(buffer).context(FormatSnafu)?;
+
+        // This is sort of long, and sticks out. Maybe it goes into a function?
+        let mut paste = Buffer::new();
+        for referrer in &referrers {
+            let binary = sarzak_get_one_r_bin_across_r6!(referrer, store.sarzak());
+            let referent = sarzak_get_one_r_to_across_r5!(binary, store.sarzak());
+            let r_obj = sarzak_get_one_obj_across_r16!(referent, store.sarzak());
+
+            writeln!(
+                buffer,
+                "use crate::everything::types::{}::{};",
+                r_obj.as_ident(),
+                r_obj.as_type()
+            )
+            .context(FormatSnafu)?;
+
+            writeln!(paste, "// R{}: {}", binary.number, referrer.description)
+                .context(FormatSnafu)?;
+            writeln!(
+                paste,
+                "pub {}: &'a {}",
+                referrer.referential_attribute,
+                r_obj.as_type()
+            )
+            .context(FormatSnafu)?;
+        }
 
         log::debug!("writing Struct Definition for {}", obj.name);
-        // We need a builder for this so that we can add privacy modifiers, as
-        // well as derives.
-        writeln!(buffer, "pub struct {} {{", obj.as_type()).context(FormatSnafu)?;
+        if has_referential_attrs {
+            // Lifetime parameters. Really, we should assign one for each attribute. TBD.
+            writeln!(buffer).context(FormatSnafu)?;
+            writeln!(buffer, "pub struct {}<'a> {{", obj.as_type()).context(FormatSnafu)?;
+        } else {
+            writeln!(buffer, "pub struct {} {{", obj.as_type()).context(FormatSnafu)?;
+        }
 
         let mut attrs = sarzak_get_many_as_across_r1!(obj, store.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
-
         for attr in attrs {
-            // Already bumping into problems. Now better than later. The issue
-            // is that we need to import Uuid, and we don't know about it until
-            // now. We in fact need to know about it long before now. There may
-            // very well be things in the impl that need to be used, and they
-            // will have the same type of problem as here.
-            //
-            // Seems like DefaultStructGenerator should have some means of
-            // collection use statements and spitting them out at the beginning
-            // of the buffer.
             let ty = sarzak_get_one_t_across_r2!(attr, store.sarzak());
             writeln!(buffer, "pub {}: {},", attr.as_ident(), ty.as_type()).context(FormatSnafu)?;
         }
+
+        // Paste in the referential attributes, computed above.
+        *buffer += paste;
 
         writeln!(buffer, "}}").context(FormatSnafu)?;
 
