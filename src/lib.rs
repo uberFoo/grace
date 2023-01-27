@@ -1,20 +1,25 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use sarzak::mc::ModelCompilerOptions;
+use snafu::prelude::*;
+use uuid::Uuid;
 
-mod buffer;
 mod codegen;
 pub mod options;
 mod types;
 
 pub use options::GraceCompilerOptions;
-pub use sarzak::mc::{ModelCompilerError, SarzakModelCompiler};
+pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
-use buffer::GeneratorBuilder;
-use codegen::RenderIdent;
-use types::{DefaultStructBuilder, TypeBuilder};
+use codegen::{generator::GeneratorBuilder, render::RenderIdent};
+use sarzak::sarzak::types::Object;
+use types::{DefaultStruct, DefaultStructBuilder};
 
 const RS_EXT: &str = "rs";
+const TYPES: &str = "types";
 
 #[derive(Default)]
 pub struct ModelCompiler {}
@@ -29,38 +34,59 @@ impl SarzakModelCompiler for ModelCompiler {
         _test: bool,
     ) -> Result<(), ModelCompilerError> {
         // Generate types.rs
+
+        // First deal with the path
         let mut types = PathBuf::from(src_path.as_ref());
         types.push(module);
+        types.push(TYPES);
+        fs::create_dir_all(&types).context(FileSnafu { path: &types })?;
         types.push("discard");
 
-        for (_id, obj) in model.sarzak().iter_object() {
+        // Sort the objects -- I need to figure out how to do this automagically.
+        let mut objects: Vec<(&Uuid, &Object)> = model.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+        // Iterate over the objects, generating an implementation for file each.
+        for (id, obj) in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
+            // Here's the generation.
             GeneratorBuilder::new()
+                // Where to write
                 .path(&types)?
-                .add_type(
-                    TypeBuilder::new(&obj)
-                        .using_struct_defn(DefaultStructBuilder::new())?
+                // What to write
+                .generator(
+                    // Struct
+                    DefaultStructBuilder::new()
+                        // Definition type
+                        .definition(DefaultStruct::new(&id))
+                        // Store? For each type? Lame.
+                        .store(&model)
                         .build()?,
                 )
-                .build()?
                 .generate()?;
         }
 
-        // Generate macros.rs
-        let mut types = PathBuf::from(src_path.as_ref());
-        types.push(module);
-        types.push("macros.rs");
+        // // Generate macros.rs
+        // let mut types = PathBuf::from(src_path.as_ref());
+        // types.push(module);
+        // types.push("macros.rs");
 
-        GeneratorBuilder::new().path(&types)?.build()?.generate()?;
+        // GeneratorBuilder::new()
+        //     .path(&types)?
+        //     .generate()?
+        //     .generate()?;
 
-        // Generate store.rs
-        let mut types = PathBuf::from(src_path.as_ref());
-        types.push(module);
-        types.push("store.rs");
+        // // Generate store.rs
+        // let mut types = PathBuf::from(src_path.as_ref());
+        // types.push(module);
+        // types.push("store.rs");
 
-        GeneratorBuilder::new().path(&types)?.build()?.generate()?;
+        // GeneratorBuilder::new()
+        //     .path(&types)?
+        //     .generate()?
+        //     .generate()?;
 
         Ok(())
     }

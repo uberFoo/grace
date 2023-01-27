@@ -11,12 +11,6 @@ pub use macros::*;
 // pub use store::ObjectStore;
 pub use types::*;
 
-pub mod everything;
-pub mod rando_object;
-
-use everything::Everything;
-use rando_object::RandoObject;
-
 // everything
 pub const UUID_NS: Uuid = uuid!("68f2a75c-4397-5ee0-9bae-86b95bd1b866");
 
@@ -24,9 +18,21 @@ pub const UUID_NS: Uuid = uuid!("68f2a75c-4397-5ee0-9bae-86b95bd1b866");
 mod tests {
     use super::*;
 
+    use everything::Everything;
+    use rando_object::RandoObject;
+
     #[test]
     fn test_structs() {
-        let e = Everything {};
-        let r = RandoObject {};
+        let e = Everything {
+            id: Uuid::new_v5(&UUID_NS, b"everything"),
+            string: "everything".to_owned(),
+            float: 42.0,
+            bool: true,
+            int: 42,
+        };
+
+        let r = RandoObject {
+            id: Uuid::new_v5(&UUID_NS, b"rando"),
+        };
     }
 }
