@@ -122,7 +122,10 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
         // well as derives.
         writeln!(buffer, "pub struct {} {{", obj.as_type()).context(FormatSnafu)?;
 
-        for attr in sarzak_get_many_as_across_r1!(obj, store.sarzak()) {
+        let mut attrs = sarzak_get_many_as_across_r1!(obj, store.sarzak());
+        attrs.sort_by(|a, b| a.name.cmp(&b.name));
+
+        for attr in attrs {
             // Already bumping into problems. Now better than later. The issue
             // is that we need to import Uuid, and we don't know about it until
             // now. We in fact need to know about it long before now. There may
