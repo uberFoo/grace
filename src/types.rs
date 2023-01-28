@@ -1,12 +1,12 @@
 //! Generate Types
 //!
 //! This is the entry point for all type generation.
-use std::{fmt::Write, io};
+use std::fmt::Write;
 
 use log;
 use sarzak::{
     domain::Domain,
-    mc::{CompilerSnafu, FormatSnafu, IOSnafu, Result},
+    mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
             sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
@@ -26,16 +26,12 @@ use crate::codegen::{
 };
 
 pub(crate) struct DefaultStructBuilder<'a> {
-    store: Option<&'a Domain>,
     definition: Option<Box<dyn StructDefinition + 'a>>,
 }
 
 impl<'a> DefaultStructBuilder<'a> {
     pub(crate) fn new() -> Self {
-        DefaultStructBuilder {
-            store: None,
-            definition: None,
-        }
+        DefaultStructBuilder { definition: None }
     }
 
     pub(crate) fn definition(mut self, definition: Box<dyn StructDefinition + 'a>) -> Self {
@@ -44,19 +40,7 @@ impl<'a> DefaultStructBuilder<'a> {
         self
     }
 
-    pub(crate) fn store(mut self, store: &'a Domain) -> Self {
-        self.store = Some(store);
-
-        self
-    }
-
     pub(crate) fn build(self) -> Result<Box<DefaultStructGenerator<'a>>> {
-        ensure!(
-            self.store.is_some(),
-            CompilerSnafu {
-                description: "missing domain store"
-            }
-        );
         ensure!(
             self.definition.is_some(),
             CompilerSnafu {
@@ -65,7 +49,6 @@ impl<'a> DefaultStructBuilder<'a> {
         );
 
         Ok(Box::new(DefaultStructGenerator {
-            store: self.store.unwrap(),
             definition: self.definition.unwrap(),
         }))
     }
@@ -81,30 +64,22 @@ impl<'a> DefaultStructBuilder<'a> {
 /// know how to write different parts of some rust code. This one is for
 /// structs.
 pub(crate) struct DefaultStructGenerator<'a> {
-    store: &'a Domain,
     definition: Box<dyn StructDefinition + 'a>,
 }
 
 impl<'a> FileGenerator for DefaultStructGenerator<'a> {
-    fn generate(&self, mut writer: Box<dyn io::Write>) -> Result<()> {
-        let mut buffer = Buffer::new();
-
+    fn generate(&self, domain: &Domain, mut buffer: &mut Buffer) -> Result<()> {
         buffer.block(
             Directive::Provenance,
             "something better than this",
             |buffer| {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
-                self.definition.write_code(self.store, buffer)?;
+                self.definition.write_code(domain, buffer)?;
 
                 Ok(())
             },
         )?;
-
-        // Write it.
-        writer
-            .write_all(buffer.dump().as_bytes())
-            .context(IOSnafu)?;
 
         Ok(())
     }

@@ -4,3 +4,4 @@
 pub(crate) mod buffer;
 pub(crate) mod generator;
 pub(crate) mod render;
+mod rustfmt;

@@ -55,14 +55,14 @@ impl SarzakModelCompiler for ModelCompiler {
             GeneratorBuilder::new()
                 // Where to write
                 .path(&types)?
+                // Domain/Store
+                .domain(&model)
                 // What to write
                 .generator(
                     // Struct
                     DefaultStructBuilder::new()
                         // Definition type
                         .definition(DefaultStruct::new(&id))
-                        // Store? For each type? Lame.
-                        .store(&model)
                         .build()?,
                 )
                 .generate()?;
