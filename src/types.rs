@@ -20,7 +20,7 @@ use snafu::prelude::*;
 use uuid::Uuid;
 
 use crate::codegen::{
-    buffer::Buffer,
+    buffer::{Buffer, Directive},
     generator::{CodeWriter, FileGenerator},
     render::{RenderIdent, RenderType},
 };
@@ -89,13 +89,17 @@ impl<'a> FileGenerator for DefaultStructGenerator<'a> {
     fn generate(&self, mut writer: Box<dyn io::Write>) -> Result<()> {
         let mut buffer = Buffer::new();
 
-        buffer.block(|buffer| {
-            // It's important that we maintain ordering for code injection and
-            // redaction. We begin with the struct definition.
-            self.definition.write_code(self.store, buffer)?;
+        buffer.block(
+            Directive::Provenance,
+            "something better than this",
+            |buffer| {
+                // It's important that we maintain ordering for code injection and
+                // redaction. We begin with the struct definition.
+                self.definition.write_code(self.store, buffer)?;
 
-            Ok(())
-        })?;
+                Ok(())
+            },
+        )?;
 
         // Write it.
         writer
@@ -135,59 +139,67 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
         writeln!(buffer).context(FormatSnafu)?;
 
         let mut paste = Buffer::new();
-        buffer.block(|buffer| {
-            // This is sort of long, and sticks out. Maybe it goes into a function?
-            for referrer in &referrers {
-                let binary = sarzak_get_one_r_bin_across_r6!(referrer, store.sarzak());
-                let referent = sarzak_get_one_r_to_across_r5!(binary, store.sarzak());
-                let r_obj = sarzak_get_one_obj_across_r16!(referent, store.sarzak());
+        buffer.block(
+            Directive::PreferNewCommentOld,
+            format!("{}-referrer-use-statements", obj.as_ident()),
+            |buffer| {
+                // This is sort of long, and sticks out. Maybe it goes into a function?
+                for referrer in &referrers {
+                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, store.sarzak());
+                    let referent = sarzak_get_one_r_to_across_r5!(binary, store.sarzak());
+                    let r_obj = sarzak_get_one_obj_across_r16!(referent, store.sarzak());
 
-                writeln!(
-                    buffer,
-                    "use crate::everything::types::{}::{};",
-                    r_obj.as_ident(),
-                    r_obj.as_type()
-                )
-                .context(FormatSnafu)?;
-
-                writeln!(paste, "/// R{}: {}", binary.number, referrer.description)
+                    writeln!(
+                        buffer,
+                        "use crate::everything::types::{}::{};",
+                        r_obj.as_ident(),
+                        r_obj.as_type()
+                    )
                     .context(FormatSnafu)?;
-                writeln!(
-                    paste,
-                    "pub {}: &'a {}",
-                    referrer.referential_attribute,
-                    r_obj.as_type()
-                )
-                .context(FormatSnafu)?;
-            }
 
-            Ok(())
-        })?;
+                    writeln!(paste, "/// R{}: {}", binary.number, referrer.description)
+                        .context(FormatSnafu)?;
+                    writeln!(
+                        paste,
+                        "pub {}: &'a {}",
+                        referrer.referential_attribute,
+                        r_obj.as_type()
+                    )
+                    .context(FormatSnafu)?;
+                }
+
+                Ok(())
+            },
+        )?;
 
         log::debug!("writing Struct Definition for {}", obj.name);
 
-        buffer.block(|buffer| {
-            if has_referential_attrs {
-                // Lifetime parameters. Really, we should assign one for each attribute. TBD.
-                writeln!(buffer, "pub struct {}<'a> {{", obj.as_type()).context(FormatSnafu)?;
-            } else {
-                writeln!(buffer, "pub struct {} {{", obj.as_type()).context(FormatSnafu)?;
-            }
+        buffer.block(
+            Directive::PreferNewCommentOld,
+            format!("{}-struct-definition", obj.as_ident()),
+            |buffer| {
+                if has_referential_attrs {
+                    // Lifetime parameters. Really, we should assign one for each attribute. TBD.
+                    writeln!(buffer, "pub struct {}<'a> {{", obj.as_type()).context(FormatSnafu)?;
+                } else {
+                    writeln!(buffer, "pub struct {} {{", obj.as_type()).context(FormatSnafu)?;
+                }
 
-            let mut attrs = sarzak_get_many_as_across_r1!(obj, store.sarzak());
-            attrs.sort_by(|a, b| a.name.cmp(&b.name));
-            for attr in attrs {
-                let ty = sarzak_get_one_t_across_r2!(attr, store.sarzak());
-                writeln!(buffer, "pub {}: {},", attr.as_ident(), ty.as_type())
-                    .context(FormatSnafu)?;
-            }
+                let mut attrs = sarzak_get_many_as_across_r1!(obj, store.sarzak());
+                attrs.sort_by(|a, b| a.name.cmp(&b.name));
+                for attr in attrs {
+                    let ty = sarzak_get_one_t_across_r2!(attr, store.sarzak());
+                    writeln!(buffer, "pub {}: {},", attr.as_ident(), ty.as_type())
+                        .context(FormatSnafu)?;
+                }
 
-            // Paste in the referential attributes, computed above.
-            *buffer += paste;
+                // Paste in the referential attributes, computed above.
+                *buffer += paste;
 
-            writeln!(buffer, "}}").context(FormatSnafu)?;
-            Ok(())
-        })?;
+                writeln!(buffer, "}}").context(FormatSnafu)?;
+                Ok(())
+            },
+        )?;
 
         Ok(())
     }

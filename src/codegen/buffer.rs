@@ -6,7 +6,30 @@ use std::{
 };
 
 use sarzak::mc::{FormatSnafu, Result};
+use serde::Serialize;
+use serde_json;
 use snafu::prelude::*;
+
+const MAGIC: char = '';
+
+#[derive(Serialize)]
+pub(crate) enum Directive {
+    #[serde(rename = "provenance")]
+    Provenance,
+    #[serde(rename = "ignore")]
+    Ignore,
+    #[serde(rename = "prefer-new")]
+    PreferNewCommentOld,
+    #[serde(rename = "prefer-old")]
+    PreferOldCommentNew,
+}
+
+#[derive(Serialize)]
+struct DirectiveComment {
+    magic: char,
+    directive: Directive,
+    tag: String,
+}
 
 pub(crate) struct Buffer {
     buffer: String,
@@ -19,8 +42,9 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn block<F>(&mut self, mut block: F) -> Result<()>
+    pub(crate) fn block<S, F>(&mut self, directive: Directive, tag: S, mut block: F) -> Result<()>
     where
+        S: AsRef<str>,
         F: FnOnce(&mut Self) -> Result<()>,
     {
         let mut inner = Self::new();
@@ -29,8 +53,15 @@ impl Buffer {
 
         // Don't do anything if nothing happened.
         if inner.buffer.len() != 0 {
-            writeln!(self.buffer, "// ✨").context(FormatSnafu)?;
-            writeln!(inner, "// ✨").context(FormatSnafu)?;
+            let comment_directive = DirectiveComment {
+                magic: MAGIC,
+                directive,
+                tag: tag.as_ref().to_owned(),
+            };
+            let comment = serde_json::to_string(&comment_directive).expect("serde_json failed");
+
+            writeln!(self.buffer, "// {}", comment).context(FormatSnafu)?;
+            writeln!(inner, "// {}", comment).context(FormatSnafu)?;
             *self += inner;
         }
 
