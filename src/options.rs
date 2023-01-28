@@ -21,8 +21,20 @@ use serde::{Deserialize, Serialize};
 
 use sarzak::mc::ModelCompilerOptions;
 
+const DEFAULT_DERIVE: &'static [&'static str] = &["Debug"];
+
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
-pub struct GraceCompilerOptions {}
+pub struct GraceCompilerOptions {
+    /// Derive macros
+    ///
+    /// A comma separated list of derive macros to be added to each generated
+    /// item, globally.
+    ///
+    /// Note that this option is available on a per-object basis using the
+    /// description coloring option: `// 🐶 {"derive": ["macro", ...]}`.
+    #[arg(long, short, use_value_delimiter = true, value_delimiter = ',')]
+    pub derive: Option<Vec<String>>,
+}
 
 impl ModelCompilerOptions for GraceCompilerOptions {
     fn as_any(&self) -> &dyn Any {
@@ -32,6 +44,8 @@ impl ModelCompilerOptions for GraceCompilerOptions {
 
 impl Default for GraceCompilerOptions {
     fn default() -> Self {
-        Self {}
+        Self {
+            derive: Some(DEFAULT_DERIVE.iter().map(|&x| x.to_owned()).collect()),
+        }
     }
 }

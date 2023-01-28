@@ -19,10 +19,13 @@ use sarzak::{
 use snafu::prelude::*;
 use uuid::Uuid;
 
-use crate::codegen::{
-    buffer::{Buffer, Directive},
-    generator::{CodeWriter, FileGenerator},
-    render::{RenderIdent, RenderType},
+use crate::{
+    codegen::{
+        buffer::{Buffer, Directive},
+        generator::{CodeWriter, FileGenerator},
+        render::{RenderIdent, RenderType},
+    },
+    options::GraceCompilerOptions,
 };
 
 pub(crate) struct DefaultStructBuilder<'a> {
@@ -68,14 +71,19 @@ pub(crate) struct DefaultStructGenerator<'a> {
 }
 
 impl<'a> FileGenerator for DefaultStructGenerator<'a> {
-    fn generate(&self, domain: &Domain, buffer: &mut Buffer) -> Result<()> {
+    fn generate(
+        &self,
+        options: &GraceCompilerOptions,
+        domain: &Domain,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
         buffer.block(
             Directive::Provenance,
             "something better than this",
             |buffer| {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
-                self.definition.write_code(domain, buffer)?;
+                self.definition.write_code(options, domain, buffer)?;
 
                 Ok(())
             },
@@ -104,7 +112,12 @@ impl<'a> DefaultStruct<'a> {
 impl<'a> StructDefinition for DefaultStruct<'a> {}
 
 impl<'a> CodeWriter for DefaultStruct<'a> {
-    fn write_code(&self, store: &Domain, buffer: &mut Buffer) -> Result<()> {
+    fn write_code(
+        &self,
+        options: &GraceCompilerOptions,
+        store: &Domain,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
         let obj = store.sarzak().exhume_object(self.obj_id).unwrap();
         let referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, store.sarzak());
         let has_referential_attrs = referrers.len() > 0;
@@ -153,6 +166,14 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
             Directive::PreferNewCommentOld,
             format!("{}-struct-definition", obj.as_ident()),
             |buffer| {
+                if let Some(derive) = &options.derive {
+                    write!(buffer, "#[derive(").context(FormatSnafu)?;
+                    for d in derive {
+                        write!(buffer, "{},", d).context(FormatSnafu)?;
+                    }
+                    writeln!(buffer, ")]").context(FormatSnafu)?;
+                }
+
                 if has_referential_attrs {
                     // Lifetime parameters. Really, we should assign one for each attribute. TBD.
                     writeln!(buffer, "pub struct {}<'a> {{", obj.as_type()).context(FormatSnafu)?;

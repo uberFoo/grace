@@ -30,12 +30,17 @@ impl SarzakModelCompiler for ModelCompiler {
         model: &sarzak::domain::Domain,
         module: &str,
         src_path: P,
-        _options: Box<&dyn ModelCompilerOptions>,
+        options: Box<&dyn ModelCompilerOptions>,
         _test: bool,
     ) -> Result<(), ModelCompilerError> {
-        // Generate types.rs
+        // ✨Generate Types✨
+        // Extract our options
+        let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
+            Some(options) => options.clone(),
+            None => GraceCompilerOptions::default(),
+        };
 
-        // First deal with the path
+        // Build a path to src/types
         let mut types = PathBuf::from(src_path.as_ref());
         types.push(module);
         types.push(TYPES);
@@ -53,6 +58,7 @@ impl SarzakModelCompiler for ModelCompiler {
 
             // Here's the generation.
             GeneratorBuilder::new()
+                .options(&options)
                 // Where to write
                 .path(&types)?
                 // Domain/Store

@@ -23,10 +23,15 @@ mod tests {
 
     #[test]
     fn test_structs() {
+        // Test struct creation ✅
         let r = RandoObject {
             id: Uuid::new_v5(&UUID_NS, b"rando"),
         };
 
+        // Test derive option ✅
+        println!("{:?}", r);
+
+        // Test struct creation ✅
         let e = Everything {
             id: Uuid::new_v5(&UUID_NS, b"everything"),
             string: "everything".to_owned(),
@@ -35,5 +40,8 @@ mod tests {
             int: 42,
             rando: &r,
         };
+
+        // Test derive option ✅
+        println!("{:?}", e);
     }
 }

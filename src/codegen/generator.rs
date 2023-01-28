@@ -9,13 +9,17 @@ use sarzak::{
 };
 use snafu::prelude::*;
 
-use crate::codegen::{buffer::Buffer, rustfmt::format};
+use crate::{
+    codegen::{buffer::Buffer, rustfmt::format},
+    options::GraceCompilerOptions,
+};
 
 pub(crate) struct GeneratorBuilder<'a> {
     original: Option<String>,
     writer: Option<Box<dyn Write>>,
     generator: Option<Box<dyn FileGenerator + 'a>>,
     domain: Option<&'a Domain>,
+    options: Option<&'a GraceCompilerOptions>,
 }
 
 impl<'a> GeneratorBuilder<'a> {
@@ -25,7 +29,14 @@ impl<'a> GeneratorBuilder<'a> {
             writer: None,
             generator: None,
             domain: None,
+            options: None,
         }
+    }
+
+    pub fn options(mut self, options: &'a GraceCompilerOptions) -> Self {
+        self.options = Some(options);
+
+        self
     }
 
     pub fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
@@ -59,6 +70,13 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub fn generate(self) -> Result<()> {
         ensure!(
+            self.options.is_some(),
+            CompilerSnafu {
+                description: "missing compiler options"
+            }
+        );
+
+        ensure!(
             self.writer.is_some(),
             CompilerSnafu {
                 description: "missing writer"
@@ -82,11 +100,11 @@ impl<'a> GeneratorBuilder<'a> {
         let mut writer = self.writer.unwrap();
 
         let mut buffer = Buffer::new();
-        match self
-            .generator
-            .unwrap()
-            .generate(&self.domain.unwrap(), &mut buffer)
-        {
+        match self.generator.unwrap().generate(
+            &self.options.unwrap(),
+            &self.domain.unwrap(),
+            &mut buffer,
+        ) {
             Ok(_) => {
                 if let Some(_original) = self.original {
                     // Diff the buffers and write the output
@@ -101,7 +119,12 @@ impl<'a> GeneratorBuilder<'a> {
 }
 
 pub(crate) trait FileGenerator {
-    fn generate(&self, domain: &Domain, buffer: &mut Buffer) -> Result<()>;
+    fn generate(
+        &self,
+        options: &GraceCompilerOptions,
+        domain: &Domain,
+        buffer: &mut Buffer,
+    ) -> Result<()>;
 }
 
 /// CodeWriter
@@ -110,7 +133,12 @@ pub(crate) trait FileGenerator {
 /// is the `Buffer` parameter. That's a dead giveaway that the rubber is hitting
 /// the road.
 pub(crate) trait CodeWriter {
-    fn write_code(&self, domain: &Domain, buffer: &mut Buffer) -> Result<()>;
+    fn write_code(
+        &self,
+        options: &GraceCompilerOptions,
+        domain: &Domain,
+        buffer: &mut Buffer,
+    ) -> Result<()>;
 }
 
 #[cfg(test)]

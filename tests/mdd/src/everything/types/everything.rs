@@ -5,6 +5,7 @@ use uuid::Uuid;
 use crate::everything::types::rando_object::RandoObject;
 // {"magic":"","directive":"prefer-new","tag":"everything-referrer-use-statements"}
 // {"magic":"","directive":"prefer-new","tag":"everything-struct-definition"}
+#[derive(Debug)]
 pub struct Everything<'a> {
     pub bool: bool,
     pub float: f64,
