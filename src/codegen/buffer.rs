@@ -42,7 +42,7 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn block<S, F>(&mut self, directive: Directive, tag: S, mut block: F) -> Result<()>
+    pub(crate) fn block<S, F>(&mut self, directive: Directive, tag: S, block: F) -> Result<()>
     where
         S: AsRef<str>,
         F: FnOnce(&mut Self) -> Result<()>,

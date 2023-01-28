@@ -68,7 +68,7 @@ pub(crate) struct DefaultStructGenerator<'a> {
 }
 
 impl<'a> FileGenerator for DefaultStructGenerator<'a> {
-    fn generate(&self, domain: &Domain, mut buffer: &mut Buffer) -> Result<()> {
+    fn generate(&self, domain: &Domain, buffer: &mut Buffer) -> Result<()> {
         buffer.block(
             Directive::Provenance,
             "something better than this",

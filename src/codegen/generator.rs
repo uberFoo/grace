@@ -95,7 +95,7 @@ impl<'a> GeneratorBuilder<'a> {
             .generate(&self.domain.unwrap(), &mut buffer)
         {
             Ok(_) => {
-                if let Some(original) = self.original {
+                if let Some(_original) = self.original {
                     // Diff the buffers and write the output
                     let generated = format(&buffer.dump())?;
                     writer.write_all(generated.as_bytes()).context(IOSnafu)?
@@ -128,5 +128,14 @@ mod tests {
     fn test_generator_builder_error() {
         let gb = GeneratorBuilder::new().generate();
         assert!(gb.is_err());
+
+        let gb = GeneratorBuilder::new().path("/tmp/foo").unwrap().generate();
+        assert!(gb.is_err());
+
+        let domain = sarzak::domain::DomainBuilder::new()
+            .cuckoo_model("tests/mdd/models/everything.json")
+            .unwrap()
+            .build()
+            .unwrap();
     }
 }
