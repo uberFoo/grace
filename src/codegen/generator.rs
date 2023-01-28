@@ -28,13 +28,6 @@ impl<'a> GeneratorBuilder<'a> {
         }
     }
 
-    // I tried 'a, and it didn't work...
-    pub fn writer<W: Write + 'static>(mut self, writer: W) -> Self {
-        self.writer = Some(Box::new(writer));
-
-        self
-    }
-
     pub fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
         let path = path.as_ref();
         if path.exists() {
