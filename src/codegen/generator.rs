@@ -19,8 +19,6 @@ use crate::{
 };
 
 pub(crate) struct GeneratorBuilder<'a> {
-    original: Option<String>,
-    writer: Option<Box<dyn Write>>,
     path: Option<PathBuf>,
     generator: Option<Box<dyn FileGenerator + 'a>>,
     domain: Option<&'a Domain>,
@@ -31,8 +29,6 @@ pub(crate) struct GeneratorBuilder<'a> {
 impl<'a> GeneratorBuilder<'a> {
     pub fn new() -> Self {
         GeneratorBuilder {
-            original: None,
-            writer: None,
             path: None,
             generator: None,
             domain: None,
@@ -49,13 +45,6 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
         let path = path.as_ref();
-        if path.exists() {
-            self.original = Some(format(&path)?);
-        }
-
-        self.writer = Some(Box::new(
-            File::create(&path).context(FileSnafu { path: path })?,
-        ));
 
         self.path = Some(path.to_path_buf());
 
@@ -89,9 +78,9 @@ impl<'a> GeneratorBuilder<'a> {
         );
 
         ensure!(
-            self.writer.is_some(),
+            self.path.is_some(),
             CompilerSnafu {
-                description: "missing writer"
+                description: "missing output path"
             }
         );
 
@@ -116,8 +105,6 @@ impl<'a> GeneratorBuilder<'a> {
             }
         );
 
-        let mut writer = self.writer.unwrap();
-
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
             &self.options.unwrap(),
@@ -126,13 +113,74 @@ impl<'a> GeneratorBuilder<'a> {
             &mut buffer,
         ) {
             Ok(_) => {
-                if let Some(_original) = self.original {
-                    // Diff the buffers and write the output
-                    writer
-                        .write_all(&buffer.dump().as_bytes())
-                        .context(IOSnafu)?;
-                    let generated = format(&self.path.unwrap())?;
+                // Generation was successful, write the output.
+                //
+                // Because of the way `rustfmt` works (it acts like it's running
+                // the compiler) the file needs to be in place (I've only
+                // found this to be true for files that are declaring modules).
+                // I'd prefer to format a temporary file, and avoid all this
+                // shuffling. It's what I did in nut...
+
+                // First, we need to see if the file exists, if not it's the easy
+                // path. We write the file and format it in place.
+                //
+                // Otherwise, we format the existing file, so that we are on as
+                // level a field as possible. Once it's formatted we read it
+                // into a String. Then...
+                //
+                // We need to format the generated code. To keep `rustfmt` happy,
+                // we _overwrite_ the existing file with the generated code.
+                // Format it, and then read it into a String.
+                //
+                // Finally we can diff the two Strings and write the output.
+                // I don't think that it should have to be formatted.
+                //
+                // Whew!
+                //
+                // And it's actually more complicated than that! If something
+                // goes wrong with formatting, we know that there is some bad
+                // syntax. We don't want to overwrite an existing file with
+                // that. We also don't want to output it as if it were parsing
+                // correctly. So in the event of failure, we write the original
+                // back, and save the bad one as `file_stem`_fail.rs. If there was
+                // no existing file, we'll just output the fail version.
+                //
+                let path = self.path.unwrap();
+
+                if path.exists() {
+                    // Format the original. We get some validation from ^rustfmt`,
+                    // so if it fails, we'll just stop.
+                    match format(&path) {
+                        Ok(_) => {
+                            let mut file =
+                                File::create(&path).context(FileSnafu { path: &path })?;
+                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+
+                            // Format takes care of saving the file off for us. We just
+                            // let the end user know about it.
+                            match format(&path) {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    eprintln!("{}", e)
+                                }
+                            };
+                        }
+                        Err(e) => eprintln!("{}", e),
+                    }
+                } else {
+                    let mut file = File::create(&path).context(FileSnafu { path: &path })?;
+                    file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+
+                    // Format takes care of saving the file off for us. We just
+                    // let the end user know about it.
+                    match format(&path) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            eprintln!("{}", e)
+                        }
+                    };
                 }
+
                 Ok(())
             }
             Err(e) => Err(e),

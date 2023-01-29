@@ -304,7 +304,7 @@ impl<'a> CodeWriter for DefaultModule {
                 }
                 Ok(())
             },
-        );
+        )?;
 
         Ok(())
     }
