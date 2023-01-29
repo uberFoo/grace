@@ -21,10 +21,17 @@ use serde::{Deserialize, Serialize};
 
 use sarzak::mc::ModelCompilerOptions;
 
+const GENERATE_DOMAIN_DEFAULT: bool = false;
 const DEFAULT_DERIVE: &'static [&'static str] = &["Debug"];
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
 pub struct GraceCompilerOptions {
+    /// Generate Domain
+    ///
+    /// This flag indicates that code should be generated for a sarzak Domain.
+    #[arg(long, short)]
+    pub generate_domain: bool,
+
     /// Derive macros
     ///
     /// A comma separated list of derive macros to be added to each generated
@@ -45,6 +52,7 @@ impl ModelCompilerOptions for GraceCompilerOptions {
 impl Default for GraceCompilerOptions {
     fn default() -> Self {
         Self {
+            generate_domain: GENERATE_DOMAIN_DEFAULT,
             derive: Some(DEFAULT_DERIVE.iter().map(|&x| x.to_owned()).collect()),
         }
     }

@@ -6,7 +6,7 @@ use std::fmt::Write;
 use log;
 use sarzak::{
     domain::Domain,
-    mc::{CompilerSnafu, FormatSnafu, Result},
+    mc::{FormatSnafu, Result},
     sarzak::{
         macros::{
             sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
@@ -22,7 +22,7 @@ use uuid::Uuid;
 use crate::{
     codegen::{
         buffer::{Buffer, Directive},
-        generator::{CodeWriter, FileGenerator},
+        generator::CodeWriter,
         render::{RenderIdent, RenderType},
     },
     options::GraceCompilerOptions,
@@ -38,7 +38,7 @@ pub(crate) struct DomainStruct<'a> {
 }
 
 impl<'a> DomainStruct<'a> {
-    pub(crate) fn new(obj_id: &'a Uuid) -> Box<Self> {
+    pub(crate) fn new(obj_id: &'a Uuid) -> Box<dyn StructDefinition + 'a> {
         Box::new(Self { obj_id })
     }
 }
@@ -55,7 +55,6 @@ impl<'a> CodeWriter for DomainStruct<'a> {
     ) -> Result<()> {
         let obj = store.sarzak().exhume_object(self.obj_id).unwrap();
         let referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, store.sarzak());
-        let has_referential_attrs = referrers.len() > 0;
 
         // Everything has an `id`, everything needs this.
         writeln!(buffer, "use uuid::Uuid;").context(FormatSnafu)?;

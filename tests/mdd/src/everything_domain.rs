@@ -34,7 +34,7 @@ mod tests {
             float: 42.0,
             bool: true,
             int: 42,
-            rando: &r,
+            rando: r.id,
         };
 
         // Test derive option ✅
