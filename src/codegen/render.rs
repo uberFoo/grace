@@ -59,6 +59,8 @@ impl RenderType for Type {
     fn as_type(&self) -> String {
         match self {
             Type::Boolean(_) => "bool".to_owned(),
+            // I don't have a good feeling about this one...
+            Type::Reference(_) => "&".to_owned(),
             Type::String(_) => "String".to_owned(),
             Type::Uuid(_) => "Uuid".to_owned(),
             Type::Float(_) => "f64".to_owned(),
