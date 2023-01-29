@@ -14,7 +14,7 @@ use sarzak::{
             sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
         },
-        types::{Attribute, Referrer},
+        types::{Attribute, Object, Referrer},
     },
 };
 use snafu::prelude::*;
@@ -82,7 +82,7 @@ impl<'a> FileGenerator for DefaultStructGenerator<'a> {
     ) -> Result<()> {
         buffer.block(
             Directive::Provenance,
-            "something better than this",
+            format!("{}-struct-definition-file", "no-obj-here"),
             |buffer| {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
@@ -257,7 +257,7 @@ impl<'a> FileGenerator for DefaultModuleGenerator<'a> {
     ) -> Result<()> {
         buffer.block(
             Directive::Provenance,
-            "something better than this",
+            format!("{}-module-definition-file", module),
             |buffer| {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
@@ -293,6 +293,19 @@ impl<'a> CodeWriter for DefaultModule {
         module: &str,
         buffer: &mut Buffer,
     ) -> Result<()> {
+        buffer.block(
+            Directive::PreferNewCommentOld,
+            format!("{}-module-definition", module),
+            |buffer| {
+                let mut objects: Vec<(&Uuid, &Object)> = store.sarzak().iter_object().collect();
+                objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+                for (_, obj) in objects {
+                    writeln!(buffer, "pub mod {};", obj.as_ident()).context(FormatSnafu)?;
+                }
+                Ok(())
+            },
+        );
+
         Ok(())
     }
 }

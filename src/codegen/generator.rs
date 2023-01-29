@@ -1,7 +1,11 @@
 //! Generator Root
 //!
 //!
-use std::{fs::File, io::prelude::*, path::Path};
+use std::{
+    fs::File,
+    io::prelude::*,
+    path::{Path, PathBuf},
+};
 
 use sarzak::{
     domain::Domain,
@@ -17,6 +21,7 @@ use crate::{
 pub(crate) struct GeneratorBuilder<'a> {
     original: Option<String>,
     writer: Option<Box<dyn Write>>,
+    path: Option<PathBuf>,
     generator: Option<Box<dyn FileGenerator + 'a>>,
     domain: Option<&'a Domain>,
     options: Option<&'a GraceCompilerOptions>,
@@ -28,6 +33,7 @@ impl<'a> GeneratorBuilder<'a> {
         GeneratorBuilder {
             original: None,
             writer: None,
+            path: None,
             generator: None,
             domain: None,
             options: None,
@@ -44,16 +50,14 @@ impl<'a> GeneratorBuilder<'a> {
     pub fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
         let path = path.as_ref();
         if path.exists() {
-            let mut file = File::open(&path).context(FileSnafu { path: path })?;
-            let mut buffer = String::new();
-            file.read_to_string(&mut buffer);
-
-            self.original = Some(format(&buffer)?);
+            self.original = Some(format(&path)?);
         }
 
         self.writer = Some(Box::new(
-            File::create(path).context(FileSnafu { path: path })?,
+            File::create(&path).context(FileSnafu { path: path })?,
         ));
+
+        self.path = Some(path.to_path_buf());
 
         Ok(self)
     }
@@ -124,8 +128,10 @@ impl<'a> GeneratorBuilder<'a> {
             Ok(_) => {
                 if let Some(_original) = self.original {
                     // Diff the buffers and write the output
-                    let generated = format(&buffer.dump())?;
-                    writer.write_all(generated.as_bytes()).context(IOSnafu)?
+                    writer
+                        .write_all(&buffer.dump().as_bytes())
+                        .context(IOSnafu)?;
+                    let generated = format(&self.path.unwrap())?;
                 }
                 Ok(())
             }

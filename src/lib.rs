@@ -63,19 +63,6 @@ impl SarzakModelCompiler for ModelCompiler {
         let mut objects: Vec<(&Uuid, &Object)> = model.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 
-        // Generate a "types.rs" module file containing all of the types.
-        // GeneratorBuilder::new()
-        //     .options(&options)
-        //     .path(&types)?
-        //     .domain(&model)
-        //     .module(module)
-        //     .generator(
-        //         DefaultModuleBuilder::new()
-        //             .definition(DefaultModule::new())
-        //             .build()?,
-        //     )
-        //     .generate()?;
-
         // Iterate over the objects, generating an implementation for file each.
         for (id, obj) in objects {
             types.set_file_name(obj.as_ident());
@@ -115,6 +102,27 @@ impl SarzakModelCompiler for ModelCompiler {
                 )
                 .generate()?;
         }
+
+        let mut types = PathBuf::from(src_path.as_ref());
+        types.push(module);
+        types.push("discard");
+        types.set_file_name(TYPES);
+        types.set_extension(RS_EXT);
+
+        // Generate a "types.rs" module file containing all of the types.
+        // This needs to be done after the types are generated so that rustfmt
+        // doesn't complain an us.
+        GeneratorBuilder::new()
+            .options(&options)
+            .path(&types)?
+            .domain(&model)
+            .module(module)
+            .generator(
+                DefaultModuleBuilder::new()
+                    .definition(DefaultModule::new())
+                    .build()?,
+            )
+            .generate()?;
 
         // // Generate macros.rs
         // let mut types = PathBuf::from(src_path.as_ref());

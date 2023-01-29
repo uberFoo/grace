@@ -1,21 +1,25 @@
-use std::{io::Write, process};
+use std::{fs::File, io::prelude::*, path::Path, process};
 
-use sarzak::mc::{CompilerSnafu, IOSnafu, Result};
+use sarzak::mc::{CompilerSnafu, FileSnafu, IOSnafu, Result};
 use snafu::prelude::*;
 
 use tempfile::NamedTempFile;
 
-pub(crate) fn format(buffer: &String) -> Result<String> {
-    log::trace!("running `rustfmt --emit stdout`");
+pub(crate) fn format(path: &Path) -> Result<String> {
+    log::trace!("running `rustfmt --emit stdout {}`", path.display());
+
+    let mut file = File::open(&path).context(FileSnafu { path: path })?;
+    let mut buffer = String::new();
+    file.read_to_string(&mut buffer);
 
     // Write the buffer to a temporary file
-    let mut file = NamedTempFile::new().context(IOSnafu)?;
-    file.write_all(buffer.as_bytes()).context(IOSnafu)?;
+    // let mut file = NamedTempFile::new().context(IOSnafu)?;
+    // file.write_all(buffer.as_bytes()).context(IOSnafu)?;
 
     // Run rustfmt on the file
     let child = process::Command::new("rustfmt")
         // .arg(&path.to_str().expect("this is a pain in the dick"))
-        .args(["--emit", "stdout", &file.path().to_string_lossy()])
+        .args(["--emit", "stdout", &path.to_string_lossy()])
         .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped())
         .spawn()
@@ -23,7 +27,7 @@ pub(crate) fn format(buffer: &String) -> Result<String> {
 
     // Wait for the process to finish, and then read it's output buffer.
     let output = child.wait_with_output().context(IOSnafu)?;
-    let buffer = String::from_utf8_lossy(&output.stdout);
+    let stdout = String::from_utf8_lossy(&output.stdout);
 
     // Need to figure out what to do with the failed output. Maybe squirt it
     // to vscode? That would actually be really useful...
@@ -43,13 +47,15 @@ pub(crate) fn format(buffer: &String) -> Result<String> {
             })?;
             writeln!(stdin, "😱 rustfmt failed with:").context(IOSnafu)?;
             stdin.write_all(&stderr.as_bytes()).context(IOSnafu)?;
-            writeln!(stdin, "😱 here is any offending output:",).context(IOSnafu)?;
+            writeln!(stdin, "here is what it choked on:").context(IOSnafu)?;
             stdin.write_all(&buffer.as_bytes()).context(IOSnafu)?;
+            writeln!(stdin, "here is any offending output:").context(IOSnafu)?;
+            stdin.write_all(&stdout.as_bytes()).context(IOSnafu)?;
         } else {
             eprintln!("😱 rustfmt failed with:");
             eprintln!("{}", stderr);
             eprintln!("😱 here is any offending output:",);
-            eprintln!("{}", buffer);
+            eprintln!("{}", stdout);
         }
     }
 
@@ -63,7 +69,7 @@ pub(crate) fn format(buffer: &String) -> Result<String> {
     );
 
     // Some junk get's appended to the top of stdout.
-    let mut iter = buffer.splitn(3, '\n');
+    let mut iter = stdout.splitn(3, '\n');
     iter.next();
     iter.next();
 
