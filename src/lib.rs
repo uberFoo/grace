@@ -16,7 +16,10 @@ pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
 use codegen::{generator::GeneratorBuilder, render::RenderIdent};
 use sarzak::sarzak::types::Object;
-use types::default::{DefaultStruct, DefaultStructBuilder};
+use types::{
+    default::{DefaultModule, DefaultModuleBuilder, DefaultStruct, DefaultStructBuilder},
+    domain::DomainStruct,
+};
 
 const RS_EXT: &str = "rs";
 const TYPES: &str = "types";
@@ -33,6 +36,15 @@ impl SarzakModelCompiler for ModelCompiler {
         options: Box<&dyn ModelCompilerOptions>,
         _test: bool,
     ) -> Result<(), ModelCompilerError> {
+        log::debug!(
+            "compile invoked with model: {}, module: {}, src_path: {}, options: {:#?}, test: {}",
+            model.domain(),
+            module,
+            src_path.as_ref().display(),
+            options,
+            _test
+        );
+
         // ✨Generate Types✨
         // Extract our options
         let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
@@ -51,10 +63,38 @@ impl SarzakModelCompiler for ModelCompiler {
         let mut objects: Vec<(&Uuid, &Object)> = model.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 
+        // Generate a "types.rs" module file containing all of the types.
+        // GeneratorBuilder::new()
+        //     .options(&options)
+        //     .path(&types)?
+        //     .domain(&model)
+        //     .module(module)
+        //     .generator(
+        //         DefaultModuleBuilder::new()
+        //             .definition(DefaultModule::new())
+        //             .build()?,
+        //     )
+        //     .generate()?;
+
         // Iterate over the objects, generating an implementation for file each.
         for (id, obj) in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
+
+            let struct_writer = if options.generate_domain {
+                DomainStruct::new(&id)
+            } else {
+                DefaultStruct::new(&id)
+            };
+            // let struct_writer = if let Some(domain) = options.generate_domain {
+            //     if domain {
+            //         DomainStruct::new(&id)
+            //     } else {
+            //         DefaultStruct::new(&id)
+            //     }
+            // } else {
+            //     DefaultStruct::new(&id)
+            // };
 
             // Here's the generation.
             GeneratorBuilder::new()
@@ -70,7 +110,7 @@ impl SarzakModelCompiler for ModelCompiler {
                     // Struct
                     DefaultStructBuilder::new()
                         // Definition type
-                        .definition(DefaultStruct::new(&id))
+                        .definition(struct_writer)
                         .build()?,
                 )
                 .generate()?;

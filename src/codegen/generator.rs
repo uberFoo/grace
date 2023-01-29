@@ -171,7 +171,7 @@ mod tests {
         let gb = GeneratorBuilder::new().path("/tmp/foo").unwrap().generate();
         assert!(gb.is_err());
 
-        let domain = sarzak::domain::DomainBuilder::new()
+        let _domain = sarzak::domain::DomainBuilder::new()
             .cuckoo_model("tests/mdd/models/everything.json")
             .unwrap()
             .build()

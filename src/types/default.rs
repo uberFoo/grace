@@ -27,7 +27,7 @@ use crate::{
         render::{RenderIdent, RenderType},
     },
     options::GraceCompilerOptions,
-    types::StructDefinition,
+    types::{ModuleDefinition, StructDefinition},
 };
 
 pub(crate) struct DefaultStructBuilder<'a> {
@@ -106,7 +106,7 @@ pub(crate) struct DefaultStruct<'a> {
 }
 
 impl<'a> DefaultStruct<'a> {
-    pub(crate) fn new(obj_id: &'a Uuid) -> Box<Self> {
+    pub(crate) fn new(obj_id: &'a Uuid) -> Box<dyn StructDefinition + 'a> {
         Box::new(Self { obj_id })
     }
 }
@@ -201,6 +201,98 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
             },
         )?;
 
+        Ok(())
+    }
+}
+
+pub(crate) struct DefaultModuleBuilder<'a> {
+    definition: Option<Box<dyn ModuleDefinition + 'a>>,
+}
+
+impl<'a> DefaultModuleBuilder<'a> {
+    pub(crate) fn new() -> Self {
+        DefaultModuleBuilder { definition: None }
+    }
+
+    pub(crate) fn definition(mut self, definition: Box<dyn ModuleDefinition + 'a>) -> Self {
+        self.definition = Some(definition);
+
+        self
+    }
+
+    pub(crate) fn build(self) -> Result<Box<DefaultModuleGenerator<'a>>> {
+        ensure!(
+            self.definition.is_some(),
+            CompilerSnafu {
+                description: "missing ModuleDefinition"
+            }
+        );
+
+        Ok(Box::new(DefaultModuleGenerator {
+            definition: self.definition.unwrap(),
+        }))
+    }
+}
+
+/// Generator -- Code Generator Engine
+///
+/// This is supposed to be general, but it's very much geared towards generating
+/// a file that contains a struct definition and implementations. I need to
+/// do some refactoring.
+///
+/// As just hinted at, the idea is that you plug in different code writers that
+/// know how to write different parts of some rust code. This one is for
+/// structs.
+pub(crate) struct DefaultModuleGenerator<'a> {
+    definition: Box<dyn ModuleDefinition + 'a>,
+}
+
+impl<'a> FileGenerator for DefaultModuleGenerator<'a> {
+    fn generate(
+        &self,
+        options: &GraceCompilerOptions,
+        domain: &Domain,
+        module: &str,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
+        buffer.block(
+            Directive::Provenance,
+            "something better than this",
+            |buffer| {
+                // It's important that we maintain ordering for code injection and
+                // redaction. We begin with the struct definition.
+                self.definition
+                    .write_code(options, domain, module, buffer)?;
+
+                Ok(())
+            },
+        )?;
+
+        Ok(())
+    }
+}
+
+/// Default Types Module Generator / CodeWriter
+///
+/// This generates a rust file that imports the generated type implementations.
+pub(crate) struct DefaultModule {}
+
+impl<'a> DefaultModule {
+    pub(crate) fn new() -> Box<dyn ModuleDefinition + 'a> {
+        Box::new(Self {})
+    }
+}
+
+impl ModuleDefinition for DefaultModule {}
+
+impl<'a> CodeWriter for DefaultModule {
+    fn write_code(
+        &self,
+        options: &GraceCompilerOptions,
+        store: &Domain,
+        module: &str,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
         Ok(())
     }
 }

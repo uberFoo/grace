@@ -7,4 +7,14 @@ use crate::codegen::generator::CodeWriter;
 pub(crate) mod default;
 pub(crate) mod domain;
 
+/// Struct Definition Trait
+///
+/// This trait is implemented by types that are capable of generating a struct
+/// definition.
 pub(crate) trait StructDefinition: CodeWriter {}
+
+/// Module Definition Trait
+///
+/// This trait is implemented by types that are capable of generationg a module
+/// definition.
+pub(crate) trait ModuleDefinition: CodeWriter {}

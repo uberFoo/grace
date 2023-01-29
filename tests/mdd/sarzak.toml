@@ -1,6 +1,0 @@
-[domains.everything]
-module = "everything"
-path = "models/everything.json"
-
-[domains.everything.compiler]
-compiler = "grace"
