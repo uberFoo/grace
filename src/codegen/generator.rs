@@ -20,6 +20,7 @@ pub(crate) struct GeneratorBuilder<'a> {
     generator: Option<Box<dyn FileGenerator + 'a>>,
     domain: Option<&'a Domain>,
     options: Option<&'a GraceCompilerOptions>,
+    module: Option<&'a str>,
 }
 
 impl<'a> GeneratorBuilder<'a> {
@@ -30,6 +31,7 @@ impl<'a> GeneratorBuilder<'a> {
             generator: None,
             domain: None,
             options: None,
+            module: None,
         }
     }
 
@@ -58,6 +60,12 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub fn generator(mut self, generator: Box<dyn FileGenerator + 'a>) -> Self {
         self.generator = Some(generator);
+
+        self
+    }
+
+    pub(crate) fn module(mut self, module: &'a str) -> Self {
+        self.module = Some(module);
 
         self
     }
@@ -97,12 +105,20 @@ impl<'a> GeneratorBuilder<'a> {
             }
         );
 
+        ensure!(
+            self.module.is_some(),
+            CompilerSnafu {
+                description: "missing module"
+            }
+        );
+
         let mut writer = self.writer.unwrap();
 
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
             &self.options.unwrap(),
             &self.domain.unwrap(),
+            self.module.unwrap(),
             &mut buffer,
         ) {
             Ok(_) => {
@@ -123,6 +139,7 @@ pub(crate) trait FileGenerator {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        module: &str,
         buffer: &mut Buffer,
     ) -> Result<()>;
 }
@@ -137,6 +154,7 @@ pub(crate) trait CodeWriter {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        module: &str,
         buffer: &mut Buffer,
     ) -> Result<()>;
 }

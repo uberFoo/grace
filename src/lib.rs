@@ -16,7 +16,7 @@ pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
 use codegen::{generator::GeneratorBuilder, render::RenderIdent};
 use sarzak::sarzak::types::Object;
-use types::{DefaultStruct, DefaultStructBuilder};
+use types::default::{DefaultStruct, DefaultStructBuilder};
 
 const RS_EXT: &str = "rs";
 const TYPES: &str = "types";
@@ -63,6 +63,8 @@ impl SarzakModelCompiler for ModelCompiler {
                 .path(&types)?
                 // Domain/Store
                 .domain(&model)
+                // Module name
+                .module(module)
                 // What to write
                 .generator(
                     // Struct
