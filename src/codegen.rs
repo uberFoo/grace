@@ -45,6 +45,14 @@ pub(crate) enum DirectiveKind {
     /// by code gen.
     #[serde(rename = "ignore-orig")]
     IgnoreOrig,
+    /// Allow Editing
+    ///
+    /// This may be one of two of these that I actually need. This simply states
+    /// that unless otherwise restricted, editing is allowed in this section.
+    /// By default the entire file should be marked with this, with generated
+    /// code bracketed by the other one I need. CommentOrig, I think.
+    #[serde(rename = "allow-editing")]
+    AllowEditing,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -199,7 +207,7 @@ fn process_diff_not_recursive_after_all<'a>(
 fn write_left(line: &str, output: &mut String, directive: &DirectiveKind) {
     match directive {
         // Ignoring new means that we write the line
-        DirectiveKind::IgnoreGenerated => {
+        DirectiveKind::IgnoreGenerated | DirectiveKind::AllowEditing => {
             output.extend([line, "\n"]);
         }
         // This implies that we write the original line

@@ -158,13 +158,12 @@ impl<'a> GeneratorBuilder<'a> {
 
                                     let mut file =
                                         File::create(&path).context(FileSnafu { path: &path })?;
-
                                     // This is where we diff and write the output.
                                     if orig.len() > 0 {
                                         let diffed = process_diff(
                                             orig.as_str(),
                                             incoming.as_str(),
-                                            DirectiveKind::IgnoreGenerated,
+                                            DirectiveKind::AllowEditing,
                                         );
 
                                         // Write the file
@@ -175,6 +174,11 @@ impl<'a> GeneratorBuilder<'a> {
                                     }
                                 }
                                 Err(e) => {
+                                    // Put the original back.
+                                    let mut file =
+                                        File::create(&path).context(FileSnafu { path: &path })?;
+                                    file.write_all(&orig.as_bytes()).context(IOSnafu)?;
+
                                     eprintln!("{}", e)
                                 }
                             };

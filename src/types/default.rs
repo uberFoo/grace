@@ -82,7 +82,7 @@ impl<'a> FileGenerator for DefaultStructGenerator<'a> {
         buffer: &mut Buffer,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::IgnoreGenerated,
+            DirectiveKind::AllowEditing,
             format!("{}-struct-definition-file", "no-obj-here"),
             |buffer| {
                 // It's important that we maintain ordering for code injection and
@@ -166,6 +166,17 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
         )?;
 
         log::debug!("writing Struct Definition for {}", obj.name);
+
+        buffer.block(
+            DirectiveKind::CommentOrig,
+            format!("{}-struct-documentation", obj.as_ident()),
+            |buffer| {
+                for line in obj.description.split_terminator('\n') {
+                    writeln!(buffer, "/// {}", line).context(FormatSnafu)?;
+                }
+                Ok(())
+            },
+        )?;
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -256,8 +267,11 @@ impl<'a> FileGenerator for DefaultModuleGenerator<'a> {
         module: &str,
         buffer: &mut Buffer,
     ) -> Result<()> {
+        // Output the domain/module documentation/description
+        writeln!(buffer, "//! {}", domain.description()).context(FormatSnafu)?;
+
         buffer.block(
-            DirectiveKind::IgnoreGenerated,
+            DirectiveKind::AllowEditing,
             format!("{}-module-definition-file", module),
             |buffer| {
                 // It's important that we maintain ordering for code injection and

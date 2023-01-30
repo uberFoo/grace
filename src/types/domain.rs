@@ -63,6 +63,17 @@ impl<'a> CodeWriter for DomainStruct<'a> {
         log::debug!("writing Struct Definition for {}", obj.name);
 
         buffer.block(
+            DirectiveKind::CommentOrig,
+            format!("{}-struct-documentation", obj.as_ident()),
+            |buffer| {
+                for line in obj.description.split_terminator('\n') {
+                    writeln!(buffer, "/// {}", line).context(FormatSnafu)?;
+                }
+                Ok(())
+            },
+        )?;
+
+        buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-definition", obj.as_ident()),
             |buffer| {

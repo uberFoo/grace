@@ -1,7 +1,10 @@
-// {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"no-obj-here-struct-definition-file"}}}
+// {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"no-obj-here-struct-definition-file"}}}
 use uuid::Uuid;
 
-// {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-definition"}}}
+// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-documentation"}}}
+/// An object, with everything on it!
+// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-definition"}}}
 #[derive(Debug)]
 pub struct Everything {
     pub bool: bool,
@@ -9,10 +12,10 @@ pub struct Everything {
     pub id: Uuid,
     pub int: i64,
     pub string: String,
-    // {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-referrer-use-statements"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-referrer-use-statements"}}}
     /// R1: points at
     pub rando: Uuid,
-    // {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
-// {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
-// {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
