@@ -1,11 +1,8 @@
-use std::{
-    fs::{self},
-    path::Path,
-    process,
-};
+use std::{fs, io::prelude::*, path::Path, process};
 
 use sarzak::mc::{CompilerSnafu, IOSnafu, Result};
 use snafu::prelude::*;
+use tempfile::NamedTempFile;
 
 pub(crate) fn format(path: &Path) -> Result<()> {
     log::trace!("running `rustfmt --emit files {}`", path.display());
@@ -25,6 +22,15 @@ pub(crate) fn format(path: &Path) -> Result<()> {
     if !output.status.success() {
         if cfg!(feature = "vscode") {
             // Save the file off
+            let mut fail_file = NamedTempFile::new().context(IOSnafu)?;
+            fail_file
+                .write_all(
+                    fs::read_to_string(&path)
+                        .expect("read_to_string")
+                        .as_bytes(),
+                )
+                .context(IOSnafu)?;
+
             let path = path.to_path_buf();
             let mut to = path.clone();
 
@@ -38,11 +44,11 @@ pub(crate) fn format(path: &Path) -> Result<()> {
             ));
             to.set_extension(ext);
 
-            log::trace!("moving {} to {}", path.display(), to.display());
-            fs::rename(&path, &to);
+            // log::trace!("moving {} to {}", path.display(), to.display());
+            // fs::rename(&path, &to).context(IOSnafu)?;
 
-            let vscode = process::Command::new("code")
-                .args([format!("{}", to.display())])
+            process::Command::new("code")
+                .args([format!("{}", fail_file.path().display())])
                 .stdin(process::Stdio::piped())
                 .spawn()
                 .context(IOSnafu)?;

@@ -1,6 +1,7 @@
-// {"magic":"","directive":"provenance","tag":"everything-module-definition-file"}
-// {"magic":"","directive":"prefer-new","tag":"everything-module-definition"}
+// {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-module-definition-file"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-module-definition"}}}
 pub mod everything;
 pub mod rando_object;
-// {"magic":"","directive":"prefer-new","tag":"everything-module-definition"}
-// {"magic":"","directive":"provenance","tag":"everything-module-definition-file"}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
+
