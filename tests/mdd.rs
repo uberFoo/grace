@@ -11,7 +11,7 @@ use sarzak::domain::DomainBuilder;
 /// the package.
 #[test]
 fn compile_and_test_default() -> Result<ExitCode, std::io::Error> {
-    env_logger::builder().is_test(true).try_init();
+    let _ = env_logger::builder().is_test(true).try_init();
 
     let options = GraceCompilerOptions::default();
     let grace = ModelCompiler::default();
@@ -50,7 +50,7 @@ fn compile_and_test_default() -> Result<ExitCode, std::io::Error> {
 
 #[test]
 fn compile_and_test_domain() -> Result<ExitCode, std::io::Error> {
-    env_logger::builder().is_test(true).try_init();
+    let _ = env_logger::builder().is_test(true).try_init();
 
     let mut options = GraceCompilerOptions::default();
     options.generate_domain = true;
