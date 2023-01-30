@@ -20,7 +20,7 @@ const MAGIC: char = '';
 ///
 /// Each output code block will be wrapped in a pair of these. For all lines
 /// in the wrapped pair, the behavior of the diff engine is defined as...
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) enum DirectiveKind {
     /// Comment Original
     ///
@@ -134,8 +134,7 @@ fn process_diff_not_recursive_after_all<'a>(
                             tag: _,
                         } => {
                             // Write the line -- always write the directive
-                            output.push_str(orig);
-                            output.push('\n');
+                            output.extend([orig, "\n"]);
 
                             // Instead of recursion...
                             stack.push(directive);
@@ -145,8 +144,7 @@ fn process_diff_not_recursive_after_all<'a>(
                             assert_eq!(d, directive);
 
                             // Write the line -- always write the directive
-                            output.push_str(orig);
-                            output.push('\n');
+                            output.extend([orig, "\n"]);
 
                             directive = stack.pop().expect("unbalanced directives")
                         }
@@ -181,8 +179,7 @@ fn process_diff_not_recursive_after_all<'a>(
 
                 // Process line
                 // If it's in both, we always just write it.
-                output.push_str(both);
-                output.push('\n');
+                output.extend([both, "\n"]);
             }
             diff::Result::Right(new) => {
                 // If we processed directives here, we may have a chance of
@@ -203,21 +200,15 @@ fn write_left(line: &str, output: &mut String, directive: &DirectiveKind) {
     match directive {
         // Ignoring new means that we write the line
         DirectiveKind::IgnoreGenerated => {
-            output.push_str(line);
-            output.push('\n');
+            output.extend([line, "\n"]);
         }
         // This implies that we write the original line
         DirectiveKind::CommentGenerated => {
-            output.push_str(line);
-            output.push('\n');
+            output.extend([line, "\n"]);
         }
         // This means that we should comment this out.
         DirectiveKind::CommentOrig => {
-            output.push('/');
-            output.push('/');
-            output.push(' ');
-            output.push_str(line);
-            output.push('\n');
+            output.extend(["// ", line, "\n"]);
         }
         _ => {}
     }
@@ -228,21 +219,15 @@ fn write_right(line: &str, output: &mut String, directive: &DirectiveKind) {
     match directive {
         // Ignoring orig means that we write the line
         DirectiveKind::IgnoreOrig => {
-            output.push_str(line);
-            output.push('\n');
+            output.extend([line, "\n"]);
         }
         // Prefer new means that we write the line
         DirectiveKind::CommentOrig => {
-            output.push_str(line);
-            output.push('\n');
+            output.extend([line, "\n"]);
         }
         // This means that we should comment this out.
         DirectiveKind::CommentGenerated => {
-            output.push('/');
-            output.push('/');
-            output.push(' ');
-            output.push_str(line);
-            output.push('\n');
+            output.extend(["// ", line, "\n"]);
         }
         _ => {}
     }

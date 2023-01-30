@@ -156,17 +156,23 @@ impl<'a> GeneratorBuilder<'a> {
                                     // Grab the generated output
                                     let incoming = fs::read_to_string(&path).context(IOSnafu)?;
 
-                                    // This is where we diff and write the output.
-                                    let diffed = process_diff(
-                                        orig.as_str(),
-                                        incoming.as_str(),
-                                        DirectiveKind::IgnoreGenerated,
-                                    );
-
-                                    // Write the file
                                     let mut file =
                                         File::create(&path).context(FileSnafu { path: &path })?;
-                                    file.write_all(&diffed.as_bytes()).context(IOSnafu)?;
+
+                                    // This is where we diff and write the output.
+                                    if orig.len() > 0 {
+                                        let diffed = process_diff(
+                                            orig.as_str(),
+                                            incoming.as_str(),
+                                            DirectiveKind::IgnoreGenerated,
+                                        );
+
+                                        // Write the file
+                                        file.write_all(&diffed.as_bytes()).context(IOSnafu)?;
+                                    } else {
+                                        // Write the file
+                                        file.write_all(&incoming.as_bytes()).context(IOSnafu)?;
+                                    }
                                 }
                                 Err(e) => {
                                     eprintln!("{}", e)

@@ -2,7 +2,7 @@ use std::{fs, io::prelude::*, path::Path, process};
 
 use sarzak::mc::{CompilerSnafu, IOSnafu, Result};
 use snafu::prelude::*;
-use tempfile::NamedTempFile;
+use tempfile::{NamedTempFile, TempDir, TempPath};
 
 pub(crate) fn format(path: &Path) -> Result<()> {
     log::trace!("running `rustfmt --emit files {}`", path.display());
@@ -31,27 +31,15 @@ pub(crate) fn format(path: &Path) -> Result<()> {
                 )
                 .context(IOSnafu)?;
 
-            let path = path.to_path_buf();
-            let mut to = path.clone();
+            let (_, fail_path) = fail_file.keep().expect("error with temporary file");
 
-            // Borrow these from path so that we can mutate to.
-            let stem = path.file_stem().expect("can't get file stem");
-            let ext = path.extension().expect("can't get file extension");
-
-            to.set_file_name(format!(
-                "{}_fail",
-                stem.to_str().expect("can't turn it to a &str")
-            ));
-            to.set_extension(ext);
-
-            // log::trace!("moving {} to {}", path.display(), to.display());
-            // fs::rename(&path, &to).context(IOSnafu)?;
-
-            process::Command::new("code")
-                .args([format!("{}", fail_file.path().display())])
+            let mut output = process::Command::new("code")
+                .args([format!("{}", fail_path.display())])
                 .stdin(process::Stdio::piped())
                 .spawn()
                 .context(IOSnafu)?;
+
+            output.wait();
         } else {
             eprintln!("😱 rustfmt failed with:");
             eprintln!("{}", stderr);
