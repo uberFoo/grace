@@ -6,30 +6,10 @@ use std::{
 };
 
 use sarzak::mc::{FormatSnafu, Result};
-use serde::Serialize;
 use serde_json;
 use snafu::prelude::*;
 
-const MAGIC: char = '';
-
-#[derive(Serialize)]
-pub(crate) enum Directive {
-    #[serde(rename = "provenance")]
-    Provenance,
-    #[serde(rename = "ignore")]
-    Ignore,
-    #[serde(rename = "prefer-new")]
-    PreferNewCommentOld,
-    #[serde(rename = "prefer-old")]
-    PreferOldCommentNew,
-}
-
-#[derive(Serialize)]
-struct DirectiveComment {
-    magic: char,
-    directive: Directive,
-    tag: String,
-}
+use crate::codegen::{DirectiveComment, DirectiveKind};
 
 pub(crate) struct Buffer {
     buffer: String,
@@ -42,7 +22,7 @@ impl Buffer {
         }
     }
 
-    pub(crate) fn block<S, F>(&mut self, directive: Directive, tag: S, block: F) -> Result<()>
+    pub(crate) fn block<S, F>(&mut self, directive: DirectiveKind, tag: S, block: F) -> Result<()>
     where
         S: AsRef<str>,
         F: FnOnce(&mut Self) -> Result<()>,
@@ -53,15 +33,16 @@ impl Buffer {
 
         // Don't do anything if nothing happened.
         if inner.buffer.len() != 0 {
-            let comment_directive = DirectiveComment {
-                magic: MAGIC,
-                directive,
-                tag: tag.as_ref().to_owned(),
-            };
-            let comment = serde_json::to_string(&comment_directive).expect("serde_json failed");
+            let start_comment = serde_json::to_string(&DirectiveComment::start(
+                directive.clone(),
+                tag.as_ref().to_owned(),
+            ))
+            .expect("serde_json failed");
+            let end_comment = serde_json::to_string(&DirectiveComment::end(directive))
+                .expect("serde_json failed");
 
-            writeln!(self.buffer, "// {}", comment).context(FormatSnafu)?;
-            writeln!(inner, "// {}", comment).context(FormatSnafu)?;
+            writeln!(self.buffer, "// {}", start_comment).context(FormatSnafu)?;
+            writeln!(inner, "// {}", end_comment).context(FormatSnafu)?;
             *self += inner;
         }
 

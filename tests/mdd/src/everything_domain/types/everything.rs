@@ -1,10 +1,7 @@
-// {"magic":"","directive":"provenance","tag":"no-obj-here-struct-definition-file"}
+// {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"no-obj-here-struct-definition-file"}}}
 use uuid::Uuid;
 
-// {"magic":"","directive":"prefer-new","tag":"everything-referrer-use-statements"}
-use crate::everything_domain::types::rando_object::RandoObject;
-// {"magic":"","directive":"prefer-new","tag":"everything-referrer-use-statements"}
-// {"magic":"","directive":"prefer-new","tag":"everything-struct-definition"}
+// {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-definition"}}}
 #[derive(Debug)]
 pub struct Everything {
     pub bool: bool,
@@ -12,8 +9,10 @@ pub struct Everything {
     pub id: Uuid,
     pub int: i64,
     pub string: String,
+    // {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-referrer-use-statements"}}}
     /// R1: points at
     pub rando: Uuid,
+    // {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
 }
-// {"magic":"","directive":"prefer-new","tag":"everything-struct-definition"}
-// {"magic":"","directive":"provenance","tag":"no-obj-here-struct-definition-file"}
+// {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}

@@ -22,9 +22,10 @@ use uuid::Uuid;
 
 use crate::{
     codegen::{
-        buffer::{Buffer, Directive},
+        buffer::Buffer,
         generator::{CodeWriter, FileGenerator},
         render::{RenderIdent, RenderType},
+        DirectiveKind,
     },
     options::GraceCompilerOptions,
     types::{ModuleDefinition, StructDefinition},
@@ -81,7 +82,7 @@ impl<'a> FileGenerator for DefaultStructGenerator<'a> {
         buffer: &mut Buffer,
     ) -> Result<()> {
         buffer.block(
-            Directive::Provenance,
+            DirectiveKind::IgnoreGenerated,
             format!("{}-struct-definition-file", "no-obj-here"),
             |buffer| {
                 // It's important that we maintain ordering for code injection and
@@ -131,7 +132,7 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
 
         let mut paste = Buffer::new();
         buffer.block(
-            Directive::PreferNewCommentOld,
+            DirectiveKind::IgnoreOrig,
             format!("{}-referrer-use-statements", obj.as_ident()),
             |buffer| {
                 // This is sort of long, and sticks out. Maybe it goes into a function?
@@ -153,7 +154,7 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
                         .context(FormatSnafu)?;
                     writeln!(
                         paste,
-                        "pub {}: &'a {}",
+                        "pub {}: &'a {},",
                         referrer.referential_attribute,
                         r_obj.as_type()
                     )
@@ -167,7 +168,7 @@ impl<'a> CodeWriter for DefaultStruct<'a> {
         log::debug!("writing Struct Definition for {}", obj.name);
 
         buffer.block(
-            Directive::PreferNewCommentOld,
+            DirectiveKind::IgnoreOrig,
             format!("{}-struct-definition", obj.as_ident()),
             |buffer| {
                 if let Some(derive) = &options.derive {
@@ -256,7 +257,7 @@ impl<'a> FileGenerator for DefaultModuleGenerator<'a> {
         buffer: &mut Buffer,
     ) -> Result<()> {
         buffer.block(
-            Directive::Provenance,
+            DirectiveKind::IgnoreGenerated,
             format!("{}-module-definition-file", module),
             |buffer| {
                 // It's important that we maintain ordering for code injection and
@@ -288,13 +289,13 @@ impl ModuleDefinition for DefaultModule {}
 impl<'a> CodeWriter for DefaultModule {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        _options: &GraceCompilerOptions,
         store: &Domain,
         module: &str,
         buffer: &mut Buffer,
     ) -> Result<()> {
         buffer.block(
-            Directive::PreferNewCommentOld,
+            DirectiveKind::IgnoreOrig,
             format!("{}-module-definition", module),
             |buffer| {
                 let mut objects: Vec<(&Uuid, &Object)> = store.sarzak().iter_object().collect();

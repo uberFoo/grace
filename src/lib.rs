@@ -37,7 +37,7 @@ impl SarzakModelCompiler for ModelCompiler {
         _test: bool,
     ) -> Result<(), ModelCompilerError> {
         log::debug!(
-            "compile invoked with model: {}, module: {}, src_path: {}, options: {:#?}, test: {}",
+            "compile invoked with model: {}, module: {}, src_path: {}, options: {:?}, test: {}",
             model.domain(),
             module,
             src_path.as_ref().display(),

@@ -9,8 +9,7 @@ use sarzak::{
     mc::{FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
+            sarzak_get_many_as_across_r1, sarzak_get_one_r_bin_across_r6,
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
         },
         types::{Attribute, Referrer},
@@ -21,9 +20,10 @@ use uuid::Uuid;
 
 use crate::{
     codegen::{
-        buffer::{Buffer, Directive},
+        buffer::Buffer,
         generator::CodeWriter,
         render::{RenderIdent, RenderType},
+        DirectiveKind,
     },
     options::GraceCompilerOptions,
     types::StructDefinition,
@@ -50,7 +50,7 @@ impl<'a> CodeWriter for DomainStruct<'a> {
         &self,
         options: &GraceCompilerOptions,
         store: &Domain,
-        module: &str,
+        _module: &str,
         buffer: &mut Buffer,
     ) -> Result<()> {
         let obj = store.sarzak().exhume_object(self.obj_id).unwrap();
@@ -60,40 +60,10 @@ impl<'a> CodeWriter for DomainStruct<'a> {
         writeln!(buffer, "use uuid::Uuid;").context(FormatSnafu)?;
         writeln!(buffer).context(FormatSnafu)?;
 
-        let mut paste = Buffer::new();
-        buffer.block(
-            Directive::PreferNewCommentOld,
-            format!("{}-referrer-use-statements", obj.as_ident()),
-            |buffer| {
-                // This is sort of long, and sticks out. Maybe it goes into a function?
-                for referrer in &referrers {
-                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, store.sarzak());
-                    let referent = sarzak_get_one_r_to_across_r5!(binary, store.sarzak());
-                    let r_obj = sarzak_get_one_obj_across_r16!(referent, store.sarzak());
-
-                    writeln!(
-                        buffer,
-                        "use crate::{}::types::{}::{};",
-                        module,
-                        r_obj.as_ident(),
-                        r_obj.as_type()
-                    )
-                    .context(FormatSnafu)?;
-
-                    writeln!(paste, "/// R{}: {}", binary.number, referrer.description)
-                        .context(FormatSnafu)?;
-                    writeln!(paste, "pub {}: Uuid", referrer.referential_attribute,)
-                        .context(FormatSnafu)?;
-                }
-
-                Ok(())
-            },
-        )?;
-
         log::debug!("writing Struct Definition for {}", obj.name);
 
         buffer.block(
-            Directive::PreferNewCommentOld,
+            DirectiveKind::IgnoreOrig,
             format!("{}-struct-definition", obj.as_ident()),
             |buffer| {
                 if let Some(derive) = &options.derive {
@@ -114,8 +84,26 @@ impl<'a> CodeWriter for DomainStruct<'a> {
                         .context(FormatSnafu)?;
                 }
 
-                // Paste in the referential attributes, computed above.
-                *buffer += paste;
+                // This doesn't need to be in it's own block, and it's probably
+                // distracting to leave it so. But this is interesting for
+                // testing the diff that I'm about to add.
+                buffer.block(
+                    DirectiveKind::IgnoreOrig,
+                    format!("{}-referrer-use-statements", obj.as_ident()),
+                    |buffer| {
+                        // This is sort of long, and sticks out. Maybe it goes into a function?
+                        for referrer in &referrers {
+                            let binary = sarzak_get_one_r_bin_across_r6!(referrer, store.sarzak());
+
+                            writeln!(buffer, "/// R{}: {}", binary.number, referrer.description)
+                                .context(FormatSnafu)?;
+                            writeln!(buffer, "pub {}: Uuid,", referrer.referential_attribute,)
+                                .context(FormatSnafu)?;
+                        }
+
+                        Ok(())
+                    },
+                )?;
 
                 writeln!(buffer, "}}").context(FormatSnafu)?;
                 Ok(())

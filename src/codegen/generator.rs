@@ -2,7 +2,7 @@
 //!
 //!
 use std::{
-    fs::File,
+    fs::{self, File},
     io::prelude::*,
     path::{Path, PathBuf},
 };
@@ -14,7 +14,7 @@ use sarzak::{
 use snafu::prelude::*;
 
 use crate::{
-    codegen::{buffer::Buffer, rustfmt::format},
+    codegen::{buffer::Buffer, process_diff, rustfmt::format, DirectiveKind},
     options::GraceCompilerOptions,
 };
 
@@ -137,14 +137,6 @@ impl<'a> GeneratorBuilder<'a> {
                 //
                 // Whew!
                 //
-                // And it's actually more complicated than that! If something
-                // goes wrong with formatting, we know that there is some bad
-                // syntax. We don't want to overwrite an existing file with
-                // that. We also don't want to output it as if it were parsing
-                // correctly. So in the event of failure, we write the original
-                // back, and save the bad one as `file_stem`_fail.rs. If there was
-                // no existing file, we'll just output the fail version.
-                //
                 let path = self.path.unwrap();
 
                 if path.exists() {
@@ -152,14 +144,36 @@ impl<'a> GeneratorBuilder<'a> {
                     // so if it fails, we'll just stop.
                     match format(&path) {
                         Ok(_) => {
+                            // Grab the formatted output.
+                            let orig = fs::read_to_string(&path).context(IOSnafu)?;
+
+                            // Format the generated buffer
                             let mut file =
                                 File::create(&path).context(FileSnafu { path: &path })?;
                             file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
-
-                            // Format takes care of saving the file off for us. We just
-                            // let the end user know about it.
                             match format(&path) {
-                                Ok(_) => {}
+                                Ok(_) => {
+                                    // Grab the generated output
+                                    let incoming = fs::read_to_string(&path).context(IOSnafu)?;
+
+                                    let mut file =
+                                        File::create(&path).context(FileSnafu { path: &path })?;
+
+                                    // This is where we diff and write the output.
+                                    if orig.len() > 0 {
+                                        let diffed = process_diff(
+                                            orig.as_str(),
+                                            incoming.as_str(),
+                                            DirectiveKind::IgnoreGenerated,
+                                        );
+
+                                        // Write the file
+                                        file.write_all(&diffed.as_bytes()).context(IOSnafu)?;
+                                    } else {
+                                        // Write the file
+                                        file.write_all(&incoming.as_bytes()).context(IOSnafu)?;
+                                    }
+                                }
                                 Err(e) => {
                                     eprintln!("{}", e)
                                 }
@@ -171,8 +185,6 @@ impl<'a> GeneratorBuilder<'a> {
                     let mut file = File::create(&path).context(FileSnafu { path: &path })?;
                     file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
 
-                    // Format takes care of saving the file off for us. We just
-                    // let the end user know about it.
                     match format(&path) {
                         Ok(_) => {}
                         Err(e) => {
