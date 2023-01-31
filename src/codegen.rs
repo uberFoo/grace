@@ -216,7 +216,7 @@ fn write_left(line: &str, output: &mut String, directive: &DirectiveKind) {
         }
         // This means that we should comment this out.
         DirectiveKind::CommentOrig => {
-            output.extend(["// ", line, "\n"]);
+            output.extend([comment_line(line), "\n".to_owned()]);
         }
         _ => {}
     }
@@ -235,9 +235,18 @@ fn write_right(line: &str, output: &mut String, directive: &DirectiveKind) {
         }
         // This means that we should comment this out.
         DirectiveKind::CommentGenerated => {
-            output.extend(["// ", line, "\n"]);
+            output.extend([comment_line(line), "\n".to_owned()]);
         }
         _ => {}
+    }
+}
+
+fn comment_line(line: &str) -> String {
+    let test = line.trim();
+    if test.starts_with("//") {
+        line.to_owned()
+    } else {
+        format!("// {}", line)
     }
 }
 
