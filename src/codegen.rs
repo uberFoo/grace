@@ -7,6 +7,6 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use sarzak::types::Parameter;
+use sarzak::woog::types::ObjectMethod;
 
 // pub (crate) fn output_parameters(param: &Parameter)

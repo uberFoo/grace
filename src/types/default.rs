@@ -16,6 +16,7 @@ use sarzak::{
         },
         types::{Attribute, Object, Referrer},
     },
+    woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -90,6 +91,7 @@ impl FileGenerator for DefaultStructGenerator {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -110,10 +112,17 @@ impl FileGenerator for DefaultStructGenerator {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
                 self.definition
-                    .write_code(options, domain, module, Some(obj_id), buffer)?;
+                    .write_code(options, domain, woog, module, Some(obj_id), buffer)?;
 
                 if let Some(implementation) = &self.implementation {
-                    implementation.write_code(options, domain, module, Some(obj_id), buffer)?;
+                    implementation.write_code(
+                        options,
+                        domain,
+                        woog,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
                 }
 
                 Ok(())
@@ -143,6 +152,7 @@ impl CodeWriter for DefaultStruct {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -312,6 +322,7 @@ impl CodeWriter for DefaultImplementation {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -340,7 +351,14 @@ impl CodeWriter for DefaultImplementation {
                 }
 
                 if let Some(implementation) = &self.implementation {
-                    implementation.write_code(options, domain, module, Some(obj_id), buffer)?;
+                    implementation.write_code(
+                        options,
+                        domain,
+                        woog,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
                 }
 
                 emit!(buffer, "}}");
@@ -377,6 +395,7 @@ impl CodeWriter for DefaultNewImpl {
         &self,
         _options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -504,6 +523,7 @@ impl FileGenerator for DefaultModuleGenerator {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -518,7 +538,7 @@ impl FileGenerator for DefaultModuleGenerator {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
                 self.definition
-                    .write_code(options, domain, module, obj_id, buffer)?;
+                    .write_code(options, domain, woog, module, obj_id, buffer)?;
 
                 Ok(())
             },
@@ -546,6 +566,7 @@ impl CodeWriter for DefaultModule {
         &self,
         _options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

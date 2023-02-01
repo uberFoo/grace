@@ -10,6 +10,7 @@ use std::{
 use sarzak::{
     domain::Domain,
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
+    woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -27,6 +28,7 @@ pub(crate) struct GeneratorBuilder<'a> {
     path: Option<PathBuf>,
     generator: Option<Box<dyn FileGenerator + 'a>>,
     domain: Option<&'a Domain>,
+    woog: Option<&'a mut WoogStore>,
     options: Option<&'a GraceCompilerOptions>,
     module: Option<&'a str>,
     obj_id: Option<&'a Uuid>,
@@ -38,6 +40,7 @@ impl<'a> GeneratorBuilder<'a> {
             path: None,
             generator: None,
             domain: None,
+            woog: None,
             options: None,
             module: None,
             obj_id: None,
@@ -72,6 +75,12 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub(crate) fn domain(mut self, domain: &'a Domain) -> Self {
         self.domain = Some(domain);
+
+        self
+    }
+
+    pub(crate) fn compiler_domain(mut self, domain: &'a mut WoogStore) -> Self {
+        self.woog = Some(domain);
 
         self
     }
@@ -112,6 +121,13 @@ impl<'a> GeneratorBuilder<'a> {
         );
 
         ensure!(
+            self.woog.is_some(),
+            CompilerSnafu {
+                description: "missing compiler domain"
+            }
+        );
+
+        ensure!(
             self.module.is_some(),
             CompilerSnafu {
                 description: "missing module"
@@ -121,7 +137,8 @@ impl<'a> GeneratorBuilder<'a> {
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
             &self.options.unwrap(),
-            &mut self.domain.unwrap(),
+            &self.domain.unwrap(),
+            &mut self.woog.unwrap(),
             self.module.unwrap(),
             self.obj_id,
             &mut buffer,
@@ -223,6 +240,7 @@ pub(crate) trait FileGenerator {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -239,6 +257,7 @@ pub(crate) trait CodeWriter {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

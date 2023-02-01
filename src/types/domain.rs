@@ -16,7 +16,7 @@ use sarzak::{
         },
         types::{Attribute, Referrer},
     },
-    woog::{ObjectMethod, Parameter},
+    woog::{store::ObjectStore as WoogStore, ObjectMethod, Parameter},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -51,6 +51,7 @@ impl CodeWriter for DomainStruct {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -196,6 +197,7 @@ impl CodeWriter for DomainImplementation {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -218,7 +220,14 @@ impl CodeWriter for DomainImplementation {
                 emit!(buffer, "impl {} {{", obj.as_type(&domain.sarzak()));
 
                 if let Some(implementation) = &self.implementation {
-                    implementation.write_code(options, domain, module, Some(obj_id), buffer)?;
+                    implementation.write_code(
+                        options,
+                        domain,
+                        woog,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
                 }
 
                 emit!(buffer, "}}");
@@ -244,6 +253,7 @@ impl CodeWriter for DomainNewImpl {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

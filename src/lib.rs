@@ -15,7 +15,7 @@ pub use options::GraceCompilerOptions;
 pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
 use codegen::{generator::GeneratorBuilder, render::RenderIdent};
-use sarzak::sarzak::types::Object;
+use sarzak::{sarzak::types::Object, woog::store::ObjectStore as WoogStore};
 use types::{
     default::{
         DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultNewImpl, DefaultStruct,
@@ -47,6 +47,9 @@ impl SarzakModelCompiler for ModelCompiler {
             options,
             _test
         );
+        // Create our local compiler domain
+        let mut woog = WoogStore::new();
+
         // ✨Generate Types✨
         // Extract our options
         let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
@@ -93,6 +96,7 @@ impl SarzakModelCompiler for ModelCompiler {
                 .path(&types)?
                 // Domain/Store
                 .domain(&domain)
+                .compiler_domain(&mut woog)
                 // Module name
                 .module(module)
                 .obj_id(&id)
@@ -122,6 +126,7 @@ impl SarzakModelCompiler for ModelCompiler {
             .options(&options)
             .path(&types)?
             .domain(&domain)
+            .compiler_domain(&mut woog)
             .module(module)
             .generator(
                 DefaultModuleBuilder::new()
