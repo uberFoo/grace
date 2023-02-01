@@ -12,9 +12,14 @@ use sarzak::{
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
 };
 use snafu::prelude::*;
+use uuid::Uuid;
 
 use crate::{
-    codegen::{buffer::Buffer, process_diff, rustfmt::format, DirectiveKind},
+    codegen::{
+        buffer::Buffer,
+        diff_engine::{process_diff, DirectiveKind},
+        rustfmt::format,
+    },
     options::GraceCompilerOptions,
 };
 
@@ -24,6 +29,7 @@ pub(crate) struct GeneratorBuilder<'a> {
     domain: Option<&'a Domain>,
     options: Option<&'a GraceCompilerOptions>,
     module: Option<&'a str>,
+    obj_id: Option<&'a Uuid>,
 }
 
 impl<'a> GeneratorBuilder<'a> {
@@ -34,6 +40,7 @@ impl<'a> GeneratorBuilder<'a> {
             domain: None,
             options: None,
             module: None,
+            obj_id: None,
         }
     }
 
@@ -65,6 +72,12 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub(crate) fn domain(mut self, domain: &'a Domain) -> Self {
         self.domain = Some(domain);
+
+        self
+    }
+
+    pub(crate) fn obj_id(mut self, obj_id: &'a Uuid) -> Self {
+        self.obj_id = Some(obj_id);
 
         self
     }
@@ -108,8 +121,9 @@ impl<'a> GeneratorBuilder<'a> {
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
             &self.options.unwrap(),
-            &self.domain.unwrap(),
+            &mut self.domain.unwrap(),
             self.module.unwrap(),
+            self.obj_id,
             &mut buffer,
         ) {
             Ok(_) => {
@@ -142,7 +156,7 @@ impl<'a> GeneratorBuilder<'a> {
                 if path.exists() {
                     // Format the original. We get some validation from ^rustfmt`,
                     // so if it fails, we'll just stop.
-                    match format(&path) {
+                    match format(&path, false) {
                         Ok(_) => {
                             // Grab the formatted output.
                             let orig = fs::read_to_string(&path).context(IOSnafu)?;
@@ -151,7 +165,7 @@ impl<'a> GeneratorBuilder<'a> {
                             let mut file =
                                 File::create(&path).context(FileSnafu { path: &path })?;
                             file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
-                            match format(&path) {
+                            match format(&path, true) {
                                 Ok(_) => {
                                     // Grab the generated output
                                     let incoming = fs::read_to_string(&path).context(IOSnafu)?;
@@ -189,7 +203,7 @@ impl<'a> GeneratorBuilder<'a> {
                     let mut file = File::create(&path).context(FileSnafu { path: &path })?;
                     file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
 
-                    match format(&path) {
+                    match format(&path, false) {
                         Ok(_) => {}
                         Err(e) => {
                             eprintln!("{}", e)
@@ -210,6 +224,7 @@ pub(crate) trait FileGenerator {
         options: &GraceCompilerOptions,
         domain: &Domain,
         module: &str,
+        obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()>;
 }
@@ -225,6 +240,7 @@ pub(crate) trait CodeWriter {
         options: &GraceCompilerOptions,
         domain: &Domain,
         module: &str,
+        obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()>;
 }

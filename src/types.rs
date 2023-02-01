@@ -13,6 +13,12 @@ pub(crate) mod domain;
 /// definition.
 pub(crate) trait StructDefinition: CodeWriter {}
 
+/// Struct Implementation Trait
+///
+/// This trait is implemented by types that are capable of generating a struct
+/// implementation.
+pub(crate) trait StructImplementation: CodeWriter {}
+
 /// Module Definition Trait
 ///
 /// This trait is implemented by types that are capable of generationg a module

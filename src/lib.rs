@@ -17,8 +17,11 @@ pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 use codegen::{generator::GeneratorBuilder, render::RenderIdent};
 use sarzak::sarzak::types::Object;
 use types::{
-    default::{DefaultModule, DefaultModuleBuilder, DefaultStruct, DefaultStructBuilder},
-    domain::DomainStruct,
+    default::{
+        DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultNewImpl, DefaultStruct,
+        DefaultStructBuilder,
+    },
+    domain::{DomainImplBuilder, DomainNewImpl, DomainStruct},
 };
 
 const RS_EXT: &str = "rs";
@@ -30,7 +33,7 @@ pub struct ModelCompiler {}
 impl SarzakModelCompiler for ModelCompiler {
     fn compile<P: AsRef<Path>>(
         &self,
-        model: &sarzak::domain::Domain,
+        domain: &sarzak::domain::Domain,
         module: &str,
         src_path: P,
         options: Box<&dyn ModelCompilerOptions>,
@@ -38,13 +41,12 @@ impl SarzakModelCompiler for ModelCompiler {
     ) -> Result<(), ModelCompilerError> {
         log::debug!(
             "compile invoked with model: {}, module: {}, src_path: {}, options: {:?}, test: {}",
-            model.domain(),
+            domain.domain(),
             module,
             src_path.as_ref().display(),
             options,
             _test
         );
-
         // ✨Generate Types✨
         // Extract our options
         let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
@@ -60,7 +62,7 @@ impl SarzakModelCompiler for ModelCompiler {
         types.push("discard");
 
         // Sort the objects -- I need to figure out how to do this automagically.
-        let mut objects: Vec<(&Uuid, &Object)> = model.sarzak().iter_object().collect();
+        let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 
         // Iterate over the objects, generating an implementation for file each.
@@ -68,20 +70,21 @@ impl SarzakModelCompiler for ModelCompiler {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
-            let struct_writer = if options.generate_domain {
-                DomainStruct::new(&id)
+            let (struct_writer, impl_writer) = if options.generate_domain {
+                (
+                    DomainStruct::new(),
+                    DomainImplBuilder::new()
+                        .implementation(DomainNewImpl::new())
+                        .build(),
+                )
             } else {
-                DefaultStruct::new(&id)
+                (
+                    DefaultStruct::new(),
+                    DefaultImplBuilder::new()
+                        .implementation(DefaultNewImpl::new())
+                        .build(),
+                )
             };
-            // let struct_writer = if let Some(domain) = options.generate_domain {
-            //     if domain {
-            //         DomainStruct::new(&id)
-            //     } else {
-            //         DefaultStruct::new(&id)
-            //     }
-            // } else {
-            //     DefaultStruct::new(&id)
-            // };
 
             // Here's the generation.
             GeneratorBuilder::new()
@@ -89,15 +92,18 @@ impl SarzakModelCompiler for ModelCompiler {
                 // Where to write
                 .path(&types)?
                 // Domain/Store
-                .domain(&model)
+                .domain(&domain)
                 // Module name
                 .module(module)
+                .obj_id(&id)
                 // What to write
                 .generator(
                     // Struct
                     DefaultStructBuilder::new()
                         // Definition type
                         .definition(struct_writer)
+                        // Implementation
+                        .implementation(impl_writer)
                         .build()?,
                 )
                 .generate()?;
@@ -115,7 +121,7 @@ impl SarzakModelCompiler for ModelCompiler {
         GeneratorBuilder::new()
             .options(&options)
             .path(&types)?
-            .domain(&model)
+            .domain(&domain)
             .module(module)
             .generator(
                 DefaultModuleBuilder::new()
