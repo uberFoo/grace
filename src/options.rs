@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 use sarzak::mc::ModelCompilerOptions;
 
 const GENERATE_DOMAIN_DEFAULT: bool = false;
-const DEFAULT_DERIVE: &'static [&'static str] = &["Debug"];
+const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
 pub struct GraceCompilerOptions {
