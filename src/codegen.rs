@@ -1,265 +1,177 @@
 //! Things necessary for code generation
 //!
 
-use diff;
-use serde::{Deserialize, Serialize};
-
 pub(crate) mod buffer;
+pub(crate) mod diff_engine;
 pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-const MAGIC: char = '';
-// const UBER: char = "❌";
+use std::{fmt::Write, iter::zip};
 
-/// Diff Directives
-///
-/// These describe diff behavior. They are all from the perspective of the
-/// original file. So, orig is the source file, and new is the generated
-/// code.
-///
-/// Each output code block will be wrapped in a pair of these. For all lines
-/// in the wrapped pair, the behavior of the diff engine is defined as...
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
-pub(crate) enum DirectiveKind {
-    /// Comment Original
-    ///
-    /// The intent of this is to comment lines in the original that don't
-    /// occur in the generated code.
-    #[serde(rename = "comment-orig")]
-    CommentOrig,
-    /// Comment Generated
-    ///
-    /// This means that incoming changes, generated code, that does not exist in
-    /// the original source will be output as commented code.
-    #[serde(rename = "comment-gen")]
-    CommentGenerated,
-    /// Ignore Generated
-    ///
-    /// Generated code will not be output is this section.
-    #[serde(rename = "ignore-gen")]
-    IgnoreGenerated,
-    /// Ignore Original
-    ///
-    /// This implies that anything added to this section will be eradicated
-    /// by code gen.
-    #[serde(rename = "ignore-orig")]
-    IgnoreOrig,
-    /// Allow Editing
-    ///
-    /// This may be one of two of these that I actually need. This simply states
-    /// that unless otherwise restricted, editing is allowed in this section.
-    /// By default the entire file should be marked with this, with generated
-    /// code bracketed by the other one I need. CommentOrig, I think.
-    #[serde(rename = "allow-editing")]
-    AllowEditing,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-enum Directive {
-    Start {
-        directive: DirectiveKind,
-        tag: String,
+use sarzak::{
+    mc::{CompilerSnafu, FormatSnafu, Result},
+    sarzak::{
+        store::ObjectStore as SarzakStore,
+        types::{Object, Type, UUID},
     },
-    End {
-        directive: DirectiveKind,
+    woog::{
+        macros::{woog_maybe_get_one_param_across_r1, woog_maybe_get_one_param_across_r5},
+        store::ObjectStore as WoogStore,
+        types::{ObjectMethod, Parameter},
     },
-}
+};
+use snafu::prelude::*;
 
-#[derive(Debug, Deserialize, Serialize)]
-struct DirectiveComment {
-    magic: char,
-    directive: Directive,
-}
+use crate::{
+    codegen::{
+        buffer::{emit, Buffer},
+        render::{RenderIdent, RenderType},
+    },
+    todo::{LValue, RValue},
+};
 
-impl DirectiveComment {
-    fn start(directive: DirectiveKind, tag: String) -> Self {
-        Self {
-            magic: MAGIC,
-            directive: Directive::Start { directive, tag },
+pub(crate) fn render_method_definition(
+    buffer: &mut Buffer,
+    method: &ObjectMethod,
+    woog: &WoogStore,
+    sarzak: &SarzakStore,
+) -> Result<()> {
+    // Write the beginning of the definition
+    write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
+
+    // Write the parameter list.
+    if let Some(mut param) = woog_maybe_get_one_param_across_r5!(method, woog) {
+        let ty = sarzak.exhume_ty(&param.ty).unwrap();
+        write!(
+            buffer,
+            "{}: {},",
+            param.name.as_ident(),
+            ty.as_type(&sarzak),
+        )
+        .context(FormatSnafu)?;
+
+        while let Some(next_param) = woog_maybe_get_one_param_across_r1!(param, woog) {
+            let ty = sarzak.exhume_ty(&next_param.ty).unwrap();
+            write!(
+                buffer,
+                "{}: {},",
+                next_param.as_ident(),
+                ty.as_type(&sarzak),
+            )
+            .context(FormatSnafu)?;
+
+            param = next_param;
         }
     }
 
-    fn end(directive: DirectiveKind) -> Self {
-        Self {
-            magic: MAGIC,
-            directive: Directive::End { directive },
-        }
-    }
+    // Finish the first line of the definition
+    let ty = sarzak.exhume_ty(&method.ty).unwrap();
+    writeln!(buffer, ") -> {} {{", ty.as_type(sarzak)).context(FormatSnafu)?;
+
+    Ok(())
 }
 
-/// Diff Entry Point
+/// Generate code to create a new UUID
 ///
-/// Given to strings, diff according to the rules, which are defined using
-/// directives embedded in the source file.
-fn process_diff(orig: &str, incoming: &str, directive: DirectiveKind) -> String {
-    log::trace!("diffing buffers");
-    let mut diff = diff::lines(orig, incoming);
+/// TODO: We should be taking a list of rvals to use, and not [`Parameter`]s.
+pub(crate) fn render_make_uuid(
+    buffer: &mut Buffer,
+    lval: &LValue,
+    rvals: &Vec<Parameter>,
+    store: &SarzakStore,
+) -> Result<()> {
+    assert!(lval.ty == UUID);
 
-    // Reverse the diff so that we can just pop lines off the end when we process
-    // the list.
-    diff.reverse();
+    let mut format_string = String::new();
+    let mut params = String::new();
+    for val in rvals {
+        let ty = store.exhume_ty(&val.ty).unwrap();
 
-    process_diff_not_recursive_after_all(&mut diff, directive)
-}
-
-/// Process the Diff
-///
-/// Process each line of the diff, and do the right thing. This was meant to be
-/// recursive, but the borrow checker would have none it. So now it isn't.
-///
-/// This function is a bit complicated. It processes each line as an insertion,
-/// from the original Left), an insertion from the generated (Right), or both
-/// buffers contain the line (Both).
-///
-/// Since we need to process directives, we parse them as we see them. However,
-/// we only parse the directive if it comes from the file. So, in Left, and
-/// Both. We don't want to process directives in Right because we don't want it
-/// to interfere with any directives in the file. This is slightly less than
-/// optimal, because it means that sometimes a directive end is output. This
-/// can happen if a block type is changed in the source from the generated. I'm
-/// not quite sure what to do about it.
-///
-/// In fact, I'm not convinced that this is the correct approach. I need to do
-/// some serious thinking about this.
-fn process_diff_not_recursive_after_all<'a>(
-    lines: &'a mut Vec<diff::Result<&'a str>>,
-    directive: DirectiveKind,
-) -> String {
-    let mut stack = Vec::new();
-    let mut directive = directive;
-    let mut output = String::new();
-
-    while lines.len() > 0 {
-        let line = lines.pop().expect("lines.pop()");
-        match line {
-            diff::Result::Left(orig) => {
-                // Parse directive
-                match parse_directive(orig) {
-                    Some(d) => match d {
-                        Directive::Start {
-                            directive: d,
-                            tag: _,
-                        } => {
-                            // Write the line -- always write the directive
-                            output.extend([orig, "\n"]);
-
-                            // Instead of recursion...
-                            stack.push(directive);
-                            directive = d;
-                        }
-                        Directive::End { directive: d } => {
-                            assert_eq!(d, directive);
-
-                            // Write the line -- always write the directive
-                            output.extend([orig, "\n"]);
-
-                            directive = stack.pop().expect("unbalanced directives")
-                        }
-                    },
-                    None => {
-                        // Process line
-                        write_left(orig, &mut output, &directive);
-                    }
-                };
-            }
-            diff::Result::Both(both, _) => {
-                // Parse directive
-                match parse_directive(both) {
-                    Some(d) => match d {
-                        Directive::Start {
-                            directive: d,
-                            tag: _,
-                        } => {
-                            // The directive will be written below.
-                            // Instead of recursion...
-                            stack.push(directive);
-                            directive = d;
-                        }
-                        Directive::End { directive: d } => {
-                            assert_eq!(d, directive);
-                            // The directive will be written below.
-                            directive = stack.pop().expect("unbalanced directives")
-                        }
-                    },
-                    None => {}
-                };
-
-                // Process line
-                // If it's in both, we always just write it.
-                output.extend([both, "\n"]);
-            }
-            diff::Result::Right(new) => {
-                // If we processed directives here, we may have a chance of
-                // catching trailing end directives that should not be written.
-
-                // Process line
-                write_right(new, &mut output, &directive);
-            }
-        }
-    }
-
-    output
-}
-
-/// Write a line that exists in the file, but not the generated code.
-///
-fn write_left(line: &str, output: &mut String, directive: &DirectiveKind) {
-    match directive {
-        // Ignoring new means that we write the line
-        DirectiveKind::IgnoreGenerated | DirectiveKind::AllowEditing => {
-            output.extend([line, "\n"]);
-        }
-        // This implies that we write the original line
-        DirectiveKind::CommentGenerated => {
-            output.extend([line, "\n"]);
-        }
-        // This means that we should comment this out.
-        DirectiveKind::CommentOrig => {
-            output.extend(["// ", line, "\n"]);
-        }
-        _ => {}
-    }
-}
-
-/// Write a line that exists in the generated code, but not the file.
-fn write_right(line: &str, output: &mut String, directive: &DirectiveKind) {
-    match directive {
-        // Ignoring orig means that we write the line
-        DirectiveKind::IgnoreOrig => {
-            output.extend([line, "\n"]);
-        }
-        // Prefer new means that we write the line
-        DirectiveKind::CommentOrig => {
-            output.extend([line, "\n"]);
-        }
-        // This means that we should comment this out.
-        DirectiveKind::CommentGenerated => {
-            output.extend(["// ", line, "\n"]);
-        }
-        _ => {}
-    }
-}
-
-/// Parse a &str looking for ✨ MAGIC ✨
-///
-/// Directives are always behind comments.
-///
-/// There is the opportunity for an override: ☯️. I'm just not quite sure how
-/// I want to use it.
-fn parse_directive(line: &str) -> Option<Directive> {
-    let mut test = String::from(line);
-    test = test.trim_start().to_owned();
-    if test.starts_with("//") {
-        test.replace_range(..3, "");
-        if let Ok(directive_comment) = serde_json::from_str::<DirectiveComment>(test.as_str()) {
-            let directive = directive_comment.directive;
-            log::trace!("found directive: {:?}", directive);
-            Some(directive)
+        if let Type::Reference(_) = ty {
+            format_string.extend(["{:?}:"]);
         } else {
-            None
+            format_string.extend(["{}:"]);
         }
-    } else {
-        None
+
+        params.extend([val.name.as_ident(), ",".to_owned()]);
     }
+    // Remove the trailing ":"
+    format_string.pop();
+    // And the trailining ","
+    params.pop();
+
+    emit!(
+        buffer,
+        "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
+        lval.name,
+        format_string,
+        params
+    );
+
+    Ok(())
 }
+
+pub(crate) fn render_new_instance(
+    buffer: &mut Buffer,
+    object: &Object,
+    lval: Option<&LValue>,
+    fields: &Vec<LValue>,
+    rvals: &Vec<RValue>,
+    store: &SarzakStore,
+) -> Result<()> {
+    if let Some(lval) = lval {
+        assert!(lval.ty == object.id);
+        write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
+    }
+    emit!(buffer, "{} {{", object.as_type(&store));
+
+    let tuples = zip(fields, rvals);
+
+    // Gee. I have a list of fields, and a list of parameters. How do I match
+    // them up? I could infer by type, and the UUID will be tricky, because
+    // how do I know that I cet get a UUID from an Object by calling id()?
+    // I think that maybe the best we can do is typecheck the incoming values
+    // against expected. Do that id() thing here, because we know. I think that
+    // maybe I'm forgetting that I'm the one calling this. Maybe I'm being too
+    // weird, and I just need a template engine. But then again, I'll be generating
+    // unit tests, and the more I have, the better I think I'll be.
+    for (field, rval) in tuples {
+        let field_type = store.exhume_ty(&field.ty).unwrap();
+        log::trace!("field type {} {:?}", field.name, field_type);
+        let rval_type = store.exhume_ty(&rval.ty).unwrap();
+        log::trace!("rval type {} {:?}", rval.name, rval_type);
+
+        // TODO: This type conversion should likely be a function.
+        match field_type {
+            Type::Uuid(_) => match rval_type {
+                Type::Uuid(_) => emit!(buffer, "{}: {},", field.name, rval.name),
+                Type::Reference(_) => emit!(buffer, "{}: {}.id,", field.name, rval.name),
+                _ => ensure!(
+                    field_type == rval_type,
+                    CompilerSnafu {
+                        description: "type mismatch"
+                    }
+                ),
+            },
+            _ => {
+                ensure!(
+                    field_type == rval_type,
+                    CompilerSnafu {
+                        description: "type mismatch"
+                    }
+                );
+                emit!(buffer, "{}: {},", field.name, rval.name)
+            }
+        }
+    }
+
+    emit!(buffer, "id");
+    emit!(buffer, "}};");
+
+    Ok(())
+}
+
+// pub(crate) fn introspect_object<G>(&object: &Object) -> G {
+// G::new()
+// }

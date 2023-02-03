@@ -9,7 +9,21 @@ use sarzak::mc::{FormatSnafu, Result};
 use serde_json;
 use snafu::prelude::*;
 
-use crate::codegen::{DirectiveComment, DirectiveKind};
+use crate::codegen::diff_engine::{DirectiveComment, DirectiveKind};
+
+#[macro_export]
+macro_rules! emit {
+    ($buffer:ident, $string:expr, $($args:expr),* ,) => {
+        emit!($buffer, $string, $($args),*)
+    };
+    ($buffer:ident, $string:expr, $($args:expr),*) => {
+        writeln!($buffer, $string, $($args),*).context(FormatSnafu)?
+    };
+    ($buffer:ident, $string:expr) => {
+        writeln!($buffer, $string).context(FormatSnafu)?
+    };
+}
+pub(crate) use emit;
 
 pub(crate) struct Buffer {
     buffer: String,

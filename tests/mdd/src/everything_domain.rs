@@ -40,4 +40,15 @@ mod tests {
         // Test derive option ✅
         format!("{:?}", e);
     }
+
+    #[test]
+    fn test_new() {
+        let r = RandoObject::new();
+        let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r);
+        assert_eq!(e.string, "string".to_owned());
+        assert_eq!(e.float, 42.0);
+        assert_eq!(e.bool, true);
+        assert_eq!(e.int, 42);
+        assert_eq!(e.rando, r.id);
+    }
 }

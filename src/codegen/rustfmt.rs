@@ -2,9 +2,15 @@ use std::{fs, io::prelude::*, path::Path, process};
 
 use sarzak::mc::{CompilerSnafu, IOSnafu, Result};
 use snafu::prelude::*;
-use tempfile::{NamedTempFile, TempDir, TempPath};
+use tempfile::NamedTempFile;
 
-pub(crate) fn format(path: &Path) -> Result<()> {
+/// Format
+///
+/// We call rustfmt to do our formatting. This may need to change, because we
+/// are doing a lot of this now.
+///
+/// If there is an error, we will optionally display the offending file.
+pub(crate) fn format(path: &Path, display_err: bool) -> Result<()> {
     log::trace!("running `rustfmt --emit files {}`", path.display());
 
     // Run rustfmt on the file
@@ -19,7 +25,7 @@ pub(crate) fn format(path: &Path) -> Result<()> {
     let output = child.wait_with_output().context(IOSnafu)?;
     let stderr = String::from_utf8_lossy(&output.stderr);
 
-    if !output.status.success() {
+    if !output.status.success() && display_err {
         if cfg!(feature = "vscode") {
             // Save the file off
             let mut fail_file = NamedTempFile::new().context(IOSnafu)?;
@@ -33,13 +39,11 @@ pub(crate) fn format(path: &Path) -> Result<()> {
 
             let (_, fail_path) = fail_file.keep().expect("error with temporary file");
 
-            let mut output = process::Command::new("code")
+            process::Command::new("code")
                 .args([format!("{}", fail_path.display())])
                 .stdin(process::Stdio::piped())
                 .spawn()
                 .context(IOSnafu)?;
-
-            output.wait();
         } else {
             eprintln!("😱 rustfmt failed with:");
             eprintln!("{}", stderr);

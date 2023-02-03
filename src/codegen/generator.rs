@@ -10,11 +10,17 @@ use std::{
 use sarzak::{
     domain::Domain,
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
+    woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
+use uuid::Uuid;
 
 use crate::{
-    codegen::{buffer::Buffer, process_diff, rustfmt::format, DirectiveKind},
+    codegen::{
+        buffer::Buffer,
+        diff_engine::{process_diff, DirectiveKind},
+        rustfmt::format,
+    },
     options::GraceCompilerOptions,
 };
 
@@ -22,8 +28,10 @@ pub(crate) struct GeneratorBuilder<'a> {
     path: Option<PathBuf>,
     generator: Option<Box<dyn FileGenerator + 'a>>,
     domain: Option<&'a Domain>,
+    woog: Option<&'a mut WoogStore>,
     options: Option<&'a GraceCompilerOptions>,
     module: Option<&'a str>,
+    obj_id: Option<&'a Uuid>,
 }
 
 impl<'a> GeneratorBuilder<'a> {
@@ -32,8 +40,10 @@ impl<'a> GeneratorBuilder<'a> {
             path: None,
             generator: None,
             domain: None,
+            woog: None,
             options: None,
             module: None,
+            obj_id: None,
         }
     }
 
@@ -69,6 +79,18 @@ impl<'a> GeneratorBuilder<'a> {
         self
     }
 
+    pub(crate) fn compiler_domain(mut self, domain: &'a mut WoogStore) -> Self {
+        self.woog = Some(domain);
+
+        self
+    }
+
+    pub(crate) fn obj_id(mut self, obj_id: &'a Uuid) -> Self {
+        self.obj_id = Some(obj_id);
+
+        self
+    }
+
     pub fn generate(self) -> Result<()> {
         ensure!(
             self.options.is_some(),
@@ -99,6 +121,13 @@ impl<'a> GeneratorBuilder<'a> {
         );
 
         ensure!(
+            self.woog.is_some(),
+            CompilerSnafu {
+                description: "missing compiler domain"
+            }
+        );
+
+        ensure!(
             self.module.is_some(),
             CompilerSnafu {
                 description: "missing module"
@@ -109,7 +138,9 @@ impl<'a> GeneratorBuilder<'a> {
         match self.generator.unwrap().generate(
             &self.options.unwrap(),
             &self.domain.unwrap(),
+            &mut self.woog.unwrap(),
             self.module.unwrap(),
+            self.obj_id,
             &mut buffer,
         ) {
             Ok(_) => {
@@ -142,7 +173,7 @@ impl<'a> GeneratorBuilder<'a> {
                 if path.exists() {
                     // Format the original. We get some validation from ^rustfmt`,
                     // so if it fails, we'll just stop.
-                    match format(&path) {
+                    match format(&path, false) {
                         Ok(_) => {
                             // Grab the formatted output.
                             let orig = fs::read_to_string(&path).context(IOSnafu)?;
@@ -151,7 +182,7 @@ impl<'a> GeneratorBuilder<'a> {
                             let mut file =
                                 File::create(&path).context(FileSnafu { path: &path })?;
                             file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
-                            match format(&path) {
+                            match format(&path, true) {
                                 Ok(_) => {
                                     // Grab the generated output
                                     let incoming = fs::read_to_string(&path).context(IOSnafu)?;
@@ -189,7 +220,7 @@ impl<'a> GeneratorBuilder<'a> {
                     let mut file = File::create(&path).context(FileSnafu { path: &path })?;
                     file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
 
-                    match format(&path) {
+                    match format(&path, false) {
                         Ok(_) => {}
                         Err(e) => {
                             eprintln!("{}", e)
@@ -209,7 +240,9 @@ pub(crate) trait FileGenerator {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
+        obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()>;
 }
@@ -224,7 +257,9 @@ pub(crate) trait CodeWriter {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
+        woog: &mut WoogStore,
         module: &str,
+        obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()>;
 }
