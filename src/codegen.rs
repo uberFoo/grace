@@ -385,7 +385,12 @@ pub(crate) fn render_new_instance(
     }
 
     emit!(buffer, "id");
-    emit!(buffer, "}};");
+
+    if lval.is_some() {
+        emit!(buffer, "}};");
+    } else {
+        emit!(buffer, "}}")
+    };
 
     Ok(())
 }

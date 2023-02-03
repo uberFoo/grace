@@ -36,15 +36,14 @@ impl<'a> Everything<'a> {
             &UUID_NS,
             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
         );
-        let new = Everything {
+        Everything {
             bool: bool,
             float: float,
             int: int,
             string: string,
             rando: rando,
             id,
-        };
-        new
+        }
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 }

@@ -396,11 +396,13 @@ impl CodeWriter for DefaultImplementation {
 ///
 /// I think that I may add optional references to the non-formalizing side of
 /// relationships.
-pub(crate) struct DefaultStructNewImpl;
+pub(crate) struct DefaultNewImpl {
+    generate_tests: bool,
+}
 
-impl DefaultStructNewImpl {
-    pub(crate) fn new() -> Box<dyn TypeImplementation> {
-        Box::new(Self)
+impl DefaultNewImpl {
+    pub(crate) fn new(generate_tests: bool) -> Box<dyn StructImplementation> {
+        Box::new(Self { generate_tests })
     }
 }
 
@@ -553,7 +555,10 @@ impl CodeWriter for DefaultStructNewImpl {
                     &config,
                 )?;
 
-                emit!(buffer, "new");
+                // 🚧 Below is the new code. I'm not sure why the third parameter is None.
+                // let rvals = params.iter().map(|p| p.into()).collect();
+                // render_new_instance(buffer, obj, None, &fields, &rvals, domain.sarzak())?;
+
                 emit!(buffer, "}}");
 
                 Ok(())
