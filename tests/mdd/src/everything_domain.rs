@@ -16,6 +16,7 @@ mod tests {
 
     use everything::Everything;
     use rando_object::RandoObject;
+    // use store::ObjectStore;
 
     #[test]
     fn test_structs() {

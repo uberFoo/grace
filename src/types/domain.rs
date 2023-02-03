@@ -14,7 +14,7 @@ use sarzak::{
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
             sarzak_maybe_get_one_t_ref_across_r27,
         },
-        types::{Attribute, Referrer, Type, UUID},
+        types::{Attribute, External, Referrer, Type, UUID},
     },
     woog::{store::ObjectStore as WoogStore, ObjectMethod, Parameter},
 };
@@ -327,6 +327,12 @@ impl CodeWriter for DomainNewImpl {
                 referrer.referential_attribute.as_ident(),
             ));
         }
+
+        // Add the store
+        // This should maybe go into a postload script that is only run for this
+        // target? Nope. It's too late by then. Not sure where this goes.
+        // let store_type = Type::External(External::new(domain.sarzak(), "store".to_owned(), "crate::"))
+        // params.push(Parameter::new{woog, None, })
 
         // Link the params
         let mut iter = params.iter_mut().peekable();
