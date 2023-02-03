@@ -19,8 +19,8 @@ pub struct Everything {
     pub string: String,
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-referrer-use-statements"}}}
     /// R1: [`Everything`] 'points at' [`RandoObject`]
-    pub rando: Uuid,
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    pub rando: Uuid,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-implementation"}}}
@@ -43,6 +43,8 @@ impl Everything {
             float: float,
             int: int,
             string: string,
+            //             rando: rando.id,
+            //             rando: rando,
             rando: rando.id,
             id,
         };

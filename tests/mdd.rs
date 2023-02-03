@@ -1,7 +1,7 @@
 use std::process::{self, ExitCode};
 
 use env_logger;
-use grace::{GraceCompilerOptions, ModelCompiler, SarzakModelCompiler};
+use grace::{GraceCompilerOptions, ModelCompiler, SarzakModelCompiler, Target};
 use log;
 use sarzak::domain::DomainBuilder;
 
@@ -53,7 +53,7 @@ fn compile_and_test_domain() -> Result<ExitCode, std::io::Error> {
     let _ = env_logger::builder().is_test(true).try_init();
 
     let mut options = GraceCompilerOptions::default();
-    options.generate_domain = true;
+    options.target = Target::Domain;
     let grace = ModelCompiler::default();
 
     // Build the domains

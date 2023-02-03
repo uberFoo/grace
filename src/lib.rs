@@ -12,7 +12,7 @@ pub mod options;
 mod todo;
 mod types;
 
-pub use options::GraceCompilerOptions;
+pub use options::{GraceCompilerOptions, Target};
 pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
 use codegen::{generator::GeneratorBuilder, render::RenderIdent};
@@ -74,20 +74,20 @@ impl SarzakModelCompiler for ModelCompiler {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
-            let (struct_writer, impl_writer) = if options.generate_domain {
-                (
+            // This is how we generate different implementations.
+            let (struct_writer, impl_writer) = match options.target {
+                Target::Domain => (
                     DomainStruct::new(),
                     DomainImplBuilder::new()
                         .implementation(DomainNewImpl::new())
                         .build(),
-                )
-            } else {
-                (
+                ),
+                Target::Application => (
                     DefaultStruct::new(),
                     DefaultImplBuilder::new()
                         .implementation(DefaultNewImpl::new())
                         .build(),
-                )
+                ),
             };
 
             // Here's the generation.

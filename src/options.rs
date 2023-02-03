@@ -16,22 +16,33 @@
 //! I should solve early.
 use std::any::Any;
 
-use clap::Args;
+use clap::{Args, Subcommand};
 use serde::{Deserialize, Serialize};
 
 use sarzak::mc::ModelCompilerOptions;
 
-const GENERATE_DOMAIN_DEFAULT: bool = false;
+const DEFAULT_TARGET: Target = Target::Application;
 const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
+
+#[derive(Clone, Debug, Deserialize, Serialize, Subcommand)]
+pub enum Target {
+    /// Target Domain Infrastructure
+    ///
+    /// This target is used by model compilers to generate code.
+    Domain,
+    /// Target Application Code
+    ///
+    /// This target is intended to be run as an application.
+    Application,
+}
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
 pub struct GraceCompilerOptions {
-    /// Generate Domain
+    /// Code Generation Target
     ///
-    /// This flag indicates that code should be generated for a sarzak Domain.
-    #[arg(long, short)]
-    pub generate_domain: bool,
-
+    /// This determines how objects are rendered into structs and enums.
+    #[command(subcommand)]
+    pub target: Target,
     /// Derive macros
     ///
     /// A comma separated list of derive macros to be added to each generated
@@ -52,7 +63,7 @@ impl ModelCompilerOptions for GraceCompilerOptions {
 impl Default for GraceCompilerOptions {
     fn default() -> Self {
         Self {
-            generate_domain: GENERATE_DOMAIN_DEFAULT,
+            target: DEFAULT_TARGET,
             derive: Some(DEFAULT_DERIVE.iter().map(|&x| x.to_owned()).collect()),
         }
     }
