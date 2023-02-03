@@ -17,10 +17,10 @@ macro_rules! emit {
         emit!($buffer, $string, $($args),*)
     };
     ($buffer:ident, $string:expr, $($args:expr),*) => {
-        writeln!($buffer, $string, $($args),*).context(FormatSnafu)?;
+        writeln!($buffer, $string, $($args),*).context(FormatSnafu)?
     };
     ($buffer:ident, $string:expr) => {
-        writeln!($buffer, $string).context(FormatSnafu)?;
+        writeln!($buffer, $string).context(FormatSnafu)?
     };
 }
 pub(crate) use emit;

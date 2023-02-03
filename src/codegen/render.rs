@@ -1,7 +1,10 @@
 use heck::{ToSnakeCase, ToUpperCamelCase};
-use sarzak::sarzak::{
-    store::ObjectStore as SarzakStore,
-    types::{Attribute, Event, Object, State, Type},
+use sarzak::{
+    sarzak::{
+        store::ObjectStore as SarzakStore,
+        types::{Attribute, Event, Object, State, Type},
+    },
+    woog::types::{ObjectMethod, Parameter},
 };
 
 macro_rules! render_ident {
@@ -37,7 +40,13 @@ pub(crate) trait RenderIdent {
     fn as_ident(&self) -> String;
 }
 
-render_ident!(Attribute, Event, Object, State);
+render_ident!(Attribute, Event, Object, State, ObjectMethod, Parameter);
+
+impl RenderIdent for String {
+    fn as_ident(&self) -> String {
+        self.to_snake_case()
+    }
+}
 
 /// Trait for rendering type as a Type
 ///
@@ -65,7 +74,10 @@ impl RenderType for Type {
     fn as_type(&self, store: &SarzakStore) -> String {
         match self {
             Type::Boolean(_) => "bool".to_owned(),
-            // I don't have a good feeling about this one...
+            Type::Object(o) => {
+                let object = store.exhume_object(&o).unwrap();
+                format!("{}", object.as_type(&store))
+            }
             Type::Reference(r) => {
                 let reference = store.exhume_reference(&r).unwrap();
                 let object = store.exhume_object(&reference.object).unwrap();
@@ -76,11 +88,5 @@ impl RenderType for Type {
             Type::Float(_) => "f64".to_owned(),
             Type::Integer(_) => "i64".to_owned(),
         }
-    }
-}
-
-impl RenderIdent for String {
-    fn as_ident(&self) -> String {
-        self.to_snake_case()
     }
 }

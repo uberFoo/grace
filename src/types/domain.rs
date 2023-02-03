@@ -14,7 +14,7 @@ use sarzak::{
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
             sarzak_maybe_get_one_t_ref_across_r27,
         },
-        types::{Attribute, Referrer},
+        types::{Attribute, Referrer, Type, UUID},
     },
     woog::{store::ObjectStore as WoogStore, ObjectMethod, Parameter},
 };
@@ -27,8 +27,10 @@ use crate::{
         diff_engine::DirectiveKind,
         generator::CodeWriter,
         render::{RenderIdent, RenderType},
+        render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
+    todo::LValue,
     types::{StructDefinition, StructImplementation},
 };
 
@@ -51,7 +53,7 @@ impl CodeWriter for DomainStruct {
         &self,
         options: &GraceCompilerOptions,
         domain: &Domain,
-        woog: &mut WoogStore,
+        _woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -63,14 +65,43 @@ impl CodeWriter for DomainStruct {
             }
         );
         let obj_id = obj_id.unwrap();
-
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
-        let referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
+
+        // These need to be sorted, as they are output as attributes and we require
+        // stable output.
+        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
+        referrers.sort_by(|a, b| {
+            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
+            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
+            obj_a.name.cmp(&obj_b.name)
+        });
 
         // Everything has an `id`, everything needs these.
         emit!(buffer, "use uuid::Uuid;");
         emit!(buffer, "use crate::{}::UUID_NS;", module);
         emit!(buffer, "");
+
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-referrer-use-statements", obj.as_ident()),
+            |buffer| {
+                for referrer in &referrers {
+                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
+                    let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
+                    let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+
+                    emit!(
+                        buffer,
+                        "use crate::{}::types::{}::{};",
+                        module,
+                        r_obj.as_ident(),
+                        r_obj.as_type(&domain.sarzak())
+                    );
+                }
+
+                Ok(())
+            },
+        )?;
 
         log::debug!("writing Struct Definition for {}", obj.name);
 
@@ -111,33 +142,25 @@ impl CodeWriter for DomainStruct {
                     );
                 }
 
-                // This doesn't need to be in it's own block, and it's probably
-                // distracting to leave it so. But this is interesting for
-                // testing the diff that I'm about to add.
-                buffer.block(
-                    DirectiveKind::IgnoreOrig,
-                    format!("{}-referrer-use-statements", obj.as_ident()),
-                    |buffer| {
-                        // This is sort of long, and sticks out. Maybe it goes into a function?
-                        for referrer in &referrers {
-                            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-                            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-                            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+                for referrer in &referrers {
+                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
+                    let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
+                    let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
 
-                            emit!(
-                                buffer,
-                                "/// R{}: [`{}`] '{}' [`{}`]",
-                                binary.number,
-                                obj.as_type(&domain.sarzak()),
-                                referrer.description,
-                                r_obj.as_type(&domain.sarzak())
-                            );
-                            emit!(buffer, "pub {}: Uuid,", referrer.referential_attribute,);
-                        }
-
-                        Ok(())
-                    },
-                )?;
+                    emit!(
+                        buffer,
+                        "/// R{}: [`{}`] '{}' [`{}`]",
+                        binary.number,
+                        obj.as_type(&domain.sarzak()),
+                        referrer.description,
+                        r_obj.as_type(&domain.sarzak())
+                    );
+                    emit!(
+                        buffer,
+                        "pub {}: Uuid,",
+                        referrer.referential_attribute.as_ident(),
+                    );
+                }
 
                 emit!(buffer, "}}");
                 Ok(())
@@ -174,20 +197,6 @@ impl DomainImplBuilder {
 
 pub(crate) struct DomainImplementation {
     implementation: Option<Box<dyn StructImplementation>>,
-}
-
-impl DomainImplementation {
-    pub(crate) fn new() -> Box<dyn StructImplementation> {
-        Box::new(Self {
-            implementation: None,
-        })
-    }
-
-    pub(crate) fn implementation(mut self, implementation: Box<dyn StructImplementation>) -> Self {
-        self.implementation = Some(implementation);
-
-        self
-    }
 }
 
 impl StructImplementation for DomainImplementation {}
@@ -238,6 +247,14 @@ impl CodeWriter for DomainImplementation {
     }
 }
 
+/// Domain New Implementation
+///
+/// This generates a new implementation for the object. The new implementation
+/// calculates the object's `id` based on the string representation of it's
+/// attributes.
+///
+/// __NB__ --- this implies that the lexicographical sum of it's attributes,
+/// across all instances, must be unique.
 pub(crate) struct DomainNewImpl;
 
 impl DomainNewImpl {
@@ -251,10 +268,10 @@ impl StructImplementation for DomainNewImpl {}
 impl CodeWriter for DomainNewImpl {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        _options: &GraceCompilerOptions,
         domain: &Domain,
         woog: &mut WoogStore,
-        module: &str,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
@@ -266,117 +283,117 @@ impl CodeWriter for DomainNewImpl {
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
-        let referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
 
-        let mut woog = sarzak::woog::store::ObjectStore::new();
+        // These are more attributes on our object, and they should be sorted.
+        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
+        referrers.sort_by(|a, b| {
+            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
+            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
+            obj_a.name.cmp(&obj_b.name)
+        });
+
+        // Collect the attributes
+        let mut params: Vec<Parameter> = Vec::new();
+        let mut fields: Vec<LValue> = Vec::new();
+        let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
+        attrs.sort_by(|a, b| a.name.cmp(&b.name));
+        for attr in attrs {
+            // We are going to generate the id, so don't include it in the
+            // list of parameters.
+            if attr.name != "id" {
+                let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
+                fields.push(LValue::new(attr.name.as_ident(), &ty));
+                params.push(Parameter::new(woog, None, &ty, attr.as_ident()));
+            }
+        }
+
+        // And the referential attributes
+        for referrer in &referrers {
+            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
+            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
+            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+            let reference = sarzak_maybe_get_one_t_ref_across_r27!(r_obj, domain.sarzak()).unwrap();
+
+            // This determines how a reference is stored in the struct. In this
+            // case a UUID.
+            fields.push(LValue::new(
+                referrer.referential_attribute.as_ident(),
+                &Type::Uuid(UUID),
+            ));
+            params.push(Parameter::new(
+                woog,
+                None,
+                &Type::Reference(reference.id),
+                referrer.referential_attribute.as_ident(),
+            ));
+        }
+
+        // Link the params
+        let mut iter = params.iter_mut().peekable();
+        loop {
+            if let Some(param) = iter.next() {
+                if let Some(next) = iter.peek() {
+                    param.next = Some(next.id);
+                    woog.inter_parameter(param.clone());
+                }
+            } else {
+                break;
+            }
+        }
+
+        // Create an ObjectMethod
+        // The uniqueness of this instance depends on the inputs to it's
+        // new method. Param can be None, and two methods on the same
+        // object will have the same obj. So it comes down to a unique
+        // name for each object. So just "new" should suffice for name,
+        // because it's scoped by obj already.
+        let param = match params.len() {
+            0 => None,
+            _ => Some(&params[0]),
+        };
+        // We need to find the type that corresponds to this object
+        let mut iter = domain.sarzak().iter_ty();
+        let ty = loop {
+            if let Some((id, ty)) = iter.next() {
+                if id == &obj.id {
+                    break Some(ty);
+                }
+            } else {
+                break None;
+            }
+        };
+        let method = ObjectMethod::new(
+            woog,
+            param,
+            obj,
+            ty.unwrap(),
+            "new".to_owned(),
+            "Create a new instance".to_owned(),
+        );
 
         buffer.block(
             DirectiveKind::CommentOrig,
             format!("{}-struct-impl-new", obj.as_ident()),
             |buffer| {
-                let mut params: Vec<Parameter> = Vec::new();
-
-                // Collect the attributes
-                let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-                attrs.sort_by(|a, b| a.name.cmp(&b.name));
-                for attr in attrs {
-                    // We are going to generate the id, so don't include it in the
-                    // list of parameters.
-                    if attr.name != "id" {
-                        let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
-                        // params.push((attr.as_ident(), ty.as_type()));
-                        params.push(Parameter::new(&mut woog, None, ty, attr.as_ident()));
-                    }
-                }
-
-                // And the referential attributes
-                for referrer in &referrers {
-                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-                    let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-                    let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-                    let reference =
-                        sarzak_maybe_get_one_t_ref_across_r27!(r_obj, domain.sarzak()).unwrap();
-
-                    // If don't remember why I don't have a macro for this. Going the other
-                    // direction is trivial, but this way is trickier.
-                    let mut iter = domain.sarzak().iter_ty();
-                    let ty = loop {
-                        if let Some((id, ty)) = iter.next() {
-                            if ty.get_id() == reference.id {
-                                break ty;
-                            }
-                        }
-                    };
-
-                    // params.push((referrer.referential_attribute.clone(), "&Uuid".to_owned()));
-                    // let reference = Reference::new(&mut domain.sarzak().borrow_mut(), r_obj);
-                    // let ty = Type::Reference(reference.id);
-                    params.push(Parameter::new(
-                        &mut woog,
-                        None,
-                        &ty,
-                        referrer.referential_attribute.as_ident(),
-                    ));
-                }
-
-                // Link the params, and build a format string while we're at it.
-                let mut format_string = String::new();
-                let mut iter = params.iter_mut().peekable();
-                loop {
-                    if let Some(param) = iter.next() {
-                        format_string.extend(["{}:"]);
-                        if let Some(next) = iter.peek() {
-                            param.next = Some(next.id);
-                        }
-                    } else {
-                        break;
-                    }
-                }
-                format_string.pop();
-
-                let foo: Vec<(String, String)> = params
-                    .iter()
-                    .map(|p| {
-                        let ty = domain.sarzak().exhume_ty(&p.ty).unwrap();
-                        (ty.as_type(&domain.sarzak()), p.name.as_ident())
-                    })
-                    .collect();
-
+                // Output a docstring
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
                     obj.as_type(&domain.sarzak())
                 );
 
-                emit!(
-                    buffer,
-                    "pub fn new({}) -> {} {{",
-                    foo.iter()
-                        .map(|p| format!("{}: {}", p.0, p.1))
-                        .collect::<Vec<String>>()
-                        .join(","),
-                    obj.as_type(&domain.sarzak())
-                );
-                emit!(
-                    buffer,
-                    "let id = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
-                    format_string,
-                    foo.iter()
-                        .map(|p| format!("{}", p.1))
-                        .collect::<Vec<String>>()
-                        .join(",")
-                );
-                emit!(buffer, "let new = Self {{");
-                emit!(buffer, "id,");
-                emit!(
-                    buffer,
-                    "{}",
-                    foo.iter()
-                        .map(|p| format!("{}", p.1))
-                        .collect::<Vec<String>>()
-                        .join(",")
-                );
-                emit!(buffer, "}};");
+                // Output the top of the function definition
+                render_method_definition(buffer, &method, woog, domain.sarzak())?;
+
+                // Output the code to create the `id`.
+                let id = LValue::new("id", &Type::Uuid(UUID));
+                render_make_uuid(buffer, &id, &params, domain.sarzak())?;
+
+                // Output code to create the instance
+                let new = LValue::new("new", &Type::Reference(obj.id));
+                let rvals = params.iter().map(|p| p.into()).collect();
+                render_new_instance(buffer, obj, Some(&new), &fields, &rvals, domain.sarzak())?;
+
                 emit!(buffer, "new");
                 emit!(buffer, "}}");
 
