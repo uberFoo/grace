@@ -27,6 +27,7 @@ const DEFAULT_TARGET: Target = Target::Application;
 const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
 const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
+const DEFAULT_TEST: bool = true;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Subcommand)]
 #[serde(tag = "target")]
@@ -139,6 +140,11 @@ pub struct GraceCompilerOptions {
     /// Note that the domain parameters _must_ match.
     #[arg(long, short, use_value_delimiter = true, value_delimiter = ',')]
     pub imported_domains: Option<Vec<String>>,
+    /// Generate Document Tests
+    ///
+    /// Document tests are generated for all generated functions.
+    #[arg(long, short)]
+    pub tests: Option<bool>,
 }
 
 impl ModelCompilerOptions for GraceCompilerOptions {
@@ -154,6 +160,7 @@ impl Default for GraceCompilerOptions {
             derive: Some(DEFAULT_DERIVE.iter().map(|&x| x.to_owned()).collect()),
             use_paths: DEFAULT_USE_PATHS,
             imported_domains: DEFAULT_IMPORTED_DOMAINS,
+            tests: Some(DEFAULT_TEST),
         }
     }
 }
