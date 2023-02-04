@@ -583,8 +583,6 @@ impl FileGenerator for DefaultModuleGenerator {
             DirectiveKind::AllowEditing,
             format!("{}-module-definition-file", module),
             |buffer| {
-                // It's important that we maintain ordering for code injection and
-                // redaction. We begin with the struct definition.
                 self.definition
                     .write_code(options, domain, woog, module, obj_id, buffer)?;
 
@@ -627,6 +625,15 @@ impl CodeWriter for DefaultModule {
                 objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
                 for (_, obj) in &objects {
                     emit!(buffer, "pub mod {};", obj.as_ident());
+                }
+                emit!(buffer, "");
+                for (_, obj) in &objects {
+                    emit!(
+                        buffer,
+                        "pub use {}::{};",
+                        obj.as_ident(),
+                        obj.as_type(domain.sarzak())
+                    );
                 }
 
                 Ok(())

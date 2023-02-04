@@ -258,7 +258,7 @@ fn parse_directive(line: &str) -> Option<Directive> {
     let mut test = String::from(line);
     test = test.trim_start().to_owned();
     if test.starts_with("//") {
-        test.replace_range(..3, "");
+        test.replace_range(..2, "");
         if let Ok(directive_comment) = serde_json::from_str::<DirectiveComment>(test.as_str()) {
             let directive = directive_comment.directive;
             log::trace!("found directive: {:?}", directive);
