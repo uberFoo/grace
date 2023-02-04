@@ -18,7 +18,7 @@ use sarzak::{
     woog::{
         macros::{woog_maybe_get_one_param_across_r1, woog_maybe_get_one_param_across_r5},
         store::ObjectStore as WoogStore,
-        types::{ObjectMethod, Parameter},
+        types::{Mutability, ObjectMethod, BORROWED},
     },
 };
 use snafu::prelude::*;
@@ -41,23 +41,26 @@ pub(crate) fn render_method_definition(
     write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
 
     // Write the parameter list.
+    // TODO: This is so clumsy! I should clean it up.
     if let Some(mut param) = woog_maybe_get_one_param_across_r5!(method, woog) {
         let ty = sarzak.exhume_ty(&param.ty).unwrap();
+        let mutability = woog.exhume_mutability(&param.mutability).unwrap();
         write!(
             buffer,
             "{}: {},",
             param.name.as_ident(),
-            ty.as_type(&sarzak),
+            ty.as_type(&mutability, &sarzak),
         )
         .context(FormatSnafu)?;
 
         while let Some(next_param) = woog_maybe_get_one_param_across_r1!(param, woog) {
             let ty = sarzak.exhume_ty(&next_param.ty).unwrap();
+            let mutability = woog.exhume_mutability(&next_param.mutability).unwrap();
             write!(
                 buffer,
                 "{}: {},",
                 next_param.as_ident(),
-                ty.as_type(&sarzak),
+                ty.as_type(&mutability, &sarzak),
             )
             .context(FormatSnafu)?;
 
@@ -67,7 +70,12 @@ pub(crate) fn render_method_definition(
 
     // Finish the first line of the definition
     let ty = sarzak.exhume_ty(&method.ty).unwrap();
-    writeln!(buffer, ") -> {} {{", ty.as_type(sarzak)).context(FormatSnafu)?;
+    writeln!(
+        buffer,
+        ") -> {} {{",
+        ty.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+    )
+    .context(FormatSnafu)?;
 
     Ok(())
 }
@@ -78,7 +86,7 @@ pub(crate) fn render_method_definition(
 pub(crate) fn render_make_uuid(
     buffer: &mut Buffer,
     lval: &LValue,
-    rvals: &Vec<Parameter>,
+    rvals: &Vec<RValue>,
     store: &SarzakStore,
 ) -> Result<()> {
     assert!(lval.ty == UUID);
@@ -124,7 +132,11 @@ pub(crate) fn render_new_instance(
         assert!(lval.ty == object.id);
         write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
     }
-    emit!(buffer, "{} {{", object.as_type(&store));
+    emit!(
+        buffer,
+        "{} {{",
+        object.as_type(&Mutability::Borrowed(BORROWED), &store)
+    );
 
     let tuples = zip(fields, rvals);
 

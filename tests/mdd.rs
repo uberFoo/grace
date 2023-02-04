@@ -20,13 +20,11 @@ fn compile_and_test_default() -> Result<ExitCode, std::io::Error> {
     log::debug!("Testing everything domain: generating for application domain.");
     let domain = DomainBuilder::new()
         .cuckoo_model("tests/mdd/models/everything.json")
-        .unwrap()
-        .build()
         .unwrap();
 
     grace
         .compile(
-            &domain,
+            domain,
             "everything",
             "tests/mdd/src",
             Box::new(&options),
@@ -67,13 +65,11 @@ fn compile_and_test_domain() -> Result<ExitCode, std::io::Error> {
     log::debug!("Testing everything domain: generating for sarzak domain.");
     let domain = DomainBuilder::new()
         .cuckoo_model("tests/mdd/models/everything.json")
-        .unwrap()
-        .build()
         .unwrap();
 
     grace
         .compile(
-            &domain,
+            domain,
             "everything_domain",
             "tests/mdd/src",
             Box::new(&options),

@@ -6,7 +6,10 @@ use sarzak::{
     domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
-    woog::store::ObjectStore as WoogStore,
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{Mutability, BORROWED},
+    },
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -86,7 +89,11 @@ impl FileGenerator for DomainStoreGenerator {
         let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
         for (_, obj) in &objects {
-            emit!(buffer, "//! * [`{}`]", obj.as_type(domain.sarzak()));
+            emit!(
+                buffer,
+                "//! * [`{}`]",
+                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
         }
 
         // We don't want this to be edited -- there's no reason.
@@ -139,7 +146,11 @@ impl CodeWriter for DomainStore {
                 let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
                 objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
                 for (_, obj) in &objects {
-                    emit!(buffer, "{},", obj.as_type(domain.sarzak()));
+                    emit!(
+                        buffer,
+                        "{},",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
@@ -150,7 +161,7 @@ impl CodeWriter for DomainStore {
                         buffer,
                         "{}: HashMap<Uuid,{}>,",
                         obj.as_ident(),
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                 }
                 emit!(buffer, "}}");
@@ -168,7 +179,7 @@ impl CodeWriter for DomainStore {
                     emit!(
                         buffer,
                         "/// Inter [`{}`] into the store.",
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                     emit!(buffer, "///");
                     emit!(
@@ -176,7 +187,7 @@ impl CodeWriter for DomainStore {
                         "pub fn inter_{}(&mut self, {}: {}) {{",
                         obj.as_ident(),
                         obj.as_ident(),
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                     emit!(
                         buffer,
@@ -190,28 +201,28 @@ impl CodeWriter for DomainStore {
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store.",
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}(&self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                     emit!(buffer, "self.{}.get(id)", obj.as_ident());
                     emit!(buffer, "}}");
                     emit!(
                         buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                     emit!(buffer, "//");
                     emit!(
                         buffer,
                         "pub fn iter_{}(&self) -> impl Iterator<Item = (&Uuid, &{})> {{",
                         obj.as_ident(),
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                     emit!(buffer, "self.{}.iter()", obj.as_ident());
                     emit!(buffer, "}}");

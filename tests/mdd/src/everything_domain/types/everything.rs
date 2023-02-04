@@ -1,11 +1,12 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"everything-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-use-statements"}}}
-use crate::everything_domain::UUID_NS;
 use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
+use crate::everything_domain::store::ObjectStore as EverythingDomainStore;
 use crate::everything_domain::types::rando_object::RandoObject;
+use crate::everything_domain::UUID_NS;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-documentation"}}}
 /// An object, with everything on it!
@@ -32,9 +33,18 @@ impl Everything {
         int: i64,
         string: String,
         rando: &RandoObject,
+        //         store: EverythingDomainStore,
+        //         store: &EverythingDomainStore,
+        store: &mut EverythingDomainStore,
     ) -> Everything {
         let id = Uuid::new_v5(
             &UUID_NS,
+            //             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
+            //             format!(
+            //                 "{}:{}:{}:{}:{:?}:{}",
+            //                 bool, float, int, string, rando, store
+            //             )
+            //             .as_bytes(),
             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
         );
         let new = Everything {
@@ -45,6 +55,7 @@ impl Everything {
             rando: rando.id,
             id,
         };
+        store.inter_everything(new.clone());
         new
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}

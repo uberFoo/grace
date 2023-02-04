@@ -13,9 +13,16 @@ mod todo;
 mod types;
 
 pub use options::{GraceCompilerOptions, Target};
-pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
+pub use sarzak::{
+    mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler},
+    sarzak::types::{External, Type},
+    woog::types::{Mutability, BORROWED},
+};
 
-use codegen::{generator::GeneratorBuilder, render::RenderIdent};
+use codegen::{
+    generator::GeneratorBuilder,
+    render::{RenderIdent, RenderType},
+};
 use sarzak::{sarzak::types::Object, woog::store::ObjectStore as WoogStore};
 use types::{
     default::{
@@ -37,12 +44,43 @@ pub struct ModelCompiler {}
 impl SarzakModelCompiler for ModelCompiler {
     fn compile<P: AsRef<Path>>(
         &self,
-        domain: &sarzak::domain::Domain,
+        domain: sarzak::domain::DomainBuilder,
         module: &str,
         src_path: P,
         options: Box<&dyn ModelCompilerOptions>,
         _test: bool,
     ) -> Result<(), ModelCompilerError> {
+        // Extract our options
+        let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
+            Some(options) => options.clone(),
+            None => GraceCompilerOptions::default(),
+        };
+
+        // Here is where we have a opportunity to mutate input domain.
+        let domain = if options.target == Target::Domain {
+            let module = module.to_owned();
+            domain
+                .post_load(move |sarzak, _| {
+                    let store_type = Type::External(
+                        External::new(
+                            sarzak,
+                            format!(
+                                "{}Store",
+                                module.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
+                            ),
+                            format!("crate::{}::store::ObjectStore", module.as_ident(),),
+                        )
+                        .id,
+                    );
+
+                    sarzak.inter_ty(store_type);
+                })
+                .build()
+                .unwrap()
+        } else {
+            domain.build().unwrap()
+        };
+
         log::debug!(
             "compile invoked with model: {}, module: {}, src_path: {}, options: {:?}, test: {}",
             domain.domain(),
@@ -51,15 +89,11 @@ impl SarzakModelCompiler for ModelCompiler {
             options,
             _test
         );
-        // Create our local compiler domain
-        let mut woog = WoogStore::new();
 
         // ✨Generate Types✨
-        // Extract our options
-        let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
-            Some(options) => options.clone(),
-            None => GraceCompilerOptions::default(),
-        };
+        // Create our local compiler domain
+        let mut woog = WoogStore::new();
+        sarzak::woog::init_instances(&mut woog);
 
         // Build a path to src/types
         let mut types = PathBuf::from(src_path.as_ref());

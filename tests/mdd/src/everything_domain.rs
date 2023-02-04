@@ -6,6 +6,7 @@ use uuid::{uuid, Uuid};
 pub mod store;
 pub mod types;
 
+pub use store::ObjectStore;
 pub use types::*;
 
 // everything
@@ -45,12 +46,21 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let r = RandoObject::new();
-        let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r);
+        let mut store = ObjectStore::new();
+
+        let r = RandoObject::new(&mut store);
+        let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r, &mut store);
+
         assert_eq!(e.string, "string".to_owned());
         assert_eq!(e.float, 42.0);
         assert_eq!(e.bool, true);
         assert_eq!(e.int, 42);
         assert_eq!(e.rando, r.id);
+
+        let r_prime = store.exhume_rando_object(&r.id).unwrap();
+        assert_eq!(&r, r_prime);
+
+        let e_prime = store.exhume_everything(&e.id).unwrap();
+        assert_eq!(&e, e_prime);
     }
 }

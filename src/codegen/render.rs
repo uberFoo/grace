@@ -4,7 +4,7 @@ use sarzak::{
         store::ObjectStore as SarzakStore,
         types::{Attribute, Event, External, Object, State, Type},
     },
-    woog::types::{ObjectMethod, Parameter},
+    woog::types::{Mutability, ObjectMethod, Parameter},
 };
 
 macro_rules! render_ident {
@@ -23,8 +23,8 @@ macro_rules! render_type {
     ($($t:ident),+) => {
         $(
             impl RenderType for $t {
-                fn as_type(&self, _store: &SarzakStore) -> String {
-                    self.name.to_upper_camel_case()
+                fn as_type(&self, mutability: &Mutability, store: &SarzakStore) -> String {
+                    self.name.as_type(mutability, store)
                 }
             }
         )+
@@ -48,6 +48,12 @@ impl RenderIdent for String {
     }
 }
 
+impl RenderIdent for &str {
+    fn as_ident(&self) -> String {
+        self.to_snake_case()
+    }
+}
+
 /// Trait for rendering type as a Type
 ///
 /// This trait represents the sanitization of an unknown string, into one
@@ -57,10 +63,28 @@ impl RenderIdent for String {
 /// It takes a reference to the store so that Type (see below) works. I've got
 /// [a possible workaround](https://git.uberfoo.com/sarzak/sarzak/-/issues/8).
 pub(crate) trait RenderType {
-    fn as_type(&self, store: &SarzakStore) -> String;
+    fn as_type(&self, mutability: &Mutability, store: &SarzakStore) -> String;
 }
 
 render_type!(Attribute, Event, Object, State, External);
+
+impl RenderType for String {
+    fn as_type(&self, mutability: &Mutability, _store: &SarzakStore) -> String {
+        match mutability {
+            Mutability::Mutable(_) => format!("mut {}", self.to_upper_camel_case()),
+            _ => self.to_upper_camel_case(),
+        }
+    }
+}
+
+impl RenderType for &str {
+    fn as_type(&self, mutability: &Mutability, _store: &SarzakStore) -> String {
+        match mutability {
+            Mutability::Mutable(_) => format!("mut {}", self.to_upper_camel_case()),
+            _ => self.to_upper_camel_case(),
+        }
+    }
+}
 
 /// RenderType implementation for Type
 ///
@@ -71,23 +95,23 @@ render_type!(Attribute, Event, Object, State, External);
 ///
 /// One thing that worries me is what happens when we get to references?
 impl RenderType for Type {
-    fn as_type(&self, store: &SarzakStore) -> String {
+    fn as_type(&self, mutability: &Mutability, store: &SarzakStore) -> String {
         match self {
             Type::Boolean(_) => "bool".to_owned(),
             Type::Object(o) => {
                 let object = store.exhume_object(&o).unwrap();
-                format!("{}", object.as_type(&store))
+                format!("{}", object.as_type(&mutability, &store))
             }
             Type::Reference(r) => {
                 let reference = store.exhume_reference(&r).unwrap();
                 let object = store.exhume_object(&reference.object).unwrap();
-                format!("&{}", object.as_type(&store))
+                format!("&{}", object.as_type(&mutability, &store))
             }
             Type::String(_) => "String".to_owned(),
             Type::Uuid(_) => "Uuid".to_owned(),
             Type::External(e) => {
                 let ext = store.exhume_external(&e).unwrap();
-                format!("{}", ext.as_type(&store))
+                format!("&{}", ext.as_type(&mutability, &store))
             }
             Type::Float(_) => "f64".to_owned(),
             Type::Integer(_) => "i64".to_owned(),

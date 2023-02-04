@@ -17,7 +17,10 @@ use sarzak::{
         },
         types::{Attribute, Object, Referrer, Type, UUID},
     },
-    woog::{store::ObjectStore as WoogStore, ObjectMethod, Parameter},
+    woog::{
+        store::ObjectStore as WoogStore, Mutability, ObjectMethod, Parameter, Visibility, BORROWED,
+        PUBLIC,
+    },
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -31,7 +34,7 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
-    todo::LValue,
+    todo::{LValue, RValue},
     types::{ModuleDefinition, StructDefinition, StructImplementation},
 };
 
@@ -199,22 +202,22 @@ impl CodeWriter for DefaultStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
 
                     emit!(
                         paste,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         binary.number,
-                        obj.as_type(&domain.sarzak()),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
                         referrer.description,
-                        r_obj.as_type(&domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
                     emit!(
                         paste,
                         "pub {}: &'a {},",
                         referrer.referential_attribute.as_ident(),
-                        r_obj.as_type(&domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
                 }
 
@@ -252,10 +255,14 @@ impl CodeWriter for DefaultStruct {
                     emit!(
                         buffer,
                         "pub struct {}<'a> {{",
-                        obj.as_type(&domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
                 } else {
-                    emit!(buffer, "pub struct {} {{", obj.as_type(&domain.sarzak()));
+                    emit!(
+                        buffer,
+                        "pub struct {} {{",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
                 }
 
                 let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
@@ -266,7 +273,7 @@ impl CodeWriter for DefaultStruct {
                         buffer,
                         "pub {}: {},",
                         attr.as_ident(),
-                        ty.as_type(&domain.sarzak())
+                        ty.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
                 }
 
@@ -341,9 +348,17 @@ impl CodeWriter for DefaultImplementation {
                 let has_referential_attrs = referrers.len() > 0;
 
                 if has_referential_attrs {
-                    emit!(buffer, "impl<'a> {}<'a> {{", obj.as_type(&domain.sarzak()));
+                    emit!(
+                        buffer,
+                        "impl<'a> {}<'a> {{",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
                 } else {
-                    emit!(buffer, "impl {} {{", obj.as_type(&domain.sarzak()));
+                    emit!(
+                        buffer,
+                        "impl {} {{",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
                 }
 
                 if let Some(implementation) = &self.implementation {
@@ -424,7 +439,14 @@ impl CodeWriter for DefaultNewImpl {
             if attr.name != "id" {
                 let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
                 fields.push(LValue::new(attr.name.as_ident(), &ty));
-                params.push(Parameter::new(woog, None, &ty, attr.as_ident()));
+                params.push(Parameter::new(
+                    woog,
+                    &Mutability::Borrowed(BORROWED),
+                    None,
+                    &ty,
+                    &Visibility::Public(PUBLIC),
+                    attr.as_ident(),
+                ));
             }
         }
 
@@ -443,8 +465,10 @@ impl CodeWriter for DefaultNewImpl {
             ));
             params.push(Parameter::new(
                 woog,
+                &Mutability::Borrowed(BORROWED),
                 None,
                 &Type::Reference(reference.id),
+                &Visibility::Public(PUBLIC),
                 referrer.referential_attribute.as_ident(),
             ));
         }
@@ -488,9 +512,12 @@ impl CodeWriter for DefaultNewImpl {
             param,
             obj,
             ty.unwrap(),
+            &Visibility::Public(PUBLIC),
             "new".to_owned(),
             "Create a new instance".to_owned(),
         );
+
+        let rvals: Vec<RValue> = params.iter().map(|p| p.into()).collect();
 
         buffer.block(
             DirectiveKind::CommentOrig,
@@ -500,7 +527,7 @@ impl CodeWriter for DefaultNewImpl {
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&domain.sarzak())
+                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
 
                 // Output the top of the function definition
@@ -508,7 +535,7 @@ impl CodeWriter for DefaultNewImpl {
 
                 // Output the code to create the `id`.
                 let id = LValue::new("id", &Type::Uuid(UUID));
-                render_make_uuid(buffer, &id, &params, domain.sarzak())?;
+                render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
 
                 // Output code to create the instance
                 let new = LValue::new("new", &Type::Reference(obj.id));
@@ -632,7 +659,7 @@ impl CodeWriter for DefaultModule {
                         buffer,
                         "pub use {}::{};",
                         obj.as_ident(),
-                        obj.as_type(domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                 }
 

@@ -11,9 +11,12 @@ use sarzak::{
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
             sarzak_maybe_get_one_t_ref_across_r27,
         },
-        types::{Attribute, External, Referrer, Type, UUID},
+        types::{Attribute, Referrer, Type, UUID},
     },
-    woog::{store::ObjectStore as WoogStore, ObjectMethod, Parameter},
+    woog::{
+        store::ObjectStore as WoogStore, Mutability, ObjectMethod, Parameter, Visibility, BORROWED,
+        MUTABLE, PUBLIC,
+    },
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -27,7 +30,7 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
-    todo::LValue,
+    todo::{LValue, RValue},
     types::{StructDefinition, StructImplementation},
 };
 
@@ -77,16 +80,22 @@ impl CodeWriter for DomainStruct {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
-                // Everything has an `id`, everything needs these.
+                // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
-                emit!(buffer, "use crate::{}::UUID_NS;", module);
                 emit!(buffer, "");
+
+                // Add the use statements from the options.
                 if let Some(use_paths) = &options.use_paths {
                     for path in use_paths {
                         emit!(buffer, "use {};", path);
                     }
                     emit!(buffer, "");
                 }
+
+                // We need this to create id's.
+                emit!(buffer, "use crate::{}::UUID_NS;", module);
+
+                // Add use statements for all the referrers.
                 for referrer in &referrers {
                     let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                     let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
@@ -97,9 +106,32 @@ impl CodeWriter for DomainStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
                 }
+
+                // Add the ObjectStore
+                let mut iter = domain.sarzak().iter_ty();
+                let name = format!(
+                    "{}Store",
+                    module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                );
+                let store = loop {
+                    let ty = iter.next();
+                    match ty {
+                        Some((_, ty)) => match ty {
+                            Type::External(e) => {
+                                let ext = domain.sarzak().exhume_external(&e).unwrap();
+                                if ext.name == name {
+                                    break ext;
+                                }
+                            }
+                            _ => continue,
+                        },
+                        None => panic!("Could not find store type for {}", module),
+                    }
+                };
+                emit!(buffer, "use {} as {};", store.path, store.name);
 
                 Ok(())
             },
@@ -130,7 +162,11 @@ impl CodeWriter for DomainStruct {
                     emit!(buffer, ")]");
                 }
 
-                emit!(buffer, "pub struct {} {{", obj.as_type(&domain.sarzak()));
+                emit!(
+                    buffer,
+                    "pub struct {} {{",
+                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                );
 
                 let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
                 attrs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -140,7 +176,7 @@ impl CodeWriter for DomainStruct {
                         buffer,
                         "pub {}: {},",
                         attr.as_ident(),
-                        ty.as_type(&domain.sarzak())
+                        ty.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
                 }
 
@@ -153,9 +189,9 @@ impl CodeWriter for DomainStruct {
                         buffer,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         binary.number,
-                        obj.as_type(&domain.sarzak()),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
                         referrer.description,
-                        r_obj.as_type(&domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
                     emit!(
                         buffer,
@@ -228,7 +264,11 @@ impl CodeWriter for DomainImplementation {
             |buffer| {
                 let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                emit!(buffer, "impl {} {{", obj.as_type(&domain.sarzak()));
+                emit!(
+                    buffer,
+                    "impl {} {{",
+                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                );
 
                 if let Some(implementation) = &self.implementation {
                     implementation.write_code(
@@ -273,7 +313,7 @@ impl CodeWriter for DomainNewImpl {
         _options: &GraceCompilerOptions,
         domain: &Domain,
         woog: &mut WoogStore,
-        _module: &str,
+        module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
@@ -305,7 +345,14 @@ impl CodeWriter for DomainNewImpl {
             if attr.name != "id" {
                 let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
                 fields.push(LValue::new(attr.name.as_ident(), &ty));
-                params.push(Parameter::new(woog, None, &ty, attr.as_ident()));
+                params.push(Parameter::new(
+                    woog,
+                    &Mutability::Borrowed(BORROWED),
+                    None,
+                    &ty,
+                    &Visibility::Public(PUBLIC),
+                    attr.as_ident(),
+                ));
             }
         }
 
@@ -324,17 +371,43 @@ impl CodeWriter for DomainNewImpl {
             ));
             params.push(Parameter::new(
                 woog,
+                &Mutability::Borrowed(BORROWED),
                 None,
                 &Type::Reference(reference.id),
+                &Visibility::Public(PUBLIC),
                 referrer.referential_attribute.as_ident(),
             ));
         }
 
-        // Add the store
-        // This should maybe go into a postload script that is only run for this
-        // target? Nope. It's too late by then. Not sure where this goes.
-        // let store_type = Type::External(External::new(domain.sarzak(), "store".to_owned(), "crate::"))
-        // params.push(Parameter::new{woog, None, })
+        // Add the store to the end of the  input parameters
+        let mut iter = domain.sarzak().iter_ty();
+        let name = format!(
+            "{}Store",
+            module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+        );
+        let store_type = loop {
+            let ty = iter.next();
+            match ty {
+                Some((_, ty)) => match ty {
+                    Type::External(e) => {
+                        let ext = domain.sarzak().exhume_external(&e).unwrap();
+                        if ext.name == name {
+                            break ty;
+                        }
+                    }
+                    _ => continue,
+                },
+                None => panic!("Could not find store type for {}", module),
+            }
+        };
+        params.push(Parameter::new(
+            woog,
+            &Mutability::Mutable(MUTABLE),
+            None,
+            &store_type,
+            &Visibility::Public(PUBLIC),
+            "store".to_owned(),
+        ));
 
         // Link the params
         let mut iter = params.iter_mut().peekable();
@@ -375,9 +448,14 @@ impl CodeWriter for DomainNewImpl {
             param,
             obj,
             ty.unwrap(),
+            &Visibility::Public(PUBLIC),
             "new".to_owned(),
             "Create a new instance".to_owned(),
         );
+
+        let mut rvals: Vec<RValue> = params.iter().map(|p| p.into()).collect();
+        // Remove the store.
+        rvals.pop();
 
         buffer.block(
             DirectiveKind::CommentOrig,
@@ -387,7 +465,7 @@ impl CodeWriter for DomainNewImpl {
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&domain.sarzak())
+                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
 
                 // Output the top of the function definition
@@ -395,13 +473,13 @@ impl CodeWriter for DomainNewImpl {
 
                 // Output the code to create the `id`.
                 let id = LValue::new("id", &Type::Uuid(UUID));
-                render_make_uuid(buffer, &id, &params, domain.sarzak())?;
+                render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
 
                 // Output code to create the instance
                 let new = LValue::new("new", &Type::Reference(obj.id));
-                let rvals = params.iter().map(|p| p.into()).collect();
                 render_new_instance(buffer, obj, Some(&new), &fields, &rvals, domain.sarzak())?;
 
+                emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                 emit!(buffer, "new");
                 emit!(buffer, "}}");
 
