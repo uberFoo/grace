@@ -25,13 +25,52 @@ use crate::{
     options::GraceConfig,
 };
 
+/// Generator Builder
+///
+/// This is the builder for a [`Generator`], and what the end user will be
+/// interacting with to generate files. That's what this does, it generates
+/// a file, given a bunch of possible inputs.
+///
+/// To be honest, most of the inputs are required, and it will continue to
+/// evolve to meet the needs of code generation.
 pub(crate) struct GeneratorBuilder<'a> {
+    /// Output Path
+    ///
+    /// This is the path where the generated file will be written.
     path: Option<PathBuf>,
+    /// File Generator
+    ///
+    /// This is the specific code generate that will be invoked to generate
+    /// code for the output file.
     generator: Option<Box<dyn FileGenerator + 'a>>,
+    /// Domain
+    ///
+    /// This is the domain of instances from the sarzak/cuckoo model. It
+    /// contains [`ObjectStore`]s for both sarzak and the drawing domains.
     domain: Option<&'a Domain>,
+    /// Woog Store
+    ///
+    /// The woog ObjectStore. The woog domain contains types specific to code
+    /// generation, and perhaps this code generator specifically. I am intending
+    /// to make it generic, but Rust things are creeping in. Like mutability,
+    /// and crate public.
     woog: Option<&'a mut WoogStore>,
-    config: Option<&'a GraceConfig>,
-    module: Option<String>,
+    /// Grace Compiler Options
+    ///
+    /// These are the [`Options`] to the model compiler.
+    options: Option<&'a GraceCompilerOptions>,
+    /// Module Name
+    ///
+    /// The Rust module to which we are generating code. It's not quite synonymous
+    /// with a domain name. There is a 1:M relationship between domains and modules,
+    /// so we need to have a module name.
+    module: Option<&'a str>,
+    /// Object ID
+    ///
+    /// Here's an optional one, that is indeed optional. It's used by the
+    /// [`DefaultStructGenerator`] to pass on the specific object for which
+    /// structs will be built. I expect that there will be a [`DefaultEnumGenerator`]
+    /// eventually as well.
     obj_id: Option<&'a Uuid>,
     imports: Option<&'a HashMap<String, Domain>>,
 }
