@@ -2,7 +2,7 @@ use heck::{ToSnakeCase, ToUpperCamelCase};
 use sarzak::{
     sarzak::{
         store::ObjectStore as SarzakStore,
-        types::{Attribute, Event, Object, State, Type},
+        types::{Attribute, Event, External, Object, State, Type},
     },
     woog::types::{ObjectMethod, Parameter},
 };
@@ -60,7 +60,7 @@ pub(crate) trait RenderType {
     fn as_type(&self, store: &SarzakStore) -> String;
 }
 
-render_type!(Attribute, Event, Object, State);
+render_type!(Attribute, Event, Object, State, External);
 
 /// RenderType implementation for Type
 ///
@@ -85,6 +85,10 @@ impl RenderType for Type {
             }
             Type::String(_) => "String".to_owned(),
             Type::Uuid(_) => "Uuid".to_owned(),
+            Type::External(e) => {
+                let ext = store.exhume_external(&e).unwrap();
+                format!("{}", ext.as_type(&store))
+            }
             Type::Float(_) => "f64".to_owned(),
             Type::Integer(_) => "i64".to_owned(),
         }

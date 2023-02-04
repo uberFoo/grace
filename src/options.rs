@@ -23,8 +23,9 @@ use sarzak::mc::ModelCompilerOptions;
 
 const DEFAULT_TARGET: Target = Target::Application;
 const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
+const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 
-#[derive(Clone, Debug, Deserialize, Serialize, Subcommand)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Subcommand)]
 pub enum Target {
     /// Target Domain Infrastructure
     ///
@@ -52,6 +53,11 @@ pub struct GraceCompilerOptions {
     /// description coloring option: `// 🐶 {"derive": ["macro", ...]}`.
     #[arg(long, short, use_value_delimiter = true, value_delimiter = ',')]
     pub derive: Option<Vec<String>>,
+    /// Use Paths
+    ///
+    /// These are paths to be issued as `use` statements.
+    #[arg(long, short, use_value_delimiter = true, value_delimiter = ',')]
+    pub use_paths: Option<Vec<String>>,
 }
 
 impl ModelCompilerOptions for GraceCompilerOptions {
@@ -65,6 +71,7 @@ impl Default for GraceCompilerOptions {
         Self {
             target: DEFAULT_TARGET,
             derive: Some(DEFAULT_DERIVE.iter().map(|&x| x.to_owned()).collect()),
+            use_paths: DEFAULT_USE_PATHS,
         }
     }
 }

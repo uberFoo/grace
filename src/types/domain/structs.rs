@@ -1,7 +1,3 @@
-//! Default Struct Handling
-//!
-//! This is the place to find all the default implementations for generating structs.
-//! These are meant to be used in an application domain.
 use std::fmt::Write;
 
 use log;
@@ -15,7 +11,7 @@ use sarzak::{
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
             sarzak_maybe_get_one_t_ref_across_r27,
         },
-        types::{Attribute, Object, Referrer, Type, UUID},
+        types::{Attribute, External, Referrer, Type, UUID},
     },
     woog::{store::ObjectStore as WoogStore, ObjectMethod, Parameter},
 };
@@ -26,131 +22,30 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        generator::{CodeWriter, FileGenerator},
+        generator::CodeWriter,
         render::{RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
     todo::LValue,
-    types::{ModuleDefinition, StructDefinition, StructImplementation},
+    types::{StructDefinition, StructImplementation},
 };
 
-pub(crate) struct DefaultStructBuilder {
-    definition: Option<Box<dyn StructDefinition>>,
-    implementation: Option<Box<dyn StructImplementation>>,
-}
-
-impl DefaultStructBuilder {
-    pub(crate) fn new() -> Self {
-        DefaultStructBuilder {
-            definition: None,
-            implementation: None,
-        }
-    }
-
-    pub(crate) fn definition(mut self, definition: Box<dyn StructDefinition>) -> Self {
-        self.definition = Some(definition);
-
-        self
-    }
-
-    pub(crate) fn implementation(mut self, implementation: Box<dyn StructImplementation>) -> Self {
-        self.implementation = Some(implementation);
-
-        self
-    }
-
-    pub(crate) fn build(self) -> Result<Box<DefaultStructGenerator>> {
-        ensure!(
-            self.definition.is_some(),
-            CompilerSnafu {
-                description: "missing StructDefinition"
-            }
-        );
-
-        Ok(Box::new(DefaultStructGenerator {
-            definition: self.definition.unwrap(),
-            implementation: self.implementation,
-        }))
-    }
-}
-
-/// Generator -- Code Generator Engine
-///
-/// This is supposed to be general, but it's very much geared towards generating
-/// a file that contains a struct definition and implementations. I need to
-/// do some refactoring.
-///
-/// As just hinted at, the idea is that you plug in different code writers that
-/// know how to write different parts of some rust code. This one is for
-/// structs.
-pub(crate) struct DefaultStructGenerator {
-    definition: Box<dyn StructDefinition>,
-    implementation: Option<Box<dyn StructImplementation>>,
-}
-
-impl FileGenerator for DefaultStructGenerator {
-    fn generate(
-        &self,
-        options: &GraceCompilerOptions,
-        domain: &Domain,
-        woog: &mut WoogStore,
-        module: &str,
-        obj_id: Option<&Uuid>,
-        buffer: &mut Buffer,
-    ) -> Result<()> {
-        ensure!(
-            obj_id.is_some(),
-            CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
-            }
-        );
-        let obj_id = obj_id.unwrap();
-        let object = domain.sarzak().exhume_object(&obj_id).unwrap();
-
-        buffer.block(
-            DirectiveKind::AllowEditing,
-            format!("{}-struct-definition-file", object.as_ident()),
-            |buffer| {
-                // It's important that we maintain ordering for code injection and
-                // redaction. We begin with the struct definition.
-                self.definition
-                    .write_code(options, domain, woog, module, Some(obj_id), buffer)?;
-
-                if let Some(implementation) = &self.implementation {
-                    implementation.write_code(
-                        options,
-                        domain,
-                        woog,
-                        module,
-                        Some(obj_id),
-                        buffer,
-                    )?;
-                }
-
-                Ok(())
-            },
-        )?;
-
-        Ok(())
-    }
-}
-
-/// Default Struct Generator / CodeWriter
+/// Domain Struct Generator / CodeWriter
 ///
 /// We need a builder for this so that we can add privacy modifiers, as
 /// well as derives.
-pub(crate) struct DefaultStruct;
+pub(crate) struct DomainStruct;
 
-impl DefaultStruct {
+impl DomainStruct {
     pub(crate) fn new() -> Box<dyn StructDefinition> {
         Box::new(Self)
     }
 }
 
-impl StructDefinition for DefaultStruct {}
+impl StructDefinition for DomainStruct {}
 
-impl CodeWriter for DefaultStruct {
+impl CodeWriter for DomainStruct {
     fn write_code(
         &self,
         options: &GraceCompilerOptions,
@@ -167,9 +62,10 @@ impl CodeWriter for DefaultStruct {
             }
         );
         let obj_id = obj_id.unwrap();
-
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
+        // These need to be sorted, as they are output as attributes and we require
+        // stable output.
         let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
         referrers.sort_by(|a, b| {
             let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
@@ -177,18 +73,20 @@ impl CodeWriter for DefaultStruct {
             obj_a.name.cmp(&obj_b.name)
         });
 
-        let has_referential_attrs = referrers.len() > 0;
-
-        // Everything has an `id`, everything needs these.
-        emit!(buffer, "use uuid::Uuid;");
-        emit!(buffer, "use crate::{}::UUID_NS;", module);
-        emit!(buffer, "");
-
-        let mut paste = Buffer::new();
         buffer.block(
             DirectiveKind::IgnoreOrig,
-            format!("{}-referrer-use-statements", obj.as_ident()),
+            format!("{}-use-statements", obj.as_ident()),
             |buffer| {
+                // Everything has an `id`, everything needs these.
+                emit!(buffer, "use uuid::Uuid;");
+                emit!(buffer, "use crate::{}::UUID_NS;", module);
+                emit!(buffer, "");
+                if let Some(use_paths) = &options.use_paths {
+                    for path in use_paths {
+                        emit!(buffer, "use {};", path);
+                    }
+                    emit!(buffer, "");
+                }
                 for referrer in &referrers {
                     let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                     let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
@@ -199,21 +97,6 @@ impl CodeWriter for DefaultStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&domain.sarzak())
-                    );
-
-                    emit!(
-                        paste,
-                        "/// R{}: [`{}`] '{}' [`{}`]",
-                        binary.number,
-                        obj.as_type(&domain.sarzak()),
-                        referrer.description,
-                        r_obj.as_type(&domain.sarzak())
-                    );
-                    emit!(
-                        paste,
-                        "pub {}: &'a {},",
-                        referrer.referential_attribute.as_ident(),
                         r_obj.as_type(&domain.sarzak())
                     );
                 }
@@ -247,16 +130,7 @@ impl CodeWriter for DefaultStruct {
                     emit!(buffer, ")]");
                 }
 
-                if has_referential_attrs {
-                    // Lifetime parameters. Really, we should assign one for each attribute. TBD.
-                    emit!(
-                        buffer,
-                        "pub struct {}<'a> {{",
-                        obj.as_type(&domain.sarzak())
-                    );
-                } else {
-                    emit!(buffer, "pub struct {} {{", obj.as_type(&domain.sarzak()));
-                }
+                emit!(buffer, "pub struct {} {{", obj.as_type(&domain.sarzak()));
 
                 let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
                 attrs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -270,8 +144,25 @@ impl CodeWriter for DefaultStruct {
                     );
                 }
 
-                // Paste in the referential attributes, computed above.
-                *buffer += paste;
+                for referrer in &referrers {
+                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
+                    let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
+                    let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+
+                    emit!(
+                        buffer,
+                        "/// R{}: [`{}`] '{}' [`{}`]",
+                        binary.number,
+                        obj.as_type(&domain.sarzak()),
+                        referrer.description,
+                        r_obj.as_type(&domain.sarzak())
+                    );
+                    emit!(
+                        buffer,
+                        "pub {}: Uuid,",
+                        referrer.referential_attribute.as_ident(),
+                    );
+                }
 
                 emit!(buffer, "}}");
                 Ok(())
@@ -282,12 +173,12 @@ impl CodeWriter for DefaultStruct {
     }
 }
 
-pub(crate) struct DefaultImplBuilder {
+pub(crate) struct DomainImplBuilder {
     implementation: Option<Box<dyn StructImplementation>>,
 }
 
-impl DefaultImplBuilder {
-    pub(crate) fn new() -> DefaultImplBuilder {
+impl DomainImplBuilder {
+    pub(crate) fn new() -> DomainImplBuilder {
         Self {
             implementation: None,
         }
@@ -300,19 +191,19 @@ impl DefaultImplBuilder {
     }
 
     pub(crate) fn build(self) -> Box<dyn StructImplementation> {
-        Box::new(DefaultImplementation {
+        Box::new(DomainImplementation {
             implementation: self.implementation,
         })
     }
 }
 
-pub(crate) struct DefaultImplementation {
+pub(crate) struct DomainImplementation {
     implementation: Option<Box<dyn StructImplementation>>,
 }
 
-impl StructImplementation for DefaultImplementation {}
+impl StructImplementation for DomainImplementation {}
 
-impl CodeWriter for DefaultImplementation {
+impl CodeWriter for DomainImplementation {
     fn write_code(
         &self,
         options: &GraceCompilerOptions,
@@ -337,14 +228,7 @@ impl CodeWriter for DefaultImplementation {
             |buffer| {
                 let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                let referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
-                let has_referential_attrs = referrers.len() > 0;
-
-                if has_referential_attrs {
-                    emit!(buffer, "impl<'a> {}<'a> {{", obj.as_type(&domain.sarzak()));
-                } else {
-                    emit!(buffer, "impl {} {{", obj.as_type(&domain.sarzak()));
-                }
+                emit!(buffer, "impl {} {{", obj.as_type(&domain.sarzak()));
 
                 if let Some(implementation) = &self.implementation {
                     implementation.write_code(
@@ -365,7 +249,7 @@ impl CodeWriter for DefaultImplementation {
     }
 }
 
-/// Default New Implementation
+/// Domain New Implementation
 ///
 /// This generates a new implementation for the object. The new implementation
 /// calculates the object's `id` based on the string representation of it's
@@ -373,20 +257,17 @@ impl CodeWriter for DefaultImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-///
-/// I think that I may add optional references to the non-formalizing side of
-/// relationships.
-pub(crate) struct DefaultNewImpl;
+pub(crate) struct DomainNewImpl;
 
-impl DefaultNewImpl {
+impl DomainNewImpl {
     pub(crate) fn new() -> Box<dyn StructImplementation> {
         Box::new(Self)
     }
 }
 
-impl StructImplementation for DefaultNewImpl {}
+impl StructImplementation for DomainNewImpl {}
 
-impl CodeWriter for DefaultNewImpl {
+impl CodeWriter for DomainNewImpl {
     fn write_code(
         &self,
         _options: &GraceCompilerOptions,
@@ -403,9 +284,9 @@ impl CodeWriter for DefaultNewImpl {
             }
         );
         let obj_id = obj_id.unwrap();
-
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
+        // These are more attributes on our object, and they should be sorted.
         let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
         referrers.sort_by(|a, b| {
             let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
@@ -436,10 +317,10 @@ impl CodeWriter for DefaultNewImpl {
             let reference = sarzak_maybe_get_one_t_ref_across_r27!(r_obj, domain.sarzak()).unwrap();
 
             // This determines how a reference is stored in the struct. In this
-            // case a reference.
+            // case a UUID.
             fields.push(LValue::new(
                 referrer.referential_attribute.as_ident(),
-                &Type::Reference(reference.id),
+                &Type::Uuid(UUID),
             ));
             params.push(Parameter::new(
                 woog,
@@ -448,6 +329,12 @@ impl CodeWriter for DefaultNewImpl {
                 referrer.referential_attribute.as_ident(),
             ));
         }
+
+        // Add the store
+        // This should maybe go into a postload script that is only run for this
+        // target? Nope. It's too late by then. Not sure where this goes.
+        // let store_type = Type::External(External::new(domain.sarzak(), "store".to_owned(), "crate::"))
+        // params.push(Parameter::new{woog, None, })
 
         // Link the params
         let mut iter = params.iter_mut().peekable();
@@ -521,125 +408,5 @@ impl CodeWriter for DefaultNewImpl {
                 Ok(())
             },
         )
-    }
-}
-
-pub(crate) struct DefaultModuleBuilder {
-    definition: Option<Box<dyn ModuleDefinition>>,
-}
-
-impl DefaultModuleBuilder {
-    pub(crate) fn new() -> Self {
-        DefaultModuleBuilder { definition: None }
-    }
-
-    pub(crate) fn definition(mut self, definition: Box<dyn ModuleDefinition>) -> Self {
-        self.definition = Some(definition);
-
-        self
-    }
-
-    pub(crate) fn build(self) -> Result<Box<DefaultModuleGenerator>> {
-        ensure!(
-            self.definition.is_some(),
-            CompilerSnafu {
-                description: "missing ModuleDefinition"
-            }
-        );
-
-        Ok(Box::new(DefaultModuleGenerator {
-            definition: self.definition.unwrap(),
-        }))
-    }
-}
-
-/// Generator -- Code Generator Engine
-///
-/// This is supposed to be general, but it's very much geared towards generating
-/// a file that contains a struct definition and implementations. I need to
-/// do some refactoring.
-///
-/// As just hinted at, the idea is that you plug in different code writers that
-/// know how to write different parts of some rust code. This one is for
-/// structs.
-pub(crate) struct DefaultModuleGenerator {
-    definition: Box<dyn ModuleDefinition>,
-}
-
-impl FileGenerator for DefaultModuleGenerator {
-    fn generate(
-        &self,
-        options: &GraceCompilerOptions,
-        domain: &Domain,
-        woog: &mut WoogStore,
-        module: &str,
-        obj_id: Option<&Uuid>,
-        buffer: &mut Buffer,
-    ) -> Result<()> {
-        // Output the domain/module documentation/description
-        emit!(buffer, "//! {}", domain.description());
-
-        buffer.block(
-            DirectiveKind::AllowEditing,
-            format!("{}-module-definition-file", module),
-            |buffer| {
-                self.definition
-                    .write_code(options, domain, woog, module, obj_id, buffer)?;
-
-                Ok(())
-            },
-        )?;
-
-        Ok(())
-    }
-}
-
-/// Default Types Module Generator / CodeWriter
-///
-/// This generates a rust file that imports the generated type implementations.
-pub(crate) struct DefaultModule;
-
-impl DefaultModule {
-    pub(crate) fn new() -> Box<dyn ModuleDefinition> {
-        Box::new(Self)
-    }
-}
-
-impl ModuleDefinition for DefaultModule {}
-
-impl CodeWriter for DefaultModule {
-    fn write_code(
-        &self,
-        _options: &GraceCompilerOptions,
-        domain: &Domain,
-        _woog: &mut WoogStore,
-        module: &str,
-        _obj_id: Option<&Uuid>,
-        buffer: &mut Buffer,
-    ) -> Result<()> {
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-module-definition", module),
-            |buffer| {
-                let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
-                objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
-                for (_, obj) in &objects {
-                    emit!(buffer, "pub mod {};", obj.as_ident());
-                }
-                emit!(buffer, "");
-                for (_, obj) in &objects {
-                    emit!(
-                        buffer,
-                        "pub use {}::{};",
-                        obj.as_ident(),
-                        obj.as_type(domain.sarzak())
-                    );
-                }
-
-                Ok(())
-            },
-        )?;
-
-        Ok(())
     }
 }

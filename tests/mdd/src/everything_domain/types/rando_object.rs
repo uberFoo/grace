@@ -1,15 +1,19 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"no-obj-here-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"rando_object-struct-definition-file"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-use-statements"}}}
 use crate::everything_domain::UUID_NS;
 use uuid::Uuid;
 
+use serde::{Deserialize, Serialize};
+
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-documentation"}}}
 /// Just some random object with which we wish to relate
 ///
 /// How tawdry.
 // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-definition"}}}
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct RandoObject {
     pub id: Uuid,
 }

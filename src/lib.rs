@@ -22,7 +22,10 @@ use types::{
         DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultNewImpl, DefaultStruct,
         DefaultStructBuilder,
     },
-    domain::{DomainImplBuilder, DomainNewImpl, DomainStruct},
+    domain::{
+        store::{DomainStore, DomainStoreBuilder},
+        structs::{DomainImplBuilder, DomainNewImpl, DomainStruct},
+    },
 };
 
 const RS_EXT: &str = "rs";
@@ -109,6 +112,26 @@ impl SarzakModelCompiler for ModelCompiler {
                         .definition(struct_writer)
                         // Implementation
                         .implementation(impl_writer)
+                        .build()?,
+                )
+                .generate()?;
+        }
+
+        if options.target == Target::Domain {
+            // Generate the store.rs file
+            let mut store = PathBuf::from(src_path.as_ref());
+            store.push(module);
+            store.push("store.rs");
+
+            GeneratorBuilder::new()
+                .options(&options)
+                .path(&store)?
+                .domain(&domain)
+                .compiler_domain(&mut woog)
+                .module(module)
+                .generator(
+                    DomainStoreBuilder::new()
+                        .definition(DomainStore::new())
                         .build()?,
                 )
                 .generate()?;

@@ -24,3 +24,5 @@ pub(crate) trait StructImplementation: CodeWriter {}
 /// This trait is implemented by types that are capable of generationg a module
 /// definition.
 pub(crate) trait ModuleDefinition: CodeWriter {}
+
+pub(crate) trait ObjectStoreDefinition: CodeWriter {}
