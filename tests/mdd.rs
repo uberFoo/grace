@@ -54,6 +54,13 @@ fn compile_and_test_domain() -> Result<ExitCode, std::io::Error> {
 
     let mut options = GraceCompilerOptions::default();
     options.target = Target::Domain;
+    if let Some(ref mut derive) = options.derive {
+        derive.push("Clone".to_string());
+        derive.push("Deserialize".to_string());
+        derive.push("Serialize".to_string());
+    }
+    options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+
     let grace = ModelCompiler::default();
 
     // Build the domains
