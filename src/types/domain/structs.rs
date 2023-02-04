@@ -449,11 +449,20 @@ impl CodeWriter for DomainImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainStructNewImpl;
+pub(crate) struct DomainStructNewImpl {
+    generate_tests: bool,
+    imports: HashMap<String, Domain>,
+}
 
 impl DomainStructNewImpl {
-    pub(crate) fn new() -> Box<dyn MethodImplementation> {
-        Box::new(Self)
+    pub(crate) fn new(
+        generate_tests: bool,
+        imports: HashMap<String, Domain>,
+    ) -> Box<dyn MethodImplementation> {
+        Box::new(Self {
+            generate_tests,
+            imports,
+        })
     }
 }
 
