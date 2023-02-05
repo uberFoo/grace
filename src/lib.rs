@@ -3,6 +3,7 @@ use std::path::Path;
 use sarzak::mc::ModelCompilerOptions;
 
 mod codegen;
+mod init_woog;
 pub mod options;
 mod targets;
 mod todo;
@@ -41,8 +42,7 @@ impl SarzakModelCompiler for ModelCompiler {
         };
 
         // Create our local compiler domain
-        let mut woog = WoogStore::new();
-        sarzak::woog::init_instances(&mut woog);
+        let mut woog = init_woog(module, &options, &domain.sarzak());
 
         let mut target = match options.target {
             Target::Domain(_) => DomainTarget::new(

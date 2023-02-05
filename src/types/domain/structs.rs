@@ -45,7 +45,7 @@ use crate::{
         get_objs_for_assoc_referents_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_referents_sorted, get_objs_for_referrers_sorted, get_referents_sorted,
         get_referrers_sorted,
-        render::{RenderIdent, RenderType},
+        render::{RenderIdent, RenderStatement, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
@@ -507,9 +507,11 @@ impl CodeWriter for DomainStructNewImpl {
         // matched up with the input arguments, and type checked. Since I'm
         // generating both, I'm beginning to wonder what the point is.
         //
-        // So just now the type system reminded me that I need to turn a referince
+        // So just now the type system reminded me that I need to turn a reference
         // into a UUID. So maybe it's worth keeping.
         let mut fields: Vec<LValue> = Vec::new();
+        let mut rvals: Vec<RValue> = Vec::new();
+        // Collect the attributes
         let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
         for attr in attrs {
@@ -525,6 +527,7 @@ impl CodeWriter for DomainStructNewImpl {
                     PUBLIC,
                     attr.as_ident(),
                 ));
+                rvals.push(RValue::new(attr.as_ident(), &ty));
             }
         }
 
@@ -576,6 +579,8 @@ impl CodeWriter for DomainStructNewImpl {
             let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
             let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
 
+            // This determines how a reference is stored in the struct. In this
+            // case a reference.
             fields.push(LValue::new(
                 assoc_referrer.one_referential_attribute.as_ident(),
                 GType::Uuid,
@@ -651,6 +656,30 @@ impl CodeWriter for DomainStructNewImpl {
             "Create a new instance".to_owned(),
         );
 
+            // 🚧
+            rvals.push(RValue::new(
+                referrer.referential_attribute.as_ident(),
+                &Type::Reference(reference.id),
+            ));
+        }
+        // Find the method
+        // This is going to suck. We don't have cross-domain relationship
+        // navigation -- somethinig to be addressed.
+        let mut iter = woog.iter_object_method();
+        let method = loop {
+            match iter.next() {
+                Some((_, method)) => {
+                    if method.object == obj.id && method.name == "new" {
+                        break method;
+                    }
+                }
+                None => {
+                    panic!("Unable to find the new method for {}", obj.name);
+                }
+            }
+        };
+            // 🚧
+
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-impl-new", obj.as_ident()),
@@ -661,6 +690,30 @@ impl CodeWriter for DomainStructNewImpl {
                     "/// Inter a new {} in the store, and return it's `id`.",
                     obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
+
+                if self.generate_tests {
+                    buffer.block(
+                        DirectiveKind::IgnoreOrig,
+                        format!("{}-struct-test-new", obj.as_ident()),
+                        |buffer| {
+                            let (use_stmts, stmts) =
+                                method.as_statement(module, woog, domain.sarzak());
+                            emit!(buffer, "/// # Example");
+                            emit!(buffer, "///");
+                            emit!(buffer, "///```ignore");
+                            for s in use_stmts.split_terminator('\n') {
+                                emit!(buffer, "/// {}", s);
+                            }
+                            emit!(buffer, "///");
+                            for s in stmts.split_terminator('\n') {
+                                emit!(buffer, "/// {}", s);
+                            }
+                            emit!(buffer, "///```");
+
+                            Ok(())
+                        },
+                    )?;
+                }
 
                 // Output the top of the function definition
                 render_method_definition(buffer, &method, woog, domain.sarzak())?;

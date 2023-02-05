@@ -76,15 +76,9 @@ impl DefaultStructBuilder {
     }
 }
 
-/// Generator -- Code Generator Engine
+/// Default Struct Generator
 ///
-/// This is supposed to be general, but it's very much geared towards generating
-/// a file that contains a struct definition and implementations. I need to
-/// do some refactoring.
-///
-/// As just hinted at, the idea is that you plug in different code writers that
-/// know how to write different parts of some rust code. This one is for
-/// structs.
+/// Called by the [`Generator`] to write code for a struct.
 pub(crate) struct DefaultStructGenerator {
     definition: Box<dyn TypeDefinition>,
     implementations: Vec<Box<dyn TypeImplementation>>,
@@ -446,7 +440,7 @@ impl CodeWriter for DefaultStructNewImpl {
         });
 
         // Collect the attributes
-        let mut params: Vec<Parameter> = Vec::new();
+        let mut rvals: Vec<RValue> = Vec::new();
         let mut fields: Vec<LValue> = Vec::new();
         let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -463,6 +457,7 @@ impl CodeWriter for DefaultStructNewImpl {
                     PUBLIC,
                     attr.as_ident(),
                 ));
+                rvals.push(RValue::new(attr.as_ident(), &ty));
             }
         }
 
@@ -483,46 +478,27 @@ impl CodeWriter for DefaultStructNewImpl {
                 None,
                 GType::Reference(r_obj.id),
                 PUBLIC,
+            }
+            rvals.push(RValue::new(
                 referrer.referential_attribute.as_ident(),
+                &Type::Reference(reference.id),
             ));
-        }
-
-        // Collect rvals for rendering the method.
-        let rvals = params.clone();
-        let rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
-
-        // Link the params. The result is the head of the list.
-        let param = if params.len() > 0 {
-            let mut iter = params.iter_mut().rev();
-            let mut last = iter.next().unwrap();
-            loop {
-                match iter.next() {
-                    Some(param) => {
-                        param.next = Some(last);
-                        last = param;
+        // Find the method
+        // This is going to suck. We don't have cross-domain relationship
+        // navigation -- somethinig to be addressed.
+        let mut iter = woog.iter_object_method();
+        let method = loop {
+            match iter.next() {
+                Some((_, method)) => {
+                    if method.object == obj.id && method.name == "new" {
+                        break method;
                     }
-                    None => break,
+                }
+                None => {
+                    panic!("Unable to find the new method for {}", obj.name);
                 }
             }
-            Some(last.clone())
-        } else {
-            None
         };
-
-        // Create an ObjectMethod
-        // The uniqueness of this instance depends on the inputs to it's
-        // new method. Param can be None, and two methods on the same
-        // object will have the same obj. So it comes down to a unique
-        // name for each object. So just "new" should suffice for name,
-        // because it's scoped by obj already.
-        let method = ObjectMethod::new(
-            param.as_ref(),
-            obj.id,
-            GType::Object(obj.id),
-            PUBLIC,
-            "new".to_owned(),
-            "Create a new instance".to_owned(),
-        );
 
         buffer.block(
             DirectiveKind::CommentOrig,

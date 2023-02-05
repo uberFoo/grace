@@ -32,6 +32,21 @@ pub struct Everything {
 impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
     /// Inter a new Everything in the store, and return it's `id`.
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-test-new"}}}
+    /// # Example
+    ///
+    ///```ignore
+    /// use crate::everything_domain::types::RandoObject;
+    /// use crate::everything_domain::store::ObjectStore as EverythingDomainStore;
+    ///
+    /// let repulsive_quiet = true;
+    /// let odd_earth = 42.0;
+    /// let macho_zipper = 42;
+    /// let heavy_test = "quickest-pig";
+    /// let cheap_test = RandoObject::new();
+    /// let light_icicle = EverythingDomainStore::new();
+    ///```
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     pub fn new(
         bool: bool,
         float: f64,
@@ -49,6 +64,8 @@ impl Everything {
             float: float,
             int: int,
             string: string,
+            //             rando: rando.id,
+            //             rando: rando,
             rando: rando.id,
             id,
         };
