@@ -59,6 +59,11 @@ pub(crate) struct GeneratorBuilder<'a> {
     ///
     /// These are the [`Options`] to the model compiler.
     options: Option<&'a GraceCompilerOptions>,
+    /// Package Name
+    ///
+    /// The Rust package for which we are generating code. Some may call this
+    /// the crate, although that's technically incorrect.
+    package: Option<&'a str>,
     /// Module Name
     ///
     /// The Rust module to which we are generating code. It's not quite synonymous
@@ -82,20 +87,21 @@ impl<'a> GeneratorBuilder<'a> {
             generator: None,
             domain: None,
             woog: None,
-            config: None,
+            options: None,
+            package: None,
             module: None,
             obj_id: None,
             imports: None,
         }
     }
 
-    pub fn config(mut self, config: &'a GraceConfig) -> Self {
-        self.config = Some(config);
+    pub(crate) fn options(mut self, options: &'a GraceCompilerOptions) -> Self {
+        self.options = Some(options);
 
         self
     }
 
-    pub fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
+    pub(crate) fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
         let path = path.as_ref();
 
         self.path = Some(path.to_path_buf());
@@ -103,7 +109,7 @@ impl<'a> GeneratorBuilder<'a> {
         Ok(self)
     }
 
-    pub fn generator(mut self, generator: Box<dyn FileGenerator + 'a>) -> Self {
+    pub(crate) fn generator(mut self, generator: Box<dyn FileGenerator + 'a>) -> Self {
         self.generator = Some(generator);
 
         self
@@ -111,6 +117,12 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub(crate) fn module(mut self, module: &'a str) -> Self {
         self.module = Some(module.replace("/", "::"));
+
+        self
+    }
+
+    pub(crate) fn package(mut self, package: &'a str) -> Self {
+        self.package = Some(package);
 
         self
     }
@@ -175,12 +187,20 @@ impl<'a> GeneratorBuilder<'a> {
             }
         );
 
+        ensure!(
+            self.package.is_some(),
+            CompilerSnafu {
+                description: "missing package"
+            }
+        );
+
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
             &self.config.unwrap(),
             &self.domain.unwrap(),
             &self.woog,
             &self.imports,
+            self.package.unwrap(),
             self.module.unwrap().as_str(),
             self.obj_id,
             &mut buffer,
@@ -313,6 +333,7 @@ pub(crate) trait FileGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -331,6 +352,7 @@ pub(crate) trait CodeWriter {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

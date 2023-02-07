@@ -148,3 +148,14 @@ impl From<&Type> for GType {
         }
     }
 }
+
+pub(crate) struct Statement {
+    pub(crate) lvalue: LValue,
+    pub(crate) rvalue: RValue,
+}
+
+impl Statement {
+    pub(crate) fn new(lvalue: LValue, rvalue: RValue) -> Self {
+        Self { lvalue, rvalue }
+    }
+}

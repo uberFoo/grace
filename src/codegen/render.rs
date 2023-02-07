@@ -1,3 +1,9 @@
+//! Render Traits
+//!
+//! And implementations. This needs some housecleaning.
+//!
+use std::collections::HashSet;
+
 use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 use names::Generator;
 use sarzak::{
@@ -109,76 +115,124 @@ impl RenderRval for bool {
 pub(crate) trait RenderStatement {
     fn as_statement(
         &self,
+        package: &str,
         module: &str,
         woog: &WoogStore,
         sarzak: &SarzakStore,
-    ) -> (String, String);
+        uses: &mut HashSet<String>,
+    ) -> (String, String, String);
 }
 
 impl RenderStatement for Type {
     fn as_statement(
         &self,
+        package: &str,
         module: &str,
         woog: &WoogStore,
         sarzak: &SarzakStore,
-    ) -> (String, String) {
+        uses: &mut HashSet<String>,
+    ) -> (String, String, String) {
         match self {
-            Type::Boolean(_) => (
-                "".to_owned(),
-                format!(
-                    "let {} = true;\n",
-                    Generator::default().next().unwrap().to_snake_case()
-                ),
-            ),
+            Type::Boolean(_) => {
+                let var = Generator::default().next().unwrap().to_snake_case();
+                ("".to_owned(), format!("let {} = true;\n", var), var)
+            }
             Type::Object(o) => {
                 let object = sarzak.exhume_object(&o).unwrap();
-                (
-                    format!(
-                        "use crate::{}::types::{};\n",
-                        module,
-                        object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
-                    ),
-                    format!(
-                        "let {} = {}::new();\n",
-                        Generator::default().next().unwrap().to_snake_case(),
-                        object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
-                    ),
-                )
+                let mut iter = woog.iter_object_method();
+                let method = loop {
+                    match iter.next() {
+                        Some((_, method)) => {
+                            if method.object == object.id && method.name == "new" {
+                                break method;
+                            }
+                        }
+                        None => {
+                            panic!("Unable to find the new method for {}", object.name);
+                        }
+                    }
+                };
+
+                let mut use_statements = format!(
+                    "use mdd::{}::types::{};",
+                    module,
+                    object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                );
+                uses.insert(use_statements.clone());
+
+                // Recurse into the method
+                let (use_stmts, stmts, var) =
+                    method.as_statement(package, module, woog, sarzak, uses);
+
+                use_statements.push_str(use_stmts.as_str());
+
+                (use_statements, stmts, var)
             }
             Type::Reference(r) => {
                 let reference = sarzak.exhume_reference(&r).unwrap();
                 let object = sarzak.exhume_object(&reference.object).unwrap();
+                let mut iter = woog.iter_object_method();
+                let method = loop {
+                    match iter.next() {
+                        Some((_, method)) => {
+                            if method.object == object.id && method.name == "new" {
+                                break method;
+                            }
+                        }
+                        None => {
+                            panic!("Unable to find the new method for {}", object.name);
+                        }
+                    }
+                };
+
+                let mut use_statements = format!(
+                    "use mdd::{}::types::{};",
+                    module,
+                    object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                );
+                uses.insert(use_statements.clone());
+
+                // Recurse into the method
+                let (use_stmts, stmts, var) =
+                    method.as_statement(package, module, woog, sarzak, uses);
+
+                use_statements.push_str(use_stmts.as_str());
+
+                (use_statements, stmts, var)
+            }
+            Type::String(_) => {
+                let var = Generator::default().next().unwrap().to_snake_case();
                 (
+                    "".to_owned(),
                     format!(
-                        "use crate::{}::types::{};\n",
-                        module,
-                        object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                        "let {} = \"{}\";\n",
+                        var,
+                        Generator::default().next().unwrap()
                     ),
-                    format!(
-                        "let {} = {}::new();\n",
-                        Generator::default().next().unwrap().to_snake_case(),
-                        object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
-                    ),
+                    var,
                 )
             }
-            Type::String(_) => (
-                "".to_owned(),
-                format!(
-                    "let {} = \"{}\";\n",
-                    Generator::default().next().unwrap().to_snake_case(),
-                    Generator::default().next().unwrap()
-                ),
-            ),
-            Type::Uuid(_) => (
-                "use uuid::Uuid;\n".to_owned(),
-                format!(
-                    "let {} = Uuid::new_v5(&UUID_NS, \"{}\");\n",
-                    Generator::default().next().unwrap().to_snake_case(),
-                    Generator::default().next().unwrap().to_snake_case(),
-                ),
-            ),
+            Type::Uuid(_) => {
+                let var = Generator::default().next().unwrap().to_snake_case();
+                (
+                    "use uuid::Uuid;\n".to_owned(),
+                    format!(
+                        "let {} = Uuid::new_v5(&UUID_NS, \"{}\");\n",
+                        var,
+                        Generator::default().next().unwrap().to_snake_case(),
+                    ),
+                    var,
+                )
+            }
             Type::External(e) => {
                 let ext = sarzak.exhume_external(&e).unwrap();
+                let var = Generator::default().next().unwrap().to_snake_case();
+                uses.insert(format!(
+                    "use {}::{} as {};",
+                    package,
+                    ext.path,
+                    ext.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
+                ));
                 (
                     format!(
                         "use {} as {};\n",
@@ -187,25 +241,20 @@ impl RenderStatement for Type {
                     ),
                     format!(
                         "let {} = {}::new();\n",
-                        Generator::default().next().unwrap().to_snake_case(),
+                        var,
                         ext.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
                     ),
+                    var,
                 )
             }
-            Type::Float(_) => (
-                "".to_owned(),
-                format!(
-                    "let {} = 42.0;\n",
-                    Generator::default().next().unwrap().to_snake_case()
-                ),
-            ),
-            Type::Integer(_) => (
-                "".to_owned(),
-                format!(
-                    "let {} = 42;\n",
-                    Generator::default().next().unwrap().to_snake_case()
-                ),
-            ),
+            Type::Float(_) => {
+                let var = Generator::default().next().unwrap().to_snake_case();
+                ("".to_owned(), format!("let {} = 42.0;\n", var), var)
+            }
+            Type::Integer(_) => {
+                let var = Generator::default().next().unwrap().to_snake_case();
+                ("".to_owned(), format!("let {} = 42;\n", var), var)
+            }
         }
     }
 }
@@ -216,63 +265,81 @@ impl RenderStatement for Type {
 impl RenderStatement for Parameter {
     fn as_statement(
         &self,
+        package: &str,
         module: &str,
         woog: &WoogStore,
         sarzak: &SarzakStore,
-    ) -> (String, String) {
+        uses: &mut HashSet<String>,
+    ) -> (String, String, String) {
         log::trace!("{}:{} as rval, next: {:?}", self.name, self.id, self.next);
         let mut use_statements = String::new();
         let mut statements = String::new();
+        let mut params = String::new();
 
+        // Get an instance of our type
         let ty = sarzak.exhume_ty(&self.ty).unwrap();
-        let (use_stmt, stmt) = ty.as_statement(module, woog, sarzak);
+        let (use_stmt, stmt, var) = ty.as_statement(package, module, woog, sarzak, uses);
         use_statements.push_str(use_stmt.as_str());
         statements.extend([stmt.as_str()]);
+        params.extend([var.as_str(), ","]);
 
         match self.next {
             Some(p) => {
                 let param = woog.exhume_parameter(&p).unwrap();
                 log::trace!("invoking next: {}:{}", param.name, param.id);
-                let (use_stmt, stmt) = param.as_statement(module, woog, sarzak);
+                // Recurse
+                let (use_stmt, stmt, var) = param.as_statement(package, module, woog, sarzak, uses);
                 use_statements.push_str(use_stmt.as_str());
                 statements.push_str(stmt.as_str());
+                params.extend([var.as_str(), ","]);
             }
             _ => {}
         };
 
-        (use_statements, statements)
+        (use_statements, statements, params)
     }
 }
 
 impl RenderStatement for ObjectMethod {
     fn as_statement(
         &self,
+        package: &str,
         module: &str,
         woog: &WoogStore,
         sarzak: &SarzakStore,
-    ) -> (String, String) {
+        uses: &mut HashSet<String>,
+    ) -> (String, String, String) {
         log::trace!("{}:{} as rval", self.name, self.id);
         let mut use_statements = String::new();
         let mut statements = String::new();
 
-        // let obj = sarzak.exhume_object(&self.object).unwrap();
-        // let mut statements = format!(
-        //     "{}::{}(",
-        //     obj.as_type(&Mutability::Borrowed(BORROWED), sarzak),
-        //     self.name.as_ident()
-        // );
-
+        let obj = sarzak.exhume_object(&self.object).unwrap();
         let mut param = woog_maybe_get_one_param_across_r5!(self, woog);
-        match param {
+        let params = match param {
             Some(p) => {
-                let (use_stmt, stmt) = p.as_statement(module, woog, sarzak);
+                // Recurse
+                let (use_stmt, stmt, params) = p.as_statement(package, module, woog, sarzak, uses);
                 use_statements.push_str(use_stmt.as_str());
                 statements.extend([stmt.as_str()]);
+                params
             }
-            _ => {}
+            _ => "".to_owned(),
         };
 
-        (use_statements, statements)
+        // Add the method call
+        let var = Generator::default().next().unwrap().to_snake_case();
+        statements.push_str(
+            format!(
+                "\nlet {} = {}::{}({});\n\n",
+                var,
+                obj.as_type(&Mutability::Borrowed(BORROWED), sarzak),
+                self.name.as_ident(),
+                params
+            )
+            .as_str(),
+        );
+
+        (use_statements, statements, var)
     }
 }
 

@@ -31,8 +31,10 @@ use sarzak::{
         },
     },
     v1::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, MUTABLE, PUBLIC},
-};
+    woog::{store::ObjectStore as WoogStore, types::{Mutability, BORROWED, MUTABLE, PUBLIC,
+        Attribute, Referrer, Type, UUID}}
+    };
+
 use snafu::prelude::*;
 use uuid::Uuid;
 
@@ -74,6 +76,7 @@ impl CodeWriter for DomainStruct {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -394,6 +397,7 @@ impl CodeWriter for DomainImplementation {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -425,6 +429,7 @@ impl CodeWriter for DomainImplementation {
                         domain,
                         woog,
                         imports,
+                        package,
                         module,
                         Some(obj_id),
                         buffer,
@@ -475,6 +480,7 @@ impl CodeWriter for DomainStructNewImpl {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -692,16 +698,23 @@ impl CodeWriter for DomainStructNewImpl {
                 );
 
                 if self.generate_tests {
+                    let mut uses = HashSet::new();
                     buffer.block(
-                        DirectiveKind::IgnoreOrig,
+                        DirectiveKind::IgnoreGenerated,
                         format!("{}-struct-test-new", obj.as_ident()),
                         |buffer| {
-                            let (use_stmts, stmts) =
-                                method.as_statement(module, woog, domain.sarzak());
+                            let (use_stmts, stmts, var) = method.as_statement(
+                                package,
+                                module,
+                                woog,
+                                domain.sarzak(),
+                                &mut uses,
+                            );
                             emit!(buffer, "/// # Example");
                             emit!(buffer, "///");
                             emit!(buffer, "///```ignore");
-                            for s in use_stmts.split_terminator('\n') {
+                            // for s in use_stmts.split_terminator('\n') {
+                            for s in uses.iter() {
                                 emit!(buffer, "/// {}", s);
                             }
                             emit!(buffer, "///");

@@ -91,6 +91,7 @@ impl FileGenerator for DefaultStructGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -115,6 +116,7 @@ impl FileGenerator for DefaultStructGenerator {
                     domain,
                     woog,
                     imports,
+                    package,
                     module,
                     Some(obj_id),
                     buffer,
@@ -126,6 +128,7 @@ impl FileGenerator for DefaultStructGenerator {
                         domain,
                         woog,
                         imports,
+                        package,
                         module,
                         Some(obj_id),
                         buffer,
@@ -161,6 +164,7 @@ impl CodeWriter for DefaultStruct {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -323,6 +327,7 @@ impl CodeWriter for DefaultImplementation {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -365,6 +370,7 @@ impl CodeWriter for DefaultImplementation {
                         domain,
                         woog,
                         imports,
+                        package,
                         module,
                         Some(obj_id),
                         buffer,
@@ -409,6 +415,7 @@ impl CodeWriter for DefaultStructNewImpl {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -478,11 +485,15 @@ impl CodeWriter for DefaultStructNewImpl {
                 None,
                 GType::Reference(r_obj.id),
                 PUBLIC,
-            }
+                referrer.referential_attribute.as_ident(),
+            ));
+
             rvals.push(RValue::new(
                 referrer.referential_attribute.as_ident(),
                 &Type::Reference(reference.id),
             ));
+        }
+
         // Find the method
         // This is going to suck. We don't have cross-domain relationship
         // navigation -- somethinig to be addressed.
@@ -592,6 +603,7 @@ impl FileGenerator for DefaultModuleGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -607,6 +619,7 @@ impl FileGenerator for DefaultModuleGenerator {
             |buffer| {
                 self.definition
                     .write_code(config, domain, woog, imports, module, obj_id, buffer)?;
+                    .write_code(config, domain, woog, package, module, obj_id, buffer)?;
 
                 Ok(())
             },
@@ -636,6 +649,7 @@ impl CodeWriter for DefaultModule {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

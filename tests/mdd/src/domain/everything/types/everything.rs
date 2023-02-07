@@ -32,21 +32,27 @@ pub struct Everything {
 impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
     /// Inter a new Everything in the store, and return it's `id`.
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-test-new"}}}
+    // {"magic":"❌","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-test-new"}}}
     /// # Example
     ///
     ///```ignore
-    /// use crate::everything_domain::types::RandoObject;
-    /// use crate::everything_domain::store::ObjectStore as EverythingDomainStore;
+    /// use mdd::everything_domain::types::RandoObject;
+    /// use mdd::everything_domain::store::ObjectStore as EverythingDomainStore;
     ///
-    /// let repulsive_quiet = true;
-    /// let odd_earth = 42.0;
-    /// let macho_zipper = 42;
-    /// let heavy_test = "quickest-pig";
-    /// let cheap_test = RandoObject::new();
-    /// let light_icicle = EverythingDomainStore::new();
+    /// let painful_heat = true;
+    /// let calculating_event = 42.0;
+    /// let hurried_drug = 42;
+    /// let deranged_increase = "assorted-wish";
+    /// let quizzical_volleyball = EverythingDomainStore::new();
+    ///
+    /// let exotic_food = RandoObject::new(quizzical_volleyball,);
+    ///
+    /// let industrious_ants = EverythingDomainStore::new();
+    ///
+    /// let orange_discussion = Everything::new(painful_heat,calculating_event,hurried_drug,deranged_increase,exotic_food,industrious_ants,,,,,,);
+    ///
     ///```
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"❌","directive":{"End":{"directive":"ignore-gen"}}}
     pub fn new(
         bool: bool,
         float: f64,
@@ -64,8 +70,6 @@ impl Everything {
             float: float,
             int: int,
             string: string,
-            //             rando: rando.id,
-            //             rando: rando,
             rando: rando.id,
             id,
         };
