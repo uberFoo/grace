@@ -8,7 +8,7 @@ use diff;
 use serde::{Deserialize, Serialize};
 
 const MAGIC: char = '';
-// const UBER: char = "❌";
+const UBER: char = '❌';
 
 /// Diff Directives
 ///
@@ -216,7 +216,7 @@ fn write_orig_only(line: &str, output: &mut String, directive: &DirectiveKind) {
         DirectiveKind::CommentOrig => {
             output.extend([comment_line(line), "\n".to_owned()]);
         }
-        _ => log::trace!("orig unhandled directive"),
+        _ => log::trace!("orig unhandled directive {:?}", directive),
     }
 }
 
@@ -235,7 +235,8 @@ fn write_generated_only(line: &str, output: &mut String, directive: &DirectiveKi
         DirectiveKind::CommentGenerated => {
             output.extend([comment_line(line), "\n".to_owned()]);
         }
-        _ => log::trace!("generated unhandled directive"),
+        // Ignore this line.
+        DirectiveKind::IgnoreGenerated => {}
     }
 }
 
@@ -260,7 +261,31 @@ fn parse_directive(line: &str) -> Option<Directive> {
     if test.starts_with("//") {
         test.replace_range(..2, "");
         if let Ok(directive_comment) = serde_json::from_str::<DirectiveComment>(test.as_str()) {
-            let directive = directive_comment.directive;
+            let directive = match directive_comment.magic {
+                UBER => match directive_comment.directive {
+                    Directive::Start { directive, ref tag } => match directive {
+                        DirectiveKind::IgnoreGenerated => {
+                            log::trace!("overriding IgnoreGenerated start with IgnoreOrig start");
+                            Directive::Start {
+                                directive: DirectiveKind::IgnoreOrig,
+                                tag: tag.to_owned(),
+                            }
+                        }
+                        _ => directive_comment.directive,
+                    },
+                    Directive::End { directive } => match directive {
+                        DirectiveKind::IgnoreGenerated => {
+                            log::trace!("overriding IgnoreGenerated end with IgnoreOrig end");
+                            Directive::End {
+                                directive: DirectiveKind::IgnoreOrig,
+                            }
+                        }
+                        _ => directive_comment.directive,
+                    },
+                },
+                MAGIC => directive_comment.directive,
+                _ => panic!("bad voodoo: {}", directive_comment.magic),
+            };
             log::trace!("found directive: {:?}", directive);
             Some(directive)
         } else {
