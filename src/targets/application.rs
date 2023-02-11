@@ -14,7 +14,7 @@ use uuid::Uuid;
 use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
     options::GraceCompilerOptions,
-    target::Target,
+    targets::Target,
     types::default::{
         DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultNewImpl, DefaultStruct,
         DefaultStructBuilder,

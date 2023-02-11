@@ -40,14 +40,14 @@ use crate::{
 
 pub(crate) struct DefaultStructBuilder {
     definition: Option<Box<dyn StructDefinition>>,
-    implementation: Option<Box<dyn StructImplementation>>,
+    implementations: Vec<Box<dyn StructImplementation>>,
 }
 
 impl DefaultStructBuilder {
     pub(crate) fn new() -> Self {
         DefaultStructBuilder {
             definition: None,
-            implementation: None,
+            implementations: Vec::new(),
         }
     }
 
@@ -58,7 +58,7 @@ impl DefaultStructBuilder {
     }
 
     pub(crate) fn implementation(mut self, implementation: Box<dyn StructImplementation>) -> Self {
-        self.implementation = Some(implementation);
+        self.implementations.push(implementation);
 
         self
     }
@@ -73,7 +73,7 @@ impl DefaultStructBuilder {
 
         Ok(Box::new(DefaultStructGenerator {
             definition: self.definition.unwrap(),
-            implementation: self.implementation,
+            implementations: self.implementations,
         }))
     }
 }
@@ -89,7 +89,7 @@ impl DefaultStructBuilder {
 /// structs.
 pub(crate) struct DefaultStructGenerator {
     definition: Box<dyn StructDefinition>,
-    implementation: Option<Box<dyn StructImplementation>>,
+    implementations: Vec<Box<dyn StructImplementation>>,
 }
 
 impl FileGenerator for DefaultStructGenerator {
@@ -120,7 +120,7 @@ impl FileGenerator for DefaultStructGenerator {
                 self.definition
                     .write_code(options, domain, woog, module, Some(obj_id), buffer)?;
 
-                if let Some(implementation) = &self.implementation {
+                for implementation in &self.implementations {
                     implementation.write_code(
                         options,
                         domain,

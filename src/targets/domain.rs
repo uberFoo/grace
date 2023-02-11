@@ -20,12 +20,12 @@ use crate::{
         render::{RenderIdent, RenderType},
     },
     options::GraceCompilerOptions,
-    target::Target,
+    targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
             store::{DomainStore, DomainStoreBuilder},
-            structs::{DomainImplBuilder, DomainNewImpl, DomainStruct},
+            structs::{DomainImplBuilder, DomainNewImpl, DomainRelNavImpl, DomainStruct},
         },
     },
     RS_EXT, TYPES,
@@ -83,12 +83,8 @@ impl<'a> DomainTarget<'a> {
             _test,
         })
     }
-}
 
-impl<'a> Target for DomainTarget<'a> {
-    fn compile(&mut self) -> Result<(), ModelCompilerError> {
-        // ✨Generate Types✨
-
+    fn generate_types(&mut self) -> Result<(), ModelCompilerError> {
         // Build a path to src/types
         let mut types = PathBuf::from(self.src_path);
         types.push(self.module);
@@ -123,10 +119,12 @@ impl<'a> Target for DomainTarget<'a> {
                     DefaultStructBuilder::new()
                         // Definition type
                         .definition(DomainStruct::new())
-                        // Implementation
                         .implementation(
                             DomainImplBuilder::new()
-                                .implementation(DomainNewImpl::new())
+                                // New implementation
+                                .method(DomainNewImpl::new())
+                                // Relationship navigation implementations
+                                .method(DomainRelNavImpl::new())
                                 .build(),
                         )
                         // Go!
@@ -136,7 +134,10 @@ impl<'a> Target for DomainTarget<'a> {
                 .generate()?;
         }
 
-        // Generate the store.rs file
+        Ok(())
+    }
+
+    fn generate_store(&mut self) -> Result<(), ModelCompilerError> {
         let mut store = PathBuf::from(self.src_path);
         store.push(self.module);
         store.push("store.rs");
@@ -154,9 +155,10 @@ impl<'a> Target for DomainTarget<'a> {
             )
             .generate()?;
 
-        // Generate a "types.rs" module file containing all of the types.
-        // This needs to be done after the types are generated so that rustfmt
-        // doesn't complain at us.
+        Ok(())
+    }
+
+    fn generate_types_module(&mut self) -> Result<(), ModelCompilerError> {
         let mut types = PathBuf::from(self.src_path);
         types.push(self.module);
         types.push("discard");
@@ -175,6 +177,23 @@ impl<'a> Target for DomainTarget<'a> {
                     .build()?,
             )
             .generate()?;
+
+        Ok(())
+    }
+}
+
+impl<'a> Target for DomainTarget<'a> {
+    fn compile(&mut self) -> Result<(), ModelCompilerError> {
+        // ✨Generate Types✨
+        self.generate_types()?;
+
+        // Generate the store.rs file
+        self.generate_store()?;
+
+        // Generate a "types.rs" module file containing all of the types.
+        // This needs to be done after the types are generated so that rustfmt
+        // doesn't complain at us.
+        self.generate_types_module()?;
 
         Ok(())
     }

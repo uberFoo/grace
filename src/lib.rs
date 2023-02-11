@@ -4,7 +4,7 @@ use sarzak::mc::ModelCompilerOptions;
 
 mod codegen;
 pub mod options;
-mod target;
+mod targets;
 mod todo;
 mod types;
 
@@ -16,7 +16,7 @@ pub use sarzak::{
 };
 
 use sarzak::woog::store::ObjectStore as WoogStore;
-use target::{application::ApplicationTarget, domain::DomainTarget};
+use targets::{application::ApplicationTarget, domain::DomainTarget};
 
 pub(crate) const RS_EXT: &str = "rs";
 pub(crate) const TYPES: &str = "types";

@@ -23,16 +23,40 @@ pub struct RandoObject {
 impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-new"}}}
     /// Inter a new RandoObject in the store, and return it's `id`.
-    //     pub fn new() -> RandoObject {
-    //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
-    //     pub fn new(store: EverythingDomainStore) -> RandoObject {
-    //     pub fn new(store: &EverythingDomainStore) -> RandoObject {
-    //         let id = Uuid::new_v5(&UUID_NS, format!("{}", store).as_bytes());
-    //     pub fn new(store: &mut EverythingDomainStore) -> RandoObject {
-    //     pub fn new(store: &uberfoo) -> RandoObject {
     pub fn new(store: &mut EverythingDomainStore) -> RandoObject {
         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
         let new = RandoObject { id };
+        //         store.inter_rando_object(new.clone());
+        //         new
+        //     }
+        // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-implementation"}}}
+        // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-newish"}}}
+        /// Inter a new RandoObject in the store, and return it's `id`.
+        //     pub fn new() -> RandoObject {
+        //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+        //     pub fn new(store: EverythingDomainStore) -> RandoObject {
+        //     pub fn new(store: &EverythingDomainStore) -> RandoObject {
+        //         let id = Uuid::new_v5(&UUID_NS, format!("{}", store).as_bytes());
+        //     pub fn new(store: &mut EverythingDomainStore) -> RandoObject {
+        //     pub fn new(store: &uberfoo) -> RandoObject {
+        //     pub fn new(store: &mut EverythingDomainStore) -> RandoObject {
+        //     pub fn newish(store: &mut EverythingDomainStore) -> RandoObject {
+        //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+        //         let new = RandoObject { id };
+        //         let newish = RandoObject { id };
+        store.inter_rando_object(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-implementation"}}}
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-newish"}}}
+    /// Inter a new RandoObject in the store, and return it's `id`.
+    pub fn newish(store: &mut EverythingDomainStore) -> RandoObject {
+        let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+        let newish = RandoObject { id };
         store.inter_rando_object(new.clone());
         new
     }

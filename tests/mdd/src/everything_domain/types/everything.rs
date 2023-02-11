@@ -33,21 +33,39 @@ impl Everything {
         int: i64,
         string: String,
         rando: &RandoObject,
-        //         store: EverythingDomainStore,
-        //         store: &EverythingDomainStore,
         store: &mut EverythingDomainStore,
     ) -> Everything {
         let id = Uuid::new_v5(
             &UUID_NS,
-            //             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
-            //             format!(
-            //                 "{}:{}:{}:{}:{:?}:{}",
-            //                 bool, float, int, string, rando, store
-            //             )
-            //             .as_bytes(),
             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
         );
         let new = Everything {
+            bool: bool,
+            float: float,
+            int: int,
+            string: string,
+            rando: rando.id,
+            id,
+        };
+        store.inter_everything(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-newish"}}}
+    /// Inter a new Everything in the store, and return it's `id`.
+    pub fn newish(
+        bool: bool,
+        float: f64,
+        int: i64,
+        string: String,
+        rando: &RandoObject,
+        store: &mut EverythingDomainStore,
+    ) -> Everything {
+        let id = Uuid::new_v5(
+            &UUID_NS,
+            format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
+        );
+        let newish = Everything {
             bool: bool,
             float: float,
             int: int,
