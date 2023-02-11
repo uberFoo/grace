@@ -166,7 +166,7 @@ impl CodeWriter for DefaultStruct {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DefaultStruct"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -332,7 +332,7 @@ impl CodeWriter for DefaultImplementation {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DefaultImplementation"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -414,7 +414,7 @@ impl CodeWriter for DefaultNewImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DefaultNewImpl"
             }
         );
         let obj_id = obj_id.unwrap();

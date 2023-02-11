@@ -61,7 +61,7 @@ impl CodeWriter for DomainStruct {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DomainStruct"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -252,7 +252,7 @@ impl CodeWriter for DomainImplementation {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DomainImplementation"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -313,7 +313,7 @@ impl CodeWriter for DomainNewImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DomainNewImpl"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -510,7 +510,7 @@ impl CodeWriter for DomainRelNavImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DomainRelNavImpl"
             }
         );
         let obj_id = obj_id.unwrap();
