@@ -3,7 +3,10 @@
 //! Not that the whole things shouldn't be, but this stuff is low hanging fruit.
 //!
 
-use sarzak::sarzak::types::{External as SarzakExternal, Type};
+use sarzak::{
+    sarzak::types::{External as SarzakExternal, Type},
+    woog::types::Parameter,
+};
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -158,4 +161,10 @@ impl Statement {
     pub(crate) fn new(lvalue: LValue, rvalue: RValue) -> Self {
         Self { lvalue, rvalue }
     }
+}
+
+pub(crate) struct ExternalInvocation {
+    pub is_initialized: bool,
+    pub init_func: String,
+    pub external: Uuid,
 }
