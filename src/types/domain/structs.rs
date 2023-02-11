@@ -36,6 +36,42 @@ use crate::{
     types::{MethodImplementation, StructDefinition, StructImplementation},
 };
 
+macro_rules! get_referrers {
+    ($obj:expr, $store:expr) => {{
+        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!($obj, $store);
+        referrers.sort_by(|a, b| {
+            let binary = sarzak_get_one_r_bin_across_r6!(&a, $store);
+            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
+            let obj_a = sarzak_get_one_obj_across_r16!(referent, $store);
+
+            let binary = sarzak_get_one_r_bin_across_r6!(&b, $store);
+            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
+            let obj_b = sarzak_get_one_obj_across_r16!(referent, $store);
+
+            obj_a.name.cmp(&obj_b.name)
+        });
+        referrers
+    }};
+}
+
+macro_rules! get_referents {
+    ($obj:expr, $store:expr) => {{
+        let mut referrers = sarzak_maybe_get_many_r_tos_across_r16!($obj, $store);
+        referrers.sort_by(|a, b| {
+            let binary = sarzak_get_one_r_bin_across_r5!(&a, $store);
+            let referent = sarzak_get_one_r_from_across_r6!(binary, $store);
+            let obj_a = sarzak_get_one_obj_across_r17!(referent, $store);
+
+            let binary = sarzak_get_one_r_bin_across_r5!(&b, $store);
+            let referent = sarzak_get_one_r_from_across_r6!(binary, $store);
+            let obj_b = sarzak_get_one_obj_across_r17!(referent, $store);
+
+            obj_a.name.cmp(&obj_b.name)
+        });
+        referrers
+    }};
+}
+
 /// Domain Struct Generator / CodeWriter
 ///
 /// We need a builder for this so that we can add privacy modifiers, as
@@ -71,19 +107,8 @@ impl CodeWriter for DomainStruct {
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
-
-        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
+        let referrers = get_referrers!(obj, domain.sarzak());
+        let referents = get_referents!(obj, domain.sarzak());
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -354,12 +379,7 @@ impl CodeWriter for DomainNewImpl {
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
         // These are more attributes on our object, and they should be sorted.
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
+        let referrers = get_referrers!(obj, domain.sarzak());
 
         // Collect the attributes
         let mut params: Vec<Parameter> = Vec::new();
@@ -574,19 +594,9 @@ impl CodeWriter for DomainRelNavImpl {
         };
 
         // These are relationships that we formalize
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
+        let referrers = get_referrers!(obj, domain.sarzak());
         // These are relationships of which we are the target
-        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!(obj, domain.sarzak());
-        referents.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
+        let referents = get_referents!(obj, domain.sarzak());
 
         for referrer in &referrers {
             let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
