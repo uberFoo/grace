@@ -25,6 +25,7 @@ fn compile_and_test_default() -> Result<ExitCode, std::io::Error> {
     grace
         .compile(
             domain,
+            "mdd",
             "everything",
             "tests/mdd/src",
             Box::new(&options),
@@ -70,6 +71,7 @@ fn compile_and_test_domain() -> Result<ExitCode, std::io::Error> {
     grace
         .compile(
             domain,
+            "mdd",
             "everything_domain",
             "tests/mdd/src",
             Box::new(&options),

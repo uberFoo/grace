@@ -45,6 +45,7 @@ impl SarzakModelCompiler for ModelCompiler {
     fn compile<P: AsRef<Path>>(
         &self,
         domain: sarzak::domain::DomainBuilder,
+        _package: &str,
         module: &str,
         src_path: P,
         options: Box<&dyn ModelCompilerOptions>,
