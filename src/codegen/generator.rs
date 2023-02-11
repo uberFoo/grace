@@ -177,7 +177,10 @@ impl<'a> GeneratorBuilder<'a> {
                     ensure!(
                         result.is_ok(),
                         CompilerSnafu {
-                            description: "rustfmt failed on original file"
+                            description: format!(
+                                "rustfmt failed on existing file: {}",
+                                path.display()
+                            )
                         }
                     );
 
