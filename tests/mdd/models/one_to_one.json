@@ -1,0 +1,272 @@
+{
+    "paper": {
+        "ids": [
+            "88cd70e0-c065-5c4b-b1ce-69194ab4d0cb"
+        ],
+        "entities": {
+            "88cd70e0-c065-5c4b-b1ce-69194ab4d0cb": {
+                "id": "88cd70e0-c065-5c4b-b1ce-69194ab4d0cb",
+                "domain_name": "one_to_one",
+                "description": "Domain to test the many flavors of 1-1 relationships.",
+                "domain_ns": "b49d6fe1-e5e9-5896-bd42-b72012429e52",
+                "width": 4000,
+                "height": 3200,
+                "offset": {
+                    "x": -739,
+                    "y": -515
+                },
+                "objects": {
+                    "92bc9be3-761f-5b31-a013-79a4d5343870": {
+                        "x": 1445,
+                        "y": 1065,
+                        "width": 193,
+                        "height": 99
+                    },
+                    "91da8f64-33b3-58eb-923f-9adf702bdec3": {
+                        "x": 1436,
+                        "y": 772,
+                        "width": 211,
+                        "height": 107
+                    },
+                    "db839890-ce6f-51e8-91cb-07d494cb81c7": {
+                        "x": 1849,
+                        "y": 1073,
+                        "width": 198,
+                        "height": 104,
+                        "id": "db839890-ce6f-51e8-91cb-07d494cb81c7"
+                    },
+                    "04f50b98-563e-5268-b6b4-7ea3b18d162b": {
+                        "x": 1072,
+                        "y": 1063,
+                        "width": 202,
+                        "height": 104,
+                        "id": "04f50b98-563e-5268-b6b4-7ea3b18d162b"
+                    }
+                },
+                "relationships": {
+                    "937c3d7c-c43a-5359-888c-950cbf60574b": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "91da8f64-33b3-58eb-923f-9adf702bdec3",
+                                "dir": "South",
+                                "x": 1496,
+                                "y": 879,
+                                "offset": {
+                                    "x": 29,
+                                    "y": 28
+                                }
+                            },
+                            "to": {
+                                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                                "dir": "North",
+                                "x": 1495,
+                                "y": 1065,
+                                "offset": {
+                                    "x": 23,
+                                    "y": -16
+                                }
+                            }
+                        }
+                    },
+                    "a29e0fe5-6ba5-5af9-8f22-2ae8a8219cb3": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "db839890-ce6f-51e8-91cb-07d494cb81c7",
+                                "x": 1849,
+                                "y": 1125,
+                                "offset": {
+                                    "x": -72,
+                                    "y": 74
+                                },
+                                "dir": "West"
+                            },
+                            "to": {
+                                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                                "x": 1638,
+                                "y": 1125,
+                                "offset": {
+                                    "x": 22,
+                                    "y": 31
+                                },
+                                "dir": "East"
+                            }
+                        }
+                    },
+                    "dfe91224-6eaf-5b87-85db-8b7df06b620b": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "04f50b98-563e-5268-b6b4-7ea3b18d162b",
+                                "x": 1274,
+                                "y": 1126,
+                                "offset": {
+                                    "x": -39,
+                                    "y": 66
+                                },
+                                "dir": "East"
+                            },
+                            "to": {
+                                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                                "x": 1445,
+                                "y": 1126,
+                                "offset": {
+                                    "x": -3,
+                                    "y": 55
+                                },
+                                "dir": "West"
+                            }
+                        }
+                    }
+                },
+                "config": null
+            }
+        }
+    },
+    "objects": {
+        "ids": [
+            "92bc9be3-761f-5b31-a013-79a4d5343870",
+            "91da8f64-33b3-58eb-923f-9adf702bdec3",
+            "db839890-ce6f-51e8-91cb-07d494cb81c7",
+            "04f50b98-563e-5268-b6b4-7ea3b18d162b"
+        ],
+        "entities": {
+            "91da8f64-33b3-58eb-923f-9adf702bdec3": {
+                "id": "91da8f64-33b3-58eb-923f-9adf702bdec3",
+                "key_letter": "A",
+                "name": "A",
+                "description": "A: Referrer with Conditional [`Referent`]\n\nThis type is related to the [`Referent`] across a conditional relationship. This is 1-1c, and given that I am the referrer, I have the referential attribute/I am formalizing the relationship. I think I prefer the latter language, but the former is very descriptive...",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "32aaf97d-ded7-5e5d-b161-0c3680f27c89": {
+                        "id": "32aaf97d-ded7-5e5d-b161-0c3680f27c89",
+                        "name": "number",
+                        "type": "Integer"
+                    }
+                }
+            },
+            "92bc9be3-761f-5b31-a013-79a4d5343870": {
+                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                "key_letter": "TGT",
+                "name": "Referent",
+                "description": "The target of our relationship tests.\n\nIt is conditionally related to [`OneToOneConditional`] across _R2_, and it is unconditionally related to [`OneToOneUnconditional`] across _R1_.",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "61b791d9-8b6d-5017-a063-fa2c67f956a1": {
+                        "id": "61b791d9-8b6d-5017-a063-fa2c67f956a1",
+                        "name": "name",
+                        "type": "String"
+                    }
+                }
+            },
+            "db839890-ce6f-51e8-91cb-07d494cb81c7": {
+                "id": "db839890-ce6f-51e8-91cb-07d494cb81c7",
+                "key_letter": "B",
+                "name": "B",
+                "description": "B: Referrer Unconditional to Referent\n\nThis is a plain Jayne 😉 1-1 relationship, where this guy is formalizing.",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "b87cc517-beff-5a09-b9a1-14c57f645e00": {
+                        "id": "b87cc517-beff-5a09-b9a1-14c57f645e00",
+                        "name": "bit",
+                        "type": "Boolean"
+                    }
+                }
+            },
+            "04f50b98-563e-5268-b6b4-7ea3b18d162b": {
+                "id": "04f50b98-563e-5268-b6b4-7ea3b18d162b",
+                "key_letter": "C",
+                "name": "C",
+                "description": "C: Referrer to [`Referent`] Bi-Conditional\n\nThis will be an interesting one to translate. Hopefully not too gnarly.🤘",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "043c2c57-737c-56d7-a2d2-dd3478400d20": {
+                        "id": "043c2c57-737c-56d7-a2d2-dd3478400d20",
+                        "name": "like_water",
+                        "type": "Float"
+                    }
+                }
+            }
+        }
+    },
+    "relationships": {
+        "ids": [
+            "937c3d7c-c43a-5359-888c-950cbf60574b",
+            "a29e0fe5-6ba5-5af9-8f22-2ae8a8219cb3",
+            "dfe91224-6eaf-5b87-85db-8b7df06b620b"
+        ],
+        "entities": {
+            "937c3d7c-c43a-5359-888c-950cbf60574b": {
+                "Binary": {
+                    "id": "937c3d7c-c43a-5359-888c-950cbf60574b",
+                    "number": 1,
+                    "from": {
+                        "obj_id": "91da8f64-33b3-58eb-923f-9adf702bdec3",
+                        "description": "pointed at by",
+                        "cardinality": "One",
+                        "conditionality": "Conditional",
+                        "formalizing_attribute_name": "ptr"
+                    },
+                    "to": {
+                        "obj_id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                        "description": "points at",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional"
+                    }
+                }
+            },
+            "a29e0fe5-6ba5-5af9-8f22-2ae8a8219cb3": {
+                "Binary": {
+                    "id": "a29e0fe5-6ba5-5af9-8f22-2ae8a8219cb3",
+                    "number": 2,
+                    "from": {
+                        "obj_id": "db839890-ce6f-51e8-91cb-07d494cb81c7",
+                        "description": "is pointed at by",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional",
+                        "formalizing_attribute_name": "ptr"
+                    },
+                    "to": {
+                        "obj_id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                        "description": "points at",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional"
+                    }
+                }
+            },
+            "dfe91224-6eaf-5b87-85db-8b7df06b620b": {
+                "Binary": {
+                    "id": "dfe91224-6eaf-5b87-85db-8b7df06b620b",
+                    "number": 3,
+                    "from": {
+                        "obj_id": "04f50b98-563e-5268-b6b4-7ea3b18d162b",
+                        "description": "is pointed at by",
+                        "cardinality": "One",
+                        "conditionality": "Conditional",
+                        "formalizing_attribute_name": "ptr"
+                    },
+                    "to": {
+                        "obj_id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                        "description": "points at",
+                        "cardinality": "One",
+                        "conditionality": "Conditional"
+                    }
+                }
+            }
+        }
+    }
+}
