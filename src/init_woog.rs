@@ -26,6 +26,9 @@ use crate::{
     options::{GraceCompilerOptions, Target},
 };
 
+/// Woog post-load domain processing
+///
+/// Below we add an ObjectMethod instance for each object in the domain.
 pub(crate) fn init_woog(
     module: &str,
     options: &GraceCompilerOptions,
@@ -34,7 +37,6 @@ pub(crate) fn init_woog(
     let mut woog = WoogStore::new();
     sarzak::woog::init_instances(&mut woog);
 
-    // Sort the objects -- I need to figure out how to do this automagically.
     let mut objects: Vec<(&Uuid, &Object)> = sarzak.iter_object().collect();
     objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 

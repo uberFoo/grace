@@ -698,12 +698,12 @@ impl CodeWriter for DomainStructNewImpl {
                 );
 
                 if self.generate_tests {
-                    let mut uses = HashSet::new();
                     buffer.block(
                         DirectiveKind::IgnoreGenerated,
                         format!("{}-struct-test-new", obj.as_ident()),
                         |buffer| {
-                            let (use_stmts, stmts, var) = method.as_statement(
+                            let mut uses = HashSet::new();
+                            let stmts = method.as_statement(
                                 package,
                                 module,
                                 woog,
@@ -718,8 +718,9 @@ impl CodeWriter for DomainStructNewImpl {
                                 emit!(buffer, "/// {}", s);
                             }
                             emit!(buffer, "///");
-                            for s in stmts.split_terminator('\n') {
-                                emit!(buffer, "/// {}", s);
+                            // for s in stmts.split_terminator('\n') {
+                            for s in stmts.iter() {
+                                emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
                             }
                             emit!(buffer, "///```");
 

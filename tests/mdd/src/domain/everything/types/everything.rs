@@ -33,26 +33,23 @@ impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
     /// Inter a new Everything in the store, and return it's `id`.
     // {"magic":"❌","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-test-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-test-new"}}}
     /// # Example
     ///
     ///```ignore
-    /// use mdd::everything_domain::types::RandoObject;
     /// use mdd::everything_domain::store::ObjectStore as EverythingDomainStore;
+    /// use mdd::everything_domain::types::RandoObject;
     ///
-    /// let painful_heat = true;
-    /// let calculating_event = 42.0;
-    /// let hurried_drug = 42;
-    /// let deranged_increase = "assorted-wish";
-    /// let quizzical_volleyball = EverythingDomainStore::new();
-    ///
-    /// let exotic_food = RandoObject::new(quizzical_volleyball,);
-    ///
-    /// let industrious_ants = EverythingDomainStore::new();
-    ///
-    /// let orange_discussion = Everything::new(painful_heat,calculating_event,hurried_drug,deranged_increase,exotic_food,industrious_ants,,,,,,);
-    ///
+    /// useful_suggestion = true
+    /// grumpy_cork = 42.0
+    /// sturdy_laugh = 42
+    /// dazzling_nail = colossal-comparison
+    /// lowly_push = EverythingDomainStore::new();
+    /// curvy_can = RandoObject::new()
+    /// cool_cork = EverythingDomainStore::new();
+    /// alive_mark = Everything::new()
     ///```
-    // {"magic":"❌","directive":{"End":{"directive":"ignore-gen"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
     pub fn new(
         bool: bool,
         float: f64,

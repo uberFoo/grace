@@ -16,6 +16,8 @@ pub struct RandoObject {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-new"}}}
+// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-new"}}}
     /// Inter a new RandoObject in the store, and return it's `id`.

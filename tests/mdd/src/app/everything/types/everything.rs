@@ -22,6 +22,8 @@ pub struct Everything<'a> {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-new"}}}
+// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 impl<'a> Everything<'a> {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-new"}}}
     /// Inter a new Everything in the store, and return it's `id`.
