@@ -582,7 +582,7 @@ impl CodeWriter for DomainRelNavImpl {
         });
         // These are relationships of which we are the target
         let mut referents = sarzak_maybe_get_many_r_tos_across_r16!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
+        referents.sort_by(|a, b| {
             let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
             let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
             obj_a.name.cmp(&obj_b.name)
