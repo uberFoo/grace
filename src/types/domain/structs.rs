@@ -7,11 +7,13 @@ use sarzak::{
     sarzak::{
         macros::{
             sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
-            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
+            sarzak_get_one_obj_across_r17, sarzak_get_one_r_bin_across_r5,
+            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_from_across_r6,
+            sarzak_get_one_r_to_across_r5, sarzak_get_one_t_across_r2,
+            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_tos_across_r16,
             sarzak_maybe_get_one_t_ref_across_r27,
         },
-        types::{Attribute, Referrer, Type, UUID},
+        types::{Attribute, Referent, Referrer, Type, UUID},
     },
     woog::{
         store::ObjectStore as WoogStore, Mutability, ObjectMethod, Parameter, Visibility, BORROWED,
@@ -76,6 +78,13 @@ impl CodeWriter for DomainStruct {
             obj_a.name.cmp(&obj_b.name)
         });
 
+        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!(obj, domain.sarzak());
+        referrers.sort_by(|a, b| {
+            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
+            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
+            obj_a.name.cmp(&obj_b.name)
+        });
+
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
@@ -96,6 +105,10 @@ impl CodeWriter for DomainStruct {
                 emit!(buffer, "use crate::{}::UUID_NS;", module);
 
                 // Add use statements for all the referrers.
+                if referrers.len() > 0 {
+                    emit!(buffer, "");
+                    emit!(buffer, "// Referrer imports");
+                }
                 for referrer in &referrers {
                     let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                     let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
@@ -110,7 +123,27 @@ impl CodeWriter for DomainStruct {
                     );
                 }
 
+                // Add use statements for all the referents.
+                if referents.len() > 0 {
+                    emit!(buffer, "");
+                    emit!(buffer, "// Referent imports");
+                }
+                for referent in &referents {
+                    let binary = sarzak_get_one_r_bin_across_r5!(referent, domain.sarzak());
+                    let referrer = sarzak_get_one_r_from_across_r6!(binary, domain.sarzak());
+                    let r_obj = sarzak_get_one_obj_across_r17!(referrer, domain.sarzak());
+
+                    emit!(
+                        buffer,
+                        "use crate::{}::types::{}::{};",
+                        module,
+                        r_obj.as_ident(),
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
+                }
+
                 // Add the ObjectStore
+                emit!(buffer, "");
                 let mut iter = domain.sarzak().iter_ty();
                 let name = format!(
                     "{}Store",
@@ -136,6 +169,7 @@ impl CodeWriter for DomainStruct {
                 Ok(())
             },
         )?;
+        emit!(buffer, "");
 
         log::debug!("writing Struct Definition for {}", obj.name);
 
@@ -516,73 +550,21 @@ impl CodeWriter for DomainRelNavImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        // These are more attributes on our object, and they should be sorted.
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
-
-        // Collect the attributes
-        let mut params: Vec<Parameter> = Vec::new();
-        let mut fields: Vec<LValue> = Vec::new();
-        let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-        attrs.sort_by(|a, b| a.name.cmp(&b.name));
-        for attr in attrs {
-            // We are going to generate the id, so don't include it in the
-            // list of parameters.
-            if attr.name != "id" {
-                let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
-                fields.push(LValue::new(attr.name.as_ident(), &ty));
-                params.push(Parameter::new(
-                    woog,
-                    &Mutability::Borrowed(BORROWED),
-                    None,
-                    &ty,
-                    &Visibility::Public(PUBLIC),
-                    attr.as_ident(),
-                ));
-            }
-        }
-
-        // And the referential attributes
-        for referrer in &referrers {
-            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-            let reference = sarzak_maybe_get_one_t_ref_across_r27!(r_obj, domain.sarzak()).unwrap();
-
-            // This determines how a reference is stored in the struct. In this
-            // case a UUID.
-            fields.push(LValue::new(
-                referrer.referential_attribute.as_ident(),
-                &Type::Uuid(UUID),
-            ));
-            params.push(Parameter::new(
-                woog,
-                &Mutability::Borrowed(BORROWED),
-                None,
-                &Type::Reference(reference.id),
-                &Visibility::Public(PUBLIC),
-                referrer.referential_attribute.as_ident(),
-            ));
-        }
-
-        // Add the store to the end of the  input parameters
+        // Grab a reference to the store so that we can use it to exhume
+        // things.
         let mut iter = domain.sarzak().iter_ty();
         let name = format!(
             "{}Store",
             module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
         );
-        let store_type = loop {
+        let store = loop {
             let ty = iter.next();
             match ty {
                 Some((_, ty)) => match ty {
                     Type::External(e) => {
                         let ext = domain.sarzak().exhume_external(&e).unwrap();
                         if ext.name == name {
-                            break ty;
+                            break ext;
                         }
                     }
                     _ => continue,
@@ -590,91 +572,100 @@ impl CodeWriter for DomainRelNavImpl {
                 None => panic!("Could not find store type for {}", module),
             }
         };
-        params.push(Parameter::new(
-            woog,
-            &Mutability::Mutable(MUTABLE),
-            None,
-            &store_type,
-            &Visibility::Public(PUBLIC),
-            "store".to_owned(),
-        ));
 
-        // Link the params
-        let mut iter = params.iter_mut().peekable();
-        loop {
-            if let Some(param) = iter.next() {
-                if let Some(next) = iter.peek() {
-                    param.next = Some(next.id);
-                    woog.inter_parameter(param.clone());
-                }
-            } else {
-                break;
-            }
+        // These are relationships that we formalize
+        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
+        referrers.sort_by(|a, b| {
+            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
+            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
+            obj_a.name.cmp(&obj_b.name)
+        });
+        // These are relationships of which we are the target
+        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!(obj, domain.sarzak());
+        referrers.sort_by(|a, b| {
+            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
+            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
+            obj_a.name.cmp(&obj_b.name)
+        });
+
+        for referrer in &referrers {
+            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
+            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
+            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+            buffer.block(
+                DirectiveKind::CommentOrig,
+                format!(
+                    "{}-struct-impl-navigate-to-{}",
+                    obj.as_ident(),
+                    referrer.referential_attribute.as_ident()
+                ),
+                |buffer| {
+                    emit!(
+                        buffer,
+                        "/// Navigate to [`{}`] across R{}(1-1)",
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        binary.number,
+                    );
+                    emit!(
+                        buffer,
+                        "pub fn {}<'a>(&'a self, store: &'a {}) -> &{} {{",
+                        referrer.referential_attribute.as_ident(),
+                        store.name,
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
+                    emit!(
+                        buffer,
+                        "store.exhume_{}(&self.{}).unwrap()",
+                        r_obj.as_ident(),
+                        referrer.referential_attribute.as_ident()
+                    );
+                    emit!(buffer, "}}");
+
+                    Ok(())
+                },
+            )?;
         }
 
-        // Create an ObjectMethod
-        // The uniqueness of this instance depends on the inputs to it's
-        // new method. Param can be None, and two methods on the same
-        // object will have the same obj. So it comes down to a unique
-        // name for each object. So just "new" should suffice for name,
-        // because it's scoped by obj already.
-        let param = match params.len() {
-            0 => None,
-            _ => Some(&params[0]),
-        };
-        // We need to find the type that corresponds to this object
-        let mut iter = domain.sarzak().iter_ty();
-        let ty = loop {
-            if let Some((id, ty)) = iter.next() {
-                if id == &obj.id {
-                    break Some(ty);
-                }
-            } else {
-                break None;
-            }
-        };
-        let method = ObjectMethod::new(
-            woog,
-            param,
-            obj,
-            ty.unwrap(),
-            &Visibility::Public(PUBLIC),
-            "newish".to_owned(),
-            "Create a new instance".to_owned(),
-        );
+        for referent in &referents {
+            let binary = sarzak_get_one_r_bin_across_r5!(referent, domain.sarzak());
+            let referrer = sarzak_get_one_r_from_across_r6!(binary, domain.sarzak());
+            let r_obj = sarzak_get_one_obj_across_r17!(referrer, domain.sarzak());
+            buffer.block(
+                DirectiveKind::CommentOrig,
+                format!(
+                    "{}-struct-impl-navigate-backwards-to-{}",
+                    obj.as_ident(),
+                    r_obj.as_ident()
+                ),
+                |buffer| {
+                    emit!(
+                        buffer,
+                        "/// Navigate to [`{}`] across R{}(1-1)",
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        binary.number
+                    );
+                    emit!(
+                        buffer,
+                        "pub fn {}<'a>(&'a self, store: &'a {}) -> &{} {{",
+                        r_obj.as_ident(),
+                        store.name,
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
+                    emit!(buffer, "store.iter_{}()", r_obj.as_ident());
+                    emit!(
+                        buffer,
+                        ".find(|{}| {}.1.{} == self.id).unwrap().1",
+                        r_obj.as_ident(),
+                        r_obj.as_ident(),
+                        referrer.referential_attribute.as_ident()
+                    );
+                    emit!(buffer, "}}");
 
-        let mut rvals: Vec<RValue> = params.iter().map(|p| p.into()).collect();
-        // Remove the store.
-        rvals.pop();
+                    Ok(())
+                },
+            )?;
+        }
 
-        buffer.block(
-            DirectiveKind::CommentOrig,
-            format!("{}-struct-impl-newish", obj.as_ident()),
-            |buffer| {
-                // Output a docstring
-                emit!(
-                    buffer,
-                    "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-                );
-
-                // Output the top of the function definition
-                render_method_definition(buffer, &method, woog, domain.sarzak())?;
-
-                // Output the code to create the `id`.
-                let id = LValue::new("id", &Type::Uuid(UUID));
-                render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
-
-                // Output code to create the instance
-                let new = LValue::new("newish", &Type::Reference(obj.id));
-                render_new_instance(buffer, obj, Some(&new), &fields, &rvals, domain.sarzak())?;
-
-                emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
-                emit!(buffer, "new");
-                emit!(buffer, "}}");
-
-                Ok(())
-            },
-        )
+        Ok(())
     }
 }
