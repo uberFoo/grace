@@ -147,10 +147,12 @@ fn process_diff_not_recursive_after_all<'a>(
                             directive = d;
                         }
                         Directive::End { directive: d } => {
-                            assert_eq!(d, directive);
-
-                            // Write the line -- always write the directive
-                            output.extend([orig, "\n"]);
+                            if d == directive {
+                                // Write the line
+                                output.extend([orig, "\n"]);
+                            } else {
+                                // Don't output an un-balanced directive.
+                            }
 
                             directive = stack.pop().expect("unbalanced directives")
                         }
@@ -175,7 +177,9 @@ fn process_diff_not_recursive_after_all<'a>(
                             directive = d;
                         }
                         Directive::End { directive: d } => {
-                            assert_eq!(d, directive);
+                            if d != directive {
+                                log::error!("unbalanced directives: {:?} != {:?}", d, directive);
+                            }
                             // The directive will be written below.
                             directive = stack.pop().expect("unbalanced directives")
                         }
