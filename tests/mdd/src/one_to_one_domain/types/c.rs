@@ -23,18 +23,25 @@ pub struct C {
     pub id: Uuid,
     pub like_water: f64,
     /// R3: [`C`] 'points at' [`Referent`]
-    pub ptr: Uuid,
+    pub ptr: Option<Uuid>,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-implementation"}}}
 impl C {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"c-struct-impl-new"}}}
     /// Inter a new C in the store, and return it's `id`.
-    pub fn new(like_water: f64, ptr: &Referent, store: &mut OneToOneDomainStore) -> C {
+    //     pub fn new(like_water: f64, ptr: &Referent, store: &mut OneToOneDomainStore) -> C {
+    //     pub fn new(like_water: f64) -> C {
+    //     pub fn new(like_water: f64, ptr: &Referent, store: &mut OneToOneDomainStore) -> C {
+    //         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", like_water, ptr).as_bytes());
+    pub fn new(like_water: f64, ptr: Option<&Referent>, store: &mut OneToOneDomainStore) -> C {
+        //         let id = Uuid::new_v5(&UUID_NS, format!("{}:{}", like_water, ptr).as_bytes());
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", like_water, ptr).as_bytes());
         let new = C {
             like_water: like_water,
-            ptr: ptr.id,
+            //             ptr: ptr.id,
+            //             ptr: ptr,
+            ptr: ptr.map(|referent| referent.id),
             id,
         };
         store.inter_c(new.clone());
@@ -50,4 +57,3 @@ impl C {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
-

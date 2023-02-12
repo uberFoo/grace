@@ -39,18 +39,12 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-navigate-backwards-to-a"}}}
     /// Navigate to [`A`] across R1(1-1)
-    //     pub fn a<'a>(&'a self, store: &'a OneToOneDomainStore) -> &A {
-    //         store.iter_a().find(|a| a.1.ptr == self.id).unwrap().1
-    //     }
     pub fn a<'a>(&'a self, store: &'a OneToOneDomainStore) -> &A {
         store.iter_a().find(|a| a.1.ptr == self.id).unwrap().1
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-navigate-backwards-to-b"}}}
     /// Navigate to [`B`] across R2(1-1)
-    //     pub fn b<'a>(&'a self, store: &'a OneToOneDomainStore) -> &B {
-    //         store.iter_b().find(|b| b.1.ptr == self.id).unwrap().1
-    //     }
     pub fn b<'a>(&'a self, store: &'a OneToOneDomainStore) -> &B {
         store.iter_b().find(|b| b.1.ptr == self.id).unwrap().1
     }
@@ -59,19 +53,8 @@ impl Referent {
     /// Navigate to [`C`] across R3(1-1)
     pub fn c<'a>(&'a self, store: &'a OneToOneDomainStore) -> &C {
         store.iter_c().find(|c| c.1.ptr == self.id).unwrap().1
-//     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-navigate-backwards-to-b"}}}
-    /// Navigate to [`B`] across R2(1-1)
-    //     pub fn b<'a>(&'a self, store: &'a OneToOneDomainStore) -> &B {
-    //         store.iter_b().find(|b| b.1.ptr == self.id).unwrap().1
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-navigate-backwards-to-a"}}}
-    /// Navigate to [`A`] across R1(1-1)
-//     pub fn a<'a>(&'a self, store: &'a OneToOneDomainStore) -> &A {
-//         store.iter_a().find(|a| a.1.ptr == self.id).unwrap().1
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
-

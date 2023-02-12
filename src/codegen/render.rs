@@ -4,8 +4,10 @@ use sarzak::{
         store::ObjectStore as SarzakStore,
         types::{Attribute, Event, External, Object, State, Type},
     },
-    woog::types::{Mutability, ObjectMethod, Parameter},
+    woog::types::{Mutability, Parameter},
 };
+
+use crate::todo::{External as TodoExternal, GType, ObjectMethod};
 
 macro_rules! render_ident {
     ($($t:ident),+) => {
@@ -40,7 +42,13 @@ pub(crate) trait RenderIdent {
     fn as_ident(&self) -> String;
 }
 
-render_ident!(Attribute, Event, Object, State, ObjectMethod, Parameter);
+render_ident!(Attribute, Event, Object, State, Parameter);
+
+impl RenderIdent for ObjectMethod<'_> {
+    fn as_ident(&self) -> String {
+        self.name.to_snake_case()
+    }
+}
 
 impl RenderIdent for String {
     fn as_ident(&self) -> String {
@@ -66,7 +74,7 @@ pub(crate) trait RenderType {
     fn as_type(&self, mutability: &Mutability, store: &SarzakStore) -> String;
 }
 
-render_type!(Attribute, Event, Object, State, External);
+render_type!(Attribute, Event, Object, State, External, TodoExternal);
 
 impl RenderType for String {
     fn as_type(&self, mutability: &Mutability, _store: &SarzakStore) -> String {
@@ -102,11 +110,6 @@ impl RenderType for Type {
                 let object = store.exhume_object(&o).unwrap();
                 format!("{}", object.as_type(&mutability, &store))
             }
-            Type::Reference(r) => {
-                let reference = store.exhume_reference(&r).unwrap();
-                let object = store.exhume_object(&reference.object).unwrap();
-                format!("&{}", object.as_type(&mutability, &store))
-            }
             Type::String(_) => "String".to_owned(),
             Type::Uuid(_) => "Uuid".to_owned(),
             Type::External(e) => {
@@ -115,6 +118,40 @@ impl RenderType for Type {
             }
             Type::Float(_) => "f64".to_owned(),
             Type::Integer(_) => "i64".to_owned(),
+        }
+    }
+}
+
+/// RenderType implementation for GType
+///
+/// How recursive...
+///
+/// Eventually we'll need to expand the model to include size options for
+/// sized types. Probably need more types too. we'll just have to see.
+///
+/// One thing that worries me is what happens when we get to references?
+impl RenderType for GType {
+    fn as_type(&self, mutability: &Mutability, store: &SarzakStore) -> String {
+        match self {
+            GType::Boolean => "bool".to_owned(),
+            GType::Object(o) => {
+                let object = store.exhume_object(&o).unwrap();
+                format!("{}", object.as_type(&mutability, &store))
+            }
+            GType::Reference(r) => {
+                let object = store.exhume_object(&r).unwrap();
+                format!("&{}", object.as_type(&mutability, &store))
+            }
+            GType::Option(o) => {
+                format!("Option<{}>", o.as_type(&mutability, &store))
+            }
+            GType::External(e) => {
+                format!("&{}", e.as_type(&mutability, &store))
+            }
+            GType::String => "String".to_owned(),
+            GType::Uuid => "Uuid".to_owned(),
+            GType::Float => "f64".to_owned(),
+            GType::Integer => "i64".to_owned(),
         }
     }
 }

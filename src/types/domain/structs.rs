@@ -6,19 +6,16 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_obj_across_r17, sarzak_get_one_r_bin_across_r5,
-            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_from_across_r6,
-            sarzak_get_one_r_to_across_r5, sarzak_get_one_t_across_r2,
-            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_tos_across_r16,
-            sarzak_maybe_get_one_t_ref_across_r27,
+            sarzak_get_many_as_across_r1, sarzak_get_one_cond_across_r11,
+            sarzak_get_one_obj_across_r16, sarzak_get_one_obj_across_r17,
+            sarzak_get_one_r_bin_across_r5, sarzak_get_one_r_bin_across_r6,
+            sarzak_get_one_r_from_across_r6, sarzak_get_one_r_to_across_r5,
+            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
+            sarzak_maybe_get_many_r_tos_across_r16,
         },
-        types::{Attribute, Referent, Referrer, Type, UUID},
+        types::{Attribute, Conditionality, Referent, Referrer, Type},
     },
-    woog::{
-        store::ObjectStore as WoogStore, Mutability, ObjectMethod, Parameter, Visibility, BORROWED,
-        MUTABLE, PUBLIC,
-    },
+    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, MUTABLE, PUBLIC},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -32,7 +29,7 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
-    todo::{LValue, RValue},
+    todo::{External, GType, LValue, ObjectMethod, Parameter, RValue},
     types::{MethodImplementation, StructDefinition, StructImplementation},
 };
 
@@ -56,19 +53,19 @@ macro_rules! get_referrers {
 
 macro_rules! get_referents {
     ($obj:expr, $store:expr) => {{
-        let mut referrers = sarzak_maybe_get_many_r_tos_across_r16!($obj, $store);
-        referrers.sort_by(|a, b| {
+        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!($obj, $store);
+        referents.sort_by(|a, b| {
             let binary = sarzak_get_one_r_bin_across_r5!(&a, $store);
-            let referent = sarzak_get_one_r_from_across_r6!(binary, $store);
-            let obj_a = sarzak_get_one_obj_across_r17!(referent, $store);
+            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
+            let obj_a = sarzak_get_one_obj_across_r17!(referrer, $store);
 
             let binary = sarzak_get_one_r_bin_across_r5!(&b, $store);
-            let referent = sarzak_get_one_r_from_across_r6!(binary, $store);
-            let obj_b = sarzak_get_one_obj_across_r17!(referent, $store);
+            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
+            let obj_b = sarzak_get_one_obj_across_r17!(referrer, $store);
 
             obj_a.name.cmp(&obj_b.name)
         });
-        referrers
+        referents
     }};
 }
 
@@ -243,6 +240,7 @@ impl CodeWriter for DomainStruct {
                     let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                     let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
                     let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+                    let cond = sarzak_get_one_cond_across_r11!(referrer, domain.sarzak());
 
                     emit!(
                         buffer,
@@ -252,11 +250,18 @@ impl CodeWriter for DomainStruct {
                         referrer.description,
                         r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
-                    emit!(
-                        buffer,
-                        "pub {}: Uuid,",
-                        referrer.referential_attribute.as_ident(),
-                    );
+                    match cond {
+                        Conditionality::Conditional(_) => emit!(
+                            buffer,
+                            "pub {}: Option<Uuid>,",
+                            referrer.referential_attribute.as_ident(),
+                        ),
+                        Conditionality::Unconditional(_) => emit!(
+                            buffer,
+                            "pub {}: Uuid,",
+                            referrer.referential_attribute.as_ident(),
+                        ),
+                    }
                 }
 
                 emit!(buffer, "}}");
@@ -383,6 +388,12 @@ impl CodeWriter for DomainNewImpl {
 
         // Collect the attributes
         let mut params: Vec<Parameter> = Vec::new();
+        // This is used in the new_instance call. These fields are meant to be
+        // matched up with the input arguments, and type checked. Since I'm
+        // generating both, I'm beginning to wonder what the point is.
+        //
+        // So just now the type system reminded me that I need to turn a referince
+        // into a UUID. So maybe it's worth keeping.
         let mut fields: Vec<LValue> = Vec::new();
         let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -391,13 +402,12 @@ impl CodeWriter for DomainNewImpl {
             // list of parameters.
             if attr.name != "id" {
                 let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
-                fields.push(LValue::new(attr.name.as_ident(), &ty));
+                fields.push(LValue::new(attr.name.as_ident(), ty.into()));
                 params.push(Parameter::new(
-                    woog,
-                    &Mutability::Borrowed(BORROWED),
+                    BORROWED,
                     None,
-                    &ty,
-                    &Visibility::Public(PUBLIC),
+                    ty.into(),
+                    PUBLIC,
                     attr.as_ident(),
                 ));
             }
@@ -408,22 +418,38 @@ impl CodeWriter for DomainNewImpl {
             let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
             let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-            let reference = sarzak_maybe_get_one_t_ref_across_r27!(r_obj, domain.sarzak()).unwrap();
+            let cond = sarzak_get_one_cond_across_r11!(referrer, domain.sarzak());
 
-            // This determines how a reference is stored in the struct. In this
-            // case a UUID.
-            fields.push(LValue::new(
-                referrer.referential_attribute.as_ident(),
-                &Type::Uuid(UUID),
-            ));
-            params.push(Parameter::new(
-                woog,
-                &Mutability::Borrowed(BORROWED),
-                None,
-                &Type::Reference(reference.id),
-                &Visibility::Public(PUBLIC),
-                referrer.referential_attribute.as_ident(),
-            ));
+            // If the relationship is conditional, then we need to make the
+            // parameter an Option, and make the field match.
+            match cond {
+                Conditionality::Conditional(_) => {
+                    fields.push(LValue::new(
+                        referrer.referential_attribute.as_ident(),
+                        GType::Option(Box::new(GType::Uuid)),
+                    ));
+                    params.push(Parameter::new(
+                        BORROWED,
+                        None,
+                        GType::Option(Box::new(GType::Reference(r_obj.id))),
+                        PUBLIC,
+                        referrer.referential_attribute.as_ident(),
+                    ));
+                }
+                Conditionality::Unconditional(_) => {
+                    fields.push(LValue::new(
+                        referrer.referential_attribute.as_ident(),
+                        GType::Uuid,
+                    ));
+                    params.push(Parameter::new(
+                        BORROWED,
+                        None,
+                        GType::Reference(r_obj.id),
+                        PUBLIC,
+                        referrer.referential_attribute.as_ident(),
+                    ));
+                }
+            }
         }
 
         // Add the store to the end of the  input parameters
@@ -439,7 +465,11 @@ impl CodeWriter for DomainNewImpl {
                     Type::External(e) => {
                         let ext = domain.sarzak().exhume_external(&e).unwrap();
                         if ext.name == name {
-                            break ty;
+                            break GType::External(External::new(
+                                ext.name.clone(),
+                                ext.path.clone(),
+                                None,
+                            ));
                         }
                     }
                     _ => continue,
@@ -448,26 +478,37 @@ impl CodeWriter for DomainNewImpl {
             }
         };
         params.push(Parameter::new(
-            woog,
-            &Mutability::Mutable(MUTABLE),
+            MUTABLE,
             None,
-            &store_type,
-            &Visibility::Public(PUBLIC),
+            store_type,
+            PUBLIC,
             "store".to_owned(),
         ));
 
-        // Link the params
-        let mut iter = params.iter_mut().peekable();
-        loop {
-            if let Some(param) = iter.next() {
-                if let Some(next) = iter.peek() {
-                    param.next = Some(next.id);
-                    woog.inter_parameter(param.clone());
+        // Collect rvals for rendering the method.
+        let rvals = params.clone();
+        let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
+        // Remove the store.
+        rvals.pop();
+
+        // Link the params. The result is the head of the list.
+        let param = if params.len() > 0 {
+            let mut iter = params.iter_mut().rev();
+            let mut last = iter.next().unwrap();
+            loop {
+                match iter.next() {
+                    Some(param) => {
+                        param.next = Some(last);
+                        last = param;
+                    }
+                    None => break,
                 }
-            } else {
-                break;
             }
-        }
+            log::trace!("param: {:?}", last);
+            Some(last.clone())
+        } else {
+            None
+        };
 
         // Create an ObjectMethod
         // The uniqueness of this instance depends on the inputs to it's
@@ -475,34 +516,14 @@ impl CodeWriter for DomainNewImpl {
         // object will have the same obj. So it comes down to a unique
         // name for each object. So just "new" should suffice for name,
         // because it's scoped by obj already.
-        let param = match params.len() {
-            0 => None,
-            _ => Some(&params[0]),
-        };
-        // We need to find the type that corresponds to this object
-        let mut iter = domain.sarzak().iter_ty();
-        let ty = loop {
-            if let Some((id, ty)) = iter.next() {
-                if id == &obj.id {
-                    break Some(ty);
-                }
-            } else {
-                break None;
-            }
-        };
         let method = ObjectMethod::new(
-            woog,
-            param,
-            obj,
-            ty.unwrap(),
-            &Visibility::Public(PUBLIC),
+            param.as_ref(),
+            obj.id,
+            GType::Object(obj.id),
+            PUBLIC,
             "new".to_owned(),
             "Create a new instance".to_owned(),
         );
-
-        let mut rvals: Vec<RValue> = params.iter().map(|p| p.into()).collect();
-        // Remove the store.
-        rvals.pop();
 
         buffer.block(
             DirectiveKind::CommentOrig,
@@ -519,11 +540,11 @@ impl CodeWriter for DomainNewImpl {
                 render_method_definition(buffer, &method, woog, domain.sarzak())?;
 
                 // Output the code to create the `id`.
-                let id = LValue::new("id", &Type::Uuid(UUID));
+                let id = LValue::new("id", GType::Uuid);
                 render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
 
                 // Output code to create the instance
-                let new = LValue::new("new", &Type::Reference(obj.id));
+                let new = LValue::new("new", GType::Reference(obj.id));
                 render_new_instance(buffer, obj, Some(&new), &fields, &rvals, domain.sarzak())?;
 
                 emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
