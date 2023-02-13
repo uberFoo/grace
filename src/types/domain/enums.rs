@@ -147,7 +147,12 @@ impl CodeWriter for DomainEnum {
         // I'm convinced that R14 and R15 are broken.
         let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
         let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
-        let subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
+        let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
+        subtypes.sort_by(|a, b| {
+            let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
+            let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
+            a.name.cmp(&b.name)
+        });
 
         buffer.block(
             DirectiveKind::IgnoreOrig,

@@ -31,8 +31,8 @@ use crate::isa_domain::store::ObjectStore as IsaDomainStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SimpleSupertype {
-    SimpleSubtypeB,
     SimpleSubtypeA,
+    SimpleSubtypeB,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
