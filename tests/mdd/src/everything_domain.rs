@@ -63,4 +63,18 @@ mod tests {
         let e_prime = store.exhume_everything(&e.id).unwrap();
         assert_eq!(&e, e_prime);
     }
+
+    #[test]
+    fn test_rel_nav() {
+        let mut store = ObjectStore::new();
+
+        let r = RandoObject::new(&mut store);
+        let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r, &mut store);
+
+        let r_prime = e.rando_object(&store);
+        assert_eq!(vec![&r], r_prime);
+
+        let e_prime = r.everything(&store);
+        assert_eq!(vec![&e], e_prime);
+    }
 }

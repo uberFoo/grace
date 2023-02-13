@@ -25,6 +25,14 @@ pub struct Everything<'a> {
 impl<'a> Everything<'a> {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-new"}}}
     /// Inter a new Everything in the store, and return it's `id`.
+    //     pub fn new(
+    //         bool: bool,
+    //         float: f64,
+    //         int: i64,
+    //         string: String,
+    //         rando: &RandoObject,
+    //     ) -> Everything {
+    //     pub fn new(bool: bool, float: f64, int: i64, string: String) -> Everything {
     pub fn new(
         bool: bool,
         float: f64,
@@ -34,6 +42,8 @@ impl<'a> Everything<'a> {
     ) -> Everything {
         let id = Uuid::new_v5(
             &UUID_NS,
+            //             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
+            //             format!("{}:{}:{}:{}", bool, float, int, string).as_bytes(),
             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
         );
         //         let new = Everything { id };
@@ -42,6 +52,7 @@ impl<'a> Everything<'a> {
             float: float,
             int: int,
             string: string,
+            //             rando: rando,
             rando: rando,
             id,
         };

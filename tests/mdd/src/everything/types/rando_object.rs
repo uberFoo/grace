@@ -3,6 +3,8 @@
 use crate::everything::UUID_NS;
 use uuid::Uuid;
 
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-referrer-use-statements"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-documentation"}}}
 /// Just some random object with which we wish to relate
 ///
@@ -19,6 +21,10 @@ impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-new"}}}
     /// Inter a new RandoObject in the store, and return it's `id`.
     pub fn new() -> RandoObject {
+        //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+        //         let new = RandoObject { id };
+        //         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", rando).as_bytes());
+        //         let new = RandoObject { rando: rando, id };
         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
         let new = RandoObject { id };
         new

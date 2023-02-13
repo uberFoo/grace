@@ -13,14 +13,10 @@ use sarzak::{
             sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
             sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
-            sarzak_maybe_get_one_t_ref_across_r27,
         },
-        types::{Attribute, Object, Referrer, Type, UUID},
+        types::{Attribute, Object, Referrer},
     },
-    woog::{
-        store::ObjectStore as WoogStore, Mutability, ObjectMethod, Parameter, Visibility, BORROWED,
-        PUBLIC,
-    },
+    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -34,20 +30,20 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
-    todo::{LValue, RValue},
+    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{ModuleDefinition, StructDefinition, StructImplementation},
 };
 
 pub(crate) struct DefaultStructBuilder {
     definition: Option<Box<dyn StructDefinition>>,
-    implementation: Option<Box<dyn StructImplementation>>,
+    implementations: Vec<Box<dyn StructImplementation>>,
 }
 
 impl DefaultStructBuilder {
     pub(crate) fn new() -> Self {
         DefaultStructBuilder {
             definition: None,
-            implementation: None,
+            implementations: Vec::new(),
         }
     }
 
@@ -58,7 +54,7 @@ impl DefaultStructBuilder {
     }
 
     pub(crate) fn implementation(mut self, implementation: Box<dyn StructImplementation>) -> Self {
-        self.implementation = Some(implementation);
+        self.implementations.push(implementation);
 
         self
     }
@@ -73,7 +69,7 @@ impl DefaultStructBuilder {
 
         Ok(Box::new(DefaultStructGenerator {
             definition: self.definition.unwrap(),
-            implementation: self.implementation,
+            implementations: self.implementations,
         }))
     }
 }
@@ -89,7 +85,7 @@ impl DefaultStructBuilder {
 /// structs.
 pub(crate) struct DefaultStructGenerator {
     definition: Box<dyn StructDefinition>,
-    implementation: Option<Box<dyn StructImplementation>>,
+    implementations: Vec<Box<dyn StructImplementation>>,
 }
 
 impl FileGenerator for DefaultStructGenerator {
@@ -120,7 +116,7 @@ impl FileGenerator for DefaultStructGenerator {
                 self.definition
                     .write_code(options, domain, woog, module, Some(obj_id), buffer)?;
 
-                if let Some(implementation) = &self.implementation {
+                for implementation in &self.implementations {
                     implementation.write_code(
                         options,
                         domain,
@@ -166,7 +162,7 @@ impl CodeWriter for DefaultStruct {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DefaultStruct"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -332,7 +328,7 @@ impl CodeWriter for DefaultImplementation {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DefaultImplementation"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -414,7 +410,7 @@ impl CodeWriter for DefaultNewImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DefaultStructGenerator"
+                description: "obj_id is required by DefaultNewImpl"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -438,13 +434,12 @@ impl CodeWriter for DefaultNewImpl {
             // list of parameters.
             if attr.name != "id" {
                 let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
-                fields.push(LValue::new(attr.name.as_ident(), &ty));
+                fields.push(LValue::new(attr.name.as_ident(), ty.into()));
                 params.push(Parameter::new(
-                    woog,
-                    &Mutability::Borrowed(BORROWED),
+                    BORROWED,
                     None,
-                    &ty,
-                    &Visibility::Public(PUBLIC),
+                    ty.into(),
+                    PUBLIC,
                     attr.as_ident(),
                 ));
             }
@@ -455,36 +450,43 @@ impl CodeWriter for DefaultNewImpl {
             let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
             let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-            let reference = sarzak_maybe_get_one_t_ref_across_r27!(r_obj, domain.sarzak()).unwrap();
 
             // This determines how a reference is stored in the struct. In this
             // case a reference.
             fields.push(LValue::new(
                 referrer.referential_attribute.as_ident(),
-                &Type::Reference(reference.id),
+                GType::Reference(r_obj.id),
             ));
             params.push(Parameter::new(
-                woog,
-                &Mutability::Borrowed(BORROWED),
+                BORROWED,
                 None,
-                &Type::Reference(reference.id),
-                &Visibility::Public(PUBLIC),
+                GType::Reference(r_obj.id),
+                PUBLIC,
                 referrer.referential_attribute.as_ident(),
             ));
         }
 
-        // Link the params
-        let mut iter = params.iter_mut().peekable();
-        loop {
-            if let Some(param) = iter.next() {
-                if let Some(next) = iter.peek() {
-                    param.next = Some(next.id);
-                    woog.inter_parameter(param.clone());
+        // Collect rvals for rendering the method.
+        let rvals = params.clone();
+        let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
+
+        // Link the params. The result is the head of the list.
+        let param = if params.len() > 1 {
+            let mut iter = params.iter_mut().rev();
+            let mut last = iter.next().unwrap();
+            loop {
+                match iter.next() {
+                    Some(param) => {
+                        param.next = Some(last);
+                        last = param;
+                    }
+                    None => break,
                 }
-            } else {
-                break;
             }
-        }
+            Some(last.clone())
+        } else {
+            None
+        };
 
         // Create an ObjectMethod
         // The uniqueness of this instance depends on the inputs to it's
@@ -492,32 +494,14 @@ impl CodeWriter for DefaultNewImpl {
         // object will have the same obj. So it comes down to a unique
         // name for each object. So just "new" should suffice for name,
         // because it's scoped by obj already.
-        let param = match params.len() {
-            0 => None,
-            _ => Some(&params[0]),
-        };
-        // We need to find the type that corresponds to this object
-        let mut iter = domain.sarzak().iter_ty();
-        let ty = loop {
-            if let Some((id, ty)) = iter.next() {
-                if id == &obj.id {
-                    break Some(ty);
-                }
-            } else {
-                break None;
-            }
-        };
         let method = ObjectMethod::new(
-            woog,
-            param,
-            obj,
-            ty.unwrap(),
-            &Visibility::Public(PUBLIC),
+            param.as_ref(),
+            obj.id,
+            GType::Object(obj.id),
+            PUBLIC,
             "new".to_owned(),
             "Create a new instance".to_owned(),
         );
-
-        let rvals: Vec<RValue> = params.iter().map(|p| p.into()).collect();
 
         buffer.block(
             DirectiveKind::CommentOrig,
@@ -534,12 +518,11 @@ impl CodeWriter for DefaultNewImpl {
                 render_method_definition(buffer, &method, woog, domain.sarzak())?;
 
                 // Output the code to create the `id`.
-                let id = LValue::new("id", &Type::Uuid(UUID));
+                let id = LValue::new("id", GType::Uuid);
                 render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
 
                 // Output code to create the instance
-                let new = LValue::new("new", &Type::Reference(obj.id));
-                let rvals = params.iter().map(|p| p.into()).collect();
+                let new = LValue::new("new", GType::Reference(obj.id));
                 render_new_instance(buffer, obj, Some(&new), &fields, &rvals, domain.sarzak())?;
 
                 emit!(buffer, "new");

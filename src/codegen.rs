@@ -11,14 +11,10 @@ use std::{fmt::Write, iter::zip};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        store::ObjectStore as SarzakStore,
-        types::{Object, Type, UUID},
-    },
+    sarzak::{store::ObjectStore as SarzakStore, types::Object},
     woog::{
-        macros::{woog_maybe_get_one_param_across_r1, woog_maybe_get_one_param_across_r5},
         store::ObjectStore as WoogStore,
-        types::{Mutability, ObjectMethod, BORROWED},
+        types::{Mutability, BORROWED},
     },
 };
 use snafu::prelude::*;
@@ -28,7 +24,7 @@ use crate::{
         buffer::{emit, Buffer},
         render::{RenderIdent, RenderType},
     },
-    todo::{LValue, RValue},
+    todo::{GType, LValue, ObjectMethod, RValue},
 };
 
 pub(crate) fn render_method_definition(
@@ -42,38 +38,36 @@ pub(crate) fn render_method_definition(
 
     // Write the parameter list.
     // TODO: This is so clumsy! I should clean it up.
-    if let Some(mut param) = woog_maybe_get_one_param_across_r5!(method, woog) {
-        let ty = sarzak.exhume_ty(&param.ty).unwrap();
+    if let Some(mut param) = method.param {
         let mutability = woog.exhume_mutability(&param.mutability).unwrap();
         write!(
             buffer,
             "{}: {},",
             param.name.as_ident(),
-            ty.as_type(&mutability, &sarzak),
+            param.ty.as_type(&mutability, &sarzak),
         )
         .context(FormatSnafu)?;
 
-        while let Some(next_param) = woog_maybe_get_one_param_across_r1!(param, woog) {
-            let ty = sarzak.exhume_ty(&next_param.ty).unwrap();
+        while let Some(next_param) = param.next {
             let mutability = woog.exhume_mutability(&next_param.mutability).unwrap();
             write!(
                 buffer,
                 "{}: {},",
-                next_param.as_ident(),
-                ty.as_type(&mutability, &sarzak),
+                // Why do I need to drill down to name?
+                next_param.name.as_ident(),
+                next_param.ty.as_type(&mutability, &sarzak),
             )
             .context(FormatSnafu)?;
 
-            param = next_param;
+            param = &next_param;
         }
     }
 
     // Finish the first line of the definition
-    let ty = sarzak.exhume_ty(&method.ty).unwrap();
     writeln!(
         buffer,
         ") -> {} {{",
-        ty.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+        method.ty.as_type(&Mutability::Borrowed(BORROWED), sarzak)
     )
     .context(FormatSnafu)?;
 
@@ -89,17 +83,21 @@ pub(crate) fn render_make_uuid(
     rvals: &Vec<RValue>,
     store: &SarzakStore,
 ) -> Result<()> {
-    assert!(lval.ty == UUID);
+    assert!(lval.ty == GType::Uuid);
 
     let mut format_string = String::new();
     let mut params = String::new();
     for val in rvals {
-        let ty = store.exhume_ty(&val.ty).unwrap();
-
-        if let Type::Reference(_) = ty {
-            format_string.extend(["{:?}:"]);
-        } else {
-            format_string.extend(["{}:"]);
+        match &val.ty {
+            GType::Reference(_) => {
+                format_string.extend(["{:?}:"]);
+            }
+            GType::Option(_) => {
+                format_string.extend(["{:?}:"]);
+            }
+            _ => {
+                format_string.extend(["{}:"]);
+            }
         }
 
         params.extend([val.name.as_ident(), ",".to_owned()]);
@@ -129,7 +127,7 @@ pub(crate) fn render_new_instance(
     store: &SarzakStore,
 ) -> Result<()> {
     if let Some(lval) = lval {
-        assert!(lval.ty == object.id);
+        assert!(lval.ty == GType::Reference(object.id));
         write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
     }
     emit!(
@@ -149,28 +147,64 @@ pub(crate) fn render_new_instance(
     // weird, and I just need a template engine. But then again, I'll be generating
     // unit tests, and the more I have, the better I think I'll be.
     for (field, rval) in tuples {
-        let field_type = store.exhume_ty(&field.ty).unwrap();
-        log::trace!("field type {} {:?}", field.name, field_type);
-        let rval_type = store.exhume_ty(&rval.ty).unwrap();
-        log::trace!("rval type {} {:?}", rval.name, rval_type);
-
         // TODO: This type conversion should likely be a function.
-        match field_type {
-            Type::Uuid(_) => match rval_type {
-                Type::Uuid(_) => emit!(buffer, "{}: {},", field.name, rval.name),
-                Type::Reference(_) => emit!(buffer, "{}: {}.id,", field.name, rval.name),
+        match &field.ty {
+            GType::Uuid => match &rval.ty {
+                GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
+                GType::Reference(_) => emit!(buffer, "{}: {}.id,", field.name, rval.name),
                 _ => ensure!(
-                    field_type == rval_type,
+                    field.ty == rval.ty,
                     CompilerSnafu {
-                        description: "type mismatch"
+                        description: format!(
+                            "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
+                            rval.name, rval.ty, field.name, field.ty
+                        )
+                    }
+                ),
+            },
+            GType::Option(left) => match &rval.ty {
+                GType::Option(right) => match **right {
+                    GType::Reference(obj_id) => {
+                        let obj = store.exhume_object(&obj_id).unwrap();
+                        emit!(
+                            buffer,
+                            "{}: {}.map(|{}| {}.id),",
+                            field.name,
+                            rval.name,
+                            obj.as_ident(),
+                            obj.as_ident()
+                        )
+                    }
+                    _ => {
+                        ensure!(
+                            field.ty == rval.ty,
+                            CompilerSnafu {
+                                description: format!(
+                                    "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
+                                    rval.name, rval.ty, field.name, field.ty
+                                )
+                            }
+                        );
+                    }
+                },
+                _ => ensure!(
+                    field.ty == rval.ty,
+                    CompilerSnafu {
+                        description: format!(
+                            "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
+                            rval.name, rval.ty, field.name, field.ty
+                        )
                     }
                 ),
             },
             _ => {
                 ensure!(
-                    field_type == rval_type,
+                    field.ty == rval.ty,
                     CompilerSnafu {
-                        description: "type mismatch"
+                        description: format!(
+                            "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
+                            rval.name, rval.ty, field.name, field.ty
+                        )
                     }
                 );
                 emit!(buffer, "{}: {},", field.name, rval.name)
