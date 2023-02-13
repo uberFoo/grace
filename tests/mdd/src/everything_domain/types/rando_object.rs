@@ -55,6 +55,7 @@ impl RandoObject {
     //     pub fn everything(&self, store: &ObjectStore) -> &Everything {
     //     pub fn everything(&self, store: &EverythingDomainStore) -> &Everything {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-navigate-to-rando"}}}
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-nav-backward-one-to-everything"}}}
     /// Navigate to [`Everything`] across R1(1-1)
     //     pub fn everything<'a>(&'a self, store: &'a EverythingDomainStore) -> &Everything {
     //         store.exhume_everything(&self.id).unwrap()

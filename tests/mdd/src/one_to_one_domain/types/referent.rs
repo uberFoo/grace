@@ -69,6 +69,7 @@ impl Referent {
     //             Some(ref ptr) => vec![store.exhume_a(ptr).unwrap()],
     //             None => Vec::new(),
     //         }
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-cond-to-a"}}}
     /// Navigate to [`A`] across R1(1-1c)
     pub fn a<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&A> {
         //         vec![store.iter_a().find(|a| a.1.ptr == Some(self.id)).unwrap().1]
@@ -82,6 +83,7 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-navigate-backwards-to-b"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-navigate-to-ptr"}}}
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-one-to-b"}}}
     /// Navigate to [`B`] across R2(1-1)
     //     pub fn b<'a>(&'a self, store: &'a OneToOneDomainStore) -> &B {
     //         store.iter_b().find(|b| b.1.ptr == self.id).unwrap().1
@@ -103,6 +105,7 @@ impl Referent {
     //             None => Vec::new(),
     //         }
     /// Navigate to [`C`] across R3(1-1c)
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-one-bi-cond-to-c"}}}
     /// Navigate to [`C`] across R3(1c-1c)
     pub fn c<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&C> {
         //         vec![store.iter_c().find(|c| c.1.ptr == Some(self.id)).unwrap().1]

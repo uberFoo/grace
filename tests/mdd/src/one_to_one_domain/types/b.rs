@@ -65,6 +65,8 @@ impl B {
     //                 .1,
     //         ]
     //     pub fn ptr<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Referent> {
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-nav-forward-to-ptr"}}}
+    /// Navigate to [`Referent`] across R2(1-?)
     pub fn referent<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Referent> {
         vec![store.exhume_referent(&self.ptr).unwrap()]
     }
