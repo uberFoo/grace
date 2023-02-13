@@ -11,12 +11,8 @@ use std::{fmt::Write, iter::zip};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        store::ObjectStore as SarzakStore,
-        types::{Object, Type, UUID},
-    },
+    sarzak::{store::ObjectStore as SarzakStore, types::Object},
     woog::{
-        macros::{woog_maybe_get_one_param_across_r1, woog_maybe_get_one_param_across_r5},
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
     },

@@ -36,11 +36,14 @@ impl Everything {
         float: f64,
         int: i64,
         string: String,
+        //         rando: &RandoObject,
         rando: &RandoObject,
         store: &mut EverythingDomainStore,
     ) -> Everything {
         let id = Uuid::new_v5(
             &UUID_NS,
+            //             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
+            //             format!("{}:{}:{}:{}", bool, float, int, string).as_bytes(),
             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
         );
         let new = Everything {
@@ -48,6 +51,7 @@ impl Everything {
             float: float,
             int: int,
             string: string,
+            //             rando: rando.id,
             rando: rando.id,
             id,
         };
@@ -69,9 +73,21 @@ impl Everything {
     //     pub fn rando(&self, store: &ObjectStore) -> &RandoObject {
     //     pub fn rando(&self, store: &EverythingDomainStore) -> &RandoObject {
     //         store.exhume_rando_object(self.rando).unwrap()
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-navigate-backwards-to-rando_object"}}}
     /// Navigate to [`RandoObject`] across R1(1-1)
-    pub fn rando<'a>(&'a self, store: &'a EverythingDomainStore) -> &RandoObject {
-        store.exhume_rando_object(&self.rando).unwrap()
+    //     pub fn rando<'a>(&'a self, store: &'a EverythingDomainStore) -> &RandoObject {
+    //         store.exhume_rando_object(&self.rando).unwrap()
+    //     pub fn rando_object<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&RandoObject> {
+    //         vec![
+    //             store
+    //                 .iter_rando_object()
+    //                 .find(|rando_object| rando_object.1.rando == self.id)
+    //                 .unwrap()
+    //                 .1,
+    //         ]
+    //     pub fn rando<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&RandoObject> {
+    pub fn rando_object<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&RandoObject> {
+        vec![store.exhume_rando_object(&self.rando).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 }

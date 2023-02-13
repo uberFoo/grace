@@ -27,6 +27,15 @@ pub struct RandoObject {
 impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-new"}}}
     /// Inter a new RandoObject in the store, and return it's `id`.
+    //     pub fn new(store: &mut EverythingDomainStore) -> RandoObject {
+    //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+    //         let new = RandoObject { id };
+    //     pub fn new(rando: &Everything, store: &mut EverythingDomainStore) -> RandoObject {
+    //         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", rando).as_bytes());
+    //         let new = RandoObject {
+    //             rando: rando.id,
+    //             id,
+    //         };
     pub fn new(store: &mut EverythingDomainStore) -> RandoObject {
         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
         let new = RandoObject { id };
@@ -45,15 +54,26 @@ impl RandoObject {
     //     pub fn everything(&self) -> &Everything {}
     //     pub fn everything(&self, store: &ObjectStore) -> &Everything {
     //     pub fn everything(&self, store: &EverythingDomainStore) -> &Everything {
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-navigate-to-rando"}}}
     /// Navigate to [`Everything`] across R1(1-1)
-    pub fn everything<'a>(&'a self, store: &'a EverythingDomainStore) -> &Everything {
-        //         store.exhume_everything(&self.id).unwrap()
-        store
-            .iter_everything()
-            //             .filter(|everything| everything.1.rando == self.id)
-            .find(|everything| everything.1.rando == self.id)
-            .unwrap()
-            .1
+    //     pub fn everything<'a>(&'a self, store: &'a EverythingDomainStore) -> &Everything {
+    //         store.exhume_everything(&self.id).unwrap()
+    //         store
+    //             .iter_everything()
+    //             .filter(|everything| everything.1.rando == self.id)
+    //             .find(|everything| everything.1.rando == self.id)
+    //             .unwrap()
+    //             .1
+    //     pub fn rando<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&Everything> {
+    //         vec![store.exhume_everything(&self.rando).unwrap()]
+    pub fn everything<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&Everything> {
+        vec![
+            store
+                .iter_everything()
+                .find(|everything| everything.1.rando == self.id)
+                .unwrap()
+                .1,
+        ]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 }

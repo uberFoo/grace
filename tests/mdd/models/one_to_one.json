@@ -6,8 +6,8 @@
         "entities": {
             "88cd70e0-c065-5c4b-b1ce-69194ab4d0cb": {
                 "id": "88cd70e0-c065-5c4b-b1ce-69194ab4d0cb",
-                "domain_name": "one_to_one",
                 "description": "Domain to test the many flavors of 1-1 relationships.",
+                "domain_name": "one_to_one",
                 "domain_ns": "b49d6fe1-e5e9-5896-bd42-b72012429e52",
                 "width": 4000,
                 "height": 3200,
@@ -16,12 +16,6 @@
                     "y": -515
                 },
                 "objects": {
-                    "92bc9be3-761f-5b31-a013-79a4d5343870": {
-                        "x": 1445,
-                        "y": 1065,
-                        "width": 193,
-                        "height": 99
-                    },
                     "91da8f64-33b3-58eb-923f-9adf702bdec3": {
                         "x": 1436,
                         "y": 772,
@@ -32,18 +26,70 @@
                         "x": 1849,
                         "y": 1073,
                         "width": 198,
-                        "height": 104,
-                        "id": "db839890-ce6f-51e8-91cb-07d494cb81c7"
+                        "height": 104
+                    },
+                    "92bc9be3-761f-5b31-a013-79a4d5343870": {
+                        "x": 1445,
+                        "y": 1065,
+                        "width": 193,
+                        "height": 99
                     },
                     "04f50b98-563e-5268-b6b4-7ea3b18d162b": {
                         "x": 1072,
                         "y": 1063,
                         "width": 202,
-                        "height": 104,
-                        "id": "04f50b98-563e-5268-b6b4-7ea3b18d162b"
+                        "height": 104
                     }
                 },
                 "relationships": {
+                    "a29e0fe5-6ba5-5af9-8f22-2ae8a8219cb3": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "db839890-ce6f-51e8-91cb-07d494cb81c7",
+                                "dir": "West",
+                                "x": 1849,
+                                "y": 1125,
+                                "offset": {
+                                    "x": -72,
+                                    "y": 74
+                                }
+                            },
+                            "to": {
+                                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                                "dir": "East",
+                                "x": 1638,
+                                "y": 1125,
+                                "offset": {
+                                    "x": 22,
+                                    "y": 31
+                                }
+                            }
+                        }
+                    },
+                    "dfe91224-6eaf-5b87-85db-8b7df06b620b": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "04f50b98-563e-5268-b6b4-7ea3b18d162b",
+                                "dir": "East",
+                                "x": 1274,
+                                "y": 1126,
+                                "offset": {
+                                    "x": -39,
+                                    "y": 66
+                                }
+                            },
+                            "to": {
+                                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
+                                "dir": "West",
+                                "x": 1445,
+                                "y": 1126,
+                                "offset": {
+                                    "x": -3,
+                                    "y": 55
+                                }
+                            }
+                        }
+                    },
                     "937c3d7c-c43a-5359-888c-950cbf60574b": {
                         "BinaryUI": {
                             "from": {
@@ -65,54 +111,6 @@
                                     "x": 23,
                                     "y": -16
                                 }
-                            }
-                        }
-                    },
-                    "a29e0fe5-6ba5-5af9-8f22-2ae8a8219cb3": {
-                        "BinaryUI": {
-                            "from": {
-                                "id": "db839890-ce6f-51e8-91cb-07d494cb81c7",
-                                "x": 1849,
-                                "y": 1125,
-                                "offset": {
-                                    "x": -72,
-                                    "y": 74
-                                },
-                                "dir": "West"
-                            },
-                            "to": {
-                                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
-                                "x": 1638,
-                                "y": 1125,
-                                "offset": {
-                                    "x": 22,
-                                    "y": 31
-                                },
-                                "dir": "East"
-                            }
-                        }
-                    },
-                    "dfe91224-6eaf-5b87-85db-8b7df06b620b": {
-                        "BinaryUI": {
-                            "from": {
-                                "id": "04f50b98-563e-5268-b6b4-7ea3b18d162b",
-                                "x": 1274,
-                                "y": 1126,
-                                "offset": {
-                                    "x": -39,
-                                    "y": 66
-                                },
-                                "dir": "East"
-                            },
-                            "to": {
-                                "id": "92bc9be3-761f-5b31-a013-79a4d5343870",
-                                "x": 1445,
-                                "y": 1126,
-                                "offset": {
-                                    "x": -3,
-                                    "y": 55
-                                },
-                                "dir": "West"
                             }
                         }
                     }
@@ -171,15 +169,15 @@
                 "name": "B",
                 "description": "B: Referrer Unconditional to Referent\n\nThis is a plain Jayne 😉 1-1 relationship, where this guy is formalizing.",
                 "attributes": {
-                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
-                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
-                        "name": "id",
-                        "type": "Uuid"
-                    },
                     "b87cc517-beff-5a09-b9a1-14c57f645e00": {
                         "id": "b87cc517-beff-5a09-b9a1-14c57f645e00",
                         "name": "bit",
                         "type": "Boolean"
+                    },
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
                     }
                 }
             },
@@ -210,22 +208,22 @@
             "dfe91224-6eaf-5b87-85db-8b7df06b620b"
         ],
         "entities": {
-            "937c3d7c-c43a-5359-888c-950cbf60574b": {
+            "dfe91224-6eaf-5b87-85db-8b7df06b620b": {
                 "Binary": {
-                    "id": "937c3d7c-c43a-5359-888c-950cbf60574b",
-                    "number": 1,
+                    "id": "dfe91224-6eaf-5b87-85db-8b7df06b620b",
+                    "number": 3,
                     "from": {
-                        "obj_id": "91da8f64-33b3-58eb-923f-9adf702bdec3",
-                        "description": "pointed at by",
+                        "obj_id": "04f50b98-563e-5268-b6b4-7ea3b18d162b",
+                        "description": "points at",
                         "cardinality": "One",
                         "conditionality": "Conditional",
                         "formalizing_attribute_name": "ptr"
                     },
                     "to": {
                         "obj_id": "92bc9be3-761f-5b31-a013-79a4d5343870",
-                        "description": "points at",
+                        "description": "is pointed at by",
                         "cardinality": "One",
-                        "conditionality": "Unconditional"
+                        "conditionality": "Conditional"
                     }
                 }
             },
@@ -235,33 +233,33 @@
                     "number": 2,
                     "from": {
                         "obj_id": "db839890-ce6f-51e8-91cb-07d494cb81c7",
-                        "description": "is pointed at by",
+                        "description": "points at",
                         "cardinality": "One",
                         "conditionality": "Unconditional",
                         "formalizing_attribute_name": "ptr"
                     },
                     "to": {
                         "obj_id": "92bc9be3-761f-5b31-a013-79a4d5343870",
-                        "description": "points at",
+                        "description": "is pointed at by",
                         "cardinality": "One",
                         "conditionality": "Unconditional"
                     }
                 }
             },
-            "dfe91224-6eaf-5b87-85db-8b7df06b620b": {
+            "937c3d7c-c43a-5359-888c-950cbf60574b": {
                 "Binary": {
-                    "id": "dfe91224-6eaf-5b87-85db-8b7df06b620b",
-                    "number": 3,
+                    "id": "937c3d7c-c43a-5359-888c-950cbf60574b",
+                    "number": 1,
                     "from": {
-                        "obj_id": "04f50b98-563e-5268-b6b4-7ea3b18d162b",
-                        "description": "is pointed at by",
+                        "obj_id": "91da8f64-33b3-58eb-923f-9adf702bdec3",
+                        "description": "points at",
                         "cardinality": "One",
-                        "conditionality": "Conditional",
+                        "conditionality": "Unconditional",
                         "formalizing_attribute_name": "ptr"
                     },
                     "to": {
                         "obj_id": "92bc9be3-761f-5b31-a013-79a4d5343870",
-                        "description": "points at",
+                        "description": "pointed at by",
                         "cardinality": "One",
                         "conditionality": "Conditional"
                     }

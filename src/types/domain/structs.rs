@@ -7,11 +7,11 @@ use sarzak::{
     sarzak::{
         macros::{
             sarzak_get_many_as_across_r1, sarzak_get_one_cond_across_r11,
-            sarzak_get_one_obj_across_r16, sarzak_get_one_obj_across_r17,
-            sarzak_get_one_r_bin_across_r5, sarzak_get_one_r_bin_across_r6,
-            sarzak_get_one_r_from_across_r6, sarzak_get_one_r_to_across_r5,
-            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
-            sarzak_maybe_get_many_r_tos_across_r16,
+            sarzak_get_one_cond_across_r12, sarzak_get_one_obj_across_r16,
+            sarzak_get_one_obj_across_r17, sarzak_get_one_r_bin_across_r5,
+            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_from_across_r6,
+            sarzak_get_one_r_to_across_r5, sarzak_get_one_t_across_r2,
+            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_tos_across_r16,
         },
         types::{Attribute, Conditionality, Referent, Referrer, Type},
     },
@@ -240,6 +240,54 @@ impl CodeWriter for DomainStruct {
                     let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                     let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
                     let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+                    // Conditionality is confusing for me to think about for some reason,
+                    // so I'm going to put it down here. I should probably remove this and
+                    // put it in the book, once I'm done.
+                    //
+                    // These aren't really all that tricky, they just get jumbled about
+                    // in my head.
+                    //
+                    // # 1-1
+                    // This is the easy case. Just output a field for the referential attribute.
+                    //
+                    // It's also easy creating the navigation functions. The formalizing side
+                    // just does a lookup on the store. The other side has to iterate over
+                    // the instances of the formalizing side (from the store) and find the
+                    // one that matches it's id. It'll be there. Easy peasy.
+                    //
+                    // # 1-1c
+                    // This is when my brain starts to hurt. For one, the referential
+                    // attribute should always be on the side that is unconditional.
+                    // Therefore, there is no need for an Option when we output the
+                    // field that contains the id of the referent.
+                    //
+                    // Navigation is slightly trickier. Going from referrer to referent
+                    // is the same as 1-1. Going from referent to referrer is a bit
+                    // trickier. We have to iterate over the instances of the referrer,
+                    // looking for an id that matches the referent. However, we can't
+                    // assume that there will always be one.
+                    //
+                    // # 1c-1c
+                    // Here is where we start getting into Options. The referrer side
+                    // still has a pointer to the referent, but there may not be a
+                    // referent on the other side. So we need to store it in an Option.
+                    //
+                    // Navigation is different going from the referrer to the referent
+                    // because the referential attribute is inside of an Option. Otherwise
+                    // the store lookup is the same.
+                    //
+                    // Going from referent to referrer is the same as 1-1c.
+                    //
+
+                    // So, what that means, practically, is that I need to check the
+                    // conditionality of the referent side here.
+                    //
+                    // Fuck me. I just came to the opposite conclusion! 😱💩 Maybe
+                    // I was thinking of where the 'c' is drawn?
+                    //
+                    // We should only wrap our pointer in an option when we are conditional.
+                    // That means that we need to check the conditionality of the referrer.
+                    //
                     let cond = sarzak_get_one_cond_across_r11!(referrer, domain.sarzak());
 
                     emit!(
@@ -623,78 +671,245 @@ impl CodeWriter for DomainRelNavImpl {
             let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
             let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-            buffer.block(
-                DirectiveKind::CommentOrig,
-                format!(
-                    "{}-struct-impl-navigate-to-{}",
-                    obj.as_ident(),
-                    referrer.referential_attribute.as_ident()
-                ),
-                |buffer| {
-                    emit!(
-                        buffer,
-                        "/// Navigate to [`{}`] across R{}(1-1)",
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
-                        binary.number,
-                    );
-                    emit!(
-                        buffer,
-                        "pub fn {}<'a>(&'a self, store: &'a {}) -> &{} {{",
-                        referrer.referential_attribute.as_ident(),
-                        store.name,
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-                    );
-                    emit!(
-                        buffer,
-                        "store.exhume_{}(&self.{}).unwrap()",
-                        r_obj.as_ident(),
-                        referrer.referential_attribute.as_ident()
-                    );
-                    emit!(buffer, "}}");
+            // Note that elsewhere we use the conditionality of the referent to determine
+            // conditionality. For relationship navigation, we use the conditionality of
+            // the referrer. Why is this?
+            //
+            // See above. Basically we have the pointer, and unless _we_ are conditional,
+            // we can always just grab the thing on the other side.
+            let cond = sarzak_get_one_cond_across_r12!(referrer, domain.sarzak());
 
-                    Ok(())
-                },
-            )?;
+            match cond {
+                Conditionality::Unconditional(_) => {
+                    buffer.block(
+                        DirectiveKind::CommentOrig,
+                        format!(
+                            "{}-struct-impl-navigate-to-{}",
+                            obj.as_ident(),
+                            referrer.referential_attribute.as_ident()
+                        ),
+                        |buffer| {
+                            emit!(
+                                buffer,
+                                "/// Navigate to [`{}`] across R{}(1-1)",
+                                r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                                binary.number,
+                            );
+                            emit!(
+                                buffer,
+                                "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                                r_obj.as_ident(),
+                                store.name,
+                                r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                            );
+                            emit!(
+                                buffer,
+                                "vec![store.exhume_{}(&self.{}).unwrap()]",
+                                r_obj.as_ident(),
+                                referrer.referential_attribute.as_ident()
+                            );
+                            emit!(buffer, "}}");
+
+                            Ok(())
+                        },
+                    )?;
+                }
+                Conditionality::Conditional(_) => {
+                    buffer.block(
+                        DirectiveKind::CommentOrig,
+                        format!(
+                            "{}-struct-impl-navigate-to-{}",
+                            obj.as_ident(),
+                            referrer.referential_attribute.as_ident()
+                        ),
+                        |buffer| {
+                            emit!(
+                                buffer,
+                                "/// Navigate to [`{}`] across R{}(1-1c)",
+                                r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                                binary.number,
+                            );
+                            emit!(
+                                buffer,
+                                "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                                r_obj.as_ident(),
+                                store.name,
+                                r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                            );
+                            emit!(
+                                buffer,
+                                "match self.{} {{",
+                                referrer.referential_attribute.as_ident()
+                            );
+                            emit!(
+                                buffer,
+                                "Some(ref {}) => vec![store.exhume_{}({}).unwrap()],",
+                                referrer.referential_attribute.as_ident(),
+                                r_obj.as_ident(),
+                                referrer.referential_attribute.as_ident()
+                            );
+                            emit!(buffer, "None => Vec::new(),");
+                            emit!(buffer, "}}");
+                            emit!(buffer, "}}");
+
+                            Ok(())
+                        },
+                    )?;
+                }
+            }
         }
 
         for referent in &referents {
             let binary = sarzak_get_one_r_bin_across_r5!(referent, domain.sarzak());
             let referrer = sarzak_get_one_r_from_across_r6!(binary, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r17!(referrer, domain.sarzak());
-            buffer.block(
-                DirectiveKind::CommentOrig,
-                format!(
-                    "{}-struct-impl-navigate-backwards-to-{}",
-                    obj.as_ident(),
-                    r_obj.as_ident()
-                ),
-                |buffer| {
-                    emit!(
-                        buffer,
-                        "/// Navigate to [`{}`] across R{}(1-1)",
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
-                        binary.number
-                    );
-                    emit!(
-                        buffer,
-                        "pub fn {}<'a>(&'a self, store: &'a {}) -> &{} {{",
-                        r_obj.as_ident(),
-                        store.name,
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-                    );
-                    emit!(buffer, "store.iter_{}()", r_obj.as_ident());
-                    emit!(
-                        buffer,
-                        ".find(|{}| {}.1.{} == self.id).unwrap().1",
-                        r_obj.as_ident(),
-                        r_obj.as_ident(),
-                        referrer.referential_attribute.as_ident()
-                    );
-                    emit!(buffer, "}}");
+            let my_cond = sarzak_get_one_cond_across_r11!(referent, domain.sarzak());
+            let other_cond = sarzak_get_one_cond_across_r12!(referrer, domain.sarzak());
 
-                    Ok(())
+            match my_cond {
+                Conditionality::Unconditional(_) => {
+                    buffer.block(
+                        DirectiveKind::CommentOrig,
+                        format!(
+                            "{}-struct-impl-navigate-backwards-to-{}",
+                            obj.as_ident(),
+                            r_obj.as_ident()
+                        ),
+                        |buffer| {
+                            emit!(
+                                buffer,
+                                "/// Navigate to [`{}`] across R{}(1-1)",
+                                r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                                binary.number
+                            );
+                            emit!(
+                                buffer,
+                                "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                                r_obj.as_ident(),
+                                store.name,
+                                r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                            );
+                            emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
+                            emit!(
+                                buffer,
+                                ".find(|{}| {}.1.{} == self.id).unwrap().1]",
+                                r_obj.as_ident(),
+                                r_obj.as_ident(),
+                                referrer.referential_attribute.as_ident()
+                            );
+                            emit!(buffer, "}}");
+
+                            Ok(())
+                        },
+                    )?;
+                }
+                Conditionality::Conditional(_) => match other_cond {
+                    Conditionality::Unconditional(_) => {
+                        buffer.block(
+                            DirectiveKind::CommentOrig,
+                            format!(
+                                "{}-struct-impl-navigate-backwards-to-{}",
+                                obj.as_ident(),
+                                r_obj.as_ident()
+                            ),
+                            |buffer| {
+                                emit!(
+                                    buffer,
+                                    "/// Navigate to [`{}`] across R{}(1-1c)",
+                                    r_obj
+                                        .as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                                    binary.number
+                                );
+                                emit!(
+                                    buffer,
+                                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                                    r_obj.as_ident(),
+                                    store.name,
+                                    r_obj
+                                        .as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                                );
+                                emit!(
+                                    buffer,
+                                    "let {} = store.iter_{}()",
+                                    r_obj.as_ident(),
+                                    r_obj.as_ident()
+                                );
+                                emit!(
+                                    buffer,
+                                    ".find(|{}| {}.1.{} == self.id);",
+                                    r_obj.as_ident(),
+                                    r_obj.as_ident(),
+                                    referrer.referential_attribute.as_ident()
+                                );
+                                emit!(buffer, "match {} {{", r_obj.as_ident());
+                                emit!(
+                                    buffer,
+                                    "Some(ref {}) => vec![{}.1],",
+                                    r_obj.as_ident(),
+                                    r_obj.as_ident()
+                                );
+                                emit!(buffer, "None => Vec::new(),");
+                                emit!(buffer, "}}");
+                                emit!(buffer, "}}");
+
+                                Ok(())
+                            },
+                        )?;
+                    }
+                    Conditionality::Conditional(_) => {
+                        buffer.block(
+                            DirectiveKind::CommentOrig,
+                            format!(
+                                "{}-struct-impl-navigate-backwards-to-{}",
+                                obj.as_ident(),
+                                r_obj.as_ident()
+                            ),
+                            |buffer| {
+                                emit!(
+                                    buffer,
+                                    "/// Navigate to [`{}`] across R{}(1c-1c)",
+                                    r_obj
+                                        .as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                                    binary.number
+                                );
+                                emit!(
+                                    buffer,
+                                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                                    r_obj.as_ident(),
+                                    store.name,
+                                    r_obj
+                                        .as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                                );
+                                emit!(
+                                    buffer,
+                                    "let {} = store.iter_{}()",
+                                    r_obj.as_ident(),
+                                    r_obj.as_ident()
+                                );
+                                emit!(
+                                    buffer,
+                                    ".find(|{}| {}.1.{} == Some(self.id));",
+                                    r_obj.as_ident(),
+                                    r_obj.as_ident(),
+                                    referrer.referential_attribute.as_ident()
+                                );
+                                emit!(buffer, "match {} {{", r_obj.as_ident());
+                                emit!(
+                                    buffer,
+                                    "Some(ref {}) => vec![{}.1],",
+                                    r_obj.as_ident(),
+                                    r_obj.as_ident()
+                                );
+                                emit!(buffer, "None => Vec::new(),");
+                                emit!(buffer, "}}");
+                                emit!(buffer, "}}");
+
+                                Ok(())
+                            },
+                        )?;
+                    }
                 },
-            )?;
+            }
         }
 
         Ok(())

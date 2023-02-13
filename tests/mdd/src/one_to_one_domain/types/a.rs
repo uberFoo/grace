@@ -30,10 +30,22 @@ pub struct A {
 impl A {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"a-struct-impl-new"}}}
     /// Inter a new A in the store, and return it's `id`.
+    //     pub fn new(number: i64, ptr: &Referent, store: &mut OneToOneDomainStore) -> A {
+    //         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, ptr).as_bytes());
+    //         let new = A {
+    //             number: number,
+    //             ptr: ptr.id,
+    //             id,
+    //         };
+    //     pub fn new(number: i64, store: &mut OneToOneDomainStore) -> A {
+    //         let id = Uuid::new_v5(&UUID_NS, format!("{}", number).as_bytes());
+    //         let new = A { number: number, id };
+    //     pub fn new(number: i64, ptr: Option<&Referent>, store: &mut OneToOneDomainStore) -> A {
     pub fn new(number: i64, ptr: &Referent, store: &mut OneToOneDomainStore) -> A {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, ptr).as_bytes());
         let new = A {
             number: number,
+            //             ptr: ptr.map(|referent| referent.id),
             ptr: ptr.id,
             id,
         };
@@ -42,9 +54,21 @@ impl A {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"a-struct-impl-navigate-to-ptr"}}}
+    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"a-struct-impl-navigate-backwards-to-referent"}}}
     /// Navigate to [`Referent`] across R1(1-1)
-    pub fn ptr<'a>(&'a self, store: &'a OneToOneDomainStore) -> &Referent {
-        store.exhume_referent(&self.ptr).unwrap()
+    //     pub fn ptr<'a>(&'a self, store: &'a OneToOneDomainStore) -> &Referent {
+    //         store.exhume_referent(&self.ptr).unwrap()
+    //     pub fn referent<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Referent> {
+    //         vec![
+    //             store
+    //                 .iter_referent()
+    //                 .find(|referent| referent.1.ptr == self.id)
+    //                 .unwrap()
+    //                 .1,
+    //         ]
+    //     pub fn ptr<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Referent> {
+    pub fn referent<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Referent> {
+        vec![store.exhume_referent(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 }

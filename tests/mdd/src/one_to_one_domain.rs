@@ -26,15 +26,15 @@ mod tests {
         let tgt_1 = Referent::new("gene".to_owned(), &mut store);
         let a = A::new(42, &tgt_0, &mut store);
 
-        // let select_tgt = one_to_one_get_one_tgt_across_r1!(a, store);
-        // assert_eq!(&tgt_0, select_tgt);
+        let select_tgt = a.referent(&store);
+        assert_eq!(&tgt_0, select_tgt[0]);
 
-        // let select_a = one_to_one_maybe_get_one_a_across_r1!(tgt_0, store);
-        // assert!(select_a.is_some());
-        // assert_eq!(Some(&a), select_a);
+        let select_a = tgt_0.a(&store);
+        assert!(select_a.len() == 1);
+        assert_eq!(&a, select_a[0]);
 
-        // let select_a = one_to_one_maybe_get_one_a_across_r1!(tgt_1, store);
-        // assert!(select_a.is_none());
+        let select_a = tgt_1.a(&store);
+        assert!(select_a.len() == 0);
     }
 
     #[test]
@@ -46,17 +46,17 @@ mod tests {
         let b_0 = B::new(true, &tgt_0, &mut store);
         let b_1 = B::new(false, &tgt_1, &mut store);
 
-        // let select_tgt_0 = one_to_one_get_one_tgt_across_r2!(b_0, store);
-        // assert_eq!(&tgt_0, select_tgt_0);
+        let tgt = b_0.referent(&store);
+        assert_eq!(&tgt_0, tgt[0]);
 
-        // let select_tgt_1 = one_to_one_get_one_tgt_across_r2!(b_1, store);
-        // assert_eq!(&tgt_1, select_tgt_1);
+        let tgt = b_1.referent(&store);
+        assert_eq!(&tgt_1, tgt[0]);
 
-        // let select_b_0 = one_to_one_get_one_b_across_r2!(tgt_0, store);
-        // assert_eq!(&b_0, select_b_0);
+        let b = tgt_0.b(&store);
+        assert_eq!(&b_0, b[0]);
 
-        // let select_b_1 = one_to_one_get_one_b_across_r2!(tgt_1, store);
-        // assert_eq!(&b_1, select_b_1);
+        let b = tgt_1.b(&store);
+        assert_eq!(&b_1, b[0]);
     }
 
     #[test]
@@ -68,18 +68,18 @@ mod tests {
         let c_0 = C::new(42.0, Some(&tgt_1), &mut store);
         let c_1 = C::new(1.162, None, &mut store);
 
-        // let tgt = one_to_one_maybe_get_one_tgt_across_r3!(c_0, store);
-        // assert!(tgt.is_some());
-        // assert_eq!(Some(&tgt_1), tgt);
+        let tgt = c_0.referent(&store);
+        assert!(tgt.len() == 1);
+        assert_eq!(&tgt_1, tgt[0]);
 
-        // let tgt = one_to_one_maybe_get_one_tgt_across_r3!(c_1, store);
-        // assert!(tgt.is_none());
+        let tgt = c_1.referent(&store);
+        assert!(tgt.len() == 0);
 
-        // let c = one_to_one_maybe_get_one_c_across_r3!(tgt_0, store);
-        // assert!(c.is_none());
+        let c = tgt_0.c(&store);
+        assert!(c.len() == 0);
 
-        // let c = one_to_one_maybe_get_one_c_across_r3!(tgt_1, store);
-        // assert!(c.is_some());
-        // assert_eq!(Some(&c_0), c);
+        let c = tgt_1.c(&store);
+        assert!(c.len() == 1);
+        assert_eq!(&c_0, c[0]);
     }
 }
