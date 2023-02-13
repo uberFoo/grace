@@ -5,7 +5,10 @@ use std::{
 
 use sarzak::{
     mc::{FileSnafu, ModelCompilerError, Result},
-    sarzak::types::{External, Object, Type},
+    sarzak::{
+        macros::sarzak_maybe_get_many_r_sups_across_r14,
+        types::{External, Object, Supertype, Type},
+    },
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -24,6 +27,7 @@ use crate::{
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
+            enums::DomainEnum,
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, DomainNewImpl, DomainRelNavImpl, DomainStruct},
         },
@@ -51,6 +55,12 @@ impl<'a> DomainTarget<'a> {
         woog: WoogStore,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
+        // This post_load script creates an external entity of the ObjectStore so that
+        // we can use it from within the domain. Remember that the ObjectStore is a
+        // generated construct, and appears as if it was an external library to the
+        // domain. Now, if it were modeled, we'd probably include some aspect of it's
+        // model as an imported object, and we wouldn't need this. We'd probably need
+        // something else...
         let domain = {
             let module = module.to_owned();
             domain
@@ -97,9 +107,32 @@ impl<'a> DomainTarget<'a> {
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 
         // Iterate over the objects, generating an implementation for file each.
+        // Now things get tricky. We need to generate an enum if the objects is
+        // a supertype. For now, we just ignore any attributes on a supertype.
         for (id, obj) in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
+
+            let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, &self.domain.sarzak());
+            let generator = if is_super.len() > 0 {
+                DefaultStructBuilder::new()
+                    .definition(DomainEnum::new())
+                    .build()?
+            } else {
+                DefaultStructBuilder::new()
+                    // Definition type
+                    .definition(DomainStruct::new())
+                    .implementation(
+                        DomainImplBuilder::new()
+                            // New implementation
+                            .method(DomainNewImpl::new())
+                            // Relationship navigation implementations
+                            .method(DomainRelNavImpl::new())
+                            .build(),
+                    )
+                    // Go!
+                    .build()?
+            };
 
             // Here's the generation.
             GeneratorBuilder::new()
@@ -114,23 +147,8 @@ impl<'a> DomainTarget<'a> {
                 .module(self.module)
                 .obj_id(&id)
                 // What to write
-                .generator(
-                    // Struct
-                    DefaultStructBuilder::new()
-                        // Definition type
-                        .definition(DomainStruct::new())
-                        .implementation(
-                            DomainImplBuilder::new()
-                                // New implementation
-                                .method(DomainNewImpl::new())
-                                // Relationship navigation implementations
-                                .method(DomainRelNavImpl::new())
-                                .build(),
-                        )
-                        // Go!
-                        .build()?,
-                )
-                // Really go!
+                .generator(generator)
+                // Go!
                 .generate()?;
         }
 

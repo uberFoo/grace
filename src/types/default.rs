@@ -31,12 +31,12 @@ use crate::{
     },
     options::GraceCompilerOptions,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
-    types::{ModuleDefinition, StructDefinition, StructImplementation},
+    types::{ModuleDefinition, TypeDefinition, TypeImplementation},
 };
 
 pub(crate) struct DefaultStructBuilder {
-    definition: Option<Box<dyn StructDefinition>>,
-    implementations: Vec<Box<dyn StructImplementation>>,
+    definition: Option<Box<dyn TypeDefinition>>,
+    implementations: Vec<Box<dyn TypeImplementation>>,
 }
 
 impl DefaultStructBuilder {
@@ -47,13 +47,13 @@ impl DefaultStructBuilder {
         }
     }
 
-    pub(crate) fn definition(mut self, definition: Box<dyn StructDefinition>) -> Self {
+    pub(crate) fn definition(mut self, definition: Box<dyn TypeDefinition>) -> Self {
         self.definition = Some(definition);
 
         self
     }
 
-    pub(crate) fn implementation(mut self, implementation: Box<dyn StructImplementation>) -> Self {
+    pub(crate) fn implementation(mut self, implementation: Box<dyn TypeImplementation>) -> Self {
         self.implementations.push(implementation);
 
         self
@@ -84,8 +84,8 @@ impl DefaultStructBuilder {
 /// know how to write different parts of some rust code. This one is for
 /// structs.
 pub(crate) struct DefaultStructGenerator {
-    definition: Box<dyn StructDefinition>,
-    implementations: Vec<Box<dyn StructImplementation>>,
+    definition: Box<dyn TypeDefinition>,
+    implementations: Vec<Box<dyn TypeImplementation>>,
 }
 
 impl FileGenerator for DefaultStructGenerator {
@@ -142,12 +142,12 @@ impl FileGenerator for DefaultStructGenerator {
 pub(crate) struct DefaultStruct;
 
 impl DefaultStruct {
-    pub(crate) fn new() -> Box<dyn StructDefinition> {
+    pub(crate) fn new() -> Box<dyn TypeDefinition> {
         Box::new(Self)
     }
 }
 
-impl StructDefinition for DefaultStruct {}
+impl TypeDefinition for DefaultStruct {}
 
 impl CodeWriter for DefaultStruct {
     fn write_code(
@@ -286,7 +286,7 @@ impl CodeWriter for DefaultStruct {
 }
 
 pub(crate) struct DefaultImplBuilder {
-    implementation: Option<Box<dyn StructImplementation>>,
+    implementation: Option<Box<dyn TypeImplementation>>,
 }
 
 impl DefaultImplBuilder {
@@ -296,13 +296,13 @@ impl DefaultImplBuilder {
         }
     }
 
-    pub(crate) fn implementation(mut self, implementation: Box<dyn StructImplementation>) -> Self {
+    pub(crate) fn implementation(mut self, implementation: Box<dyn TypeImplementation>) -> Self {
         self.implementation = Some(implementation);
 
         self
     }
 
-    pub(crate) fn build(self) -> Box<dyn StructImplementation> {
+    pub(crate) fn build(self) -> Box<dyn TypeImplementation> {
         Box::new(DefaultImplementation {
             implementation: self.implementation,
         })
@@ -310,10 +310,10 @@ impl DefaultImplBuilder {
 }
 
 pub(crate) struct DefaultImplementation {
-    implementation: Option<Box<dyn StructImplementation>>,
+    implementation: Option<Box<dyn TypeImplementation>>,
 }
 
-impl StructImplementation for DefaultImplementation {}
+impl TypeImplementation for DefaultImplementation {}
 
 impl CodeWriter for DefaultImplementation {
     fn write_code(
@@ -390,12 +390,12 @@ impl CodeWriter for DefaultImplementation {
 pub(crate) struct DefaultNewImpl;
 
 impl DefaultNewImpl {
-    pub(crate) fn new() -> Box<dyn StructImplementation> {
+    pub(crate) fn new() -> Box<dyn TypeImplementation> {
         Box::new(Self)
     }
 }
 
-impl StructImplementation for DefaultNewImpl {}
+impl TypeImplementation for DefaultNewImpl {}
 
 impl CodeWriter for DefaultNewImpl {
     fn write_code(

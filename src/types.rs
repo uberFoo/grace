@@ -7,18 +7,18 @@ use crate::codegen::generator::CodeWriter;
 pub(crate) mod default;
 pub(crate) mod domain;
 
-/// Struct Definition Trait
+/// Type Definition Trait
 ///
-/// This trait is implemented by types that are capable of generating a struct
-/// definition.
-pub(crate) trait StructDefinition: CodeWriter {}
+/// This trait is implemented by types that are capable of generating a
+/// definition for an enum or a struct.
+pub(crate) trait TypeDefinition: CodeWriter {}
 
-/// Struct Implementation Trait
+/// Type Implementation Trait
 ///
-/// This trait is implemented by types that are capable of generating a struct
+/// This trait is implemented by types that are capable of generating an enum or struct
 /// implementation. It's basically just a container for [`MethodImplementation`]
 /// implementors.
-pub(crate) trait StructImplementation: CodeWriter {}
+pub(crate) trait TypeImplementation: CodeWriter {}
 
 /// Method Trait
 ///
