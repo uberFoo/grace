@@ -31,8 +31,8 @@ use crate::isa_domain::store::ObjectStore as IsaDomainStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SuperT {
-    SubtypeB,
     SubtypeA,
+    SubtypeB,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

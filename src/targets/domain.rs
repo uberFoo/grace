@@ -6,8 +6,8 @@ use std::{
 use sarzak::{
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::{
-        macros::sarzak_maybe_get_many_r_sups_across_r14,
-        types::{External, Object, Supertype, Type},
+        macros::{sarzak_get_many_as_across_r1, sarzak_maybe_get_many_r_sups_across_r14},
+        types::{Attribute, External, Object, Supertype, Type},
     },
     woog::{
         store::ObjectStore as WoogStore,
@@ -27,6 +27,7 @@ use crate::{
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
+            consts::DomainConst,
             enums::DomainEnum,
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, DomainNewImpl, DomainRelNavImpl, DomainStruct},
@@ -113,25 +114,38 @@ impl<'a> DomainTarget<'a> {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
+            // Test if the object is a supertype. Those we generate as enums.
             let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, &self.domain.sarzak());
             let generator = if is_super.len() > 0 {
                 DefaultStructBuilder::new()
                     .definition(DomainEnum::new())
                     .build()?
             } else {
-                DefaultStructBuilder::new()
-                    // Definition type
-                    .definition(DomainStruct::new())
-                    .implementation(
-                        DomainImplBuilder::new()
-                            // New implementation
-                            .method(DomainNewImpl::new())
-                            // Relationship navigation implementations
-                            .method(DomainRelNavImpl::new())
-                            .build(),
-                    )
-                    // Go!
-                    .build()?
+                // Test if the object has no attributes, besides id. Hell, we should
+                // probably verify that there is an id. If it's only got an id, then
+                // it doesn't have anything distinguishing it from any other objects
+                // similarly outfitted. So what we do, is we make the object a constant,
+                // and set it's value to the UUID of the object's name.
+                let attrs = sarzak_get_many_as_across_r1!(obj, &self.domain.sarzak());
+                if attrs.len() == 1 {
+                    DefaultStructBuilder::new()
+                        .definition(DomainConst::new())
+                        .build()?
+                } else {
+                    DefaultStructBuilder::new()
+                        // Definition type
+                        .definition(DomainStruct::new())
+                        .implementation(
+                            DomainImplBuilder::new()
+                                // New implementation
+                                .method(DomainNewImpl::new())
+                                // Relationship navigation implementations
+                                .method(DomainRelNavImpl::new())
+                                .build(),
+                        )
+                        // Go!
+                        .build()?
+                }
             };
 
             // Here's the generation.

@@ -1,4 +1,4 @@
-use heck::{ToSnakeCase, ToUpperCamelCase};
+use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 use sarzak::{
     sarzak::{
         store::ObjectStore as SarzakStore,
@@ -15,6 +15,18 @@ macro_rules! render_ident {
             impl RenderIdent for $t {
                 fn as_ident(&self) -> String {
                     self.name.to_snake_case()
+                }
+            }
+        )+
+    };
+}
+
+macro_rules! render_const {
+    ($($t:ident),+) => {
+        $(
+            impl RenderConst for $t {
+                fn as_const(&self) -> String {
+                    self.name.to_shouty_snake_case()
                 }
             }
         )+
@@ -153,5 +165,29 @@ impl RenderType for GType {
             GType::Float => "f64".to_owned(),
             GType::Integer => "i64".to_owned(),
         }
+    }
+}
+
+/// Trait for rendering type as a constant
+///
+/// This trait represents the sanitization of an unknown string, into one
+/// suitable for being a constant identifier in Rust. For example, this trait would
+/// render  "RenderIdent" as `RENDER_IDENT`, and "Rando Object" as `RANDO_OBJECT`.
+
+pub(crate) trait RenderConst {
+    fn as_const(&self) -> String;
+}
+
+render_const!(Object);
+
+impl RenderConst for String {
+    fn as_const(&self) -> String {
+        self.to_shouty_snake_case()
+    }
+}
+
+impl RenderConst for &str {
+    fn as_const(&self) -> String {
+        self.to_shouty_snake_case()
     }
 }
