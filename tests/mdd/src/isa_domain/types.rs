@@ -8,8 +8,8 @@ pub mod subtype_a;
 pub mod subtype_b;
 pub mod super_t;
 
-pub use simple_subtype_a::SimpleSubtypeA;
-pub use simple_subtype_b::SimpleSubtypeB;
+pub use simple_subtype_a::SIMPLE_SUBTYPE_A;
+pub use simple_subtype_b::SIMPLE_SUBTYPE_B;
 pub use simple_supertype::SimpleSupertype;
 pub use subtype_a::SubtypeA;
 pub use subtype_b::SubtypeB;

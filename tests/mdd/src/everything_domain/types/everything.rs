@@ -28,6 +28,7 @@ pub struct Everything {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-implementation"}}}
 impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-new"}}}
     /// Inter a new Everything in the store, and return it's `id`.

@@ -4,9 +4,12 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
+use crate::isa_domain::store::ObjectStore as IsaDomainStore;
 use crate::isa_domain::UUID_NS;
 
-use crate::isa_domain::store::ObjectStore as IsaDomainStore;
+// Subtype imports
+use crate::isa_domain::types::simple_subtype_a::SIMPLE_SUBTYPE_A;
+use crate::isa_domain::types::simple_subtype_b::SIMPLE_SUBTYPE_B;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"simple_supertype-struct-documentation"}}}
@@ -31,8 +34,20 @@ use crate::isa_domain::store::ObjectStore as IsaDomainStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SimpleSupertype {
-    SimpleSubtypeA,
-    SimpleSubtypeB,
+    SimpleSubtypeA(Uuid),
+    SimpleSubtypeB(Uuid),
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-implementation"}}}
+impl SimpleSupertype {
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-get-id-impl"}}}
+    pub fn id(&self) -> Uuid {
+        match self {
+            SimpleSupertype::SimpleSubtypeA(id) => *id,
+            SimpleSupertype::SimpleSubtypeB(id) => *id,
+        }
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

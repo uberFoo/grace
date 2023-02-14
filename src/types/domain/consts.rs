@@ -6,26 +6,16 @@ use std::fmt::Write;
 use sarzak::{
     domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        macros::{
-            sarzak_get_many_r_subs_across_r27, sarzak_get_one_obj_across_r15,
-            sarzak_get_one_obj_across_r17, sarzak_get_one_r_bin_across_r5,
-            sarzak_get_one_r_from_across_r6, sarzak_get_one_r_isa_across_r13,
-            sarzak_maybe_get_many_r_sups_across_r14, sarzak_maybe_get_many_r_tos_across_r16,
-        },
-        types::{Referent, Subtype, Supertype, Type},
-    },
-    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
+    woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
-use uuid::{uuid, Uuid};
+use uuid::Uuid;
 
 use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        get_referents,
-        render::{RenderConst, RenderIdent, RenderType},
+        render::{RenderConst, RenderIdent},
     },
     options::GraceCompilerOptions,
     types::{CodeWriter, TypeDefinition},

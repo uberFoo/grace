@@ -27,6 +27,7 @@ pub struct Referent {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-new"}}}
     /// Inter a new Referent in the store, and return it's `id`.

@@ -28,9 +28,9 @@ use crate::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
             consts::DomainConst,
-            enums::DomainEnum,
+            enums::{DomainEnum, DomainEnumGetIdImpl},
             store::{DomainStore, DomainStoreBuilder},
-            structs::{DomainImplBuilder, DomainNewImpl, DomainRelNavImpl, DomainStruct},
+            structs::{DomainImplBuilder, DomainRelNavImpl, DomainStruct, DomainStructNewImpl},
         },
     },
     RS_EXT, TYPES,
@@ -119,6 +119,11 @@ impl<'a> DomainTarget<'a> {
             let generator = if is_super.len() > 0 {
                 DefaultStructBuilder::new()
                     .definition(DomainEnum::new())
+                    .implementation(
+                        DomainImplBuilder::new()
+                            .method(DomainEnumGetIdImpl::new())
+                            .build(),
+                    )
                     .build()?
             } else {
                 // Test if the object has no attributes, besides id. Hell, we should
@@ -138,7 +143,7 @@ impl<'a> DomainTarget<'a> {
                         .implementation(
                             DomainImplBuilder::new()
                                 // New implementation
-                                .method(DomainNewImpl::new())
+                                .method(DomainStructNewImpl::new())
                                 // Relationship navigation implementations
                                 .method(DomainRelNavImpl::new())
                                 .build(),

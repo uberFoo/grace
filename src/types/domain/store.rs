@@ -5,7 +5,10 @@ use std::fmt::Write;
 use sarzak::{
     domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::Object,
+    sarzak::{
+        macros::{sarzak_get_many_as_across_r1, sarzak_maybe_get_many_r_sups_across_r14},
+        types::{Attribute, Object, Supertype},
+    },
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -83,24 +86,33 @@ impl FileGenerator for DomainStoreGenerator {
             buffer,
             "//! This is used during code generation, and probably not useful elsewhere."
         );
-        emit!(buffer, "//!");
-        emit!(buffer, "//! # Contents:");
-        emit!(buffer, "//!");
         let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
-        for (_, obj) in &objects {
-            emit!(
-                buffer,
-                "//! * [`{}`]",
-                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-            );
-        }
+        let objects = objects
+            .iter()
+            .filter(|(_, obj)| {
+                let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
+                let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+                attrs.len() > 1 || is_super.len() > 0
+            })
+            .collect::<Vec<_>>();
 
         // We don't want this to be edited -- there's no reason.
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-object-store-file", module),
             |buffer| {
+                emit!(buffer, "//!");
+                emit!(buffer, "//! # Contents:");
+                emit!(buffer, "//!");
+                for (_, obj) in &objects {
+                    emit!(
+                        buffer,
+                        "//! * [`{}`]",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                }
+
                 self.definition
                     .write_code(options, domain, woog, module, obj_id, buffer)?;
 
@@ -132,6 +144,17 @@ impl CodeWriter for DomainStore {
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
+        let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+        let objects = objects
+            .iter()
+            .filter(|(_, obj)| {
+                let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
+                let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+                attrs.len() > 1 || is_super.len() > 0
+            })
+            .collect::<Vec<_>>();
+
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-object-store-definition", module),
@@ -143,8 +166,6 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "");
                 emit!(buffer, "use crate::{}::types::{{", module);
 
-                let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
-                objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
                 for (_, obj) in &objects {
                     emit!(
                         buffer,
@@ -189,13 +210,25 @@ impl CodeWriter for DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
-                    emit!(
-                        buffer,
-                        "self.{}.insert({}.id, {});",
-                        obj.as_ident(),
-                        obj.as_ident(),
-                        obj.as_ident()
-                    );
+
+                    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+                    if is_super.len() > 0 {
+                        emit!(
+                            buffer,
+                            "self.{}.insert({}.id(), {});",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "self.{}.insert({}.id, {});",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
                     emit!(

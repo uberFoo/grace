@@ -14,19 +14,23 @@ use uuid::Uuid;
 #[derive(Debug, PartialEq)]
 pub struct RandoObject {
     pub id: Uuid,
+    pub name: String,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-implementation"}}}
 impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-new"}}}
     /// Inter a new RandoObject in the store, and return it's `id`.
-    pub fn new() -> RandoObject {
-        //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
-        //         let new = RandoObject { id };
-        //         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", rando).as_bytes());
-        //         let new = RandoObject { rando: rando, id };
-        let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
-        let new = RandoObject { id };
+    //     pub fn new() -> RandoObject {
+    //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+    //         let new = RandoObject { id };
+    //         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", rando).as_bytes());
+    //         let new = RandoObject { rando: rando, id };
+    //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+    //         let new = RandoObject { id };
+    pub fn new(name: String) -> RandoObject {
+        let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
+        let new = RandoObject { name: name, id };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}

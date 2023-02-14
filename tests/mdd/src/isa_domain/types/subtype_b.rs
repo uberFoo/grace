@@ -22,6 +22,7 @@ pub struct SubtypeB {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-implementation"}}}
 impl SubtypeB {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_b-struct-impl-new"}}}
     /// Inter a new SubtypeB in the store, and return it's `id`.

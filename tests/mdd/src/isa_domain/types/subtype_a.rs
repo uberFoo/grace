@@ -23,6 +23,7 @@ pub struct SubtypeA {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-implementation"}}}
 impl SubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_a-struct-impl-new"}}}
     /// Inter a new SubtypeA in the store, and return it's `id`.

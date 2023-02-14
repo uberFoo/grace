@@ -4,9 +4,12 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
+use crate::isa_domain::store::ObjectStore as IsaDomainStore;
 use crate::isa_domain::UUID_NS;
 
-use crate::isa_domain::store::ObjectStore as IsaDomainStore;
+// Subtype imports
+use crate::isa_domain::types::subtype_a::SubtypeA;
+use crate::isa_domain::types::subtype_b::SubtypeB;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"super_t-struct-documentation"}}}
@@ -31,8 +34,20 @@ use crate::isa_domain::store::ObjectStore as IsaDomainStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SuperT {
-    SubtypeA,
-    SubtypeB,
+    SubtypeA(Uuid),
+    SubtypeB(Uuid),
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-implementation"}}}
+impl SuperT {
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-get-id-impl"}}}
+    pub fn id(&self) -> Uuid {
+        match self {
+            SuperT::SubtypeA(id) => *id,
+            SuperT::SubtypeB(id) => *id,
+        }
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

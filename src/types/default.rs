@@ -13,8 +13,9 @@ use sarzak::{
             sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
             sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
+            sarzak_maybe_get_many_r_sups_across_r14,
         },
-        types::{Attribute, Object, Referrer},
+        types::{Attribute, Object, Referrer, Supertype},
     },
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
 };
@@ -26,7 +27,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator},
-        render::{RenderIdent, RenderType},
+        render::{RenderConst, RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
@@ -387,17 +388,17 @@ impl CodeWriter for DefaultImplementation {
 ///
 /// I think that I may add optional references to the non-formalizing side of
 /// relationships.
-pub(crate) struct DefaultNewImpl;
+pub(crate) struct DefaultStructNewImpl;
 
-impl DefaultNewImpl {
+impl DefaultStructNewImpl {
     pub(crate) fn new() -> Box<dyn TypeImplementation> {
         Box::new(Self)
     }
 }
 
-impl TypeImplementation for DefaultNewImpl {}
+impl TypeImplementation for DefaultStructNewImpl {}
 
-impl CodeWriter for DefaultNewImpl {
+impl CodeWriter for DefaultStructNewImpl {
     fn write_code(
         &self,
         _options: &GraceCompilerOptions,
@@ -471,7 +472,7 @@ impl CodeWriter for DefaultNewImpl {
         let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
 
         // Link the params. The result is the head of the list.
-        let param = if params.len() > 1 {
+        let param = if params.len() > 0 {
             let mut iter = params.iter_mut().rev();
             let mut last = iter.next().unwrap();
             loop {
@@ -638,12 +639,18 @@ impl CodeWriter for DefaultModule {
                 }
                 emit!(buffer, "");
                 for (_, obj) in &objects {
-                    emit!(
-                        buffer,
-                        "pub use {}::{};",
-                        obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-                    );
+                    let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
+                    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+                    if attrs.len() == 1 && is_super.len() == 0 {
+                        emit!(buffer, "pub use {}::{};", obj.as_ident(), obj.as_const());
+                    } else {
+                        emit!(
+                            buffer,
+                            "pub use {}::{};",
+                            obj.as_ident(),
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        );
+                    }
                 }
 
                 Ok(())

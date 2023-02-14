@@ -25,6 +25,7 @@ pub struct D {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-implementation"}}}
 impl D {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"d-struct-impl-new"}}}
     /// Inter a new D in the store, and return it's `id`.

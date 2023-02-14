@@ -16,8 +16,8 @@ use crate::{
     options::GraceCompilerOptions,
     targets::Target,
     types::default::{
-        DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultNewImpl, DefaultStruct,
-        DefaultStructBuilder,
+        DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultStruct,
+        DefaultStructBuilder, DefaultStructNewImpl,
     },
     RS_EXT, TYPES,
 };
@@ -95,7 +95,7 @@ impl<'a> Target for ApplicationTarget<'a> {
                         // Implementation
                         .implementation(
                             DefaultImplBuilder::new()
-                                .implementation(DefaultNewImpl::new())
+                                .implementation(DefaultStructNewImpl::new())
                                 .build(),
                         )
                         // Go!

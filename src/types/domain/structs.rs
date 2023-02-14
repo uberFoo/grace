@@ -344,7 +344,7 @@ impl CodeWriter for DomainImplementation {
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
-            format!("{}-struct-implementation", object.as_ident()),
+            format!("{}-implementation", object.as_ident()),
             |buffer| {
                 let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
@@ -374,17 +374,17 @@ impl CodeWriter for DomainImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainNewImpl;
+pub(crate) struct DomainStructNewImpl;
 
-impl DomainNewImpl {
+impl DomainStructNewImpl {
     pub(crate) fn new() -> Box<dyn MethodImplementation> {
         Box::new(Self)
     }
 }
 
-impl MethodImplementation for DomainNewImpl {}
+impl MethodImplementation for DomainStructNewImpl {}
 
-impl CodeWriter for DomainNewImpl {
+impl CodeWriter for DomainStructNewImpl {
     fn write_code(
         &self,
         _options: &GraceCompilerOptions,

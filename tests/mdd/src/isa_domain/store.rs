@@ -3,30 +3,25 @@
 //! The ObjectStore contains instances of objects in the domain.
 //! The instances are stored in a hash map, keyed by the object's UUID.
 //! This is used during code generation, and probably not useful elsewhere.
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_domain-object-store-file"}}}
 //!
 //! # Contents:
 //!
-//! * [`SimpleSubtypeA`]
-//! * [`SimpleSubtypeB`]
 //! * [`SimpleSupertype`]
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
-//! * [`SuperT`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_domain-object-store-file"}}}
+//! * [`SuperT`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_domain-object-store-definition"}}}
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::isa_domain::types::{
-    SimpleSubtypeA, SimpleSubtypeB, SimpleSupertype, SubtypeA, SubtypeB, SuperT,
-};
+use crate::isa_domain::types::{SimpleSupertype, SubtypeA, SubtypeB, SuperT};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
-    simple_subtype_a: HashMap<Uuid, SimpleSubtypeA>,
-    simple_subtype_b: HashMap<Uuid, SimpleSubtypeB>,
     simple_supertype: HashMap<Uuid, SimpleSupertype>,
     subtype_a: HashMap<Uuid, SubtypeA>,
     subtype_b: HashMap<Uuid, SubtypeB>,
@@ -36,8 +31,6 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         Self {
-            simple_subtype_a: HashMap::new(),
-            simple_subtype_b: HashMap::new(),
             simple_supertype: HashMap::new(),
             subtype_a: HashMap::new(),
             subtype_b: HashMap::new(),
@@ -45,45 +38,11 @@ impl ObjectStore {
         }
     }
 
-    /// Inter [`SimpleSubtypeA`] into the store.
-    ///
-    pub fn inter_simple_subtype_a(&mut self, simple_subtype_a: SimpleSubtypeA) {
-        self.simple_subtype_a
-            .insert(simple_subtype_a.id, simple_subtype_a);
-    }
-
-    /// Exhume [`SimpleSubtypeA`] from the store.
-    ///
-    pub fn exhume_simple_subtype_a(&self, id: &Uuid) -> Option<&SimpleSubtypeA> {
-        self.simple_subtype_a.get(id)
-    }
-    /// Get an iterator over the internal `HashMap<&Uuid, SimpleSubtypeA>`.
-    //
-    pub fn iter_simple_subtype_a(&self) -> impl Iterator<Item = (&Uuid, &SimpleSubtypeA)> {
-        self.simple_subtype_a.iter()
-    }
-    /// Inter [`SimpleSubtypeB`] into the store.
-    ///
-    pub fn inter_simple_subtype_b(&mut self, simple_subtype_b: SimpleSubtypeB) {
-        self.simple_subtype_b
-            .insert(simple_subtype_b.id, simple_subtype_b);
-    }
-
-    /// Exhume [`SimpleSubtypeB`] from the store.
-    ///
-    pub fn exhume_simple_subtype_b(&self, id: &Uuid) -> Option<&SimpleSubtypeB> {
-        self.simple_subtype_b.get(id)
-    }
-    /// Get an iterator over the internal `HashMap<&Uuid, SimpleSubtypeB>`.
-    //
-    pub fn iter_simple_subtype_b(&self) -> impl Iterator<Item = (&Uuid, &SimpleSubtypeB)> {
-        self.simple_subtype_b.iter()
-    }
     /// Inter [`SimpleSupertype`] into the store.
     ///
     pub fn inter_simple_supertype(&mut self, simple_supertype: SimpleSupertype) {
         self.simple_supertype
-            .insert(simple_supertype.id, simple_supertype);
+            .insert(simple_supertype.id(), simple_supertype);
     }
 
     /// Exhume [`SimpleSupertype`] from the store.
@@ -131,7 +90,7 @@ impl ObjectStore {
     /// Inter [`SuperT`] into the store.
     ///
     pub fn inter_super_t(&mut self, super_t: SuperT) {
-        self.super_t.insert(super_t.id, super_t);
+        self.super_t.insert(super_t.id(), super_t);
     }
 
     /// Exhume [`SuperT`] from the store.
