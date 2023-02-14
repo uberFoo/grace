@@ -26,19 +26,29 @@ mod tests {
     #[test]
     fn test_r1() {
         // let mut store = ObjectStore::new();
-
         // What's the point of navigating this? So, let's agree that supertype
-        // to subtype navigation is trivial. Let's go the other way. This is
+        // to subtype navigation is trivial.
+        //
+        // > Care to explain?
+        //
+        // I have no idea what I _was_ thinking, but if you have a supertype it's
+        // easy enough to get the subtype: `super.id()` will do it. But you have
+        // no idea which subtype you are holding. You'd need to match on self
+        // to really get it done.
+        //
+        // Let's go the other way. This is
         // opposite to the "owned property" of e.g., objects and attributes.
-        // let sup = SimpleSupertype::SimpleSubtypeA(SimpleSubtypeA);
-        // eprintln!("sup: {:?}", sup);
-
-        // let sub = isa_relationship_get_one_SS_across_r1_from_SSA!(&SimpleSubtypeA, store);
-        // This can't work, there aren't any instances in the store. No new
-        // WTF?
-        // let sub = store.exhume_simple_supertype(&SimpleSubtypeA);
-        // eprintln!("sub: {:?}", sub);
-
-        // assert_eq!(sub, Some(&sup));
+        //
+        // > The other way makes no sense.
+        //
+        // For one what would be the point? As it is supertypes are barren wastelands
+        // when it comes to attributes. They don't even have a real id. Their id
+        // is that of their current subtype.
+        //
+        // But beyond that, there is no supertype. It's just a UUID that points at
+        // a subtype. So there. No point going forward, no point going backward.
+        //
+        // Still, we can test the store, I suppose.
+        //
     }
 }
