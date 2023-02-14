@@ -27,6 +27,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator},
+        object_is_singleton, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
@@ -639,9 +640,7 @@ impl CodeWriter for DefaultModule {
                 }
                 emit!(buffer, "");
                 for (_, obj) in &objects {
-                    let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-                    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-                    if attrs.len() == 1 && is_super.len() == 0 {
+                    if object_is_singleton(obj, domain) && !object_is_supertype(obj, domain) {
                         emit!(buffer, "pub use {}::{};", obj.as_ident(), obj.as_const());
                     } else {
                         emit!(

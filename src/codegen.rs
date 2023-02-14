@@ -10,8 +10,16 @@ mod rustfmt;
 use std::{fmt::Write, iter::zip};
 
 use sarzak::{
+    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{store::ObjectStore as SarzakStore, types::Object},
+    sarzak::{
+        macros::{
+            sarzak_get_many_as_across_r1, sarzak_maybe_get_many_ass_froms_across_r26,
+            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_sups_across_r14,
+        },
+        store::ObjectStore as SarzakStore,
+        types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype},
+    },
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -259,3 +267,17 @@ pub(crate) fn render_new_instance(
 // pub(crate) fn introspect_object<G>(&object: &Object) -> G {
 // G::new()
 // }
+
+pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
+    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, domain.sarzak());
+
+    is_super.len() > 0
+}
+
+pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
+    let attrs = sarzak_get_many_as_across_r1!(object, domain.sarzak());
+    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, domain.sarzak());
+    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, domain.sarzak());
+
+    attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
+}
