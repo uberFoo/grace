@@ -5,7 +5,10 @@ use std::{
 
 use sarzak::{
     mc::{FileSnafu, ModelCompilerError, Result},
-    sarzak::types::{External, Object, Type},
+    sarzak::{
+        macros::{sarzak_get_many_as_across_r1, sarzak_maybe_get_many_r_sups_across_r14},
+        types::{Attribute, External, Object, Supertype, Type},
+    },
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -24,8 +27,10 @@ use crate::{
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
+            consts::DomainConst,
+            enums::{DomainEnum, DomainEnumGetIdImpl},
             store::{DomainStore, DomainStoreBuilder},
-            structs::{DomainImplBuilder, DomainNewImpl, DomainRelNavImpl, DomainStruct},
+            structs::{DomainImplBuilder, DomainRelNavImpl, DomainStruct, DomainStructNewImpl},
         },
     },
     RS_EXT, TYPES,
@@ -51,6 +56,12 @@ impl<'a> DomainTarget<'a> {
         woog: WoogStore,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
+        // This post_load script creates an external entity of the ObjectStore so that
+        // we can use it from within the domain. Remember that the ObjectStore is a
+        // generated construct, and appears as if it was an external library to the
+        // domain. Now, if it were modeled, we'd probably include some aspect of it's
+        // model as an imported object, and we wouldn't need this. We'd probably need
+        // something else...
         let domain = {
             let module = module.to_owned();
             domain
@@ -97,9 +108,50 @@ impl<'a> DomainTarget<'a> {
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
 
         // Iterate over the objects, generating an implementation for file each.
+        // Now things get tricky. We need to generate an enum if the objects is
+        // a supertype. For now, we just ignore any attributes on a supertype.
         for (id, obj) in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
+
+            // Test if the object is a supertype. Those we generate as enums.
+            let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, &self.domain.sarzak());
+            let generator = if is_super.len() > 0 {
+                DefaultStructBuilder::new()
+                    .definition(DomainEnum::new())
+                    .implementation(
+                        DomainImplBuilder::new()
+                            .method(DomainEnumGetIdImpl::new())
+                            .build(),
+                    )
+                    .build()?
+            } else {
+                // Test if the object has no attributes, besides id. Hell, we should
+                // probably verify that there is an id. If it's only got an id, then
+                // it doesn't have anything distinguishing it from any other objects
+                // similarly outfitted. So what we do, is we make the object a constant,
+                // and set it's value to the UUID of the object's name.
+                let attrs = sarzak_get_many_as_across_r1!(obj, &self.domain.sarzak());
+                if attrs.len() == 1 {
+                    DefaultStructBuilder::new()
+                        .definition(DomainConst::new())
+                        .build()?
+                } else {
+                    DefaultStructBuilder::new()
+                        // Definition type
+                        .definition(DomainStruct::new())
+                        .implementation(
+                            DomainImplBuilder::new()
+                                // New implementation
+                                .method(DomainStructNewImpl::new())
+                                // Relationship navigation implementations
+                                .method(DomainRelNavImpl::new())
+                                .build(),
+                        )
+                        // Go!
+                        .build()?
+                }
+            };
 
             // Here's the generation.
             GeneratorBuilder::new()
@@ -114,23 +166,8 @@ impl<'a> DomainTarget<'a> {
                 .module(self.module)
                 .obj_id(&id)
                 // What to write
-                .generator(
-                    // Struct
-                    DefaultStructBuilder::new()
-                        // Definition type
-                        .definition(DomainStruct::new())
-                        .implementation(
-                            DomainImplBuilder::new()
-                                // New implementation
-                                .method(DomainNewImpl::new())
-                                // Relationship navigation implementations
-                                .method(DomainRelNavImpl::new())
-                                .build(),
-                        )
-                        // Go!
-                        .build()?,
-                )
-                // Really go!
+                .generator(generator)
+                // Go!
                 .generate()?;
         }
 

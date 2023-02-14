@@ -25,6 +25,7 @@ pub struct C {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-implementation"}}}
 impl C {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"c-struct-impl-new"}}}
     /// Inter a new C in the store, and return it's `id`.

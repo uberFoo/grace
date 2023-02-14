@@ -27,6 +27,44 @@ use crate::{
     todo::{GType, LValue, ObjectMethod, RValue},
 };
 
+macro_rules! get_referrers {
+    ($obj:expr, $store:expr) => {{
+        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!($obj, $store);
+        referrers.sort_by(|a, b| {
+            let binary = sarzak_get_one_r_bin_across_r6!(&a, $store);
+            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
+            let obj_a = sarzak_get_one_obj_across_r16!(referent, $store);
+
+            let binary = sarzak_get_one_r_bin_across_r6!(&b, $store);
+            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
+            let obj_b = sarzak_get_one_obj_across_r16!(referent, $store);
+
+            obj_a.name.cmp(&obj_b.name)
+        });
+        referrers
+    }};
+}
+pub(crate) use get_referrers;
+
+macro_rules! get_referents {
+    ($obj:expr, $store:expr) => {{
+        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!($obj, $store);
+        referents.sort_by(|a, b| {
+            let binary = sarzak_get_one_r_bin_across_r5!(&a, $store);
+            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
+            let obj_a = sarzak_get_one_obj_across_r17!(referrer, $store);
+
+            let binary = sarzak_get_one_r_bin_across_r5!(&b, $store);
+            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
+            let obj_b = sarzak_get_one_obj_across_r17!(referrer, $store);
+
+            obj_a.name.cmp(&obj_b.name)
+        });
+        referents
+    }};
+}
+pub(crate) use get_referents;
+
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
     method: &ObjectMethod,
@@ -162,7 +200,7 @@ pub(crate) fn render_new_instance(
                     }
                 ),
             },
-            GType::Option(left) => match &rval.ty {
+            GType::Option(_left) => match &rval.ty {
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
                         let obj = store.exhume_object(&obj_id).unwrap();

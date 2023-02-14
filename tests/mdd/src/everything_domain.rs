@@ -25,6 +25,7 @@ mod tests {
         // Test struct creation ✅
         let r = RandoObject {
             id: Uuid::new_v5(&UUID_NS, b"rando"),
+            name: "rando".to_owned(),
         };
 
         // Test derive option ✅
@@ -48,7 +49,7 @@ mod tests {
     fn test_new() {
         let mut store = ObjectStore::new();
 
-        let r = RandoObject::new(&mut store);
+        let r = RandoObject::new("rando".to_owned(), &mut store);
         let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r, &mut store);
 
         assert_eq!(e.string, "string".to_owned());
@@ -68,7 +69,7 @@ mod tests {
     fn test_rel_nav() {
         let mut store = ObjectStore::new();
 
-        let r = RandoObject::new(&mut store);
+        let r = RandoObject::new("rando".to_owned(), &mut store);
         let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r, &mut store);
 
         let r_prime = e.rando_object(&store);

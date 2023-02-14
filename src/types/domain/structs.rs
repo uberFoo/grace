@@ -1,3 +1,6 @@
+//! Domain Struct Generation
+//!
+//! Your one-stop-shop for everything to do with structs in Rust!
 use std::fmt::Write;
 
 use log;
@@ -29,49 +32,14 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::CodeWriter,
+        get_referents, get_referrers,
         render::{RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceCompilerOptions,
     todo::{External, GType, LValue, ObjectMethod, Parameter, RValue},
-    types::{MethodImplementation, StructDefinition, StructImplementation},
+    types::{MethodImplementation, TypeDefinition, TypeImplementation},
 };
-
-macro_rules! get_referrers {
-    ($obj:expr, $store:expr) => {{
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!($obj, $store);
-        referrers.sort_by(|a, b| {
-            let binary = sarzak_get_one_r_bin_across_r6!(&a, $store);
-            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
-            let obj_a = sarzak_get_one_obj_across_r16!(referent, $store);
-
-            let binary = sarzak_get_one_r_bin_across_r6!(&b, $store);
-            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
-            let obj_b = sarzak_get_one_obj_across_r16!(referent, $store);
-
-            obj_a.name.cmp(&obj_b.name)
-        });
-        referrers
-    }};
-}
-
-macro_rules! get_referents {
-    ($obj:expr, $store:expr) => {{
-        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!($obj, $store);
-        referents.sort_by(|a, b| {
-            let binary = sarzak_get_one_r_bin_across_r5!(&a, $store);
-            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
-            let obj_a = sarzak_get_one_obj_across_r17!(referrer, $store);
-
-            let binary = sarzak_get_one_r_bin_across_r5!(&b, $store);
-            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
-            let obj_b = sarzak_get_one_obj_across_r17!(referrer, $store);
-
-            obj_a.name.cmp(&obj_b.name)
-        });
-        referents
-    }};
-}
 
 /// Domain Struct Generator / CodeWriter
 ///
@@ -80,12 +48,12 @@ macro_rules! get_referents {
 pub(crate) struct DomainStruct;
 
 impl DomainStruct {
-    pub(crate) fn new() -> Box<dyn StructDefinition> {
+    pub(crate) fn new() -> Box<dyn TypeDefinition> {
         Box::new(Self)
     }
 }
 
-impl StructDefinition for DomainStruct {}
+impl TypeDefinition for DomainStruct {}
 
 impl CodeWriter for DomainStruct {
     fn write_code(
@@ -342,7 +310,7 @@ impl DomainImplBuilder {
         self
     }
 
-    pub(crate) fn build(self) -> Box<dyn StructImplementation> {
+    pub(crate) fn build(self) -> Box<dyn TypeImplementation> {
         Box::new(DomainImplementation {
             methods: self.methods,
         })
@@ -353,7 +321,7 @@ pub(crate) struct DomainImplementation {
     methods: Vec<Box<dyn MethodImplementation>>,
 }
 
-impl StructImplementation for DomainImplementation {}
+impl TypeImplementation for DomainImplementation {}
 
 impl CodeWriter for DomainImplementation {
     fn write_code(
@@ -376,7 +344,7 @@ impl CodeWriter for DomainImplementation {
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
-            format!("{}-struct-implementation", object.as_ident()),
+            format!("{}-implementation", object.as_ident()),
             |buffer| {
                 let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
@@ -406,17 +374,17 @@ impl CodeWriter for DomainImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainNewImpl;
+pub(crate) struct DomainStructNewImpl;
 
-impl DomainNewImpl {
+impl DomainStructNewImpl {
     pub(crate) fn new() -> Box<dyn MethodImplementation> {
         Box::new(Self)
     }
 }
 
-impl MethodImplementation for DomainNewImpl {}
+impl MethodImplementation for DomainStructNewImpl {}
 
-impl CodeWriter for DomainNewImpl {
+impl CodeWriter for DomainStructNewImpl {
     fn write_code(
         &self,
         _options: &GraceCompilerOptions,

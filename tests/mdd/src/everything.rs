@@ -22,6 +22,7 @@ mod tests {
         // Test struct creation ✅
         let r = RandoObject {
             id: Uuid::new_v5(&UUID_NS, b"rando"),
+            name: "rando".to_owned(),
         };
 
         // Test derive option ✅
@@ -43,7 +44,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let r = RandoObject::new();
+        let r = RandoObject::new("rando".to_owned());
         let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r);
         assert_eq!(e.string, "string".to_owned());
         assert_eq!(e.float, 42.0);

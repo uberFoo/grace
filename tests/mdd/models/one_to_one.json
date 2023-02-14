@@ -5,7 +5,7 @@
         ],
         "entities": {
             "88cd70e0-c065-5c4b-b1ce-69194ab4d0cb": {
-                "id": "88cd70e0-c065-5c4b-b1ce-69194ab4d0cb",
+                "id": "2b22547d-74d3-5dd4-94a9-122a2ac9341f",
                 "description": "Domain to test the many flavors of 1-1 relationships.",
                 "domain_name": "one_to_one",
                 "domain_ns": "b49d6fe1-e5e9-5896-bd42-b72012429e52",

@@ -4,6 +4,8 @@
 //! The instances are stored in a hash map, keyed by the object's UUID.
 //! This is used during code generation, and probably not useful elsewhere.
 //!
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything_domain-object-store-file"}}}
+//!
 //! # Contents:
 //!
 //! * [`Everything`]

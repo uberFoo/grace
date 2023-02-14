@@ -27,6 +27,7 @@ pub struct A {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-implementation"}}}
 impl A {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"a-struct-impl-new"}}}
     /// Inter a new A in the store, and return it's `id`.
