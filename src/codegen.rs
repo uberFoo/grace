@@ -198,7 +198,7 @@ pub(crate) fn render_make_uuid(
     buffer: &mut Buffer,
     lval: &LValue,
     rvals: &Vec<RValue>,
-    store: &SarzakStore,
+    _store: &SarzakStore,
 ) -> Result<()> {
     assert!(lval.ty == GType::Uuid);
 

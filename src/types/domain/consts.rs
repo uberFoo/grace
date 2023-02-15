@@ -39,7 +39,7 @@ impl CodeWriter for DomainConst {
         _config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
-        module: &str,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {

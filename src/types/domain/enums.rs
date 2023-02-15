@@ -8,13 +8,12 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_many_r_subs_across_r27,
-            sarzak_get_one_obj_across_r15, sarzak_get_one_obj_across_r17,
-            sarzak_get_one_r_bin_across_r5, sarzak_get_one_r_from_across_r6,
-            sarzak_get_one_r_isa_across_r13, sarzak_maybe_get_many_r_sups_across_r14,
-            sarzak_maybe_get_many_r_tos_across_r16,
+            sarzak_get_many_r_subs_across_r27, sarzak_get_one_obj_across_r15,
+            sarzak_get_one_obj_across_r17, sarzak_get_one_r_bin_across_r5,
+            sarzak_get_one_r_from_across_r6, sarzak_get_one_r_isa_across_r13,
+            sarzak_maybe_get_many_r_sups_across_r14, sarzak_maybe_get_many_r_tos_across_r16,
         },
-        types::{Attribute, Referent, Subtype, Supertype},
+        types::{Referent, Subtype, Supertype},
     },
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
 };
@@ -26,7 +25,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         get_referents,
-        render::{RenderConst, RenderIdent, RenderType},
+        render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
     types::{CodeWriter, MethodImplementation, TypeDefinition},
@@ -39,17 +38,6 @@ pub(crate) struct DomainEnum;
 impl DomainEnum {
     pub(crate) fn new() -> Box<dyn TypeDefinition> {
         Box::new(Self)
-    }
-
-    fn render_subtype(subtype: &Subtype, domain: &Domain) -> String {
-        let obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
-        let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-
-        if attrs.len() == 1 {
-            obj.as_const()
-        } else {
-            obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-        }
     }
 }
 
@@ -188,8 +176,8 @@ impl CodeWriter for DomainEnumGetIdImpl {
         &self,
         _config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
-        module: &str,
+        _woog: &mut WoogStore,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {

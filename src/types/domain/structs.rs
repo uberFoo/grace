@@ -85,6 +85,7 @@ impl CodeWriter for DomainStruct {
         // stable output.
         let mut referrer_objs = get_objs_for_referrers!(obj, domain.sarzak());
         referrer_objs.append(&mut get_objs_for_assoc_referents!(obj, domain.sarzak()));
+
         let mut referent_objs = get_objs_for_referents!(obj, domain.sarzak());
         referent_objs.append(&mut get_objs_for_assoc_referrers!(obj, domain.sarzak()));
 
@@ -113,6 +114,9 @@ impl CodeWriter for DomainStruct {
                     emit!(buffer, "// Referrer imports");
                 }
                 for r_obj in &referrer_objs {
+                    if config.is_imported(&r_obj.id) {
+                        emit!(buffer, "// At what point do we suck in the imported domain and generate code for it?");
+                    } else {
                     emit!(
                         buffer,
                         "use crate::{}::types::{}::{};",
@@ -120,6 +124,7 @@ impl CodeWriter for DomainStruct {
                         r_obj.as_ident(),
                         r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                     );
+                }
                 }
 
                 // Add use statements for all the referents.
@@ -1219,7 +1224,7 @@ impl CodeWriter for DomainRelNavImpl {
         &self,
         _config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        _woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
