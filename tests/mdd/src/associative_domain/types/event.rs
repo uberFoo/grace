@@ -13,7 +13,9 @@ use crate::associative_domain::store::ObjectStore as AssociativeDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-documentation"}}}
-/// An event is sent to an object, and processed by the current state. Assuming it accepts the event. Otherwise it’s dropped on the floor.
+/// An event is sent to an object, and processed by the current state. Assuming it accepts the
+/// event. Otherwise it’s dropped on the floor.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

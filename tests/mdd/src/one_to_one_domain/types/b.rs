@@ -16,6 +16,7 @@ use crate::one_to_one_domain::store::ObjectStore as OneToOneDomainStore;
 /// B: Referrer Unconditional to Referent
 ///
 /// This is a plain Jayne 😉 1-1 relationship, where this guy is formalizing.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

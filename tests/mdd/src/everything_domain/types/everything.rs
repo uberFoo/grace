@@ -14,6 +14,7 @@ use crate::everything_domain::store::ObjectStore as EverythingDomainStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-documentation"}}}
 /// An object, with everything on it!
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

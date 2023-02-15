@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 /// This [`Supertype`] is Simple
 ///
 /// By that I mean that it's [`Subtypes`] consist only of singletons.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

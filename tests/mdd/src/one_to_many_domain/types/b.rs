@@ -16,6 +16,7 @@ use crate::one_to_many_domain::store::ObjectStore as OneToManyDomainStore;
 /// Connected to TGT via _R2_.
 ///
 /// This is for testing a 1c-M relationship.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

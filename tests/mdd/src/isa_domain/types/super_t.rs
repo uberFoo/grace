@@ -9,7 +9,9 @@ use serde::{Deserialize, Serialize};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-documentation"}}}
 /// A [`Supertype`] with normal [`Subtype`]s
 ///
-/// This was called "Super". Rust didn't like it when it became "super". There needs to be a way of fixing keywords.
+/// This was called "Super". Rust didn't like it when it became "super". There needs to be
+///a way of fixing keywords.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

@@ -13,7 +13,9 @@ use crate::associative_domain::store::ObjectStore as AssociativeDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-documentation"}}}
-/// This represents additional data necessary to render an `Isa` relationship in the user interface.
+/// This represents additional data necessary to render an `Isa` relationship in the user interface
+///.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

@@ -19,6 +19,7 @@ use crate::one_to_many_domain::store::ObjectStore as OneToManyDomainStore;
 /// The object of so many relationships
 ///
 /// I’m related to stuff.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

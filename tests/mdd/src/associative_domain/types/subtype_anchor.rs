@@ -16,7 +16,9 @@ use crate::associative_domain::store::ObjectStore as AssociativeDomainStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-documentation"}}}
 /// Subtype Anchor
 ///
-/// Just as it sounds, these are [`Anchor`]s used by [`Subtype`]s in an [`Isa`] relationship.
+/// Just as it sounds, these are [`Anchor`]s used by [`Subtype`]s in an [`Isa`] relationship
+///.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

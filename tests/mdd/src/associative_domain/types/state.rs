@@ -14,6 +14,7 @@ use crate::associative_domain::store::ObjectStore as AssociativeDomainStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-documentation"}}}
 /// An [Object] state, more precisely, a set of states, is where all the action happens.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

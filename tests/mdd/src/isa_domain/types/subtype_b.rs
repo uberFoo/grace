@@ -13,6 +13,7 @@ use crate::isa_domain::store::ObjectStore as IsaDomainStore;
 /// This [`Subtype`][s] has a number
 ///
 /// [s]: nut::sarzak::Subtype
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

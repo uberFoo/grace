@@ -16,6 +16,7 @@ use crate::one_to_one_domain::store::ObjectStore as OneToOneDomainStore;
 /// C: Referrer to [`Referent`] Bi-Conditional
 ///
 /// This will be an interesting one to translate. Hopefully not too gnarly.🤘
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

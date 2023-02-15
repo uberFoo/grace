@@ -14,6 +14,7 @@ use crate::one_to_many_domain::store::ObjectStore as OneToManyDomainStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-documentation"}}}
 /// This is the [`Referrer`] side of a 1-M relationship
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

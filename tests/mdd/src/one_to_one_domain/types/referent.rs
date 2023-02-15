@@ -17,7 +17,9 @@ use crate::one_to_one_domain::store::ObjectStore as OneToOneDomainStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-documentation"}}}
 /// The target of our relationship tests.
 ///
-/// It is conditionally related to [`OneToOneConditional`] across _R2_, and it is unconditionally related to [`OneToOneUnconditional`] across _R1_.
+/// It is conditionally related to [`OneToOneConditional`] across _R2_, and it is unconditionally
+/// related to [`OneToOneUnconditional`] across _R1_.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

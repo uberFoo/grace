@@ -17,6 +17,7 @@ use crate::associative_domain::store::ObjectStore as AssociativeDomainStore;
 /// An Event that Does Something
 ///
 /// An acknowledged event is an event that a [`State`] knows how to handle.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

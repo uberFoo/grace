@@ -14,6 +14,7 @@ use crate::one_to_many_domain::store::ObjectStore as OneToManyDomainStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-documentation"}}}
 /// This is the [`Referrent`] side of a 1-Mc
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]

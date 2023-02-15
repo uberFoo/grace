@@ -16,6 +16,7 @@ use crate::everything_domain::store::ObjectStore as EverythingDomainStore;
 /// Just some random object with which we wish to relate
 ///
 /// How tawdry.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
