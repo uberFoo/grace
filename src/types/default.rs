@@ -588,7 +588,9 @@ impl FileGenerator for DefaultModuleGenerator {
         buffer: &mut Buffer,
     ) -> Result<()> {
         // Output the domain/module documentation/description
-        emit!(buffer, "//! {}", domain.description());
+        for line in domain.description().lines() {
+            emit!(buffer, "//! {}", line);
+        }
 
         buffer.block(
             DirectiveKind::AllowEditing,
