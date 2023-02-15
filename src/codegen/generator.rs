@@ -184,7 +184,7 @@ impl<'a> GeneratorBuilder<'a> {
                         }
                     );
 
-                    // Grab the formatted output.
+                    // Grab the original, formatted output.
                     let orig = fs::read_to_string(&path).context(IOSnafu)?;
 
                     // Format the generated buffer
@@ -192,7 +192,7 @@ impl<'a> GeneratorBuilder<'a> {
                     file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
                     match format(&path, true) {
                         Ok(_) => {
-                            // Grab the generated output
+                            // Grab the formatted, generated output
                             let incoming = fs::read_to_string(&path).context(IOSnafu)?;
 
                             let mut file =
@@ -200,8 +200,8 @@ impl<'a> GeneratorBuilder<'a> {
                             // This is where we diff and write the output.
                             if orig.len() > 0 {
                                 let diffed = process_diff(
-                                    orig.as_str(),
-                                    incoming.as_str(),
+                                    orig.trim(),
+                                    incoming.trim(),
                                     DirectiveKind::AllowEditing,
                                 );
 
