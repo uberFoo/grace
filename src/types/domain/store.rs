@@ -22,7 +22,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     types::ObjectStoreDefinition,
 };
 
@@ -62,7 +62,7 @@ pub(crate) struct DomainStoreGenerator {
 impl FileGenerator for DomainStoreGenerator {
     fn generate(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -110,7 +110,7 @@ impl FileGenerator for DomainStoreGenerator {
                 }
 
                 self.definition
-                    .write_code(options, domain, woog, module, obj_id, buffer)?;
+                    .write_code(config, domain, woog, module, obj_id, buffer)?;
 
                 Ok(())
             },
@@ -133,7 +133,7 @@ impl ObjectStoreDefinition for DomainStore {}
 impl CodeWriter for DomainStore {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        _config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,

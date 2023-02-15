@@ -20,7 +20,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::GraceCompilerOptions,
+    options::{GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
@@ -35,7 +35,7 @@ use crate::{
 };
 
 pub(crate) struct DomainTarget<'a> {
-    options: &'a GraceCompilerOptions,
+    config: GraceConfig,
     _package: &'a str,
     module: &'a str,
     src_path: &'a Path,
@@ -79,11 +79,13 @@ impl<'a> DomainTarget<'a> {
                     sarzak.inter_ty(store_type);
                 })
                 .build()
-                .unwrap()
+                .expect("Failed to build domain")
         };
 
+        let config: GraceConfig = (options, &domain).into();
+
         Box::new(Self {
-            options,
+            config,
             _package,
             module,
             src_path: src_path.as_ref(),
@@ -148,7 +150,7 @@ impl<'a> DomainTarget<'a> {
 
             // Here's the generation.
             GeneratorBuilder::new()
-                .options(&self.options)
+                .config(&self.config)
                 // Where to write
                 .path(&types)?
                 // Domain/Store
@@ -173,7 +175,7 @@ impl<'a> DomainTarget<'a> {
         store.push("store.rs");
 
         GeneratorBuilder::new()
-            .options(&self.options)
+            .config(&self.config)
             .path(&store)?
             .domain(&self.domain)
             .compiler_domain(&mut self.woog)
@@ -196,7 +198,7 @@ impl<'a> DomainTarget<'a> {
         types.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
-            .options(&self.options)
+            .config(&self.config)
             .path(&types)?
             .domain(&self.domain)
             .compiler_domain(&mut self.woog)

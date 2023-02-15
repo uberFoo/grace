@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
-    options::GraceCompilerOptions,
+    options::{GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::default::{
         DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultStruct,
@@ -23,7 +23,7 @@ use crate::{
 };
 
 pub(crate) struct ApplicationTarget<'a> {
-    options: &'a GraceCompilerOptions,
+    config: GraceConfig,
     _package: &'a str,
     module: &'a str,
     src_path: &'a Path,
@@ -42,12 +42,15 @@ impl<'a> ApplicationTarget<'a> {
         woog: WoogStore,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
+        let domain = domain.build().expect("Failed to build domain");
+        let config: GraceConfig = (options, &domain).into();
+
         Box::new(Self {
-            options,
+            config,
             _package,
             module,
             src_path: src_path.as_ref(),
-            domain: domain.build().unwrap(),
+            domain,
             woog,
             _test,
         })
@@ -76,7 +79,7 @@ impl<'a> Target for ApplicationTarget<'a> {
 
             // Here's the generation.
             GeneratorBuilder::new()
-                .options(&self.options)
+                .config(&self.config)
                 // Where to write
                 .path(&types)?
                 // Domain/Store
@@ -115,7 +118,7 @@ impl<'a> Target for ApplicationTarget<'a> {
         types.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
-            .options(&self.options)
+            .config(&self.config)
             .path(&types)?
             .domain(&self.domain)
             .compiler_domain(&mut self.woog)

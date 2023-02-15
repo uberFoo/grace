@@ -21,7 +21,7 @@ use crate::{
         diff_engine::{process_diff, DirectiveKind},
         rustfmt::format,
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
 };
 
 pub(crate) struct GeneratorBuilder<'a> {
@@ -29,7 +29,7 @@ pub(crate) struct GeneratorBuilder<'a> {
     generator: Option<Box<dyn FileGenerator + 'a>>,
     domain: Option<&'a Domain>,
     woog: Option<&'a mut WoogStore>,
-    options: Option<&'a GraceCompilerOptions>,
+    config: Option<&'a GraceConfig>,
     module: Option<&'a str>,
     obj_id: Option<&'a Uuid>,
 }
@@ -41,14 +41,14 @@ impl<'a> GeneratorBuilder<'a> {
             generator: None,
             domain: None,
             woog: None,
-            options: None,
+            config: None,
             module: None,
             obj_id: None,
         }
     }
 
-    pub fn options(mut self, options: &'a GraceCompilerOptions) -> Self {
-        self.options = Some(options);
+    pub fn config(mut self, config: &'a GraceConfig) -> Self {
+        self.config = Some(config);
 
         self
     }
@@ -93,7 +93,7 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub fn generate(self) -> Result<()> {
         ensure!(
-            self.options.is_some(),
+            self.config.is_some(),
             CompilerSnafu {
                 description: "missing compiler options"
             }
@@ -136,7 +136,7 @@ impl<'a> GeneratorBuilder<'a> {
 
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
-            &self.options.unwrap(),
+            &self.config.unwrap(),
             &self.domain.unwrap(),
             &mut self.woog.unwrap(),
             self.module.unwrap(),
@@ -251,7 +251,7 @@ impl<'a> GeneratorBuilder<'a> {
 pub(crate) trait FileGenerator {
     fn generate(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -268,7 +268,7 @@ pub(crate) trait FileGenerator {
 pub(crate) trait CodeWriter {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,

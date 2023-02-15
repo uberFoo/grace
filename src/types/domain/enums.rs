@@ -28,7 +28,7 @@ use crate::{
         get_referents,
         render::{RenderConst, RenderIdent, RenderType},
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     types::{CodeWriter, MethodImplementation, TypeDefinition},
 };
 
@@ -58,7 +58,7 @@ impl TypeDefinition for DomainEnum {}
 impl CodeWriter for DomainEnum {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -95,7 +95,7 @@ impl CodeWriter for DomainEnum {
                 emit!(buffer, "");
 
                 // Add the use statements from the options.
-                if let Some(use_paths) = &options.use_paths {
+                if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
                         emit!(buffer, "use {};", path);
                     }
@@ -143,9 +143,9 @@ impl CodeWriter for DomainEnum {
             DirectiveKind::IgnoreOrig,
             format!("{}-enum-definition", obj.as_ident()),
             |buffer| {
-                if let Some(derive) = &options.derive {
+                if let Some(derives) = config.get_derives(&obj.id) {
                     write!(buffer, "#[derive(").context(FormatSnafu)?;
-                    for d in derive {
+                    for d in derives {
                         write!(buffer, "{},", d).context(FormatSnafu)?;
                     }
                     emit!(buffer, ")]");
@@ -186,7 +186,7 @@ impl MethodImplementation for DomainEnumGetIdImpl {}
 impl CodeWriter for DomainEnumGetIdImpl {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        _config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,

@@ -43,7 +43,7 @@ use crate::{
         render::{RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     todo::{External, GType, LValue, ObjectMethod, Parameter, RValue},
     types::{MethodImplementation, TypeDefinition, TypeImplementation},
 };
@@ -65,7 +65,7 @@ impl TypeDefinition for DomainStruct {}
 impl CodeWriter for DomainStruct {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -97,7 +97,7 @@ impl CodeWriter for DomainStruct {
                 emit!(buffer, "");
 
                 // Add the use statements from the options.
-                if let Some(use_paths) = &options.use_paths {
+                if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
                         emit!(buffer, "use {};", path);
                     }
@@ -183,9 +183,9 @@ impl CodeWriter for DomainStruct {
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-definition", obj.as_ident()),
             |buffer| {
-                if let Some(derive) = &options.derive {
+                if let Some(derives) = config.get_derives(&obj.id) {
                     write!(buffer, "#[derive(").context(FormatSnafu)?;
-                    for d in derive {
+                    for d in derives {
                         write!(buffer, "{},", d).context(FormatSnafu)?;
                     }
                     emit!(buffer, ")]");
@@ -369,7 +369,7 @@ impl TypeImplementation for DomainImplementation {}
 impl CodeWriter for DomainImplementation {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -398,7 +398,7 @@ impl CodeWriter for DomainImplementation {
                 );
 
                 for method in &self.methods {
-                    method.write_code(options, domain, woog, module, Some(obj_id), buffer)?;
+                    method.write_code(config, domain, woog, module, Some(obj_id), buffer)?;
                 }
 
                 emit!(buffer, "}}");
@@ -430,7 +430,7 @@ impl MethodImplementation for DomainStructNewImpl {}
 impl CodeWriter for DomainStructNewImpl {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        _options: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -1217,7 +1217,7 @@ impl MethodImplementation for DomainRelNavImpl {}
 impl CodeWriter for DomainRelNavImpl {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        _config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,

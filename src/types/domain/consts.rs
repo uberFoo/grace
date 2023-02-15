@@ -17,7 +17,7 @@ use crate::{
         diff_engine::DirectiveKind,
         render::{RenderConst, RenderIdent},
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     types::{CodeWriter, TypeDefinition},
 };
 
@@ -36,7 +36,7 @@ impl TypeDefinition for DomainConst {}
 impl CodeWriter for DomainConst {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        _config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,

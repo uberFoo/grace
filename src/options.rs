@@ -370,7 +370,7 @@ mod tests {
                 config_value.derive,
                 Some(vec!["Debug".to_string(), "PartialEq".to_string(),])
             );
-            assert_eq!(config_value.use_paths, None,);
+            assert_eq!(config_value.use_paths, None);
         }
     }
 }
