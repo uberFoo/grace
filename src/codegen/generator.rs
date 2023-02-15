@@ -223,7 +223,7 @@ impl<'a> GeneratorBuilder<'a> {
 
                                     eprintln!("{}", e);
 
-                                    // This is as weird way to go about things.
+                                    // This is as weird way to go about things. WTF is going on here?
                                     ensure!(
                                         result.is_ok(),
                                         CompilerSnafu {
@@ -240,7 +240,9 @@ impl<'a> GeneratorBuilder<'a> {
                             match format(&path, false) {
                                 Ok(_) => {}
                                 Err(e) => {
-                                    eprintln!("{}", e)
+                                    // Don't write garbage.
+                                    File::create(&path).context(FileSnafu { path: &path })?;
+                                    eprintln!("{}", e);
                                 }
                             };
                         }
