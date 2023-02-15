@@ -6,6 +6,7 @@ use crate::codegen::generator::CodeWriter;
 
 pub(crate) mod default;
 pub(crate) mod domain;
+pub(crate) mod null;
 
 /// Type Definition Trait
 ///
@@ -28,7 +29,7 @@ pub(crate) trait MethodImplementation: CodeWriter {}
 
 /// Module Definition Trait
 ///
-/// This trait is implemented by types that are capable of generationg a module
+/// This trait is implemented by types that are capable of generating a module
 /// definition.
 pub(crate) trait ModuleDefinition: CodeWriter {}
 

@@ -143,102 +143,109 @@ impl<'a> GeneratorBuilder<'a> {
             self.obj_id,
             &mut buffer,
         ) {
-            Ok(_) => {
-                // Generation was successful, write the output.
-                //
-                // Because of the way `rustfmt` works (it acts like it's running
-                // the compiler) the file needs to be in place (I've only
-                // found this to be true for files that are declaring modules).
-                // I'd prefer to format a temporary file, and avoid all this
-                // shuffling. It's what I did in nut...
+            Ok(action) => {
+                match action {
+                    GenerationAction::Write => {
+                        // Generation was successful, write the output.
+                        //
+                        // Because of the way `rustfmt` works (it acts like it's running
+                        // the compiler) the file needs to be in place (I've only
+                        // found this to be true for files that are declaring modules).
+                        // I'd prefer to format a temporary file, and avoid all this
+                        // shuffling. It's what I did in nut...
 
-                // First, we need to see if the file exists, if not it's the easy
-                // path. We write the file and format it in place.
-                //
-                // Otherwise, we format the existing file, so that we are on as
-                // level a field as possible. Once it's formatted we read it
-                // into a String. Then...
-                //
-                // We need to format the generated code. To keep `rustfmt` happy,
-                // we _overwrite_ the existing file with the generated code.
-                // Format it, and then read it into a String.
-                //
-                // Finally we can diff the two Strings and write the output.
-                // I don't think that it should have to be formatted.
-                //
-                // Whew!
-                //
-                let path = self.path.unwrap();
+                        // First, we need to see if the file exists, if not it's the easy
+                        // path. We write the file and format it in place.
+                        //
+                        // Otherwise, we format the existing file, so that we are on as
+                        // level a field as possible. Once it's formatted we read it
+                        // into a String. Then...
+                        //
+                        // We need to format the generated code. To keep `rustfmt` happy,
+                        // we _overwrite_ the existing file with the generated code.
+                        // Format it, and then read it into a String.
+                        //
+                        // Finally we can diff the two Strings and write the output.
+                        // I don't think that it should have to be formatted.
+                        //
+                        // Whew!
+                        //
+                        let path = self.path.unwrap();
 
-                if path.exists() {
-                    // Format the original. We get some validation from ^rustfmt`,
-                    // so if it fails, we'll just stop.
-                    let result = format(&path, false);
-                    ensure!(
-                        result.is_ok(),
-                        CompilerSnafu {
-                            description: format!(
-                                "rustfmt failed on existing file: {}",
-                                path.display()
-                            )
-                        }
-                    );
-
-                    // Grab the original, formatted output.
-                    let orig = fs::read_to_string(&path).context(IOSnafu)?;
-
-                    // Format the generated buffer
-                    let mut file = File::create(&path).context(FileSnafu { path: &path })?;
-                    file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
-                    match format(&path, true) {
-                        Ok(_) => {
-                            // Grab the formatted, generated output
-                            let incoming = fs::read_to_string(&path).context(IOSnafu)?;
-
-                            let mut file =
-                                File::create(&path).context(FileSnafu { path: &path })?;
-                            // This is where we diff and write the output.
-                            if orig.len() > 0 {
-                                let diffed = process_diff(
-                                    orig.trim(),
-                                    incoming.trim(),
-                                    DirectiveKind::AllowEditing,
-                                );
-
-                                // Write the file
-                                file.write_all(&diffed.as_bytes()).context(IOSnafu)?;
-                            } else {
-                                // Write the file
-                                file.write_all(&incoming.as_bytes()).context(IOSnafu)?;
-                            }
-                        }
-                        Err(e) => {
-                            // Put the original back.
-                            let mut file =
-                                File::create(&path).context(FileSnafu { path: &path })?;
-                            file.write_all(&orig.as_bytes()).context(IOSnafu)?;
-
-                            eprintln!("{}", e);
-
-                            // This is as weird way to go about things.
+                        if path.exists() {
+                            // Format the original. We get some validation from ^rustfmt`,
+                            // so if it fails, we'll just stop.
+                            let result = format(&path, false);
                             ensure!(
                                 result.is_ok(),
                                 CompilerSnafu {
-                                    description: "rustfmt failed on generated file"
+                                    description: format!(
+                                        "rustfmt failed on existing file: {}",
+                                        path.display()
+                                    )
                                 }
                             );
-                        }
-                    };
-                } else {
-                    let mut file = File::create(&path).context(FileSnafu { path: &path })?;
-                    file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
 
-                    match format(&path, false) {
-                        Ok(_) => {}
-                        Err(e) => {
-                            eprintln!("{}", e)
+                            // Grab the original, formatted output.
+                            let orig = fs::read_to_string(&path).context(IOSnafu)?;
+
+                            // Format the generated buffer
+                            let mut file =
+                                File::create(&path).context(FileSnafu { path: &path })?;
+                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+                            match format(&path, true) {
+                                Ok(_) => {
+                                    // Grab the formatted, generated output
+                                    let incoming = fs::read_to_string(&path).context(IOSnafu)?;
+
+                                    let mut file =
+                                        File::create(&path).context(FileSnafu { path: &path })?;
+                                    // This is where we diff and write the output.
+                                    if orig.len() > 0 {
+                                        let diffed = process_diff(
+                                            orig.trim(),
+                                            incoming.trim(),
+                                            DirectiveKind::AllowEditing,
+                                        );
+
+                                        // Write the file
+                                        file.write_all(&diffed.as_bytes()).context(IOSnafu)?;
+                                    } else {
+                                        // Write the file
+                                        file.write_all(&incoming.as_bytes()).context(IOSnafu)?;
+                                    }
+                                }
+                                Err(e) => {
+                                    // Put the original back.
+                                    let mut file =
+                                        File::create(&path).context(FileSnafu { path: &path })?;
+                                    file.write_all(&orig.as_bytes()).context(IOSnafu)?;
+
+                                    eprintln!("{}", e);
+
+                                    // This is as weird way to go about things.
+                                    ensure!(
+                                        result.is_ok(),
+                                        CompilerSnafu {
+                                            description: "rustfmt failed on generated file"
+                                        }
+                                    );
+                                }
+                            };
+                        } else {
+                            let mut file =
+                                File::create(&path).context(FileSnafu { path: &path })?;
+                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+
+                            match format(&path, false) {
+                                Ok(_) => {}
+                                Err(e) => {
+                                    eprintln!("{}", e)
+                                }
+                            };
                         }
-                    };
+                    }
+                    GenerationAction::Skip => {}
                 }
 
                 Ok(())
@@ -246,6 +253,11 @@ impl<'a> GeneratorBuilder<'a> {
             Err(e) => Err(e),
         }
     }
+}
+
+pub(crate) enum GenerationAction {
+    Write,
+    Skip,
 }
 
 pub(crate) trait FileGenerator {
@@ -257,7 +269,7 @@ pub(crate) trait FileGenerator {
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
-    ) -> Result<()>;
+    ) -> Result<GenerationAction>;
 }
 
 /// CodeWriter

@@ -25,7 +25,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        generator::{CodeWriter, FileGenerator},
+        generator::{CodeWriter, FileGenerator, GenerationAction},
         object_is_singleton, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
@@ -98,7 +98,7 @@ impl FileGenerator for DefaultStructGenerator {
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
-    ) -> Result<()> {
+    ) -> Result<GenerationAction> {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
@@ -132,7 +132,7 @@ impl FileGenerator for DefaultStructGenerator {
             },
         )?;
 
-        Ok(())
+        Ok(GenerationAction::Write)
     }
 }
 
@@ -469,7 +469,7 @@ impl CodeWriter for DefaultStructNewImpl {
 
         // Collect rvals for rendering the method.
         let rvals = params.clone();
-        let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
+        let rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
 
         // Link the params. The result is the head of the list.
         let param = if params.len() > 0 {
@@ -586,7 +586,7 @@ impl FileGenerator for DefaultModuleGenerator {
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
-    ) -> Result<()> {
+    ) -> Result<GenerationAction> {
         // Output the domain/module documentation/description
         for line in domain.description().lines() {
             emit!(buffer, "//! {}", line);
@@ -603,7 +603,7 @@ impl FileGenerator for DefaultModuleGenerator {
             },
         )?;
 
-        Ok(())
+        Ok(GenerationAction::Write)
     }
 }
 
@@ -623,7 +623,7 @@ impl ModuleDefinition for DefaultModule {}
 impl CodeWriter for DefaultModule {
     fn write_code(
         &self,
-        _options: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -636,6 +636,14 @@ impl CodeWriter for DefaultModule {
             |buffer| {
                 let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
                 objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+                let objects = objects
+                    .iter()
+                    .filter(|(id, _)| {
+                        // Don't include imported objects
+                        !config.is_imported(*id)
+                    })
+                    .collect::<Vec<_>>();
+
                 for (_, obj) in &objects {
                     emit!(buffer, "pub mod {};", obj.as_ident());
                 }

@@ -30,6 +30,7 @@ use crate::{
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, DomainRelNavImpl, DomainStruct, DomainStructNewImpl},
         },
+        null::NullGenerator,
     },
     RS_EXT, TYPES,
 };
@@ -82,6 +83,7 @@ impl<'a> DomainTarget<'a> {
                 .expect("Failed to build domain")
         };
 
+        // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
 
         Box::new(Self {
@@ -109,7 +111,16 @@ impl<'a> DomainTarget<'a> {
 
         // Iterate over the objects, generating an implementation for file each.
         // Now things get tricky. We need to generate an enum if the objects is
-        // a supertype. For now, we just ignore any attributes on a supertype.
+        // a supertype.
+        //
+        // For now, we just ignore any attributes on a supertype,
+        // since enums don't have fields like structs. In the future I can see
+        // creating a type with an enum field that is used to track it's subtype
+        // status.
+        //
+        // Talk about tricky? Now things are going to get tricky. If the object
+        // is imported, we are going to suck it in and generate a module for
+        // it! Whoohoo! Note also, that we have a NullGenerator that does nothing.
         for (id, obj) in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
@@ -124,28 +135,30 @@ impl<'a> DomainTarget<'a> {
                             .build(),
                     )
                     .build()?
-            } else {
+            } else if self.config.is_imported(id) {
+                // If the object is imported, we don't generate anything.
+                NullGenerator::new()
+            } else if object_is_singleton(obj, &self.domain) {
                 // Look for naked objects, and generate a singleton for them.
-                if object_is_singleton(obj, &self.domain) {
-                    log::debug!("Generating singleton for {}", obj.name);
-                    DefaultStructBuilder::new()
-                        .definition(DomainConst::new())
-                        .build()?
-                } else {
-                    DefaultStructBuilder::new()
-                        // Definition type
-                        .definition(DomainStruct::new())
-                        .implementation(
-                            DomainImplBuilder::new()
-                                // New implementation
-                                .method(DomainStructNewImpl::new())
-                                // Relationship navigation implementations
-                                .method(DomainRelNavImpl::new())
-                                .build(),
-                        )
-                        // Go!
-                        .build()?
-                }
+
+                log::debug!("Generating singleton for {}", obj.name);
+                DefaultStructBuilder::new()
+                    .definition(DomainConst::new())
+                    .build()?
+            } else {
+                DefaultStructBuilder::new()
+                    // Definition type
+                    .definition(DomainStruct::new())
+                    .implementation(
+                        DomainImplBuilder::new()
+                            // New implementation
+                            .method(DomainStructNewImpl::new())
+                            // Relationship navigation implementations
+                            .method(DomainRelNavImpl::new())
+                            .build(),
+                    )
+                    // Go!
+                    .build()?
             };
 
             // Here's the generation.
