@@ -1,7 +1,7 @@
 //! Domain Struct Generation
 //!
 //! Your one-stop-shop for everything to do with structs in Rust!
-use std::fmt::Write;
+use std::{collections::HashSet, fmt::Write};
 
 use log;
 use sarzak::{
@@ -86,9 +86,11 @@ impl CodeWriter for DomainStruct {
         // stable output.
         let mut referrer_objs = get_objs_for_referrers!(obj, domain.sarzak());
         referrer_objs.append(&mut get_objs_for_assoc_referents!(obj, domain.sarzak()));
+        let referrer_objs: HashSet<_> = referrer_objs.into_iter().collect();
 
         let mut referent_objs = get_objs_for_referents!(obj, domain.sarzak());
         referent_objs.append(&mut get_objs_for_assoc_referrers!(obj, domain.sarzak()));
+        let referent_objs: HashSet<_> = referent_objs.into_iter().collect();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
