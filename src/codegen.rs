@@ -269,7 +269,14 @@ pub(crate) fn render_new_instance(
         match &field.ty {
             GType::Uuid => match &rval.ty {
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
-                GType::Reference(_) => emit!(buffer, "{}: {}.id,", field.name, rval.name),
+                GType::Reference(obj_id) => {
+                    let obj = store.exhume_object(&obj_id).unwrap();
+                    if object_is_supertype(obj, store) {
+                        emit!(buffer, "{}: {}.id(),", field.name, rval.name)
+                    } else {
+                        emit!(buffer, "{}: {}.id,", field.name, rval.name)
+                    }
+                }
                 _ => ensure!(
                     field.ty == rval.ty,
                     CompilerSnafu {
@@ -340,16 +347,16 @@ pub(crate) fn render_new_instance(
 // G::new()
 // }
 
-pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
-    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, domain.sarzak());
+pub(crate) fn object_is_supertype(object: &Object, store: &SarzakStore) -> bool {
+    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, store);
 
     is_super.len() > 0
 }
 
-pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
-    let attrs = sarzak_get_many_as_across_r1!(object, domain.sarzak());
-    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, domain.sarzak());
-    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, domain.sarzak());
+pub(crate) fn object_is_singleton(object: &Object, store: &SarzakStore) -> bool {
+    let attrs = sarzak_get_many_as_across_r1!(object, store);
+    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, store);
+    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, store);
 
     attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
 }

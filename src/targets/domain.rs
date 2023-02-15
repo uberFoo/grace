@@ -127,7 +127,7 @@ impl<'a> DomainTarget<'a> {
             types.set_extension(RS_EXT);
 
             // Test if the object is a supertype. Those we generate as enums.
-            let generator = if object_is_supertype(obj, &self.domain) {
+            let generator = if object_is_supertype(obj, self.domain.sarzak()) {
                 DefaultStructBuilder::new()
                     .definition(DomainEnum::new())
                     .implementation(
@@ -178,7 +178,7 @@ impl<'a> DomainTarget<'a> {
                 )?;
 
                 NullGenerator::new()
-            } else if object_is_singleton(obj, &self.domain) {
+            } else if object_is_singleton(obj, self.domain.sarzak()) {
                 // Look for naked objects, and generate a singleton for them.
 
                 log::debug!("Generating singleton for {}", obj.name);

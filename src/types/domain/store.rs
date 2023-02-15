@@ -90,8 +90,8 @@ impl FileGenerator for DomainStoreGenerator {
             .iter()
             .filter(|(id, obj)| {
                 // We have this odd construction because a supertype may actually be a singleton.
-                object_is_supertype(obj, domain)
-                    || !object_is_singleton(obj, domain)
+                object_is_supertype(obj, domain.sarzak())
+                    || !object_is_singleton(obj, domain.sarzak())
                 // Don't include imported objects
                 && !config.is_imported(*id)
             })
@@ -150,8 +150,8 @@ impl CodeWriter for DomainStore {
             .iter()
             .filter(|(id, obj)| {
                 // We have this odd construction because a supertype may actually be a singleton.
-                object_is_supertype(obj, domain)
-                    || !object_is_singleton(obj, domain)
+                object_is_supertype(obj, domain.sarzak())
+                    || !object_is_singleton(obj, domain.sarzak())
                 // Don't include imported objects
                 && !config.is_imported(*id)
             })
@@ -213,7 +213,7 @@ impl CodeWriter for DomainStore {
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
 
-                    if object_is_supertype(obj, domain) {
+                    if object_is_supertype(obj, domain.sarzak()) {
                         emit!(
                             buffer,
                             "self.{}.insert({}.id(), {});",
