@@ -12,9 +12,9 @@ use crate::associative_domain::types::subtype_anchor::SubtypeAnchor;
 use crate::associative_domain::store::ObjectStore as AssociativeDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"isa_ui-struct-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-documentation"}}}
 /// This represents additional data necessary to render an `Isa` relationship in the user interface.
-// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct IsaUi {
@@ -33,41 +33,12 @@ impl IsaUi {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"isa_ui-struct-impl-nav-backward-assoc-one-to-subtype_anchor"}}}
-    /// Navigate to [`SubtypeAnchor`] across R10(1-1)
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"isa_ui-struct-impl-nav-backward-cond-to-subtype_anchor"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"isa_ui-struct-impl-nav-backward-assoc-one-cond-to-subtype_anchor"}}}
-    /// Navigate to [`SubtypeAnchor`] across R10(1-1c)
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"isa_ui-struct-impl-nav-backward-assoc-many-cond-to-subtype_anchor"}}}
-    /// Navigate to [`SubtypeAnchor`] across R10(1-Mc)
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"isa_ui-struct-impl-nav-backward-assoc_many-to-subtype_anchor"}}}
     /// Navigate to [`SubtypeAnchor`] across R10(1-M)
     pub fn subtype_anchor<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&SubtypeAnchor> {
-        //         vec![
-        //             store
-        //                 .iter_subtype_anchor()
-        //                 .find(|subtype_anchor| subtype_anchor.1.isaui_id == self.id)
-        //                 .unwrap()
-        //                 .1,
-        //         ]
-        //         let subtype_anchor = store
-        //             .iter_subtype_anchor()
-        //             .find(|subtype_anchor| subtype_anchor.1.isaui_id == self.id);
-        //         match subtype_anchor {
-        //             Some(ref subtype_anchor) => vec![subtype_anchor.1],
-        //             None => Vec::new(),
-        //         }
-        //         vec![
-        //             store
-        //                 .iter_subtype_anchor()
-        //                 .find(|subtype_anchor| subtype_anchor.1.isaui_id == self.id)
-        //                 .unwrap()
-        //                 .1,
-        //         ]
         store
             .iter_subtype_anchor()
             .filter_map(|subtype_anchor| {
-                //                 if subtype_anchor.1.isaui_id == Some(self.id) {
                 if subtype_anchor.1.isaui_id == self.id {
                     Some(subtype_anchor.1)
                 } else {

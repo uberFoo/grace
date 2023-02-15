@@ -13,13 +13,11 @@ use crate::associative_domain::types::isa_ui::IsaUi;
 use crate::associative_domain::store::ObjectStore as AssociativeDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_anchor-const-documentation"}}}
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_anchor-struct-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-documentation"}}}
 /// Subtype Anchor
 ///
 /// Just as it sounds, these are [`Anchor`]s used by [`Subtype`]s in an [`Isa`] relationship.
-// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-const-definition"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct SubtypeAnchor {
@@ -34,11 +32,7 @@ pub struct SubtypeAnchor {
 impl SubtypeAnchor {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_anchor-struct-impl-new"}}}
     /// Inter a new SubtypeAnchor in the store, and return it's `id`.
-    //     pub fn new(store: &mut AssociativeDomainStore) -> SubtypeAnchor {
-    //         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
-    //         let new = SubtypeAnchor { id };
     pub fn new(
-        //         isaui_id: Option<&IsaUi>,
         isaui_id: &IsaUi,
         anchor_id: &Anchor,
         store: &mut AssociativeDomainStore,
@@ -48,7 +42,6 @@ impl SubtypeAnchor {
             format!("{:?}:{:?}", isaui_id, anchor_id).as_bytes(),
         );
         let new = SubtypeAnchor {
-            //             isaui_id: isaui_id.map(|isa_ui| isa_ui.id),
             isaui_id: isaui_id.id,
             anchor_id: anchor_id.id,
             id,

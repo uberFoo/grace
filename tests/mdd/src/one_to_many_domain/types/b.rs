@@ -12,11 +12,11 @@ use crate::one_to_many_domain::types::referent::Referent;
 use crate::one_to_many_domain::store::ObjectStore as OneToManyDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-documentation"}}}
 /// Connected to TGT via _R2_.
 ///
 /// This is for testing a 1c-M relationship.
-// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct B {
@@ -26,7 +26,6 @@ pub struct B {
     pub ptr: Option<Uuid>,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-implementation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-implementation"}}}
 impl B {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-new"}}}
@@ -42,8 +41,6 @@ impl B {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-navigate-to-ptr"}}}
-    /// Navigate to [`Referent`] across R2(1-1c)
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R2(1-?c)
     pub fn referent<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&Referent> {

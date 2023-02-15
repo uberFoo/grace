@@ -10,7 +10,6 @@
 //! * [`SimpleSupertype`]
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_domain-object-store-file"}}}
 //! * [`SuperT`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_domain-object-store-definition"}}}
 use std::collections::HashMap;
@@ -106,4 +105,3 @@ impl ObjectStore {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-

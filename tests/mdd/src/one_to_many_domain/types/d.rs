@@ -12,9 +12,9 @@ use crate::one_to_many_domain::types::referent::Referent;
 use crate::one_to_many_domain::store::ObjectStore as OneToManyDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"d-struct-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-documentation"}}}
 /// Just an unassuming D
-// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct D {
@@ -24,7 +24,6 @@ pub struct D {
     pub ptr: Option<Uuid>,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-implementation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-implementation"}}}
 impl D {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"d-struct-impl-new"}}}

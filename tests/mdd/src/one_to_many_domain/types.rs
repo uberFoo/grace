@@ -14,4 +14,3 @@ pub use d::D;
 pub use referent::Referent;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
-

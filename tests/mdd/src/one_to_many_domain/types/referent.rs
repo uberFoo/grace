@@ -15,11 +15,11 @@ use crate::one_to_many_domain::types::d::D;
 use crate::one_to_many_domain::store::ObjectStore as OneToManyDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-documentation"}}}
 /// The object of so many relationships
 ///
 /// I’m related to stuff.
-// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Referent {
@@ -27,7 +27,6 @@ pub struct Referent {
     pub name: String,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-implementation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-new"}}}
@@ -49,7 +48,6 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
-    /// Navigate to [`B`] across R2(1c-Mc)
     /// Navigate to [`B`] across R2(1-Mc)
     pub fn b<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&B> {
         store
@@ -73,8 +71,6 @@ impl Referent {
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1c_Mc-to-d"}}}
-    /// Navigate to [`D`] across R4(1c-Mc)
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}
     /// Navigate to [`D`] across R4(1-Mc)
     pub fn d<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&D> {

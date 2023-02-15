@@ -8,4 +8,3 @@ pub use everything::Everything;
 pub use rando_object::RandoObject;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
-

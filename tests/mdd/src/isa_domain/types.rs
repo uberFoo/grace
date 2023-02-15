@@ -16,4 +16,3 @@ pub use subtype_b::SubtypeB;
 pub use super_t::SuperT;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
-
