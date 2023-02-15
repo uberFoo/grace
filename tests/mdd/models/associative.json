@@ -1,0 +1,306 @@
+{
+    "paper": {
+        "ids": [
+            "78411374-4d65-54a9-a68a-cecf90597189"
+        ],
+        "entities": {
+            "78411374-4d65-54a9-a68a-cecf90597189": {
+                "id": "78411374-4d65-54a9-a68a-cecf90597189",
+                "description": "Domain to test Associative Objects/Relationships",
+                "domain_name": "associative",
+                "domain_ns": "b49d6fe1-e5e9-5896-bd42-b72012429e52",
+                "width": 4000,
+                "height": 3200,
+                "offset": {
+                    "x": -679,
+                    "y": -1051
+                },
+                "objects": {
+                    "a7d2303d-e2b5-5c4f-a7ba-a9a852146871": {
+                        "x": 2799,
+                        "y": 1436,
+                        "width": 263,
+                        "height": 133
+                    },
+                    "2979402f-0980-58b6-9601-62f931e7f368": {
+                        "x": 1556,
+                        "y": 2409,
+                        "width": 327,
+                        "height": 139
+                    },
+                    "bfb6d5f3-5dcc-5638-9a0e-de19eb25c278": {
+                        "x": 2562,
+                        "y": 1708,
+                        "width": 301,
+                        "height": 138
+                    },
+                    "27edcc78-f257-5a0b-a2e4-c233987e0889": {
+                        "x": 2311,
+                        "y": 1433,
+                        "width": 268,
+                        "height": 140
+                    },
+                    "63af1589-c7cf-50b2-ad7b-d30208ebfec4": {
+                        "x": 1766,
+                        "y": 2059,
+                        "width": 306,
+                        "height": 156
+                    },
+                    "dbdfade4-b61a-5e69-ab1a-c4d10e61bedd": {
+                        "x": 1444,
+                        "y": 2056,
+                        "width": 224,
+                        "height": 159
+                    }
+                },
+                "relationships": {
+                    "593ddc5f-5efd-5a7e-a07b-4efa70c5dbe2": {
+                        "AssociativeUI": {
+                            "from": {
+                                "x": 2700,
+                                "y": 1708
+                            },
+                            "middle": {
+                                "id": "bfb6d5f3-5dcc-5638-9a0e-de19eb25c278",
+                                "dir": "South",
+                                "x": 2700,
+                                "y": 1542,
+                                "offset": {
+                                    "x": 0,
+                                    "y": 0
+                                }
+                            },
+                            "one": {
+                                "id": "a7d2303d-e2b5-5c4f-a7ba-a9a852146871",
+                                "dir": "West",
+                                "x": 2799,
+                                "y": 1542,
+                                "offset": {
+                                    "x": -33,
+                                    "y": 54
+                                }
+                            },
+                            "other": {
+                                "id": "27edcc78-f257-5a0b-a2e4-c233987e0889",
+                                "dir": "East",
+                                "x": 2579,
+                                "y": 1543,
+                                "offset": {
+                                    "x": 15,
+                                    "y": -20
+                                }
+                            }
+                        }
+                    },
+                    "917d584e-1f66-5a90-a3fa-fc6e17dcf25e": {
+                        "AssociativeUI": {
+                            "from": {
+                                "x": 1688,
+                                "y": 2410
+                            },
+                            "middle": {
+                                "id": "2979402f-0980-58b6-9601-62f931e7f368",
+                                "dir": "South",
+                                "x": 1688,
+                                "y": 2255,
+                                "offset": {
+                                    "x": 0,
+                                    "y": 0
+                                }
+                            },
+                            "one": {
+                                "id": "dbdfade4-b61a-5e69-ab1a-c4d10e61bedd",
+                                "dir": "South",
+                                "x": 1564,
+                                "y": 2215,
+                                "offset": {
+                                    "x": -134,
+                                    "y": 36
+                                }
+                            },
+                            "other": {
+                                "id": "63af1589-c7cf-50b2-ad7b-d30208ebfec4",
+                                "dir": "South",
+                                "x": 1869,
+                                "y": 2215,
+                                "offset": {
+                                    "x": 20,
+                                    "y": 32
+                                }
+                            }
+                        }
+                    }
+                },
+                "config": null
+            }
+        }
+    },
+    "objects": {
+        "ids": [
+            "27edcc78-f257-5a0b-a2e4-c233987e0889",
+            "a7d2303d-e2b5-5c4f-a7ba-a9a852146871",
+            "bfb6d5f3-5dcc-5638-9a0e-de19eb25c278",
+            "2979402f-0980-58b6-9601-62f931e7f368",
+            "63af1589-c7cf-50b2-ad7b-d30208ebfec4",
+            "dbdfade4-b61a-5e69-ab1a-c4d10e61bedd"
+        ],
+        "entities": {
+            "63af1589-c7cf-50b2-ad7b-d30208ebfec4": {
+                "id": "63af1589-c7cf-50b2-ad7b-d30208ebfec4",
+                "key_letter": "S",
+                "name": "State",
+                "description": "An [Object] state, more precisely, a set of states, is where all the action happens.",
+                "attributes": {
+                    "58c8f404-0e17-5822-ba83-008f9fad1988": {
+                        "id": "58c8f404-0e17-5822-ba83-008f9fad1988",
+                        "name": "name",
+                        "type": "String"
+                    },
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "2979402f-0980-58b6-9601-62f931e7f368": {
+                "id": "2979402f-0980-58b6-9601-62f931e7f368",
+                "key_letter": "ACK",
+                "name": "Acknowledged Event",
+                "description": "An Event that Does Something\n\nAn acknowledged event is an event that a [`State`] knows how to handle.",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "dbdfade4-b61a-5e69-ab1a-c4d10e61bedd": {
+                "id": "dbdfade4-b61a-5e69-ab1a-c4d10e61bedd",
+                "key_letter": "E",
+                "name": "Event",
+                "description": "An event is sent to an object, and processed by the current state. Assuming it accepts the event. Otherwise it’s dropped on the floor.",
+                "attributes": {
+                    "6695235e-4f1a-5e9c-9e1e-7df811c9f276": {
+                        "id": "6695235e-4f1a-5e9c-9e1e-7df811c9f276",
+                        "name": "name",
+                        "type": "String"
+                    },
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "a7d2303d-e2b5-5c4f-a7ba-a9a852146871": {
+                "id": "a7d2303d-e2b5-5c4f-a7ba-a9a852146871",
+                "key_letter": "IUI",
+                "name": "IsaUI",
+                "description": "This represents additional data necessary to render an `Isa` relationship in the user interface.",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "b2cf3934-b0dc-5722-a782-7d2a8b28115c": {
+                        "id": "b2cf3934-b0dc-5722-a782-7d2a8b28115c",
+                        "name": "number",
+                        "type": "Integer"
+                    }
+                }
+            },
+            "27edcc78-f257-5a0b-a2e4-c233987e0889": {
+                "id": "27edcc78-f257-5a0b-a2e4-c233987e0889",
+                "key_letter": "ANCH",
+                "name": "Anchor",
+                "description": "An anchor, or anchor point, is the location where an arrow from a relationship attached to an object.\n\nRather than storing the `x` and `y` coordinates of where the anchor attaches, we are related to an [Edge], which is related to a box, which is related to the [Object] to which we are attached. This of course completes the circuit from the [Relationship] for which we are drawing the lines in the first place.\n\nAnchor also contains a direction, so that we know the orientation to draw the arrows. Finally, there is an offset, which is a point that describes the offset from the anchor for the relationship phrase.",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "5663fdb3-c54e-5f66-b697-2467a8222c4b": {
+                        "id": "5663fdb3-c54e-5f66-b697-2467a8222c4b",
+                        "name": "number",
+                        "type": "Integer"
+                    }
+                }
+            },
+            "bfb6d5f3-5dcc-5638-9a0e-de19eb25c278": {
+                "id": "bfb6d5f3-5dcc-5638-9a0e-de19eb25c278",
+                "key_letter": "SUB_A",
+                "name": "Subtype Anchor",
+                "description": "Subtype Anchor\n\nJust as it sounds, these are [`Anchor`]s used by [`Subtype`]s in an [`Isa`] relationship.",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            }
+        }
+    },
+    "relationships": {
+        "ids": [
+            "917d584e-1f66-5a90-a3fa-fc6e17dcf25e",
+            "593ddc5f-5efd-5a7e-a07b-4efa70c5dbe2"
+        ],
+        "entities": {
+            "917d584e-1f66-5a90-a3fa-fc6e17dcf25e": {
+                "Associative": {
+                    "id": "917d584e-1f66-5a90-a3fa-fc6e17dcf25e",
+                    "number": 20,
+                    "from": {
+                        "id": "73745fc1-b2b0-5466-a1ef-580c1b8f289b",
+                        "obj_id": "2979402f-0980-58b6-9601-62f931e7f368",
+                        "cardinality": "One",
+                        "one_referential_attribute": "event_id",
+                        "other_referential_attribute": "state_id"
+                    },
+                    "one": {
+                        "obj_id": "dbdfade4-b61a-5e69-ab1a-c4d10e61bedd",
+                        "description": "may be processed by",
+                        "cardinality": "Many",
+                        "conditionality": "Unconditional"
+                    },
+                    "other": {
+                        "obj_id": "63af1589-c7cf-50b2-ad7b-d30208ebfec4",
+                        "description": "may accept",
+                        "cardinality": "Many",
+                        "conditionality": "Conditional"
+                    }
+                }
+            },
+            "593ddc5f-5efd-5a7e-a07b-4efa70c5dbe2": {
+                "Associative": {
+                    "id": "593ddc5f-5efd-5a7e-a07b-4efa70c5dbe2",
+                    "number": 10,
+                    "from": {
+                        "id": "50452913-6110-5856-a2b9-66993f1f9e49",
+                        "obj_id": "bfb6d5f3-5dcc-5638-9a0e-de19eb25c278",
+                        "cardinality": "One",
+                        "one_referential_attribute": "isaui_id",
+                        "other_referential_attribute": "anchor_id"
+                    },
+                    "one": {
+                        "obj_id": "a7d2303d-e2b5-5c4f-a7ba-a9a852146871",
+                        "description": "is drawn to",
+                        "cardinality": "Many",
+                        "conditionality": "Unconditional"
+                    },
+                    "other": {
+                        "obj_id": "27edcc78-f257-5a0b-a2e4-c233987e0889",
+                        "description": "anchors",
+                        "cardinality": "One",
+                        "conditionality": "Conditional"
+                    }
+                }
+            }
+        }
+    }
+}

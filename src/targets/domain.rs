@@ -5,10 +5,7 @@ use std::{
 
 use sarzak::{
     mc::{FileSnafu, ModelCompilerError, Result},
-    sarzak::{
-        macros::{sarzak_get_many_as_across_r1, sarzak_maybe_get_many_r_sups_across_r14},
-        types::{Attribute, External, Object, Supertype, Type},
-    },
+    sarzak::types::{External, Object, Type},
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -128,7 +125,7 @@ impl<'a> DomainTarget<'a> {
             } else {
                 // Look for naked objects, and generate a singleton for them.
                 if object_is_singleton(obj, &self.domain) {
-                    eprintln!("Generating singleton for {}", obj.name);
+                    log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
                         .definition(DomainConst::new())
                         .build()?

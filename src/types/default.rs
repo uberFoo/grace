@@ -13,9 +13,8 @@ use sarzak::{
             sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
             sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
             sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
-            sarzak_maybe_get_many_r_sups_across_r14,
         },
-        types::{Attribute, Object, Referrer, Supertype},
+        types::{Attribute, Object, Referrer},
     },
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
 };
