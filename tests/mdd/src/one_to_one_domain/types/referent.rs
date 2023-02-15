@@ -31,6 +31,7 @@ pub struct Referent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
     /// Inter a new Referent in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToOneDomainStore) -> Referent {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
@@ -40,6 +41,8 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-cond-to-a"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-cond-to-a"}}}
     /// Navigate to [`A`] across R1(1-1c)
     pub fn a<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&A> {
         let a = store.iter_a().find(|a| a.1.ptr == self.id);
@@ -50,12 +53,17 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-one-to-b"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-to-b"}}}
     /// Navigate to [`B`] across R2(1-1)
-    pub fn b<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&B> {
+    //     pub fn b<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&B> {
+    pub fn b_r2<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&B> {
         vec![store.iter_b().find(|b| b.1.ptr == self.id).unwrap().1]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-one-bi-cond-to-c"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-bi-cond-to-c"}}}
     /// Navigate to [`C`] across R3(1c-1c)
     pub fn c<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&C> {
         let c = store.iter_c().find(|c| c.1.ptr == Some(self.id));
@@ -65,6 +73,7 @@ impl Referent {
         }
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

@@ -32,6 +32,7 @@ pub struct AcknowledgedEvent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-implementation"}}}
 impl AcknowledgedEvent {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"acknowledged_event-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new"}}}
     /// Inter a new AcknowledgedEvent in the store, and return it's `id`.
     pub fn new(
         event_id: &Event,
@@ -52,17 +53,22 @@ impl AcknowledgedEvent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-event_id"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-event_id"}}}
     /// Navigate to [`Event`] across R20(1-?)
     pub fn event<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&Event> {
         vec![store.exhume_event(&self.event_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-state_id"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-state_id"}}}
     /// Navigate to [`State`] across R20(1-?)
     pub fn state<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&State> {
         vec![store.exhume_state(&self.state_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

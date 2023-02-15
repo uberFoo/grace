@@ -31,6 +31,7 @@ pub struct Everything {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-implementation"}}}
 impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
     /// Inter a new Everything in the store, and return it's `id`.
     pub fn new(
         bool: bool,
@@ -57,11 +58,15 @@ impl Everything {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"everything-struct-impl-nav-forward-to-rando"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-nav-forward-to-rando"}}}
     /// Navigate to [`RandoObject`] across R1(1-?)
-    pub fn rando_object<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&RandoObject> {
+    //     pub fn rando_object<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&RandoObject> {
+    pub fn rando_object_r1<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&RandoObject> {
         vec![store.exhume_rando_object(&self.rando).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

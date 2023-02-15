@@ -31,6 +31,7 @@ pub struct Referent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
     /// Inter a new Referent in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToManyDomainStore) -> Referent {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
@@ -40,6 +41,8 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_M-to-a"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-a"}}}
     /// Navigate to [`A`] across R1(1-M)
     pub fn a<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&A> {
         store
@@ -49,6 +52,8 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
     /// Navigate to [`B`] across R2(1-Mc)
     pub fn b<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&B> {
         store
@@ -64,6 +69,8 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_M-to-c"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-c"}}}
     /// Navigate to [`C`] across R3(1-M)
     pub fn c<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&C> {
         store
@@ -73,6 +80,8 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}
     /// Navigate to [`D`] across R4(1-Mc)
     pub fn d<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&D> {
         store
@@ -87,6 +96,7 @@ impl Referent {
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

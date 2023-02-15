@@ -28,6 +28,7 @@ pub struct RandoObject {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-implementation"}}}
 impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-new"}}}
     /// Inter a new RandoObject in the store, and return it's `id`.
     pub fn new(name: String, store: &mut EverythingDomainStore) -> RandoObject {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
@@ -37,8 +38,11 @@ impl RandoObject {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"rando_object-struct-impl-nav-backward-one-to-everything"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-nav-backward-one-to-everything"}}}
     /// Navigate to [`Everything`] across R1(1-1)
-    pub fn everything<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&Everything> {
+    //     pub fn everything<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&Everything> {
+    pub fn everything_r1<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&Everything> {
         vec![
             store
                 .iter_everything()
@@ -48,6 +52,7 @@ impl RandoObject {
         ]
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

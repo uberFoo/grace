@@ -26,7 +26,7 @@ mod tests {
         let tgt_1 = Referent::new("gene".to_owned(), &mut store);
         let a = A::new(42, &tgt_0, &mut store);
 
-        let select_tgt = a.referent(&store);
+        let select_tgt = a.referent_r1(&store);
         assert_eq!(&tgt_0, select_tgt[0]);
 
         let select_a = tgt_0.a(&store);
@@ -46,16 +46,16 @@ mod tests {
         let b_0 = B::new(true, &tgt_0, &mut store);
         let b_1 = B::new(false, &tgt_1, &mut store);
 
-        let tgt = b_0.referent(&store);
+        let tgt = b_0.referent_r2(&store);
         assert_eq!(&tgt_0, tgt[0]);
 
-        let tgt = b_1.referent(&store);
+        let tgt = b_1.referent_r2(&store);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let b = tgt_0.b(&store);
+        let b = tgt_0.b_r2(&store);
         assert_eq!(&b_0, b[0]);
 
-        let b = tgt_1.b(&store);
+        let b = tgt_1.b_r2(&store);
         assert_eq!(&b_1, b[0]);
     }
 

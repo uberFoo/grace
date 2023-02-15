@@ -25,6 +25,7 @@ pub struct SubtypeB {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-implementation"}}}
 impl SubtypeB {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_b-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new"}}}
     /// Inter a new SubtypeB in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut IsaDomainStore) -> SubtypeB {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", number).as_bytes());
@@ -33,6 +34,7 @@ impl SubtypeB {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

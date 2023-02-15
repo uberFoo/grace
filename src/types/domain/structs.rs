@@ -116,16 +116,23 @@ impl CodeWriter for DomainStruct {
                 }
                 for r_obj in &referrer_objs {
                     if config.is_imported(&r_obj.id) {
-                        emit!(buffer, "// At what point do we suck in the imported domain and generate code for it?");
+                        let imported_object = config.get_imported(&r_obj.id).unwrap();
+                        emit!(
+                            buffer,
+                            "use crate::{}::types::{}::{};",
+                            imported_object.domain,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        );
                     } else {
-                    emit!(
-                        buffer,
-                        "use crate::{}::types::{}::{};",
-                        module,
-                        r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-                    );
-                }
+                        emit!(
+                            buffer,
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        );
+                    }
                 }
 
                 // Add use statements for all the referents.
@@ -624,7 +631,7 @@ impl CodeWriter for DomainStructNewImpl {
         );
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-struct-impl-new", obj.as_ident()),
             |buffer| {
                 // Output a docstring
@@ -677,7 +684,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-forward-to-{}",
                 obj.as_ident(),
@@ -692,8 +699,9 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn {}_r{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     r_obj.as_ident(),
+                    binary.number,
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
@@ -720,7 +728,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-forward-cond-to-{}",
                 obj.as_ident(),
@@ -771,7 +779,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-one-to-{}",
                 obj.as_ident(),
@@ -786,8 +794,9 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn {}_r{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     r_obj.as_ident(),
+                    binary.number,
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
@@ -816,7 +825,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-cond-to-{}",
                 obj.as_ident(),
@@ -875,7 +884,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-one-bi-cond-to-{}",
                 obj.as_ident(),
@@ -934,7 +943,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-1_M-to-{}",
                 obj.as_ident(),
@@ -981,7 +990,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-1_Mc-to-{}",
                 obj.as_ident(),
@@ -1028,7 +1037,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-forward-assoc-to-{}",
                 obj.as_ident(),
@@ -1071,7 +1080,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-assoc-one-to-{}",
                 obj.as_ident(),
@@ -1116,7 +1125,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-assoc-one-cond-to-{}",
                 obj.as_ident(),
@@ -1175,7 +1184,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-assoc_many-to-{}",
                 obj.as_ident(),

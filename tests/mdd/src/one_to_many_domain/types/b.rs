@@ -30,6 +30,7 @@ pub struct B {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-implementation"}}}
 impl B {
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
     /// Inter a new B in the store, and return it's `id`.
     pub fn new(baz: String, ptr: Option<&Referent>, store: &mut OneToManyDomainStore) -> B {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", baz, ptr).as_bytes());
@@ -43,6 +44,8 @@ impl B {
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R2(1-?c)
     pub fn referent<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&Referent> {
         match self.ptr {
@@ -51,6 +54,7 @@ impl B {
         }
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}
