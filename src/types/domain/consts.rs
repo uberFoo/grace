@@ -67,7 +67,7 @@ impl CodeWriter for DomainConst {
         emit!(buffer, "");
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-const-documentation", obj.as_ident()),
             |buffer| {
                 for line in obj.description.split_terminator('\n') {

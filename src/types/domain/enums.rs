@@ -14,7 +14,7 @@ use sarzak::{
             sarzak_get_one_r_isa_across_r13, sarzak_maybe_get_many_r_sups_across_r14,
             sarzak_maybe_get_many_r_tos_across_r16,
         },
-        types::{Attribute, Referent, Subtype, Supertype, Type},
+        types::{Attribute, Referent, Subtype, Supertype},
     },
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
 };
@@ -129,7 +129,7 @@ impl CodeWriter for DomainEnum {
         log::debug!("writing Enum Definition for {}", obj.name);
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-enum-documentation", obj.as_ident()),
             |buffer| {
                 for line in obj.description.split_terminator('\n') {

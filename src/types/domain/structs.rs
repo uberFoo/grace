@@ -169,7 +169,7 @@ impl CodeWriter for DomainStruct {
         log::debug!("writing Struct Definition for {}", obj.name);
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
             |buffer| {
                 for line in obj.description.split_terminator('\n') {
