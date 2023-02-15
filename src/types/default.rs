@@ -645,12 +645,21 @@ impl CodeWriter for DefaultModule {
                 }
                 emit!(buffer, "");
                 for (_, obj) in &objects {
-                    if object_is_singleton(obj, domain) && !object_is_supertype(obj, domain) {
-                        emit!(buffer, "pub use {}::{};", obj.as_ident(), obj.as_const());
+                    if object_is_singleton(obj, domain.sarzak())
+                        && !object_is_supertype(obj, domain.sarzak())
+                    {
+                        emit!(
+                            buffer,
+                            "pub use crate::{}::{}::{};",
+                            module,
+                            obj.as_ident(),
+                            obj.as_const()
+                        );
                     } else {
                         emit!(
                             buffer,
-                            "pub use {}::{};",
+                            "pub use crate::{}::{}::{};",
+                            module,
                             obj.as_ident(),
                             obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                         );
