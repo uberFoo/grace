@@ -76,9 +76,8 @@ pub struct GraceCompilerOptions {
     /// Until then, if you want to indicate that an object is imported, you will
     /// need to do so in the object's description like so:
     ///
-    /// `🐶 {"imported_object": {"domain": "Super-Awesome Domain", "package": "my-app", "model_file": "../sarzak/models/sarzak.json"}}`
+    /// `🐶 {"imported_object": {"domain": "Super-Awesome Domain", "model_file": "../sarzak/models/sarzak.json"}}`
     ///
-    /// "package" is also known as crate. It's the root of the rust project.
     /// "model_file" a path to the domain file, relative to the package root.
     #[arg(long, short)]
     pub imported_objects: bool,
@@ -167,23 +166,14 @@ impl GraceConfig {
         }
     }
 
-    pub(crate) fn get_imported_objects(&self) -> Vec<(&Uuid, &ImportedObject)> {
-        self.inner
-            .iter()
-            .filter_map(|(key, config_value)| {
-                if let Some(ref imported_object) = config_value.imported_object {
-                    Some((key, imported_object))
-                } else {
-                    None
-                }
-            })
-            .collect()
-    }
-
     pub(crate) fn is_imported(&self, key: &Uuid) -> bool {
         self.get_imported(key).is_some()
     }
 }
+
+/// Create a GraceConfig from GraceCompilerOptions and a Domain
+///
+/// How slick is this?
 impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
     fn from((options, domain): (&GraceCompilerOptions, &Domain)) -> Self {
         let mut config = Self::new();
@@ -238,7 +228,6 @@ impl ConfigValue {
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct ImportedObject {
     pub domain: String,
-    pub package: String,
     pub model_file: PathBuf,
 }
 
@@ -266,10 +255,9 @@ mod tests {
 
     #[test]
     fn test_parse_imported_object() {
-        let input = "Testing, 1, 2, 3...\nIt can handle junk at the beginning of the line, but not the end. 🐶 {\"imported_object\": {\"domain\": \"Super-Awesome Domain\", \"package\": \"my-app\", \"model_file\": \"../sarzak/models/sarzak.json\"}}";
+        let input = "Testing, 1, 2, 3...\nIt can handle junk at the beginning of the line, but not the end. 🐶 {\"imported_object\": {\"domain\": \"Super-Awesome Domain\", \"model_file\": \"../sarzak/models/sarzak.json\"}}";
         let expected = ImportedObject {
             domain: "Super-Awesome Domain".to_owned(),
-            package: "my-app".to_owned(),
             model_file: PathBuf::from("../sarzak/models/sarzak.json"),
         };
 
@@ -353,12 +341,12 @@ mod tests {
             let config_value = config.get(*id).unwrap();
 
             if obj.name == "Object" {
+                assert!(config.is_imported(id));
                 assert_eq!(
                     config_value.imported_object,
                     Some(ImportedObject {
                         domain: "sarzak".to_string(),
-                        package: "sarzak".to_string(),
-                        model_file: PathBuf::from("../../../sarzak/models/sarzak_✨.json"),
+                        model_file: PathBuf::from("../sarzak/models/sarzak_✨.json"),
                     })
                 );
             } else {

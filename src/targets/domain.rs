@@ -4,6 +4,7 @@ use std::{
 };
 
 use sarzak::{
+    domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::types::{External, Object, Type},
     woog::{
@@ -20,7 +21,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::{GraceCompilerOptions, GraceConfig},
+    options::{GraceCompilerOptions, GraceConfig, Target as GraceTarget},
     targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
@@ -32,28 +33,28 @@ use crate::{
         },
         null::NullGenerator,
     },
-    RS_EXT, TYPES,
+    ModelCompiler, SarzakModelCompiler, RS_EXT, TYPES,
 };
 
 pub(crate) struct DomainTarget<'a> {
     config: GraceConfig,
-    _package: &'a str,
+    package: &'a str,
     module: &'a str,
     src_path: &'a Path,
     domain: sarzak::domain::Domain,
     woog: WoogStore,
-    _test: bool,
+    test: bool,
 }
 
 impl<'a> DomainTarget<'a> {
     pub(crate) fn new(
         options: &'a GraceCompilerOptions,
-        _package: &'a str,
+        package: &'a str,
         module: &'a str,
         src_path: &'a Path,
         domain: sarzak::domain::DomainBuilder,
         woog: WoogStore,
-        _test: bool,
+        test: bool,
     ) -> Box<dyn Target + 'a> {
         // This post_load script creates an external entity of the ObjectStore so that
         // we can use it from within the domain. Remember that the ObjectStore is a
@@ -88,12 +89,12 @@ impl<'a> DomainTarget<'a> {
 
         Box::new(Self {
             config,
-            _package,
+            package,
             module,
             src_path: src_path.as_ref(),
             domain,
             woog,
-            _test,
+            test,
         })
     }
 
@@ -136,7 +137,46 @@ impl<'a> DomainTarget<'a> {
                     )
                     .build()?
             } else if self.config.is_imported(id) {
-                // If the object is imported, we don't generate anything.
+                // If the object is imported, we don't generate anything...here.
+                // But before we finish this, let's take a detour. Let's generate
+                // code for the imported domain. What do you say? Sound fun?
+                // Let's do it!
+                let imported = self.config.get_imported(id).unwrap();
+                let grace = ModelCompiler::default();
+                let imported_domain = DomainBuilder::new()
+                    .cuckoo_model(&imported.model_file)
+                    .expect("Failed to build imported domain");
+                // 🚧 We have to punt on the options. That's ok for now. Eventually
+                // I think that it would be easy enough to include custom options
+                // alongside the model. Either embedded in the store, or something
+                // else. Actually, we already know exactly what options we need.
+                //
+                // Damn. I had a thought while I was typing, and rather than take
+                // the interrupt, I forgot what it was. It was juicy too -- it
+                // had me really excited. 😢
+                //
+                // Oh, I remember now! We can actually start leveraging a new-
+                // style object store now if we wanted to. We could run the
+                // conversion once and then just store it. I think that's pretty
+                // cool. Maybe not worth all the build-up though.
+                let mut options = GraceCompilerOptions::default();
+                options.target = GraceTarget::Domain;
+                if let Some(ref mut derive) = options.derive {
+                    derive.push("Clone".to_string());
+                    derive.push("Deserialize".to_string());
+                    derive.push("Serialize".to_string());
+                }
+                options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+
+                grace.compile(
+                    imported_domain,
+                    self.package,
+                    imported.domain.as_str(),
+                    self.src_path,
+                    Box::new(&options),
+                    self.test,
+                )?;
+
                 NullGenerator::new()
             } else if object_is_singleton(obj, &self.domain) {
                 // Look for naked objects, and generate a singleton for them.
