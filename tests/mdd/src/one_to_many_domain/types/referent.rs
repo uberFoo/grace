@@ -30,7 +30,6 @@ pub struct Referent {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
     /// Inter a new Referent in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToManyDomainStore) -> Referent {
@@ -39,8 +38,6 @@ impl Referent {
         store.inter_referent(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_M-to-a"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-a"}}}
     /// Navigate to [`A`] across R1(1-M)
@@ -50,8 +47,6 @@ impl Referent {
             .filter_map(|a| if a.1.ptr == self.id { Some(a.1) } else { None })
             .collect()
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
     /// Navigate to [`B`] across R2(1-Mc)
@@ -67,8 +62,6 @@ impl Referent {
             })
             .collect()
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_M-to-c"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-c"}}}
     /// Navigate to [`C`] across R3(1-M)
@@ -78,8 +71,6 @@ impl Referent {
             .filter_map(|c| if c.1.ptr == self.id { Some(c.1) } else { None })
             .collect()
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}
     /// Navigate to [`D`] across R4(1-Mc)
@@ -95,7 +86,6 @@ impl Referent {
             })
             .collect()
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

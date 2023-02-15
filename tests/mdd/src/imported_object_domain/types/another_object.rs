@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::imported_object_domain::UUID_NS;
 
 // Referrer imports
-// At what point do we suck in the imported domain and generate code for it?
+use crate::sarzak::types::object::Object;
 
 use crate::imported_object_domain::store::ObjectStore as ImportedObjectDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -30,7 +30,7 @@ pub struct AnotherObject {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-implementation"}}}
 impl AnotherObject {
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"another_object-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new"}}}
     /// Inter a new AnotherObject in the store, and return it's `id`.
     pub fn new(ptr: &Object, store: &mut ImportedObjectDomainStore) -> AnotherObject {
         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", ptr).as_bytes());
@@ -38,13 +38,13 @@ impl AnotherObject {
         store.inter_another_object(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"another_object-struct-impl-nav-forward-to-ptr"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-nav-forward-to-ptr"}}}
     /// Navigate to [`Object`] across R1(1-?)
-    pub fn object<'a>(&'a self, store: &'a ImportedObjectDomainStore) -> Vec<&Object> {
+    pub fn object_r1<'a>(&'a self, store: &'a ImportedObjectDomainStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.ptr).unwrap()]
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

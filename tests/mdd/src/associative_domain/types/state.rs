@@ -25,7 +25,6 @@ pub struct State {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-implementation"}}}
 impl State {
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"state-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new"}}}
     /// Inter a new State in the store, and return it's `id`.
     pub fn new(name: String, store: &mut AssociativeDomainStore) -> State {
@@ -34,8 +33,6 @@ impl State {
         store.inter_state(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"state-struct-impl-nav-backward-assoc_many-to-acknowledged_event"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-nav-backward-assoc_many-to-acknowledged_event"}}}
     /// Navigate to [`AcknowledgedEvent`] across R20(1-M)
@@ -54,7 +51,6 @@ impl State {
             })
             .collect()
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

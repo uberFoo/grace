@@ -32,7 +32,6 @@ pub struct SubtypeAnchor {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-implementation"}}}
 impl SubtypeAnchor {
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_anchor-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-new"}}}
     /// Inter a new SubtypeAnchor in the store, and return it's `id`.
     pub fn new(
@@ -52,23 +51,18 @@ impl SubtypeAnchor {
         store.inter_subtype_anchor(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-isaui_id"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-isaui_id"}}}
     /// Navigate to [`IsaUi`] across R10(1-?)
     pub fn isa_ui<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&IsaUi> {
         vec![store.exhume_isa_ui(&self.isaui_id).unwrap()]
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-anchor_id"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-anchor_id"}}}
     /// Navigate to [`Anchor`] across R10(1-?)
     pub fn anchor<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&Anchor> {
         vec![store.exhume_anchor(&self.anchor_id).unwrap()]
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

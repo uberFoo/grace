@@ -29,7 +29,6 @@ pub struct B {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-implementation"}}}
 impl B {
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
     /// Inter a new B in the store, and return it's `id`.
     pub fn new(baz: String, ptr: Option<&Referent>, store: &mut OneToManyDomainStore) -> B {
@@ -42,8 +41,6 @@ impl B {
         store.inter_b(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R2(1-?c)
@@ -53,7 +50,6 @@ impl B {
             None => Vec::new(),
         }
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

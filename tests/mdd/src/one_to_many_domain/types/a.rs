@@ -27,7 +27,6 @@ pub struct A {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-implementation"}}}
 impl A {
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"a-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
     /// Inter a new A in the store, and return it's `id`.
     pub fn new(name: String, ptr: &Referent, store: &mut OneToManyDomainStore) -> A {
@@ -40,16 +39,12 @@ impl A {
         store.inter_a(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"a-struct-impl-nav-forward-to-ptr"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-nav-forward-to-ptr"}}}
     /// Navigate to [`Referent`] across R1(1-?)
-    //     pub fn referent<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&Referent> {
     pub fn referent_r1<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&Referent> {
         vec![store.exhume_referent(&self.ptr).unwrap()]
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

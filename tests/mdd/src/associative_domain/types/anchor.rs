@@ -35,7 +35,6 @@ pub struct Anchor {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-implementation"}}}
 impl Anchor {
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"anchor-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new"}}}
     /// Inter a new Anchor in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut AssociativeDomainStore) -> Anchor {
@@ -44,8 +43,6 @@ impl Anchor {
         store.inter_anchor(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"anchor-struct-impl-nav-backward-assoc-one-cond-to-subtype_anchor"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-nav-backward-assoc-one-cond-to-subtype_anchor"}}}
     /// Navigate to [`SubtypeAnchor`] across R10(1-1c)
@@ -58,7 +55,6 @@ impl Anchor {
             None => Vec::new(),
         }
     }
-    // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
