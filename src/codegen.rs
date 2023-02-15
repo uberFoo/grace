@@ -10,8 +10,16 @@ mod rustfmt;
 use std::{fmt::Write, iter::zip};
 
 use sarzak::{
+    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{store::ObjectStore as SarzakStore, types::Object},
+    sarzak::{
+        macros::{
+            sarzak_get_many_as_across_r1, sarzak_maybe_get_many_ass_froms_across_r26,
+            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_sups_across_r14,
+        },
+        store::ObjectStore as SarzakStore,
+        types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype},
+    },
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -27,6 +35,75 @@ use crate::{
     todo::{GType, LValue, ObjectMethod, RValue},
 };
 
+macro_rules! get_objs_for_assoc_referrers {
+    ($obj:expr, $store:expr) => {{
+        let mut objs = Vec::new();
+        let referrers = sarzak_maybe_get_many_ass_froms_across_r26!($obj, $store);
+        for referrer in &referrers {
+            let assoc = sarzak_get_one_r_assoc_across_r21!(referrer, $store);
+            let one = sarzak_get_one_ass_to_across_r23!(assoc, $store);
+            let other = sarzak_get_one_ass_to_across_r22!(assoc, $store);
+            objs.push(sarzak_get_one_obj_across_r25!(one, $store));
+            objs.push(sarzak_get_one_obj_across_r25!(other, $store));
+        }
+
+        objs
+    }};
+}
+pub(crate) use get_objs_for_assoc_referrers;
+
+macro_rules! get_objs_for_assoc_referents {
+    ($obj:expr, $store:expr) => {{
+        let mut objs = Vec::new();
+        let referents = sarzak_maybe_get_many_ass_tos_across_r25!($obj, $store);
+        for referent in &referents {
+            if let Some(assoc) = sarzak_get_one_r_assoc_across_r23!(referent, $store) {
+                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
+                objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
+            } else {
+                let assoc = sarzak_get_one_r_assoc_across_r22!(referent, $store);
+                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
+                objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
+            }
+        }
+
+        objs
+    }};
+}
+pub(crate) use get_objs_for_assoc_referents;
+
+macro_rules! get_objs_for_referrers {
+    ($obj:expr, $store:expr) => {{
+        let mut objs = Vec::new();
+        let referrers = get_referrers!($obj, $store);
+        for referrer in &referrers {
+            let binary = sarzak_get_one_r_bin_across_r6!(referrer, $store);
+            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
+            let obj = sarzak_get_one_obj_across_r16!(referent, $store);
+            objs.push(obj);
+        }
+
+        objs
+    }};
+}
+pub(crate) use get_objs_for_referrers;
+
+macro_rules! get_objs_for_referents {
+    ($obj:expr, $store:expr) => {{
+        let mut objs = Vec::new();
+        let referents = get_referents!($obj, $store);
+        for referent in &referents {
+            let binary = sarzak_get_one_r_bin_across_r5!(referent, $store);
+            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
+            let obj = sarzak_get_one_obj_across_r17!(referrer, $store);
+            objs.push(obj);
+        }
+
+        objs
+    }};
+}
+pub(crate) use get_objs_for_referents;
+
 macro_rules! get_referrers {
     ($obj:expr, $store:expr) => {{
         let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!($obj, $store);
@@ -41,6 +118,7 @@ macro_rules! get_referrers {
 
             obj_a.name.cmp(&obj_b.name)
         });
+
         referrers
     }};
 }
@@ -60,6 +138,7 @@ macro_rules! get_referents {
 
             obj_a.name.cmp(&obj_b.name)
         });
+
         referents
     }};
 }
@@ -259,3 +338,17 @@ pub(crate) fn render_new_instance(
 // pub(crate) fn introspect_object<G>(&object: &Object) -> G {
 // G::new()
 // }
+
+pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
+    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, domain.sarzak());
+
+    is_super.len() > 0
+}
+
+pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
+    let attrs = sarzak_get_many_as_across_r1!(object, domain.sarzak());
+    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, domain.sarzak());
+    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, domain.sarzak());
+
+    attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
+}

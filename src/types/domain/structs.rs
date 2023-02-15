@@ -9,17 +9,23 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_one_card_across_r9,
+            sarzak_get_many_as_across_r1, sarzak_get_one_ass_from_across_r21,
+            sarzak_get_one_ass_to_across_r22, sarzak_get_one_ass_to_across_r23,
+            sarzak_get_one_card_across_r89, sarzak_get_one_card_across_r9,
             sarzak_get_one_cond_across_r11, sarzak_get_one_cond_across_r12,
-            sarzak_get_one_obj_across_r16, sarzak_get_one_obj_across_r17,
+            sarzak_get_one_cond_across_r77, sarzak_get_one_obj_across_r16,
+            sarzak_get_one_obj_across_r17, sarzak_get_one_obj_across_r25,
+            sarzak_get_one_obj_across_r26, sarzak_get_one_r_assoc_across_r21,
+            sarzak_get_one_r_assoc_across_r22, sarzak_get_one_r_assoc_across_r23,
             sarzak_get_one_r_bin_across_r5, sarzak_get_one_r_bin_across_r6,
             sarzak_get_one_r_from_across_r6, sarzak_get_one_r_to_across_r5,
-            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
+            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_ass_froms_across_r26,
+            sarzak_maybe_get_many_ass_tos_across_r25, sarzak_maybe_get_many_r_froms_across_r17,
             sarzak_maybe_get_many_r_tos_across_r16,
         },
         types::{
-            Attribute, Binary, Cardinality, Conditionality, External as SarzakExternal, Object,
-            Referent, Referrer, Type,
+            AssociativeReferent, AssociativeReferrer, Attribute, Binary, Cardinality,
+            Conditionality, External as SarzakExternal, Object, Referent, Referrer, Type,
         },
     },
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, MUTABLE, PUBLIC},
@@ -32,7 +38,8 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::CodeWriter,
-        get_referents, get_referrers,
+        get_objs_for_assoc_referents, get_objs_for_assoc_referrers, get_objs_for_referents,
+        get_objs_for_referrers, get_referents, get_referrers,
         render::{RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
@@ -76,8 +83,10 @@ impl CodeWriter for DomainStruct {
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
-        let referrers = get_referrers!(obj, domain.sarzak());
-        let referents = get_referents!(obj, domain.sarzak());
+        let mut referrer_objs = get_objs_for_referrers!(obj, domain.sarzak());
+        referrer_objs.append(&mut get_objs_for_assoc_referents!(obj, domain.sarzak()));
+        let mut referent_objs = get_objs_for_referents!(obj, domain.sarzak());
+        referent_objs.append(&mut get_objs_for_assoc_referrers!(obj, domain.sarzak()));
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -99,15 +108,11 @@ impl CodeWriter for DomainStruct {
                 emit!(buffer, "use crate::{}::UUID_NS;", module);
 
                 // Add use statements for all the referrers.
-                if referrers.len() > 0 {
+                if referrer_objs.len() > 0 {
                     emit!(buffer, "");
                     emit!(buffer, "// Referrer imports");
                 }
-                for referrer in &referrers {
-                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-                    let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-                    let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-
+                for r_obj in &referrer_objs {
                     emit!(
                         buffer,
                         "use crate::{}::types::{}::{};",
@@ -118,15 +123,11 @@ impl CodeWriter for DomainStruct {
                 }
 
                 // Add use statements for all the referents.
-                if referents.len() > 0 {
+                if referent_objs.len() > 0 {
                     emit!(buffer, "");
                     emit!(buffer, "// Referent imports");
                 }
-                for referent in &referents {
-                    let binary = sarzak_get_one_r_bin_across_r5!(referent, domain.sarzak());
-                    let referrer = sarzak_get_one_r_from_across_r6!(binary, domain.sarzak());
-                    let r_obj = sarzak_get_one_obj_across_r17!(referrer, domain.sarzak());
-
+                for r_obj in &referent_objs {
                     emit!(
                         buffer,
                         "use crate::{}::types::{}::{};",
@@ -208,7 +209,7 @@ impl CodeWriter for DomainStruct {
                     );
                 }
 
-                for referrer in &referrers {
+                for referrer in get_referrers!(obj, domain.sarzak()) {
                     let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                     let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
                     let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
@@ -282,6 +283,48 @@ impl CodeWriter for DomainStruct {
                             referrer.referential_attribute.as_ident(),
                         ),
                     }
+                }
+
+                for assoc_referrer in
+                    sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak())
+                {
+                    let assoc = sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
+
+                    let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
+                    let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
+
+                    let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
+                    let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
+
+                    emit!(
+                        buffer,
+                        "/// R{}: [`{}`] '{}' [`{}`]",
+                        assoc.number,
+                        one_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        // one_obj.description,
+                        "🚧 Out of order — see sarzak#14.".to_owned(),
+                        one_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
+                    emit!(
+                        buffer,
+                        "pub {}: Uuid,",
+                        assoc_referrer.one_referential_attribute.as_ident(),
+                    );
+
+                    emit!(
+                        buffer,
+                        "/// R{}: [`{}`] '{}' [`{}`]",
+                        assoc.number,
+                        other_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        // other_obj.description,
+                        "🚧 Out of order — see sarzak#14.".to_owned(),
+                        other_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    );
+                    emit!(
+                        buffer,
+                        "pub {}: Uuid,",
+                        assoc_referrer.other_referential_attribute.as_ident(),
+                    );
                 }
 
                 emit!(buffer, "}}");
@@ -470,6 +513,40 @@ impl CodeWriter for DomainStructNewImpl {
                     ));
                 }
             }
+        }
+
+        for assoc_referrer in sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak()) {
+            let assoc = sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
+
+            let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
+            let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
+
+            let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
+            let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
+
+            fields.push(LValue::new(
+                assoc_referrer.one_referential_attribute.as_ident(),
+                GType::Uuid,
+            ));
+            params.push(Parameter::new(
+                BORROWED,
+                None,
+                GType::Reference(one_obj.id),
+                PUBLIC,
+                assoc_referrer.one_referential_attribute.as_ident(),
+            ));
+
+            fields.push(LValue::new(
+                assoc_referrer.other_referential_attribute.as_ident(),
+                GType::Uuid,
+            ));
+            params.push(Parameter::new(
+                BORROWED,
+                None,
+                GType::Reference(other_obj.id),
+                PUBLIC,
+                assoc_referrer.other_referential_attribute.as_ident(),
+            ));
         }
 
         // Add the store to the end of the  input parameters
@@ -939,6 +1016,200 @@ impl DomainRelNavImpl {
             },
         )
     }
+
+    fn forward_assoc(
+        buffer: &mut Buffer,
+        obj: &Object,
+        referential_attribute: &String,
+        number: i64,
+        store: &SarzakExternal,
+        r_obj: &Object,
+        domain: &Domain,
+    ) -> Result<()> {
+        buffer.block(
+            DirectiveKind::CommentOrig,
+            format!(
+                "{}-struct-impl-nav-forward-assoc-to-{}",
+                obj.as_ident(),
+                referential_attribute.as_ident()
+            ),
+            |buffer| {
+                emit!(
+                    buffer,
+                    "/// Navigate to [`{}`] across R{}(1-?)",
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    number,
+                );
+                emit!(
+                    buffer,
+                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                );
+                emit!(
+                    buffer,
+                    "vec![store.exhume_{}(&self.{}).unwrap()]",
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                );
+                emit!(buffer, "}}");
+
+                Ok(())
+            },
+        )
+    }
+
+    fn backward_assoc_one(
+        buffer: &mut Buffer,
+        obj: &Object,
+        r_obj: &Object,
+        number: i64,
+        store: &SarzakExternal,
+        referential_attribute: &String,
+        domain: &Domain,
+    ) -> Result<()> {
+        buffer.block(
+            DirectiveKind::CommentOrig,
+            format!(
+                "{}-struct-impl-nav-backward-assoc-one-to-{}",
+                obj.as_ident(),
+                r_obj.as_ident()
+            ),
+            |buffer| {
+                emit!(
+                    buffer,
+                    "/// Navigate to [`{}`] across R{}(1-1)",
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    number
+                );
+                emit!(
+                    buffer,
+                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                );
+                emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.1.{} == self.id).unwrap().1]",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                );
+                emit!(buffer, "}}");
+
+                Ok(())
+            },
+        )
+    }
+
+    fn backward_assoc_one_conditional(
+        buffer: &mut Buffer,
+        obj: &Object,
+        r_obj: &Object,
+        number: i64,
+        store: &SarzakExternal,
+        referential_attribute: &String,
+        domain: &Domain,
+    ) -> Result<()> {
+        buffer.block(
+            DirectiveKind::CommentOrig,
+            format!(
+                "{}-struct-impl-nav-backward-assoc-one-cond-to-{}",
+                obj.as_ident(),
+                r_obj.as_ident()
+            ),
+            |buffer| {
+                emit!(
+                    buffer,
+                    "/// Navigate to [`{}`] across R{}(1-1c)",
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    number
+                );
+                emit!(
+                    buffer,
+                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                );
+                emit!(
+                    buffer,
+                    "let {} = store.iter_{}()",
+                    r_obj.as_ident(),
+                    r_obj.as_ident()
+                );
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.1.{} == self.id);",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                );
+                emit!(buffer, "match {} {{", r_obj.as_ident());
+                emit!(
+                    buffer,
+                    "Some(ref {}) => vec![{}.1],",
+                    r_obj.as_ident(),
+                    r_obj.as_ident()
+                );
+                emit!(buffer, "None => Vec::new(),");
+                emit!(buffer, "}}");
+                emit!(buffer, "}}");
+
+                Ok(())
+            },
+        )
+    }
+
+    fn backward_assoc_many(
+        buffer: &mut Buffer,
+        obj: &Object,
+        r_obj: &Object,
+        number: i64,
+        store: &SarzakExternal,
+        referential_attribute: &String,
+        domain: &Domain,
+    ) -> Result<()> {
+        buffer.block(
+            DirectiveKind::CommentOrig,
+            format!(
+                "{}-struct-impl-nav-backward-assoc_many-to-{}",
+                obj.as_ident(),
+                r_obj.as_ident()
+            ),
+            |buffer| {
+                emit!(
+                    buffer,
+                    "/// Navigate to [`{}`] across R{}(1-M)",
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    number
+                );
+                emit!(
+                    buffer,
+                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                );
+                emit!(buffer, "store.iter_{}()", r_obj.as_ident());
+                emit!(
+                    buffer,
+                    ".filter_map(|{}| if {}.1.{} == self.id {{ Some({}.1) }} else {{ None }})",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident(),
+                    r_obj.as_ident(),
+                );
+                emit!(buffer, ".collect()");
+                emit!(buffer, "}}");
+
+                Ok(())
+            },
+        )
+    }
 }
 
 impl MethodImplementation for DomainRelNavImpl {}
@@ -1047,6 +1318,85 @@ impl CodeWriter for DomainRelNavImpl {
                         buffer, obj, r_obj, binary, store, referrer, &domain,
                     )?,
                 },
+            }
+        }
+
+        for assoc_referrer in sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak()) {
+            let assoc = sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
+
+            let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
+            let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
+
+            let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
+            let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
+
+            DomainRelNavImpl::forward_assoc(
+                buffer,
+                obj,
+                &assoc_referrer.one_referential_attribute,
+                assoc.number,
+                store,
+                one_obj,
+                &domain,
+            )?;
+            DomainRelNavImpl::forward_assoc(
+                buffer,
+                obj,
+                &assoc_referrer.other_referential_attribute,
+                assoc.number,
+                store,
+                other_obj,
+                &domain,
+            )?;
+        }
+
+        for assoc_referent in sarzak_maybe_get_many_ass_tos_across_r25!(obj, domain.sarzak()) {
+            let (assoc, referrer, referential_attribute) = if let Some(assoc) =
+                sarzak_get_one_r_assoc_across_r23!(assoc_referent, domain.sarzak())
+            {
+                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, domain.sarzak());
+                (assoc, referrer, &referrer.one_referential_attribute)
+            } else {
+                let assoc = sarzak_get_one_r_assoc_across_r22!(assoc_referent, domain.sarzak());
+                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, domain.sarzak());
+                (assoc, referrer, &referrer.other_referential_attribute)
+            };
+            let card = sarzak_get_one_card_across_r89!(assoc_referent, domain.sarzak());
+            let cond = sarzak_get_one_cond_across_r77!(assoc_referent, domain.sarzak());
+            let r_obj = sarzak_get_one_obj_across_r26!(referrer, domain.sarzak());
+
+            match card {
+                Cardinality::One(_) => match cond {
+                    Conditionality::Conditional(_) => {
+                        DomainRelNavImpl::backward_assoc_one_conditional(
+                            buffer,
+                            obj,
+                            r_obj,
+                            assoc.number,
+                            store,
+                            referential_attribute,
+                            &domain,
+                        )?
+                    }
+                    Conditionality::Unconditional(_) => DomainRelNavImpl::backward_assoc_one(
+                        buffer,
+                        obj,
+                        r_obj,
+                        assoc.number,
+                        store,
+                        referential_attribute,
+                        &domain,
+                    )?,
+                },
+                Cardinality::Many(_) => DomainRelNavImpl::backward_assoc_many(
+                    buffer,
+                    obj,
+                    r_obj,
+                    assoc.number,
+                    store,
+                    referential_attribute,
+                    &domain,
+                )?,
             }
         }
 

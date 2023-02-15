@@ -5,10 +5,7 @@ use std::{
 
 use sarzak::{
     mc::{FileSnafu, ModelCompilerError, Result},
-    sarzak::{
-        macros::{sarzak_get_many_as_across_r1, sarzak_maybe_get_many_r_sups_across_r14},
-        types::{Attribute, External, Object, Supertype, Type},
-    },
+    sarzak::types::{External, Object, Type},
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -20,6 +17,7 @@ use uuid::Uuid;
 use crate::{
     codegen::{
         generator::GeneratorBuilder,
+        object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
     options::GraceCompilerOptions,
@@ -115,8 +113,7 @@ impl<'a> DomainTarget<'a> {
             types.set_extension(RS_EXT);
 
             // Test if the object is a supertype. Those we generate as enums.
-            let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, &self.domain.sarzak());
-            let generator = if is_super.len() > 0 {
+            let generator = if object_is_supertype(obj, &self.domain) {
                 DefaultStructBuilder::new()
                     .definition(DomainEnum::new())
                     .implementation(
@@ -126,13 +123,9 @@ impl<'a> DomainTarget<'a> {
                     )
                     .build()?
             } else {
-                // Test if the object has no attributes, besides id. Hell, we should
-                // probably verify that there is an id. If it's only got an id, then
-                // it doesn't have anything distinguishing it from any other objects
-                // similarly outfitted. So what we do, is we make the object a constant,
-                // and set it's value to the UUID of the object's name.
-                let attrs = sarzak_get_many_as_across_r1!(obj, &self.domain.sarzak());
-                if attrs.len() == 1 {
+                // Look for naked objects, and generate a singleton for them.
+                if object_is_singleton(obj, &self.domain) {
+                    log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
                         .definition(DomainConst::new())
                         .build()?

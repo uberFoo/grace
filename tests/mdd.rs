@@ -101,8 +101,12 @@ macro_rules! test_target_application {
     };
 }
 
+// Domain Target Tests
 test_target_domain!(everything_domain, "everything");
 test_target_domain!(one_to_one_domain, "one_to_one");
 test_target_domain!(one_to_many_domain, "one_to_many");
 test_target_domain!(isa_domain, "isa");
+test_target_domain!(associative_domain, "associative");
+
+// Application Target Tests
 test_target_application!(everything_application, "everything");

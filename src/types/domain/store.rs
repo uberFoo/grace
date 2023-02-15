@@ -5,10 +5,7 @@ use std::fmt::Write;
 use sarzak::{
     domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        macros::{sarzak_get_many_as_across_r1, sarzak_maybe_get_many_r_sups_across_r14},
-        types::{Attribute, Object, Supertype},
-    },
+    sarzak::types::Object,
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -22,6 +19,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator},
+        object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
     options::GraceCompilerOptions,
@@ -91,9 +89,7 @@ impl FileGenerator for DomainStoreGenerator {
         let objects = objects
             .iter()
             .filter(|(_, obj)| {
-                let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-                let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-                attrs.len() > 1 || is_super.len() > 0
+                object_is_supertype(obj, domain) || !object_is_singleton(obj, domain)
             })
             .collect::<Vec<_>>();
 
@@ -149,9 +145,7 @@ impl CodeWriter for DomainStore {
         let objects = objects
             .iter()
             .filter(|(_, obj)| {
-                let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-                let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-                attrs.len() > 1 || is_super.len() > 0
+                object_is_supertype(obj, domain) || !object_is_singleton(obj, domain)
             })
             .collect::<Vec<_>>();
 
@@ -211,8 +205,7 @@ impl CodeWriter for DomainStore {
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
 
-                    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-                    if is_super.len() > 0 {
+                    if object_is_supertype(obj, domain) {
                         emit!(
                             buffer,
                             "self.{}.insert({}.id(), {});",
