@@ -15,6 +15,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
+        emit_object_comments,
         render::{RenderConst, RenderIdent},
     },
     options::GraceConfig,
@@ -69,12 +70,7 @@ impl CodeWriter for DomainConst {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-const-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         let domain_id = Uuid::from_slice(domain.id().as_bytes()).unwrap();

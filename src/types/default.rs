@@ -25,6 +25,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
+        emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         object_is_singleton, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
@@ -227,12 +228,7 @@ impl CodeWriter for DefaultStruct {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         buffer.block(

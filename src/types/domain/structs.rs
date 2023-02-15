@@ -37,6 +37,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
+        emit_object_comments,
         generator::CodeWriter,
         get_objs_for_assoc_referents, get_objs_for_assoc_referrers, get_objs_for_referents,
         get_objs_for_referrers, get_referents, get_referrers,
@@ -176,12 +177,7 @@ impl CodeWriter for DomainStruct {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         buffer.block(

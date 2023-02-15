@@ -24,7 +24,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        get_referents,
+        emit_object_comments, get_referents,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -119,12 +119,7 @@ impl CodeWriter for DomainEnum {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-enum-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         buffer.block(
