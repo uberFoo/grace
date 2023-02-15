@@ -21,7 +21,7 @@ mod tests {
     //!
     //! Update — so maybe this is an enum test? I don't currently do enums,
     //! and this should be creating enums.
-    use super::*;
+    // use super::*;
 
     #[test]
     fn test_r1() {

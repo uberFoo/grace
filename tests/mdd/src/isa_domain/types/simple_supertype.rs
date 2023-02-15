@@ -4,12 +4,6 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::isa_domain::store::ObjectStore as IsaDomainStore;
-use crate::isa_domain::UUID_NS;
-
-// Subtype imports
-use crate::isa_domain::types::simple_subtype_a::SIMPLE_SUBTYPE_A;
-use crate::isa_domain::types::simple_subtype_b::SIMPLE_SUBTYPE_B;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"simple_supertype-struct-documentation"}}}

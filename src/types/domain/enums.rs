@@ -102,46 +102,6 @@ impl CodeWriter for DomainEnum {
                     emit!(buffer, "");
                 }
 
-                // We need this to create id's.
-                emit!(buffer, "use crate::{}::UUID_NS;", module);
-
-                // Add the ObjectStore
-                let mut iter = domain.sarzak().iter_ty();
-                let name = format!(
-                    "{}Store",
-                    module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-                );
-                let store = loop {
-                    let ty = iter.next();
-                    match ty {
-                        Some((_, ty)) => match ty {
-                            Type::External(e) => {
-                                let ext = domain.sarzak().exhume_external(&e).unwrap();
-                                if ext.name == name {
-                                    break ext;
-                                }
-                            }
-                            _ => continue,
-                        },
-                        None => panic!("Could not find store type for {}", module),
-                    }
-                };
-                emit!(buffer, "use {} as {};", store.path, store.name);
-
-                // Add imports for our subtypes.
-                emit!(buffer, "");
-                emit!(buffer, "// Subtype imports");
-                for subtype in &subtypes {
-                    let obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
-                    emit!(
-                        buffer,
-                        "use crate::{}::types::{}::{};",
-                        module,
-                        obj.as_ident(),
-                        DomainEnum::render_subtype(subtype, domain)
-                    );
-                }
-
                 // Add use statements for all the referents.
                 if referents.len() > 0 {
                     emit!(buffer, "");
