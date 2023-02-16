@@ -64,7 +64,7 @@ macro_rules! test_target_application {
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
 
-            let mut options = GraceCompilerOptions::default();
+            let options = GraceCompilerOptions::default();
             let grace = ModelCompiler::default();
 
             // Build the domains
@@ -107,6 +107,7 @@ test_target_domain!(one_to_one_domain, "one_to_one");
 test_target_domain!(one_to_many_domain, "one_to_many");
 test_target_domain!(isa_domain, "isa");
 test_target_domain!(associative_domain, "associative");
+test_target_domain!(imported_object_domain, "imported_object");
 
 // Application Target Tests
 test_target_application!(everything_application, "everything");

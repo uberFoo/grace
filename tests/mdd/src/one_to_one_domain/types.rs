@@ -6,9 +6,9 @@ pub mod b;
 pub mod c;
 pub mod referent;
 
-pub use a::A;
-pub use b::B;
-pub use c::C;
-pub use referent::Referent;
+pub use crate::one_to_one_domain::a::A;
+pub use crate::one_to_one_domain::b::B;
+pub use crate::one_to_one_domain::c::C;
+pub use crate::one_to_one_domain::referent::Referent;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

@@ -231,7 +231,7 @@ pub(crate) struct ImportedObject {
     pub model_file: PathBuf,
 }
 
-fn parse_config_value(input: &str) -> ConfigValue {
+pub(crate) fn parse_config_value(input: &str) -> ConfigValue {
     if input.contains("🐶") {
         let mut iter = input.split("🐶");
         iter.next();

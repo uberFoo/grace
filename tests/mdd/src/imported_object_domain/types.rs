@@ -5,6 +5,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"imported_object_domain-module-definition"}}}
 pub mod another_object;
 
-pub use another_object::AnotherObject;
+pub use crate::imported_object_domain::another_object::AnotherObject;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

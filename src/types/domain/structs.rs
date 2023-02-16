@@ -96,6 +96,8 @@ impl CodeWriter for DomainStruct {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
+                let mut imports = HashSet::new();
+
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
@@ -119,6 +121,7 @@ impl CodeWriter for DomainStruct {
                 for r_obj in &referrer_objs {
                     if config.is_imported(&r_obj.id) {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
+                        imports.insert(imported_object.domain.as_str());
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",
@@ -152,29 +155,32 @@ impl CodeWriter for DomainStruct {
                     );
                 }
 
-                // Add the ObjectStore
+                // Add the ObjectStore, plus the store for any imported objects.
                 emit!(buffer, "");
-                let mut iter = domain.sarzak().iter_ty();
-                let name = format!(
-                    "{}Store",
-                    module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-                );
-                let store = loop {
-                    let ty = iter.next();
-                    match ty {
-                        Some((_, ty)) => match ty {
-                            Type::External(e) => {
-                                let ext = domain.sarzak().exhume_external(&e).unwrap();
-                                if ext.name == name {
-                                    break ext;
+                imports.insert(module);
+                for import in imports {
+                    let mut iter = domain.sarzak().iter_ty();
+                    let name = format!(
+                        "{}Store",
+                        import.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                    let store = loop {
+                        let ty = iter.next();
+                        match ty {
+                            Some((_, ty)) => match ty {
+                                Type::External(e) => {
+                                    let ext = domain.sarzak().exhume_external(&e).unwrap();
+                                    if ext.name == name {
+                                        break ext;
+                                    }
                                 }
-                            }
-                            _ => continue,
-                        },
-                        None => panic!("Could not find store type for {}", module),
-                    }
-                };
-                emit!(buffer, "use {} as {};", store.path, store.name);
+                                _ => continue,
+                            },
+                            None => panic!("Could not find store type for {}", module),
+                        }
+                    };
+                    emit!(buffer, "use {} as {};", store.path, store.name);
+                }
 
                 Ok(())
             },
@@ -1229,7 +1235,7 @@ impl MethodImplementation for DomainRelNavImpl {}
 impl CodeWriter for DomainRelNavImpl {
     fn write_code(
         &self,
-        _config: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -1245,29 +1251,6 @@ impl CodeWriter for DomainRelNavImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        // Grab a reference to the store so that we can use it to exhume
-        // things.
-        let mut iter = domain.sarzak().iter_ty();
-        let name = format!(
-            "{}Store",
-            module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-        );
-        let store = loop {
-            let ty = iter.next();
-            match ty {
-                Some((_, ty)) => match ty {
-                    Type::External(e) => {
-                        let ext = domain.sarzak().exhume_external(&e).unwrap();
-                        if ext.name == name {
-                            break ext;
-                        }
-                    }
-                    _ => continue,
-                },
-                None => panic!("Could not find store type for {}", module),
-            }
-        };
-
         // These are relationships that we formalize
         let referrers = get_referrers!(obj, domain.sarzak());
         // These are relationships of which we are the target
@@ -1278,6 +1261,35 @@ impl CodeWriter for DomainRelNavImpl {
             let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
             let cond = sarzak_get_one_cond_across_r12!(referrer, domain.sarzak());
+
+            let module = if config.is_imported(&r_obj.id) {
+                config.get_imported(&r_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
 
             // Cardinality does not matter from the referrer, because it's always
             // one. This is because of the normalized, table-nature of the store,
@@ -1301,6 +1313,35 @@ impl CodeWriter for DomainRelNavImpl {
             // The non-formalizing side will only ever be one, unless it's in an associative
             // relationship. We do however need to check the cardinality of the formalizing side.
             let card = sarzak_get_one_card_across_r9!(referrer, domain.sarzak());
+
+            let module = if config.is_imported(&r_obj.id) {
+                config.get_imported(&r_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
 
             match card {
                 Cardinality::One(_) => match my_cond {
@@ -1342,6 +1383,35 @@ impl CodeWriter for DomainRelNavImpl {
             let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
             let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
 
+            let module = if config.is_imported(&one_obj.id) {
+                config.get_imported(&one_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
+
             DomainRelNavImpl::forward_assoc(
                 buffer,
                 obj,
@@ -1351,6 +1421,35 @@ impl CodeWriter for DomainRelNavImpl {
                 one_obj,
                 &domain,
             )?;
+
+            let module = if config.is_imported(&other_obj.id) {
+                config.get_imported(&one_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
             DomainRelNavImpl::forward_assoc(
                 buffer,
                 obj,
@@ -1376,6 +1475,35 @@ impl CodeWriter for DomainRelNavImpl {
             let card = sarzak_get_one_card_across_r89!(assoc_referent, domain.sarzak());
             let cond = sarzak_get_one_cond_across_r77!(assoc_referent, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r26!(referrer, domain.sarzak());
+
+            let module = if config.is_imported(&r_obj.id) {
+                config.get_imported(&r_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
 
             match card {
                 Cardinality::One(_) => match cond {

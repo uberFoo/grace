@@ -4,7 +4,7 @@
 pub mod everything;
 pub mod rando_object;
 
-pub use everything::Everything;
-pub use rando_object::RandoObject;
+pub use crate::everything_domain::everything::Everything;
+pub use crate::everything_domain::rando_object::RandoObject;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     fs,
     path::{Path, PathBuf},
 };
@@ -21,7 +22,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::{GraceCompilerOptions, GraceConfig, Target as GraceTarget},
+    options::{parse_config_value, GraceCompilerOptions, GraceConfig, Target as GraceTarget},
     targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
@@ -66,19 +67,35 @@ impl<'a> DomainTarget<'a> {
             let module = module.to_owned();
             domain
                 .post_load(move |sarzak, _| {
-                    let store_type = Type::External(
-                        External::new(
-                            sarzak,
-                            format!(
-                                "{}Store",
-                                module.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
-                            ),
-                            format!("crate::{}::store::ObjectStore", module.as_ident(),),
-                        )
-                        .id,
-                    );
+                    let mut external = HashSet::new();
+                    external.insert(module.clone());
 
-                    sarzak.inter_ty(store_type);
+                    for (_, obj) in sarzak.iter_object() {
+                        // Shit, we don't have a real domain yet to build a config,
+                        // and I need the config to add the external entity. I'm
+                        // just going to have to parse each description here looking
+                        // for options. Gross. 😢
+                        let cv = parse_config_value(obj.description.as_str());
+                        if let Some(io) = cv.imported_object {
+                            external.insert(io.domain.clone());
+                        }
+                    }
+
+                    for store in external {
+                        let store_type = Type::External(
+                            External::new(
+                                sarzak,
+                                format!(
+                                    "{}Store",
+                                    store.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
+                                ),
+                                format!("crate::{}::store::ObjectStore", store.as_ident(),),
+                            )
+                            .id,
+                        );
+
+                        sarzak.inter_ty(store_type);
+                    }
                 })
                 .build()
                 .expect("Failed to build domain")
