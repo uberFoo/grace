@@ -8,13 +8,12 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_many_r_subs_across_r27,
-            sarzak_get_one_obj_across_r15, sarzak_get_one_obj_across_r17,
-            sarzak_get_one_r_bin_across_r5, sarzak_get_one_r_from_across_r6,
-            sarzak_get_one_r_isa_across_r13, sarzak_maybe_get_many_r_sups_across_r14,
-            sarzak_maybe_get_many_r_tos_across_r16,
+            sarzak_get_many_r_subs_across_r27, sarzak_get_one_obj_across_r15,
+            sarzak_get_one_obj_across_r17, sarzak_get_one_r_bin_across_r5,
+            sarzak_get_one_r_from_across_r6, sarzak_get_one_r_isa_across_r13,
+            sarzak_maybe_get_many_r_sups_across_r14, sarzak_maybe_get_many_r_tos_across_r16,
         },
-        types::{Attribute, Referent, Subtype, Supertype, Type},
+        types::{Referent, Subtype, Supertype},
     },
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
 };
@@ -25,10 +24,10 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        get_referents,
-        render::{RenderConst, RenderIdent, RenderType},
+        emit_object_comments, get_referents,
+        render::{RenderIdent, RenderType},
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     types::{CodeWriter, MethodImplementation, TypeDefinition},
 };
 
@@ -40,17 +39,6 @@ impl DomainEnum {
     pub(crate) fn new() -> Box<dyn TypeDefinition> {
         Box::new(Self)
     }
-
-    fn render_subtype(subtype: &Subtype, domain: &Domain) -> String {
-        let obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
-        let attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-
-        if attrs.len() == 1 {
-            obj.as_const()
-        } else {
-            obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-        }
-    }
 }
 
 impl TypeDefinition for DomainEnum {}
@@ -58,7 +46,7 @@ impl TypeDefinition for DomainEnum {}
 impl CodeWriter for DomainEnum {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -95,7 +83,7 @@ impl CodeWriter for DomainEnum {
                 emit!(buffer, "");
 
                 // Add the use statements from the options.
-                if let Some(use_paths) = &options.use_paths {
+                if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
                         emit!(buffer, "use {};", path);
                     }
@@ -129,23 +117,18 @@ impl CodeWriter for DomainEnum {
         log::debug!("writing Enum Definition for {}", obj.name);
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-enum-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-enum-definition", obj.as_ident()),
             |buffer| {
-                if let Some(derive) = &options.derive {
+                if let Some(derives) = config.get_derives(&obj.id) {
                     write!(buffer, "#[derive(").context(FormatSnafu)?;
-                    for d in derive {
+                    for d in derives {
                         write!(buffer, "{},", d).context(FormatSnafu)?;
                     }
                     emit!(buffer, ")]");
@@ -186,10 +169,10 @@ impl MethodImplementation for DomainEnumGetIdImpl {}
 impl CodeWriter for DomainEnumGetIdImpl {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        _config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
-        module: &str,
+        _woog: &mut WoogStore,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {

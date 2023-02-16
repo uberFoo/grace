@@ -30,15 +30,15 @@ mod tests {
         let a_2 = A::new("bar".to_owned(), &tgt_1, &mut store);
 
         // Test in the one direction.
-        let tgt = a_0.referent(&store);
+        let tgt = a_0.referent_r1(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_0, tgt[0]);
 
-        let tgt = a_1.referent(&store);
+        let tgt = a_1.referent_r1(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let tgt = a_2.referent(&store);
+        let tgt = a_2.referent_r1(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
@@ -107,11 +107,11 @@ mod tests {
         let c_2 = C::new(1.618, &tgt_1, &mut store);
 
         // Test in the one direction.
-        let tgt = c_1.referent(&store);
+        let tgt = c_1.referent_r3(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let tgt = c_2.referent(&store);
+        let tgt = c_2.referent_r3(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 

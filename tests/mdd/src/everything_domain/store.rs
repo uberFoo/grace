@@ -3,14 +3,12 @@
 //! The ObjectStore contains instances of objects in the domain.
 //! The instances are stored in a hash map, keyed by the object's UUID.
 //! This is used during code generation, and probably not useful elsewhere.
-//!
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything_domain-object-store-file"}}}
 //!
 //! # Contents:
 //!
 //! * [`Everything`]
 //! * [`RandoObject`]
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything_domain-object-store-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything_domain-object-store-definition"}}}
 use std::collections::HashMap;
 
@@ -68,4 +66,3 @@ impl ObjectStore {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-

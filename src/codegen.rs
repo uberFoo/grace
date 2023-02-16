@@ -26,6 +26,7 @@ use sarzak::{
     },
 };
 use snafu::prelude::*;
+use unicode_segmentation::UnicodeSegmentation;
 
 use crate::{
     codegen::{
@@ -198,7 +199,7 @@ pub(crate) fn render_make_uuid(
     buffer: &mut Buffer,
     lval: &LValue,
     rvals: &Vec<RValue>,
-    store: &SarzakStore,
+    _store: &SarzakStore,
 ) -> Result<()> {
     assert!(lval.ty == GType::Uuid);
 
@@ -268,7 +269,14 @@ pub(crate) fn render_new_instance(
         match &field.ty {
             GType::Uuid => match &rval.ty {
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
-                GType::Reference(_) => emit!(buffer, "{}: {}.id,", field.name, rval.name),
+                GType::Reference(obj_id) => {
+                    let obj = store.exhume_object(&obj_id).unwrap();
+                    if object_is_supertype(obj, store) {
+                        emit!(buffer, "{}: {}.id(),", field.name, rval.name)
+                    } else {
+                        emit!(buffer, "{}: {}.id,", field.name, rval.name)
+                    }
+                }
                 _ => ensure!(
                     field.ty == rval.ty,
                     CompilerSnafu {
@@ -339,16 +347,70 @@ pub(crate) fn render_new_instance(
 // G::new()
 // }
 
-pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
-    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, domain.sarzak());
+pub(crate) fn object_is_supertype(object: &Object, store: &SarzakStore) -> bool {
+    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, store);
 
     is_super.len() > 0
 }
 
-pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
-    let attrs = sarzak_get_many_as_across_r1!(object, domain.sarzak());
-    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, domain.sarzak());
-    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, domain.sarzak());
+pub(crate) fn object_is_singleton(object: &Object, store: &SarzakStore) -> bool {
+    let attrs = sarzak_get_many_as_across_r1!(object, store);
+    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, store);
+    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, store);
 
     attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
+}
+
+/// Generate struct/enum Documentation
+///
+/// The text from the tool is really long lines separated by `\n`. We split
+/// the lines up on unicode word boundaries and then reconstitute keeping the
+/// generated line length less than `MAX_LEN` characters.
+///
+/// It would be extra sweet to extract the doc links and construct pointers to
+/// known types. For example, "points at an [`Object`]", would turn into
+/// "points at an [`Object`][o]", and we'd generate an "[o]: nut::sarzak::Object"
+/// at the bottom of the comments.
+///
+/// This is still pretty cool compared to before. The long strings really got
+/// to me.
+pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buffer) -> Result<()> {
+    const MAX_LEN: usize = 90;
+
+    if input.len() > 0 {
+        for line in input.split('\n') {
+            write!(context, "{} ", comment).context(FormatSnafu)?;
+            let mut length = 4;
+
+            // Split the string by words, and append a word until we run out
+            // of room in the line. Then start another.
+            for word in line.split_word_bounds() {
+                match length {
+                    n if n < MAX_LEN + word.len() => {
+                        write!(context, "{}", word).context(FormatSnafu)?;
+                        length += word.len();
+                    }
+                    _ => {
+                        // Trim the trailing space, which I think is guaranteed to
+                        // be there, but I'll be cautious anyway. Oh, but I can't
+                        // because I don't own the buffer. Shit.
+
+                        // Add a newline
+                        emit!(context, "");
+                        length = 0;
+
+                        write!(context, "{}{}", comment, word).context(FormatSnafu)?;
+                        length += word.len() + 3;
+                    }
+                }
+            }
+
+            // Add a trailing newline
+            emit!(context, "");
+        }
+
+        emit!(context, "{}", comment);
+    }
+
+    Ok(())
 }

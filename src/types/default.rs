@@ -25,12 +25,13 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        generator::{CodeWriter, FileGenerator},
+        emit_object_comments,
+        generator::{CodeWriter, FileGenerator, GenerationAction},
         object_is_singleton, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{ModuleDefinition, TypeDefinition, TypeImplementation},
 };
@@ -92,13 +93,13 @@ pub(crate) struct DefaultStructGenerator {
 impl FileGenerator for DefaultStructGenerator {
     fn generate(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
-    ) -> Result<()> {
+    ) -> Result<GenerationAction> {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
@@ -115,11 +116,11 @@ impl FileGenerator for DefaultStructGenerator {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
                 self.definition
-                    .write_code(options, domain, woog, module, Some(obj_id), buffer)?;
+                    .write_code(config, domain, woog, module, Some(obj_id), buffer)?;
 
                 for implementation in &self.implementations {
                     implementation.write_code(
-                        options,
+                        config,
                         domain,
                         woog,
                         module,
@@ -132,7 +133,7 @@ impl FileGenerator for DefaultStructGenerator {
             },
         )?;
 
-        Ok(())
+        Ok(GenerationAction::Write)
     }
 }
 
@@ -153,7 +154,7 @@ impl TypeDefinition for DefaultStruct {}
 impl CodeWriter for DefaultStruct {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -225,23 +226,18 @@ impl CodeWriter for DefaultStruct {
         log::debug!("writing Struct Definition for {}", obj.name);
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-definition", obj.as_ident()),
             |buffer| {
-                if let Some(derive) = &options.derive {
+                if let Some(derives) = config.get_derives(&obj.id) {
                     write!(buffer, "#[derive(").context(FormatSnafu)?;
-                    for d in derive {
+                    for d in derives {
                         write!(buffer, "{},", d).context(FormatSnafu)?;
                     }
                     emit!(buffer, ")]");
@@ -319,7 +315,7 @@ impl TypeImplementation for DefaultImplementation {}
 impl CodeWriter for DefaultImplementation {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -360,7 +356,7 @@ impl CodeWriter for DefaultImplementation {
 
                 if let Some(implementation) = &self.implementation {
                     implementation.write_code(
-                        options,
+                        config,
                         domain,
                         woog,
                         module,
@@ -401,7 +397,7 @@ impl TypeImplementation for DefaultStructNewImpl {}
 impl CodeWriter for DefaultStructNewImpl {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        _config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         _module: &str,
@@ -469,7 +465,7 @@ impl CodeWriter for DefaultStructNewImpl {
 
         // Collect rvals for rendering the method.
         let rvals = params.clone();
-        let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
+        let rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
 
         // Link the params. The result is the head of the list.
         let param = if params.len() > 0 {
@@ -580,13 +576,13 @@ pub(crate) struct DefaultModuleGenerator {
 impl FileGenerator for DefaultModuleGenerator {
     fn generate(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
-    ) -> Result<()> {
+    ) -> Result<GenerationAction> {
         // Output the domain/module documentation/description
         for line in domain.description().lines() {
             emit!(buffer, "//! {}", line);
@@ -597,13 +593,13 @@ impl FileGenerator for DefaultModuleGenerator {
             format!("{}-module-definition-file", module),
             |buffer| {
                 self.definition
-                    .write_code(options, domain, woog, module, obj_id, buffer)?;
+                    .write_code(config, domain, woog, module, obj_id, buffer)?;
 
                 Ok(())
             },
         )?;
 
-        Ok(())
+        Ok(GenerationAction::Write)
     }
 }
 
@@ -623,7 +619,7 @@ impl ModuleDefinition for DefaultModule {}
 impl CodeWriter for DefaultModule {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -636,17 +632,34 @@ impl CodeWriter for DefaultModule {
             |buffer| {
                 let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
                 objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+                let objects = objects
+                    .iter()
+                    .filter(|(id, _)| {
+                        // Don't include imported objects
+                        !config.is_imported(*id)
+                    })
+                    .collect::<Vec<_>>();
+
                 for (_, obj) in &objects {
                     emit!(buffer, "pub mod {};", obj.as_ident());
                 }
                 emit!(buffer, "");
                 for (_, obj) in &objects {
-                    if object_is_singleton(obj, domain) && !object_is_supertype(obj, domain) {
-                        emit!(buffer, "pub use {}::{};", obj.as_ident(), obj.as_const());
+                    if object_is_singleton(obj, domain.sarzak())
+                        && !object_is_supertype(obj, domain.sarzak())
+                    {
+                        emit!(
+                            buffer,
+                            "pub use crate::{}::{}::{};",
+                            module,
+                            obj.as_ident(),
+                            obj.as_const()
+                        );
                     } else {
                         emit!(
                             buffer,
-                            "pub use {}::{};",
+                            "pub use crate::{}::{}::{};",
+                            module,
                             obj.as_ident(),
                             obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                         );

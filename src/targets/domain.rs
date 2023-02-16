@@ -1,9 +1,11 @@
 use std::{
+    collections::HashSet,
     fs,
     path::{Path, PathBuf},
 };
 
 use sarzak::{
+    domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::types::{External, Object, Type},
     woog::{
@@ -20,7 +22,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::GraceCompilerOptions,
+    options::{parse_config_value, GraceCompilerOptions, GraceConfig, Target as GraceTarget},
     targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
@@ -30,29 +32,30 @@ use crate::{
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, DomainRelNavImpl, DomainStruct, DomainStructNewImpl},
         },
+        null::NullGenerator,
     },
-    RS_EXT, TYPES,
+    ModelCompiler, SarzakModelCompiler, RS_EXT, TYPES,
 };
 
 pub(crate) struct DomainTarget<'a> {
-    options: &'a GraceCompilerOptions,
-    _package: &'a str,
+    config: GraceConfig,
+    package: &'a str,
     module: &'a str,
     src_path: &'a Path,
     domain: sarzak::domain::Domain,
     woog: WoogStore,
-    _test: bool,
+    test: bool,
 }
 
 impl<'a> DomainTarget<'a> {
     pub(crate) fn new(
         options: &'a GraceCompilerOptions,
-        _package: &'a str,
+        package: &'a str,
         module: &'a str,
         src_path: &'a Path,
         domain: sarzak::domain::DomainBuilder,
         woog: WoogStore,
-        _test: bool,
+        test: bool,
     ) -> Box<dyn Target + 'a> {
         // This post_load script creates an external entity of the ObjectStore so that
         // we can use it from within the domain. Remember that the ObjectStore is a
@@ -64,32 +67,51 @@ impl<'a> DomainTarget<'a> {
             let module = module.to_owned();
             domain
                 .post_load(move |sarzak, _| {
-                    let store_type = Type::External(
-                        External::new(
-                            sarzak,
-                            format!(
-                                "{}Store",
-                                module.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
-                            ),
-                            format!("crate::{}::store::ObjectStore", module.as_ident(),),
-                        )
-                        .id,
-                    );
+                    let mut external = HashSet::new();
+                    external.insert(module.clone());
 
-                    sarzak.inter_ty(store_type);
+                    for (_, obj) in sarzak.iter_object() {
+                        // Shit, we don't have a real domain yet to build a config,
+                        // and I need the config to add the external entity. I'm
+                        // just going to have to parse each description here looking
+                        // for options. Gross. 😢
+                        let cv = parse_config_value(obj.description.as_str());
+                        if let Some(io) = cv.imported_object {
+                            external.insert(io.domain.clone());
+                        }
+                    }
+
+                    for store in external {
+                        let store_type = Type::External(
+                            External::new(
+                                sarzak,
+                                format!(
+                                    "{}Store",
+                                    store.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
+                                ),
+                                format!("crate::{}::store::ObjectStore", store.as_ident(),),
+                            )
+                            .id,
+                        );
+
+                        sarzak.inter_ty(store_type);
+                    }
                 })
                 .build()
-                .unwrap()
+                .expect("Failed to build domain")
         };
 
+        // This is boss. Who says boss anymore?
+        let config: GraceConfig = (options, &domain).into();
+
         Box::new(Self {
-            options,
-            _package,
+            config,
+            package,
             module,
             src_path: src_path.as_ref(),
             domain,
             woog,
-            _test,
+            test,
         })
     }
 
@@ -107,13 +129,22 @@ impl<'a> DomainTarget<'a> {
 
         // Iterate over the objects, generating an implementation for file each.
         // Now things get tricky. We need to generate an enum if the objects is
-        // a supertype. For now, we just ignore any attributes on a supertype.
+        // a supertype.
+        //
+        // For now, we just ignore any attributes on a supertype,
+        // since enums don't have fields like structs. In the future I can see
+        // creating a type with an enum field that is used to track it's subtype
+        // status.
+        //
+        // Talk about tricky? Now things are going to get tricky. If the object
+        // is imported, we are going to suck it in and generate a module for
+        // it! Whoohoo! Note also, that we have a NullGenerator that does nothing.
         for (id, obj) in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
             // Test if the object is a supertype. Those we generate as enums.
-            let generator = if object_is_supertype(obj, &self.domain) {
+            let generator = if object_is_supertype(obj, self.domain.sarzak()) {
                 DefaultStructBuilder::new()
                     .definition(DomainEnum::new())
                     .implementation(
@@ -122,33 +153,74 @@ impl<'a> DomainTarget<'a> {
                             .build(),
                     )
                     .build()?
-            } else {
-                // Look for naked objects, and generate a singleton for them.
-                if object_is_singleton(obj, &self.domain) {
-                    log::debug!("Generating singleton for {}", obj.name);
-                    DefaultStructBuilder::new()
-                        .definition(DomainConst::new())
-                        .build()?
-                } else {
-                    DefaultStructBuilder::new()
-                        // Definition type
-                        .definition(DomainStruct::new())
-                        .implementation(
-                            DomainImplBuilder::new()
-                                // New implementation
-                                .method(DomainStructNewImpl::new())
-                                // Relationship navigation implementations
-                                .method(DomainRelNavImpl::new())
-                                .build(),
-                        )
-                        // Go!
-                        .build()?
+            } else if self.config.is_imported(id) {
+                // If the object is imported, we don't generate anything...here.
+                // But before we finish this, let's take a detour. Let's generate
+                // code for the imported domain. What do you say? Sound fun?
+                // Let's do it!
+                let imported = self.config.get_imported(id).unwrap();
+                let grace = ModelCompiler::default();
+                let imported_domain = DomainBuilder::new()
+                    .cuckoo_model(&imported.model_file)
+                    .expect("Failed to build imported domain");
+                // 🚧 We have to punt on the options. That's ok for now. Eventually
+                // I think that it would be easy enough to include custom options
+                // alongside the model. Either embedded in the store, or something
+                // else. Actually, we already know exactly what options we need.
+                //
+                // Damn. I had a thought while I was typing, and rather than take
+                // the interrupt, I forgot what it was. It was juicy too -- it
+                // had me really excited. 😢
+                //
+                // Oh, I remember now! We can actually start leveraging a new-
+                // style object store now if we wanted to. We could run the
+                // conversion once and then just store it. I think that's pretty
+                // cool. Maybe not worth all the build-up though.
+                let mut options = GraceCompilerOptions::default();
+                options.target = GraceTarget::Domain;
+                if let Some(ref mut derive) = options.derive {
+                    derive.push("Clone".to_string());
+                    derive.push("Deserialize".to_string());
+                    derive.push("Serialize".to_string());
                 }
+                options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+
+                grace.compile(
+                    imported_domain,
+                    self.package,
+                    imported.domain.as_str(),
+                    self.src_path,
+                    Box::new(&options),
+                    self.test,
+                )?;
+
+                NullGenerator::new()
+            } else if object_is_singleton(obj, self.domain.sarzak()) {
+                // Look for naked objects, and generate a singleton for them.
+
+                log::debug!("Generating singleton for {}", obj.name);
+                DefaultStructBuilder::new()
+                    .definition(DomainConst::new())
+                    .build()?
+            } else {
+                DefaultStructBuilder::new()
+                    // Definition type
+                    .definition(DomainStruct::new())
+                    .implementation(
+                        DomainImplBuilder::new()
+                            // New implementation
+                            .method(DomainStructNewImpl::new())
+                            // Relationship navigation implementations
+                            .method(DomainRelNavImpl::new())
+                            .build(),
+                    )
+                    // Go!
+                    .build()?
             };
 
             // Here's the generation.
             GeneratorBuilder::new()
-                .options(&self.options)
+                .config(&self.config)
                 // Where to write
                 .path(&types)?
                 // Domain/Store
@@ -173,7 +245,7 @@ impl<'a> DomainTarget<'a> {
         store.push("store.rs");
 
         GeneratorBuilder::new()
-            .options(&self.options)
+            .config(&self.config)
             .path(&store)?
             .domain(&self.domain)
             .compiler_domain(&mut self.woog)
@@ -196,7 +268,7 @@ impl<'a> DomainTarget<'a> {
         types.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
-            .options(&self.options)
+            .config(&self.config)
             .path(&types)?
             .domain(&self.domain)
             .compiler_domain(&mut self.woog)

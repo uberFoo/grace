@@ -6,25 +6,13 @@ use serde::{Deserialize, Serialize};
 
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"super_t-struct-documentation"}}}
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"super_t-enum-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-documentation"}}}
 /// A [`Supertype`] with normal [`Subtype`]s
 ///
-/// This was called "Super". Rust didn't like it when it became "super". There needs to be a way of fixing keywords.
-// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-definition"}}}
+/// This was called "Super". Rust didn't like it when it became "super". There needs to be
+///a way of fixing keywords.
+///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-implementation"}}}
-// {"magic":"","directive":{"Start":{"directive":"comment-orig","tag":"super_t-struct-impl-new"}}}
-/// Inter a new SuperT in the store, and return it's `id`.
-//     pub fn new(store: &mut IsaDomainStore) -> SuperT {
-//         let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
-//         let new = SuperT { id };
-//         store.inter_super_t(new.clone());
-//         new
-//     }
-// {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SuperT {

@@ -15,9 +15,10 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
+        emit_object_comments,
         render::{RenderConst, RenderIdent},
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     types::{CodeWriter, TypeDefinition},
 };
 
@@ -36,10 +37,10 @@ impl TypeDefinition for DomainConst {}
 impl CodeWriter for DomainConst {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        _config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
-        module: &str,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
@@ -67,14 +68,9 @@ impl CodeWriter for DomainConst {
         emit!(buffer, "");
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-const-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         let domain_id = Uuid::from_slice(domain.id().as_bytes()).unwrap();

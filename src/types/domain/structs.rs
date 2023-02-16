@@ -1,7 +1,7 @@
 //! Domain Struct Generation
 //!
 //! Your one-stop-shop for everything to do with structs in Rust!
-use std::fmt::Write;
+use std::{collections::HashSet, fmt::Write};
 
 use log;
 use sarzak::{
@@ -37,13 +37,14 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
+        emit_object_comments,
         generator::CodeWriter,
         get_objs_for_assoc_referents, get_objs_for_assoc_referrers, get_objs_for_referents,
         get_objs_for_referrers, get_referents, get_referrers,
         render::{RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     todo::{External, GType, LValue, ObjectMethod, Parameter, RValue},
     types::{MethodImplementation, TypeDefinition, TypeImplementation},
 };
@@ -65,7 +66,7 @@ impl TypeDefinition for DomainStruct {}
 impl CodeWriter for DomainStruct {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -85,19 +86,24 @@ impl CodeWriter for DomainStruct {
         // stable output.
         let mut referrer_objs = get_objs_for_referrers!(obj, domain.sarzak());
         referrer_objs.append(&mut get_objs_for_assoc_referents!(obj, domain.sarzak()));
+        let referrer_objs: HashSet<_> = referrer_objs.into_iter().collect();
+
         let mut referent_objs = get_objs_for_referents!(obj, domain.sarzak());
         referent_objs.append(&mut get_objs_for_assoc_referrers!(obj, domain.sarzak()));
+        let referent_objs: HashSet<_> = referent_objs.into_iter().collect();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
+                let mut imports = HashSet::new();
+
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
 
                 // Add the use statements from the options.
-                if let Some(use_paths) = &options.use_paths {
+                if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
                         emit!(buffer, "use {};", path);
                     }
@@ -113,13 +119,25 @@ impl CodeWriter for DomainStruct {
                     emit!(buffer, "// Referrer imports");
                 }
                 for r_obj in &referrer_objs {
-                    emit!(
-                        buffer,
-                        "use crate::{}::types::{}::{};",
-                        module,
-                        r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-                    );
+                    if config.is_imported(&r_obj.id) {
+                        let imported_object = config.get_imported(&r_obj.id).unwrap();
+                        imports.insert(imported_object.domain.as_str());
+                        emit!(
+                            buffer,
+                            "use crate::{}::types::{}::{};",
+                            imported_object.domain,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        );
+                    }
                 }
 
                 // Add use statements for all the referents.
@@ -137,29 +155,32 @@ impl CodeWriter for DomainStruct {
                     );
                 }
 
-                // Add the ObjectStore
+                // Add the ObjectStore, plus the store for any imported objects.
                 emit!(buffer, "");
-                let mut iter = domain.sarzak().iter_ty();
-                let name = format!(
-                    "{}Store",
-                    module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-                );
-                let store = loop {
-                    let ty = iter.next();
-                    match ty {
-                        Some((_, ty)) => match ty {
-                            Type::External(e) => {
-                                let ext = domain.sarzak().exhume_external(&e).unwrap();
-                                if ext.name == name {
-                                    break ext;
+                imports.insert(module);
+                for import in imports {
+                    let mut iter = domain.sarzak().iter_ty();
+                    let name = format!(
+                        "{}Store",
+                        import.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                    let store = loop {
+                        let ty = iter.next();
+                        match ty {
+                            Some((_, ty)) => match ty {
+                                Type::External(e) => {
+                                    let ext = domain.sarzak().exhume_external(&e).unwrap();
+                                    if ext.name == name {
+                                        break ext;
+                                    }
                                 }
-                            }
-                            _ => continue,
-                        },
-                        None => panic!("Could not find store type for {}", module),
-                    }
-                };
-                emit!(buffer, "use {} as {};", store.path, store.name);
+                                _ => continue,
+                            },
+                            None => panic!("Could not find store type for {}", module),
+                        }
+                    };
+                    emit!(buffer, "use {} as {};", store.path, store.name);
+                }
 
                 Ok(())
             },
@@ -169,23 +190,18 @@ impl CodeWriter for DomainStruct {
         log::debug!("writing Struct Definition for {}", obj.name);
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
-            |buffer| {
-                for line in obj.description.split_terminator('\n') {
-                    emit!(buffer, "/// {}", line);
-                }
-                Ok(())
-            },
+            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-definition", obj.as_ident()),
             |buffer| {
-                if let Some(derive) = &options.derive {
+                if let Some(derives) = config.get_derives(&obj.id) {
                     write!(buffer, "#[derive(").context(FormatSnafu)?;
-                    for d in derive {
+                    for d in derives {
                         write!(buffer, "{},", d).context(FormatSnafu)?;
                     }
                     emit!(buffer, ")]");
@@ -369,7 +385,7 @@ impl TypeImplementation for DomainImplementation {}
 impl CodeWriter for DomainImplementation {
     fn write_code(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -398,7 +414,7 @@ impl CodeWriter for DomainImplementation {
                 );
 
                 for method in &self.methods {
-                    method.write_code(options, domain, woog, module, Some(obj_id), buffer)?;
+                    method.write_code(config, domain, woog, module, Some(obj_id), buffer)?;
                 }
 
                 emit!(buffer, "}}");
@@ -430,7 +446,7 @@ impl MethodImplementation for DomainStructNewImpl {}
 impl CodeWriter for DomainStructNewImpl {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        _options: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -623,7 +639,7 @@ impl CodeWriter for DomainStructNewImpl {
         );
 
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!("{}-struct-impl-new", obj.as_ident()),
             |buffer| {
                 // Output a docstring
@@ -676,7 +692,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-forward-to-{}",
                 obj.as_ident(),
@@ -691,8 +707,9 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn {}_r{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     r_obj.as_ident(),
+                    binary.number,
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
@@ -719,7 +736,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-forward-cond-to-{}",
                 obj.as_ident(),
@@ -770,7 +787,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-one-to-{}",
                 obj.as_ident(),
@@ -785,8 +802,9 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn {}_r{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     r_obj.as_ident(),
+                    binary.number,
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
@@ -815,7 +833,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-cond-to-{}",
                 obj.as_ident(),
@@ -874,7 +892,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-one-bi-cond-to-{}",
                 obj.as_ident(),
@@ -933,7 +951,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-1_M-to-{}",
                 obj.as_ident(),
@@ -980,7 +998,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-1_Mc-to-{}",
                 obj.as_ident(),
@@ -1027,7 +1045,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-forward-assoc-to-{}",
                 obj.as_ident(),
@@ -1070,7 +1088,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-assoc-one-to-{}",
                 obj.as_ident(),
@@ -1115,7 +1133,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-assoc-one-cond-to-{}",
                 obj.as_ident(),
@@ -1174,7 +1192,7 @@ impl DomainRelNavImpl {
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
-            DirectiveKind::CommentOrig,
+            DirectiveKind::IgnoreOrig,
             format!(
                 "{}-struct-impl-nav-backward-assoc_many-to-{}",
                 obj.as_ident(),
@@ -1217,9 +1235,9 @@ impl MethodImplementation for DomainRelNavImpl {}
 impl CodeWriter for DomainRelNavImpl {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        _woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -1233,29 +1251,6 @@ impl CodeWriter for DomainRelNavImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        // Grab a reference to the store so that we can use it to exhume
-        // things.
-        let mut iter = domain.sarzak().iter_ty();
-        let name = format!(
-            "{}Store",
-            module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-        );
-        let store = loop {
-            let ty = iter.next();
-            match ty {
-                Some((_, ty)) => match ty {
-                    Type::External(e) => {
-                        let ext = domain.sarzak().exhume_external(&e).unwrap();
-                        if ext.name == name {
-                            break ext;
-                        }
-                    }
-                    _ => continue,
-                },
-                None => panic!("Could not find store type for {}", module),
-            }
-        };
-
         // These are relationships that we formalize
         let referrers = get_referrers!(obj, domain.sarzak());
         // These are relationships of which we are the target
@@ -1266,6 +1261,35 @@ impl CodeWriter for DomainRelNavImpl {
             let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
             let cond = sarzak_get_one_cond_across_r12!(referrer, domain.sarzak());
+
+            let module = if config.is_imported(&r_obj.id) {
+                config.get_imported(&r_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
 
             // Cardinality does not matter from the referrer, because it's always
             // one. This is because of the normalized, table-nature of the store,
@@ -1289,6 +1313,35 @@ impl CodeWriter for DomainRelNavImpl {
             // The non-formalizing side will only ever be one, unless it's in an associative
             // relationship. We do however need to check the cardinality of the formalizing side.
             let card = sarzak_get_one_card_across_r9!(referrer, domain.sarzak());
+
+            let module = if config.is_imported(&r_obj.id) {
+                config.get_imported(&r_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
 
             match card {
                 Cardinality::One(_) => match my_cond {
@@ -1330,6 +1383,35 @@ impl CodeWriter for DomainRelNavImpl {
             let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
             let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
 
+            let module = if config.is_imported(&one_obj.id) {
+                config.get_imported(&one_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
+
             DomainRelNavImpl::forward_assoc(
                 buffer,
                 obj,
@@ -1339,6 +1421,35 @@ impl CodeWriter for DomainRelNavImpl {
                 one_obj,
                 &domain,
             )?;
+
+            let module = if config.is_imported(&other_obj.id) {
+                config.get_imported(&one_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
             DomainRelNavImpl::forward_assoc(
                 buffer,
                 obj,
@@ -1364,6 +1475,35 @@ impl CodeWriter for DomainRelNavImpl {
             let card = sarzak_get_one_card_across_r89!(assoc_referent, domain.sarzak());
             let cond = sarzak_get_one_cond_across_r77!(assoc_referent, domain.sarzak());
             let r_obj = sarzak_get_one_obj_across_r26!(referrer, domain.sarzak());
+
+            let module = if config.is_imported(&r_obj.id) {
+                config.get_imported(&r_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
+
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let mut iter = domain.sarzak().iter_ty();
+            let name = format!(
+                "{}Store",
+                module.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+            );
+            let store = loop {
+                let ty = iter.next();
+                match ty {
+                    Some((_, ty)) => match ty {
+                        Type::External(e) => {
+                            let ext = domain.sarzak().exhume_external(&e).unwrap();
+                            if ext.name == name {
+                                break ext;
+                            }
+                        }
+                        _ => continue,
+                    },
+                    None => panic!("Could not find store type for {}", module),
+                }
+            };
 
             match card {
                 Cardinality::One(_) => match cond {

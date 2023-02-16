@@ -14,7 +14,7 @@ macro_rules! render_ident {
         $(
             impl RenderIdent for $t {
                 fn as_ident(&self) -> String {
-                    self.name.to_snake_case()
+                    self.name.sanitize().to_snake_case()
                 }
             }
         )+
@@ -26,7 +26,7 @@ macro_rules! render_const {
         $(
             impl RenderConst for $t {
                 fn as_const(&self) -> String {
-                    self.name.to_shouty_snake_case()
+                    self.name.sanitize().to_shouty_snake_case()
                 }
             }
         )+
@@ -38,7 +38,7 @@ macro_rules! render_type {
         $(
             impl RenderType for $t {
                 fn as_type(&self, mutability: &Mutability, store: &SarzakStore) -> String {
-                    self.name.as_type(mutability, store)
+                    self.name.sanitize().as_type(mutability, store)
                 }
             }
         )+
@@ -58,19 +58,19 @@ render_ident!(Attribute, Event, Object, State, Parameter);
 
 impl RenderIdent for ObjectMethod<'_> {
     fn as_ident(&self) -> String {
-        self.name.to_snake_case()
+        self.name.sanitize().to_snake_case()
     }
 }
 
 impl RenderIdent for String {
     fn as_ident(&self) -> String {
-        self.to_snake_case()
+        self.sanitize().to_snake_case()
     }
 }
 
 impl RenderIdent for &str {
     fn as_ident(&self) -> String {
-        self.to_snake_case()
+        self.sanitize().to_snake_case()
     }
 }
 
@@ -91,8 +91,8 @@ render_type!(Attribute, Event, Object, State, External, TodoExternal);
 impl RenderType for String {
     fn as_type(&self, mutability: &Mutability, _store: &SarzakStore) -> String {
         match mutability {
-            Mutability::Mutable(_) => format!("mut {}", self.to_upper_camel_case()),
-            _ => self.to_upper_camel_case(),
+            Mutability::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
+            _ => self.sanitize().to_upper_camel_case(),
         }
     }
 }
@@ -100,8 +100,8 @@ impl RenderType for String {
 impl RenderType for &str {
     fn as_type(&self, mutability: &Mutability, _store: &SarzakStore) -> String {
         match mutability {
-            Mutability::Mutable(_) => format!("mut {}", self.to_upper_camel_case()),
-            _ => self.to_upper_camel_case(),
+            Mutability::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
+            _ => self.sanitize().to_upper_camel_case(),
         }
     }
 }
@@ -182,12 +182,36 @@ render_const!(Object);
 
 impl RenderConst for String {
     fn as_const(&self) -> String {
-        self.to_shouty_snake_case()
+        self.sanitize().to_shouty_snake_case()
     }
 }
 
 impl RenderConst for &str {
     fn as_const(&self) -> String {
-        self.to_shouty_snake_case()
+        self.sanitize().to_shouty_snake_case()
+    }
+}
+
+trait Sanitize {
+    fn sanitize(&self) -> String;
+}
+
+impl Sanitize for &str {
+    fn sanitize(&self) -> String {
+        match *self {
+            "type" => "ty".to_owned(),
+            "Type" => "ty".to_owned(),
+            _ => self.to_string(),
+        }
+    }
+}
+
+impl Sanitize for String {
+    fn sanitize(&self) -> String {
+        match self.as_str() {
+            "type" => "ty".to_owned(),
+            "Type" => "ty".to_owned(),
+            _ => self.to_owned(),
+        }
     }
 }

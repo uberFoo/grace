@@ -18,11 +18,11 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        generator::{CodeWriter, FileGenerator},
+        generator::{CodeWriter, FileGenerator, GenerationAction},
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::GraceCompilerOptions,
+    options::GraceConfig,
     types::ObjectStoreDefinition,
 };
 
@@ -62,13 +62,13 @@ pub(crate) struct DomainStoreGenerator {
 impl FileGenerator for DomainStoreGenerator {
     fn generate(
         &self,
-        options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
-    ) -> Result<()> {
+    ) -> Result<GenerationAction> {
         // Output the domain/module documentation/description
         emit!(buffer, "//! {} Object Store", module);
         emit!(buffer, "//!");
@@ -88,8 +88,12 @@ impl FileGenerator for DomainStoreGenerator {
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
         let objects = objects
             .iter()
-            .filter(|(_, obj)| {
-                object_is_supertype(obj, domain) || !object_is_singleton(obj, domain)
+            .filter(|(id, obj)| {
+                // We have this odd construction because a supertype may actually be a singleton.
+                object_is_supertype(obj, domain.sarzak())
+                    || !object_is_singleton(obj, domain.sarzak())
+                // Don't include imported objects
+                && !config.is_imported(*id)
             })
             .collect::<Vec<_>>();
 
@@ -110,13 +114,13 @@ impl FileGenerator for DomainStoreGenerator {
                 }
 
                 self.definition
-                    .write_code(options, domain, woog, module, obj_id, buffer)?;
+                    .write_code(config, domain, woog, module, obj_id, buffer)?;
 
                 Ok(())
             },
         )?;
 
-        Ok(())
+        Ok(GenerationAction::Write)
     }
 }
 
@@ -133,7 +137,7 @@ impl ObjectStoreDefinition for DomainStore {}
 impl CodeWriter for DomainStore {
     fn write_code(
         &self,
-        _options: &GraceCompilerOptions,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
         module: &str,
@@ -144,8 +148,12 @@ impl CodeWriter for DomainStore {
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
         let objects = objects
             .iter()
-            .filter(|(_, obj)| {
-                object_is_supertype(obj, domain) || !object_is_singleton(obj, domain)
+            .filter(|(id, obj)| {
+                // We have this odd construction because a supertype may actually be a singleton.
+                object_is_supertype(obj, domain.sarzak())
+                    || !object_is_singleton(obj, domain.sarzak())
+                // Don't include imported objects
+                && !config.is_imported(*id)
             })
             .collect::<Vec<_>>();
 
@@ -205,7 +213,7 @@ impl CodeWriter for DomainStore {
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
 
-                    if object_is_supertype(obj, domain) {
+                    if object_is_supertype(obj, domain.sarzak()) {
                         emit!(
                             buffer,
                             "self.{}.insert({}.id(), {});",
