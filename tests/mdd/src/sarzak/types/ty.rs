@@ -4,8 +4,6 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-// Referent imports
-use crate::sarzak::types::attribute::Attribute;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-enum-documentation"}}}

@@ -4,9 +4,6 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-// Referent imports
-use crate::sarzak::types::referent::Referent;
-use crate::sarzak::types::referrer::Referrer;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditionality-enum-definition"}}}

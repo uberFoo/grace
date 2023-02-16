@@ -90,25 +90,6 @@ impl CodeWriter for DomainEnum {
                     emit!(buffer, "");
                 }
 
-                // Add use statements for all the referents.
-                if referents.len() > 0 {
-                    emit!(buffer, "");
-                    emit!(buffer, "// Referent imports");
-                }
-                for referent in &referents {
-                    let binary = sarzak_get_one_r_bin_across_r5!(referent, domain.sarzak());
-                    let referrer = sarzak_get_one_r_from_across_r6!(binary, domain.sarzak());
-                    let r_obj = sarzak_get_one_obj_across_r17!(referrer, domain.sarzak());
-
-                    emit!(
-                        buffer,
-                        "use crate::{}::types::{}::{};",
-                        module,
-                        r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
-                    );
-                }
-
                 Ok(())
             },
         )?;
