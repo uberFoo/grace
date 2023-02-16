@@ -41,7 +41,7 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-cond-to-a"}}}
     /// Navigate to [`A`] across R1(1-1c)
-    pub fn r1_a<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&A> {
+    pub fn r1c_a<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&A> {
         let a = store.iter_a().find(|a| a.1.ptr == self.id);
         match a {
             Some(ref a) => vec![a.1],
@@ -57,7 +57,7 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-bi-cond-to-c"}}}
     /// Navigate to [`C`] across R3(1c-1c)
-    pub fn r3_c<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&C> {
+    pub fn r3c_c<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&C> {
         let c = store.iter_c().find(|c| c.1.ptr == Some(self.id));
         match c {
             Some(ref c) => vec![c.1],

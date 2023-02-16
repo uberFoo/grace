@@ -10,6 +10,7 @@
 //! * [`A`]
 //! * [`B`]
 //! * [`C`]
+//! * [`Parameter`]
 //! * [`Referent`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"one_to_one_domain-object-store-definition"}}}
 use std::collections::HashMap;
@@ -17,13 +18,14 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::one_to_one_domain::types::{Referent, A, B, C};
+use crate::one_to_one_domain::types::{Parameter, Referent, A, B, C};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
     a: HashMap<Uuid, A>,
     b: HashMap<Uuid, B>,
     c: HashMap<Uuid, C>,
+    parameter: HashMap<Uuid, Parameter>,
     referent: HashMap<Uuid, Referent>,
 }
 
@@ -33,6 +35,7 @@ impl ObjectStore {
             a: HashMap::new(),
             b: HashMap::new(),
             c: HashMap::new(),
+            parameter: HashMap::new(),
             referent: HashMap::new(),
         }
     }
@@ -84,6 +87,22 @@ impl ObjectStore {
     //
     pub fn iter_c(&self) -> impl Iterator<Item = (&Uuid, &C)> {
         self.c.iter()
+    }
+    /// Inter [`Parameter`] into the store.
+    ///
+    pub fn inter_parameter(&mut self, parameter: Parameter) {
+        self.parameter.insert(parameter.id, parameter);
+    }
+
+    /// Exhume [`Parameter`] from the store.
+    ///
+    pub fn exhume_parameter(&self, id: &Uuid) -> Option<&Parameter> {
+        self.parameter.get(id)
+    }
+    /// Get an iterator over the internal `HashMap<&Uuid, Parameter>`.
+    //
+    pub fn iter_parameter(&self) -> impl Iterator<Item = (&Uuid, &Parameter)> {
+        self.parameter.iter()
     }
     /// Inter [`Referent`] into the store.
     ///

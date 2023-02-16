@@ -29,11 +29,11 @@ mod tests {
         let select_tgt = a.r1_referent(&store);
         assert_eq!(&tgt_0, select_tgt[0]);
 
-        let select_a = tgt_0.r1_a(&store);
+        let select_a = tgt_0.r1c_a(&store);
         assert!(select_a.len() == 1);
         assert_eq!(&a, select_a[0]);
 
-        let select_a = tgt_1.r1_a(&store);
+        let select_a = tgt_1.r1c_a(&store);
         assert!(select_a.len() == 0);
     }
 
@@ -75,11 +75,28 @@ mod tests {
         let tgt = c_1.r3_referent(&store);
         assert!(tgt.len() == 0);
 
-        let c = tgt_0.r3_c(&store);
+        let c = tgt_0.r3c_c(&store);
         assert!(c.len() == 0);
 
-        let c = tgt_1.r3_c(&store);
+        let c = tgt_1.r3c_c(&store);
         assert!(c.len() == 1);
         assert_eq!(&c_0, c[0]);
+    }
+
+    #[test]
+    fn test_r8() {
+        // This one is the reflexive relationship
+        let mut store = ObjectStore::new();
+
+        let p_2 = Parameter::new("p_2".to_owned(), None, &mut store);
+        let p_1 = Parameter::new("p_1".to_owned(), Some(&p_2), &mut store);
+        let p_0 = Parameter::new("p_0".to_owned(), Some(&p_1), &mut store);
+
+        assert!(p_0.r8c_parameter(&store).len() == 0);
+
+        let p = p_0.r8_parameter(&store);
+        assert_eq!(&p_1, p[0]);
+
+        assert!(p_2.r8_parameter(&store).len() == 0);
     }
 }

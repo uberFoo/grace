@@ -87,10 +87,20 @@ impl CodeWriter for DomainStruct {
         let mut referrer_objs = get_objs_for_referrers!(obj, domain.sarzak());
         referrer_objs.append(&mut get_objs_for_assoc_referents!(obj, domain.sarzak()));
         let referrer_objs: HashSet<_> = referrer_objs.into_iter().collect();
+        // Remove ourselves, should that happen. Spoiler alert: it does.
+        let referrer_objs: HashSet<_> = referrer_objs
+            .into_iter()
+            .filter(|r_obj| r_obj.id != obj.id)
+            .collect();
 
         let mut referent_objs = get_objs_for_referents!(obj, domain.sarzak());
         referent_objs.append(&mut get_objs_for_assoc_referrers!(obj, domain.sarzak()));
         let referent_objs: HashSet<_> = referent_objs.into_iter().collect();
+        // Remove ourselves, should that happen. Spoiler alert: it does.
+        let referent_objs: HashSet<_> = referent_objs
+            .into_iter()
+            .filter(|r_obj| r_obj.id != obj.id)
+            .collect();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -849,7 +859,7 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
@@ -909,7 +919,7 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
