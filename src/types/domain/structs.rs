@@ -707,9 +707,9 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}_r{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                    r_obj.as_ident(),
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     binary.number,
+                    r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
@@ -751,7 +751,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -802,9 +803,9 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}_r{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                    r_obj.as_ident(),
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     binary.number,
+                    r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
@@ -848,7 +849,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -907,7 +909,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -966,7 +969,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -1013,7 +1017,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -1060,7 +1065,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -1103,7 +1109,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -1148,7 +1155,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
@@ -1207,7 +1215,8 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    "pub fn {}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
                     r_obj.as_ident(),
                     store.name,
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())

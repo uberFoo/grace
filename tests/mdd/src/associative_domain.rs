@@ -29,7 +29,7 @@ mod tests {
         let _ = SubtypeAnchor::new(&ui0, &a0, &mut store);
         let _ = SubtypeAnchor::new(&ui0, &a1, &mut store);
 
-        let subtype_anchors = ui0.subtype_anchor(&store);
+        let subtype_anchors = ui0.r10_subtype_anchor(&store);
         assert_eq!(subtype_anchors.len(), 2);
         assert!(subtype_anchors
             .iter()
@@ -44,14 +44,14 @@ mod tests {
             .find(|&&x| x.anchor_id == a2.id)
             .is_none());
 
-        let subtype_anchors = a0.subtype_anchor(&store);
+        let subtype_anchors = a0.r10_subtype_anchor(&store);
         assert_eq!(subtype_anchors.len(), 1);
         assert!(subtype_anchors
             .iter()
             .find(|&&x| x.isaui_id == ui0.id)
             .is_some());
 
-        let subtype_anchors = a2.subtype_anchor(&store);
+        let subtype_anchors = a2.r10_subtype_anchor(&store);
         assert_eq!(subtype_anchors.len(), 0);
     }
 
@@ -72,27 +72,27 @@ mod tests {
 
         let _ = AcknowledgedEvent::new(&e2, &s1, &mut store);
 
-        assert_eq!(e0.acknowledged_event(&store).len(), 0);
+        assert_eq!(e0.r20_acknowledged_event(&store).len(), 0);
 
-        let ae = e1.acknowledged_event(&store);
+        let ae = e1.r20_acknowledged_event(&store);
         assert_eq!(ae.len(), 1);
         assert_eq!(ae[0].state_id, s0.id);
 
-        let ae = e2.acknowledged_event(&store);
+        let ae = e2.r20_acknowledged_event(&store);
         assert_eq!(ae.len(), 2);
         assert!(ae.iter().find(|&&x| x.state_id == s0.id).is_some());
         assert!(ae.iter().find(|&&x| x.state_id == s1.id).is_some());
 
-        let ae = s0.acknowledged_event(&store);
+        let ae = s0.r20_acknowledged_event(&store);
         assert_eq!(ae.len(), 2);
         assert!(ae.iter().find(|&&x| x.event_id == e1.id).is_some());
         assert!(ae.iter().find(|&&x| x.event_id == e2.id).is_some());
 
-        let ae = s1.acknowledged_event(&store);
+        let ae = s1.r20_acknowledged_event(&store);
         assert_eq!(ae.len(), 1);
         assert!(ae.iter().find(|&&x| x.event_id == e2.id).is_some());
 
-        let ae = s2.acknowledged_event(&store);
+        let ae = s2.r20_acknowledged_event(&store);
         assert_eq!(ae.len(), 0);
     }
 }

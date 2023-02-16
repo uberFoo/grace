@@ -26,14 +26,14 @@ mod tests {
         let tgt_1 = Referent::new("gene".to_owned(), &mut store);
         let a = A::new(42, &tgt_0, &mut store);
 
-        let select_tgt = a.referent_r1(&store);
+        let select_tgt = a.r1_referent(&store);
         assert_eq!(&tgt_0, select_tgt[0]);
 
-        let select_a = tgt_0.a(&store);
+        let select_a = tgt_0.r1_a(&store);
         assert!(select_a.len() == 1);
         assert_eq!(&a, select_a[0]);
 
-        let select_a = tgt_1.a(&store);
+        let select_a = tgt_1.r1_a(&store);
         assert!(select_a.len() == 0);
     }
 
@@ -46,16 +46,16 @@ mod tests {
         let b_0 = B::new(true, &tgt_0, &mut store);
         let b_1 = B::new(false, &tgt_1, &mut store);
 
-        let tgt = b_0.referent_r2(&store);
+        let tgt = b_0.r2_referent(&store);
         assert_eq!(&tgt_0, tgt[0]);
 
-        let tgt = b_1.referent_r2(&store);
+        let tgt = b_1.r2_referent(&store);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let b = tgt_0.b_r2(&store);
+        let b = tgt_0.r2_b(&store);
         assert_eq!(&b_0, b[0]);
 
-        let b = tgt_1.b_r2(&store);
+        let b = tgt_1.r2_b(&store);
         assert_eq!(&b_1, b[0]);
     }
 
@@ -68,17 +68,17 @@ mod tests {
         let c_0 = C::new(42.0, Some(&tgt_1), &mut store);
         let c_1 = C::new(1.162, None, &mut store);
 
-        let tgt = c_0.referent(&store);
+        let tgt = c_0.r3_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let tgt = c_1.referent(&store);
+        let tgt = c_1.r3_referent(&store);
         assert!(tgt.len() == 0);
 
-        let c = tgt_0.c(&store);
+        let c = tgt_0.r3_c(&store);
         assert!(c.len() == 0);
 
-        let c = tgt_1.c(&store);
+        let c = tgt_1.r3_c(&store);
         assert!(c.len() == 1);
         assert_eq!(&c_0, c[0]);
     }

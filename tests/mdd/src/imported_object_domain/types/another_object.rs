@@ -42,7 +42,7 @@ impl AnotherObject {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-nav-forward-to-ptr"}}}
     /// Navigate to [`Object`] across R1(1-?)
-    pub fn object_r1<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r1_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

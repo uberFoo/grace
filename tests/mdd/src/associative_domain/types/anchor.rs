@@ -46,7 +46,10 @@ impl Anchor {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-nav-backward-assoc-one-cond-to-subtype_anchor"}}}
     /// Navigate to [`SubtypeAnchor`] across R10(1-1c)
-    pub fn subtype_anchor<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&SubtypeAnchor> {
+    pub fn r10_subtype_anchor<'a>(
+        &'a self,
+        store: &'a AssociativeDomainStore,
+    ) -> Vec<&SubtypeAnchor> {
         let subtype_anchor = store
             .iter_subtype_anchor()
             .find(|subtype_anchor| subtype_anchor.1.anchor_id == self.id);

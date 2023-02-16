@@ -41,7 +41,7 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-a"}}}
     /// Navigate to [`A`] across R1(1-M)
-    pub fn a<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&A> {
+    pub fn r1_a<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&A> {
         store
             .iter_a()
             .filter_map(|a| if a.1.ptr == self.id { Some(a.1) } else { None })
@@ -50,7 +50,7 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
     /// Navigate to [`B`] across R2(1-Mc)
-    pub fn b<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&B> {
+    pub fn r2_b<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&B> {
         store
             .iter_b()
             .filter_map(|b| {
@@ -65,7 +65,7 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-c"}}}
     /// Navigate to [`C`] across R3(1-M)
-    pub fn c<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&C> {
+    pub fn r3_c<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&C> {
         store
             .iter_c()
             .filter_map(|c| if c.1.ptr == self.id { Some(c.1) } else { None })
@@ -74,7 +74,7 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}
     /// Navigate to [`D`] across R4(1-Mc)
-    pub fn d<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&D> {
+    pub fn r4_d<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&D> {
         store
             .iter_d()
             .filter_map(|d| {

@@ -54,13 +54,13 @@ impl SubtypeAnchor {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-isaui_id"}}}
     /// Navigate to [`IsaUi`] across R10(1-?)
-    pub fn isa_ui<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&IsaUi> {
+    pub fn r10_isa_ui<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&IsaUi> {
         vec![store.exhume_isa_ui(&self.isaui_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-anchor_id"}}}
     /// Navigate to [`Anchor`] across R10(1-?)
-    pub fn anchor<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&Anchor> {
+    pub fn r10_anchor<'a>(&'a self, store: &'a AssociativeDomainStore) -> Vec<&Anchor> {
         vec![store.exhume_anchor(&self.anchor_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -55,7 +55,7 @@ impl Associative {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
     /// Navigate to [`AssociativeReferent`] across R22(1-?)
-    pub fn associative_referent_r22<'a>(
+    pub fn r22_associative_referent<'a>(
         &'a self,
         store: &'a SarzakStore,
     ) -> Vec<&AssociativeReferent> {
@@ -65,7 +65,7 @@ impl Associative {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
     /// Navigate to [`AssociativeReferent`] across R23(1-?)
-    pub fn associative_referent_r23<'a>(
+    pub fn r23_associative_referent<'a>(
         &'a self,
         store: &'a SarzakStore,
     ) -> Vec<&AssociativeReferent> {
@@ -74,7 +74,7 @@ impl Associative {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-from"}}}
     /// Navigate to [`AssociativeReferrer`] across R21(1-?)
-    pub fn associative_referrer_r21<'a>(
+    pub fn r21_associative_referrer<'a>(
         &'a self,
         store: &'a SarzakStore,
     ) -> Vec<&AssociativeReferrer> {

@@ -41,13 +41,13 @@ impl Isa {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-nav-forward-to-supertype"}}}
     /// Navigate to [`Supertype`] across R13(1-?)
-    pub fn supertype_r13<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Supertype> {
+    pub fn r13_supertype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Supertype> {
         vec![store.exhume_supertype(&self.supertype).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-nav-backward-1_M-to-subtype"}}}
     /// Navigate to [`Subtype`] across R27(1-M)
-    pub fn subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
+    pub fn r27_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
         store
             .iter_subtype()
             .filter_map(|subtype| {

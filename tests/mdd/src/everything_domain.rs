@@ -72,10 +72,10 @@ mod tests {
         let r = RandoObject::new("rando".to_owned(), &mut store);
         let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r, &mut store);
 
-        let r_prime = e.rando_object_r1(&store);
+        let r_prime = e.r1_rando_object(&store);
         assert_eq!(vec![&r], r_prime);
 
-        let e_prime = r.everything_r1(&store);
+        let e_prime = r.r1_everything(&store);
         assert_eq!(vec![&e], e_prime);
     }
 }

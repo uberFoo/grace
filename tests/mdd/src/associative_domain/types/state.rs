@@ -36,7 +36,7 @@ impl State {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-nav-backward-assoc_many-to-acknowledged_event"}}}
     /// Navigate to [`AcknowledgedEvent`] across R20(1-M)
-    pub fn acknowledged_event<'a>(
+    pub fn r20_acknowledged_event<'a>(
         &'a self,
         store: &'a AssociativeDomainStore,
     ) -> Vec<&AcknowledgedEvent> {

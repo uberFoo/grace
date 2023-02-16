@@ -44,7 +44,7 @@ impl C {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R3(1-?c)
-    pub fn referent<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Referent> {
+    pub fn r3_referent<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Referent> {
         match self.ptr {
             Some(ref ptr) => vec![store.exhume_referent(ptr).unwrap()],
             None => Vec::new(),

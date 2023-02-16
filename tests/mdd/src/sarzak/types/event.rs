@@ -44,13 +44,13 @@ impl Event {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R19(1-?)
-    pub fn object_r19<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r19_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-backward-assoc_many-to-acknowledged_event"}}}
     /// Navigate to [`AcknowledgedEvent`] across R20(1-M)
-    pub fn acknowledged_event<'a>(&'a self, store: &'a SarzakStore) -> Vec<&AcknowledgedEvent> {
+    pub fn r20_acknowledged_event<'a>(&'a self, store: &'a SarzakStore) -> Vec<&AcknowledgedEvent> {
         store
             .iter_acknowledged_event()
             .filter_map(|acknowledged_event| {

@@ -38,7 +38,7 @@ impl RandoObject {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-nav-backward-one-to-everything"}}}
     /// Navigate to [`Everything`] across R1(1-1)
-    pub fn everything_r1<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&Everything> {
+    pub fn r1_everything<'a>(&'a self, store: &'a EverythingDomainStore) -> Vec<&Everything> {
         vec![
             store
                 .iter_everything()

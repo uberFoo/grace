@@ -44,13 +44,13 @@ impl Subtype {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-nav-forward-to-isa"}}}
     /// Navigate to [`Isa`] across R27(1-?)
-    pub fn isa_r27<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Isa> {
+    pub fn r27_isa<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Isa> {
         vec![store.exhume_isa(&self.isa).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R15(1-?)
-    pub fn object_r15<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r15_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

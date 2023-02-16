@@ -42,7 +42,7 @@ impl C {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-nav-forward-to-ptr"}}}
     /// Navigate to [`Referent`] across R3(1-?)
-    pub fn referent_r3<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&Referent> {
+    pub fn r3_referent<'a>(&'a self, store: &'a OneToManyDomainStore) -> Vec<&Referent> {
         vec![store.exhume_referent(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

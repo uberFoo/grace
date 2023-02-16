@@ -46,13 +46,13 @@ impl AssociativeReferrer {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R26(1-?)
-    pub fn object_r26<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r26_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-backward-one-to-associative"}}}
     /// Navigate to [`Associative`] across R21(1-1)
-    pub fn associative_r21<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
+    pub fn r21_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
         vec![
             store
                 .iter_associative()

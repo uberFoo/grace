@@ -30,24 +30,24 @@ mod tests {
         let a_2 = A::new("bar".to_owned(), &tgt_1, &mut store);
 
         // Test in the one direction.
-        let tgt = a_0.referent_r1(&store);
+        let tgt = a_0.r1_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_0, tgt[0]);
 
-        let tgt = a_1.referent_r1(&store);
+        let tgt = a_1.r1_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let tgt = a_2.referent_r1(&store);
+        let tgt = a_2.r1_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
         // Test in the many direction
-        let a = tgt_0.a(&store);
+        let a = tgt_0.r1_a(&store);
         assert_eq!(1, a.len());
         assert_eq!(&a_0, a[0]);
 
-        let a = tgt_1.a(&store);
+        let a = tgt_1.r1_a(&store);
         assert_eq!(2, a.len());
 
         // Result contains a_1 and a_2, but in any order.
@@ -71,19 +71,19 @@ mod tests {
         let b_2 = B::new("strings".to_owned(), Some(&tgt_1), &mut store);
 
         // Test in the one direction.
-        let tgt = b_0.referent(&store);
+        let tgt = b_0.r2_referent(&store);
         assert!(tgt.len() == 0);
 
-        let tgt = b_1.referent(&store);
+        let tgt = b_1.r2_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let tgt = b_2.referent(&store);
+        let tgt = b_2.r2_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
         // Test in the many direction
-        let b = tgt_1.b(&store);
+        let b = tgt_1.r2_b(&store);
         assert!(b.len() == 2);
 
         // Result contains b_1 and b_2, but in any order.
@@ -107,19 +107,19 @@ mod tests {
         let c_2 = C::new(1.618, &tgt_1, &mut store);
 
         // Test in the one direction.
-        let tgt = c_1.referent_r3(&store);
+        let tgt = c_1.r3_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let tgt = c_2.referent_r3(&store);
+        let tgt = c_2.r3_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
         // Test in the many direction
-        let c = tgt_0.c(&store);
+        let c = tgt_0.r3_c(&store);
         assert!(c.len() == 0);
 
-        let c = tgt_1.c(&store);
+        let c = tgt_1.r3_c(&store);
         assert!(c.len() == 2);
 
         // Result contains c_1 and c_2, but in any order.
@@ -144,22 +144,22 @@ mod tests {
         let d_2 = D::new("curly".to_owned(), Some(&tgt_1), &mut store);
 
         // Test in the one direction.
-        let tgt = d_0.referent(&store);
+        let tgt = d_0.r4_referent(&store);
         assert!(tgt.len() == 0);
 
-        let tgt = d_1.referent(&store);
+        let tgt = d_1.r4_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
-        let tgt = d_2.referent(&store);
+        let tgt = d_2.r4_referent(&store);
         assert!(tgt.len() == 1);
         assert_eq!(&tgt_1, tgt[0]);
 
         // Test in the many direction
-        let d = tgt_0.d(&store);
+        let d = tgt_0.r4_d(&store);
         assert!(d.len() == 0);
 
-        let d = tgt_1.d(&store);
+        let d = tgt_1.r4_d(&store);
         assert!(d.len() == 2);
 
         // Result contains d_1 and d_2, but in any order.
