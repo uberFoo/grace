@@ -203,6 +203,7 @@ impl Sanitize for &str {
             "Type" => "ty".to_owned(),
             "crate" => "krate".to_owned(),
             "Crate" => "krate".to_owned(),
+            "ref" => "x_ref".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -215,6 +216,7 @@ impl Sanitize for String {
             "Type" => "ty".to_owned(),
             "crate" => "krate".to_owned(),
             "Crate" => "krate".to_owned(),
+            "ref" => "x_ref".to_owned(),
             _ => self.to_owned(),
         }
     }

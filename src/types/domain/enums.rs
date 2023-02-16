@@ -9,11 +9,9 @@ use sarzak::{
     sarzak::{
         macros::{
             sarzak_get_many_r_subs_across_r27, sarzak_get_one_obj_across_r15,
-            sarzak_get_one_obj_across_r17, sarzak_get_one_r_bin_across_r5,
-            sarzak_get_one_r_from_across_r6, sarzak_get_one_r_isa_across_r13,
-            sarzak_maybe_get_many_r_sups_across_r14, sarzak_maybe_get_many_r_tos_across_r16,
+            sarzak_get_one_r_isa_across_r13, sarzak_maybe_get_many_r_sups_across_r14,
         },
-        types::{Referent, Subtype, Supertype},
+        types::{Subtype, Supertype},
     },
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
 };
@@ -49,7 +47,7 @@ impl CodeWriter for DomainEnum {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &mut WoogStore,
-        module: &str,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
@@ -61,8 +59,6 @@ impl CodeWriter for DomainEnum {
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
-
-        let referents = get_referents!(obj, domain.sarzak());
 
         // I'm convinced that R14 and R15 are broken.
         let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());

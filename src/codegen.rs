@@ -10,7 +10,6 @@ mod rustfmt;
 use std::{fmt::Write, iter::zip};
 
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
@@ -291,14 +290,25 @@ pub(crate) fn render_new_instance(
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
                         let obj = store.exhume_object(&obj_id).unwrap();
-                        emit!(
-                            buffer,
-                            "{}: {}.map(|{}| {}.id),",
-                            field.name,
-                            rval.name,
-                            obj.as_ident(),
-                            obj.as_ident()
-                        )
+                        if object_is_supertype(obj, store) {
+                            emit!(
+                                buffer,
+                                "{}: {}.map(|{}| {}.id()),",
+                                field.name,
+                                rval.name,
+                                obj.as_ident(),
+                                obj.as_ident()
+                            )
+                        } else {
+                            emit!(
+                                buffer,
+                                "{}: {}.map(|{}| {}.id),",
+                                field.name,
+                                rval.name,
+                                obj.as_ident(),
+                                obj.as_ident()
+                            )
+                        }
                     }
                     _ => {
                         ensure!(

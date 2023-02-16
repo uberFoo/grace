@@ -7,6 +7,7 @@
 //!
 //! # Contents:
 //!
+//! * [`NotImportant`]
 //! * [`SimpleSupertype`]
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
@@ -17,10 +18,11 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::isa_domain::types::{SimpleSupertype, SubtypeA, SubtypeB, SuperT};
+use crate::isa_domain::types::{NotImportant, SimpleSupertype, SubtypeA, SubtypeB, SuperT};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
+    not_important: HashMap<Uuid, NotImportant>,
     simple_supertype: HashMap<Uuid, SimpleSupertype>,
     subtype_a: HashMap<Uuid, SubtypeA>,
     subtype_b: HashMap<Uuid, SubtypeB>,
@@ -30,6 +32,7 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         Self {
+            not_important: HashMap::new(),
             simple_supertype: HashMap::new(),
             subtype_a: HashMap::new(),
             subtype_b: HashMap::new(),
@@ -37,6 +40,22 @@ impl ObjectStore {
         }
     }
 
+    /// Inter [`NotImportant`] into the store.
+    ///
+    pub fn inter_not_important(&mut self, not_important: NotImportant) {
+        self.not_important.insert(not_important.id, not_important);
+    }
+
+    /// Exhume [`NotImportant`] from the store.
+    ///
+    pub fn exhume_not_important(&self, id: &Uuid) -> Option<&NotImportant> {
+        self.not_important.get(id)
+    }
+    /// Get an iterator over the internal `HashMap<&Uuid, NotImportant>`.
+    //
+    pub fn iter_not_important(&self) -> impl Iterator<Item = (&Uuid, &NotImportant)> {
+        self.not_important.iter()
+    }
     /// Inter [`SimpleSupertype`] into the store.
     ///
     pub fn inter_simple_supertype(&mut self, simple_supertype: SimpleSupertype) {
