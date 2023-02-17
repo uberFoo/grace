@@ -1,9 +1,9 @@
-//! sarzak Object Store
+//! sarzak_domain Object Store
 //!
 //! The ObjectStore contains instances of objects in the domain.
 //! The instances are stored in a hash map, keyed by the object's UUID.
 //! This is used during code generation, and probably not useful elsewhere.
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"sarzak-object-store-file"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"sarzak_domain-object-store-file"}}}
 //!
 //! # Contents:
 //!
@@ -26,13 +26,13 @@
 //! * [`Subtype`]
 //! * [`Supertype`]
 //! * [`Ty`]
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"sarzak-object-store-definition"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"sarzak_domain-object-store-definition"}}}
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::sarzak::types::{
+use crate::sarzak_domain::types::{
     AcknowledgedEvent, Associative, AssociativeReferent, AssociativeReferrer, Attribute, Binary,
     Cardinality, Conditionality, Event, External, Isa, Object, Referent, Referrer, Relationship,
     State, Subtype, Supertype, Ty,

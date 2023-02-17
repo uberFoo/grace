@@ -4,13 +4,13 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referrer imports
-use crate::sarzak::types::object::Object;
-use crate::sarzak::types::ty::Ty;
+use crate::sarzak_domain::types::object::Object;
+use crate::sarzak_domain::types::ty::Ty;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-documentation"}}}
@@ -38,7 +38,7 @@ impl Attribute {
         name: String,
         obj_id: Option<&Object>,
         ty: &Ty,
-        store: &mut SarzakStore,
+        store: &mut SarzakDomainStore,
     ) -> Attribute {
         let id = Uuid::new_v5(
             &UUID_NS,
@@ -56,7 +56,7 @@ impl Attribute {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-cond-to-obj_id"}}}
     /// Navigate to [`Object`] across R1(1-?c)
-    pub fn r1_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r1_object<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Object> {
         match self.obj_id {
             Some(ref obj_id) => vec![store.exhume_object(obj_id).unwrap()],
             None => Vec::new(),
@@ -65,7 +65,7 @@ impl Attribute {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-to-ty"}}}
     /// Navigate to [`Ty`] across R2(1-?)
-    pub fn r2_ty<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Ty> {
+    pub fn r2_ty<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Ty> {
         vec![store.exhume_ty(&self.ty).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

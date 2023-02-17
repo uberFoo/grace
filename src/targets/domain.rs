@@ -22,7 +22,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::{parse_config_value, GraceCompilerOptions, GraceConfig, Target as GraceTarget},
+    options::{parse_config_value, GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
@@ -34,28 +34,28 @@ use crate::{
         },
         null::NullGenerator,
     },
-    ModelCompiler, SarzakModelCompiler, RS_EXT, TYPES,
+    RS_EXT, TYPES,
 };
 
 pub(crate) struct DomainTarget<'a> {
     config: GraceConfig,
-    package: &'a str,
+    _package: &'a str,
     module: &'a str,
     src_path: &'a Path,
     domain: sarzak::domain::Domain,
     woog: WoogStore,
-    test: bool,
+    _test: bool,
 }
 
 impl<'a> DomainTarget<'a> {
     pub(crate) fn new(
         options: &'a GraceCompilerOptions,
-        package: &'a str,
+        _package: &'a str,
         module: &'a str,
         src_path: &'a Path,
         domain: sarzak::domain::DomainBuilder,
         woog: WoogStore,
-        test: bool,
+        _test: bool,
     ) -> Box<dyn Target + 'a> {
         // This post_load script creates an external entity of the ObjectStore so that
         // we can use it from within the domain. Remember that the ObjectStore is a
@@ -65,29 +65,26 @@ impl<'a> DomainTarget<'a> {
         // something else...
         let domain = {
             let module = module.to_owned();
+            let options = options.clone();
             domain
                 .post_load(move |sarzak, _| {
                     let mut external = HashSet::new();
                     external.insert(module.clone());
 
-                    for (_, obj) in sarzak.iter_object() {
-                        // Shit, we don't have a real domain yet to build a config,
-                        // and I need the config to add the external entity. I'm
-                        // just going to have to parse each description here looking
-                        // for options. Gross. 😢
-                        let cv = parse_config_value(obj.description.as_str());
-                        if let Some(io) = cv.imported_object {
-                            external.insert(io.domain.clone());
+                    if let Some(domains) = options.imported_domains.as_ref() {
+                        for domain in domains {
+                            external.insert(domain.clone());
                         }
                     }
 
                     for store in external {
+                        log::debug!("Adding ObjectStore for {}", store);
                         let store_type = Type::External(
                             External::new(
                                 sarzak,
                                 format!(
                                     "{}Store",
-                                    store.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
+                                    store.as_type(&Mutability::Borrowed(BORROWED), sarzak)
                                 ),
                                 format!("crate::{}::store::ObjectStore", store.as_ident(),),
                             )
@@ -98,6 +95,8 @@ impl<'a> DomainTarget<'a> {
                     }
                 })
                 .build()
+                // 🚧 Blow up here -- we don't return a result. We could fix this,
+                // but I'm not sure it's worth it.
                 .expect("Failed to build domain")
         };
 
@@ -106,12 +105,12 @@ impl<'a> DomainTarget<'a> {
 
         Box::new(Self {
             config,
-            package,
+            _package,
             module,
             src_path: src_path.as_ref(),
             domain,
             woog,
-            test,
+            _test,
         })
     }
 
@@ -143,6 +142,12 @@ impl<'a> DomainTarget<'a> {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
+            println!(
+                "Generating code for: {} ... output path: {}",
+                obj.name,
+                types.display(),
+            );
+
             // Test if the object is a supertype. Those we generate as enums.
             let generator = if object_is_supertype(obj, self.domain.sarzak()) {
                 DefaultStructBuilder::new()
@@ -159,40 +164,16 @@ impl<'a> DomainTarget<'a> {
                 // code for the imported domain. What do you say? Sound fun?
                 // Let's do it!
                 let imported = self.config.get_imported(id).unwrap();
-                let grace = ModelCompiler::default();
+
+                // 🚧 Snafu is fighting me here, so unwrap it is. Figure it out
+                // later. It's important though, because this is likely to get
+                // screwed up.
+                // This belongs elsewhere...
                 let imported_domain = DomainBuilder::new()
                     .cuckoo_model(&imported.model_file)
+                    .expect("Failed to build imported domain")
+                    .build()
                     .expect("Failed to build imported domain");
-                // 🚧 We have to punt on the options. That's ok for now. Eventually
-                // I think that it would be easy enough to include custom options
-                // alongside the model. Either embedded in the store, or something
-                // else. Actually, we already know exactly what options we need.
-                //
-                // Damn. I had a thought while I was typing, and rather than take
-                // the interrupt, I forgot what it was. It was juicy too -- it
-                // had me really excited. 😢
-                //
-                // Oh, I remember now! We can actually start leveraging a new-
-                // style object store now if we wanted to. We could run the
-                // conversion once and then just store it. I think that's pretty
-                // cool. Maybe not worth all the build-up though.
-                let mut options = GraceCompilerOptions::default();
-                options.target = GraceTarget::Domain;
-                if let Some(ref mut derive) = options.derive {
-                    derive.push("Clone".to_string());
-                    derive.push("Deserialize".to_string());
-                    derive.push("Serialize".to_string());
-                }
-                options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
-
-                grace.compile(
-                    imported_domain,
-                    self.package,
-                    imported.domain.as_str(),
-                    self.src_path,
-                    Box::new(&options),
-                    self.test,
-                )?;
 
                 NullGenerator::new()
             } else if object_is_singleton(obj, self.domain.sarzak()) {

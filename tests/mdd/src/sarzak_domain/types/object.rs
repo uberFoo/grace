@@ -4,20 +4,20 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referent imports
-use crate::sarzak::types::associative_referent::AssociativeReferent;
-use crate::sarzak::types::associative_referrer::AssociativeReferrer;
-use crate::sarzak::types::attribute::Attribute;
-use crate::sarzak::types::event::Event;
-use crate::sarzak::types::referent::Referent;
-use crate::sarzak::types::referrer::Referrer;
-use crate::sarzak::types::state::State;
-use crate::sarzak::types::subtype::Subtype;
-use crate::sarzak::types::supertype::Supertype;
+use crate::sarzak_domain::types::associative_referent::AssociativeReferent;
+use crate::sarzak_domain::types::associative_referrer::AssociativeReferrer;
+use crate::sarzak_domain::types::attribute::Attribute;
+use crate::sarzak_domain::types::event::Event;
+use crate::sarzak_domain::types::referent::Referent;
+use crate::sarzak_domain::types::referrer::Referrer;
+use crate::sarzak_domain::types::state::State;
+use crate::sarzak_domain::types::subtype::Subtype;
+use crate::sarzak_domain::types::supertype::Supertype;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-documentation"}}}
@@ -47,7 +47,7 @@ impl Object {
         description: String,
         key_letters: String,
         name: String,
-        store: &mut SarzakStore,
+        store: &mut SarzakDomainStore,
     ) -> Object {
         let id = Uuid::new_v5(
             &UUID_NS,
@@ -67,7 +67,7 @@ impl Object {
     /// Navigate to [`AssociativeReferent`] across R25(1-M)
     pub fn r25_associative_referent<'a>(
         &'a self,
-        store: &'a SarzakStore,
+        store: &'a SarzakDomainStore,
     ) -> Vec<&AssociativeReferent> {
         store
             .iter_associative_referent()
@@ -85,7 +85,7 @@ impl Object {
     /// Navigate to [`AssociativeReferrer`] across R26(1-M)
     pub fn r26_associative_referrer<'a>(
         &'a self,
-        store: &'a SarzakStore,
+        store: &'a SarzakDomainStore,
     ) -> Vec<&AssociativeReferrer> {
         store
             .iter_associative_referrer()
@@ -101,7 +101,7 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_Mc-to-attribute"}}}
     /// Navigate to [`Attribute`] across R1(1-Mc)
-    pub fn r1_attribute<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Attribute> {
+    pub fn r1_attribute<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Attribute> {
         store
             .iter_attribute()
             .filter_map(|attribute| {
@@ -116,7 +116,7 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-event"}}}
     /// Navigate to [`Event`] across R19(1-M)
-    pub fn r19_event<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Event> {
+    pub fn r19_event<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Event> {
         store
             .iter_event()
             .filter_map(|event| {
@@ -131,7 +131,7 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-referent"}}}
     /// Navigate to [`Referent`] across R16(1-M)
-    pub fn r16_referent<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referent> {
+    pub fn r16_referent<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Referent> {
         store
             .iter_referent()
             .filter_map(|referent| {
@@ -146,7 +146,7 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-referrer"}}}
     /// Navigate to [`Referrer`] across R17(1-M)
-    pub fn r17_referrer<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referrer> {
+    pub fn r17_referrer<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Referrer> {
         store
             .iter_referrer()
             .filter_map(|referrer| {
@@ -161,7 +161,7 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-state"}}}
     /// Navigate to [`State`] across R18(1-M)
-    pub fn r18_state<'a>(&'a self, store: &'a SarzakStore) -> Vec<&State> {
+    pub fn r18_state<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&State> {
         store
             .iter_state()
             .filter_map(|state| {
@@ -176,7 +176,7 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-subtype"}}}
     /// Navigate to [`Subtype`] across R15(1-M)
-    pub fn r15_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
+    pub fn r15_subtype<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Subtype> {
         store
             .iter_subtype()
             .filter_map(|subtype| {
@@ -191,7 +191,7 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-supertype"}}}
     /// Navigate to [`Supertype`] across R14(1-M)
-    pub fn r14_supertype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Supertype> {
+    pub fn r14_supertype<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Supertype> {
         store
             .iter_supertype()
             .filter_map(|supertype| {

@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 use crate::imported_object_domain::UUID_NS;
 
 // Referrer imports
-use crate::sarzak::types::object::Object;
+use crate::sarzak_domain::types::object::Object;
 
 use crate::imported_object_domain::store::ObjectStore as ImportedObjectDomainStore;
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-documentation"}}}
@@ -42,7 +42,7 @@ impl AnotherObject {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-nav-forward-to-ptr"}}}
     /// Navigate to [`Object`] across R1(1-?)
-    pub fn r1_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r1_object<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

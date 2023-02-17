@@ -4,13 +4,13 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referrer imports
-use crate::sarzak::types::referent::Referent;
-use crate::sarzak::types::referrer::Referrer;
+use crate::sarzak_domain::types::referent::Referent;
+use crate::sarzak_domain::types::referrer::Referrer;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-documentation"}}}
@@ -41,7 +41,12 @@ pub struct Binary {
 impl Binary {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new"}}}
     /// Inter a new Binary in the store, and return it's `id`.
-    pub fn new(number: i64, to: &Referent, from: &Referrer, store: &mut SarzakStore) -> Binary {
+    pub fn new(
+        number: i64,
+        to: &Referent,
+        from: &Referrer,
+        store: &mut SarzakDomainStore,
+    ) -> Binary {
         let id = Uuid::new_v5(
             &UUID_NS,
             format!("{}:{:?}:{:?}", number, to, from).as_bytes(),
@@ -58,13 +63,13 @@ impl Binary {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-to"}}}
     /// Navigate to [`Referent`] across R5(1-?)
-    pub fn r5_referent<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referent> {
+    pub fn r5_referent<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Referent> {
         vec![store.exhume_referent(&self.to).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-from"}}}
     /// Navigate to [`Referrer`] across R6(1-?)
-    pub fn r6_referrer<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referrer> {
+    pub fn r6_referrer<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Referrer> {
         vec![store.exhume_referrer(&self.from).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -4,13 +4,13 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referent imports
-use crate::sarzak::types::event::Event;
-use crate::sarzak::types::state::State;
+use crate::sarzak_domain::types::event::Event;
+use crate::sarzak_domain::types::state::State;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-documentation"}}}
@@ -33,7 +33,11 @@ pub struct AcknowledgedEvent {
 impl AcknowledgedEvent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new"}}}
     /// Inter a new AcknowledgedEvent in the store, and return it's `id`.
-    pub fn new(event_id: &Event, state_id: &State, store: &mut SarzakStore) -> AcknowledgedEvent {
+    pub fn new(
+        event_id: &Event,
+        state_id: &State,
+        store: &mut SarzakDomainStore,
+    ) -> AcknowledgedEvent {
         let id = Uuid::new_v5(
             &UUID_NS,
             format!("{:?}:{:?}", event_id, state_id).as_bytes(),
@@ -49,13 +53,13 @@ impl AcknowledgedEvent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-event_id"}}}
     /// Navigate to [`Event`] across R20(1-?)
-    pub fn r20_event<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Event> {
+    pub fn r20_event<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Event> {
         vec![store.exhume_event(&self.event_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-state_id"}}}
     /// Navigate to [`State`] across R20(1-?)
-    pub fn r20_state<'a>(&'a self, store: &'a SarzakStore) -> Vec<&State> {
+    pub fn r20_state<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&State> {
         vec![store.exhume_state(&self.state_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

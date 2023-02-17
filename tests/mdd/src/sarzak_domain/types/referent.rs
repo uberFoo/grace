@@ -4,17 +4,17 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referrer imports
-use crate::sarzak::types::cardinality::Cardinality;
-use crate::sarzak::types::conditionality::Conditionality;
-use crate::sarzak::types::object::Object;
+use crate::sarzak_domain::types::cardinality::Cardinality;
+use crate::sarzak_domain::types::conditionality::Conditionality;
+use crate::sarzak_domain::types::object::Object;
 
 // Referent imports
-use crate::sarzak::types::binary::Binary;
+use crate::sarzak_domain::types::binary::Binary;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-documentation"}}}
@@ -43,7 +43,7 @@ impl Referent {
         cardinality: &Cardinality,
         conditionality: &Conditionality,
         obj_id: &Object,
-        store: &mut SarzakStore,
+        store: &mut SarzakDomainStore,
     ) -> Referent {
         let id = Uuid::new_v5(
             &UUID_NS,
@@ -66,25 +66,25 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-forward-to-cardinality"}}}
     /// Navigate to [`Cardinality`] across R8(1-?)
-    pub fn r8_cardinality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Cardinality> {
+    pub fn r8_cardinality<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Cardinality> {
         vec![store.exhume_cardinality(&self.cardinality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-forward-to-conditionality"}}}
     /// Navigate to [`Conditionality`] across R12(1-?)
-    pub fn r12_conditionality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Conditionality> {
+    pub fn r12_conditionality<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Conditionality> {
         vec![store.exhume_conditionality(&self.conditionality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R16(1-?)
-    pub fn r16_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r16_object<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-to-binary"}}}
     /// Navigate to [`Binary`] across R5(1-1)
-    pub fn r5_binary<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Binary> {
+    pub fn r5_binary<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Binary> {
         vec![
             store
                 .iter_binary()

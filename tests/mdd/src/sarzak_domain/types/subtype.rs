@@ -4,13 +4,13 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referrer imports
-use crate::sarzak::types::isa::Isa;
-use crate::sarzak::types::object::Object;
+use crate::sarzak_domain::types::isa::Isa;
+use crate::sarzak_domain::types::object::Object;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-documentation"}}}
@@ -31,7 +31,7 @@ pub struct Subtype {
 impl Subtype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-new"}}}
     /// Inter a new Subtype in the store, and return it's `id`.
-    pub fn new(isa: &Isa, obj_id: &Object, store: &mut SarzakStore) -> Subtype {
+    pub fn new(isa: &Isa, obj_id: &Object, store: &mut SarzakDomainStore) -> Subtype {
         let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", isa, obj_id).as_bytes());
         let new = Subtype {
             isa: isa.id,
@@ -44,13 +44,13 @@ impl Subtype {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-nav-forward-to-isa"}}}
     /// Navigate to [`Isa`] across R27(1-?)
-    pub fn r27_isa<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Isa> {
+    pub fn r27_isa<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Isa> {
         vec![store.exhume_isa(&self.isa).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R15(1-?)
-    pub fn r15_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r15_object<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

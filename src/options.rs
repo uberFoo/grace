@@ -24,7 +24,7 @@ use uuid::Uuid;
 const DEFAULT_TARGET: Target = Target::Application;
 const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
 const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
-const DEFAULT_IMPORTED_OBJECTS: bool = false;
+const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Subcommand)]
 pub enum Target {
@@ -68,19 +68,24 @@ pub struct GraceCompilerOptions {
     /// `🐶 {"use_paths": ["path", ...]}`.
     #[arg(long, short, use_value_delimiter = true, value_delimiter = ',')]
     pub use_paths: Option<Vec<String>>,
-    /// Imported Objects
+    /// Imported Domains
     ///
-    /// This is a useless, do nothing option that's sole purpose is to taunt you.
-    /// If I can figure out how to make it work, I'll do so.
+    /// A domain may be imported, and it's objects referenced by the importing
+    /// domain.  The values in this list need to correspond to the output location
+    /// of the imported domain, i.e., the path to the generated module.
     ///
-    /// Until then, if you want to indicate that an object is imported, you will
-    /// need to do so in the object's description like so:
+    /// To indicate that an object is imported, you will need to do so in the
+    /// object's description like so:
     ///
     /// `🐶 {"imported_object": {"domain": "Super-Awesome Domain", "model_file": "../sarzak/models/sarzak.json"}}`
     ///
+    /// "domain" is perhaps a misnomer. It is in fact the location of the generated
+    /// domain's module in this package.
     /// "model_file" a path to the domain file, relative to the package root.
-    #[arg(long, short)]
-    pub imported_objects: bool,
+    ///
+    /// Note that the domain parameters _must_ match.
+    #[arg(long, short, use_value_delimiter = true, value_delimiter = ',')]
+    pub imported_domains: Option<Vec<String>>,
 }
 
 impl ModelCompilerOptions for GraceCompilerOptions {
@@ -95,7 +100,7 @@ impl Default for GraceCompilerOptions {
             target: DEFAULT_TARGET,
             derive: Some(DEFAULT_DERIVE.iter().map(|&x| x.to_owned()).collect()),
             use_paths: DEFAULT_USE_PATHS,
-            imported_objects: DEFAULT_IMPORTED_OBJECTS,
+            imported_domains: DEFAULT_IMPORTED_DOMAINS,
         }
     }
 }
@@ -345,7 +350,7 @@ mod tests {
                 assert_eq!(
                     config_value.imported_object,
                     Some(ImportedObject {
-                        domain: "sarzak".to_string(),
+                        domain: "sarzak_domain".to_string(),
                         model_file: PathBuf::from("../sarzak/models/sarzak_✨.json"),
                     })
                 );

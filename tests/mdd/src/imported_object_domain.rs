@@ -19,8 +19,8 @@ pub const UUID_NS: Uuid = uuid!("f1b24300-39bc-5928-ab66-116fd36296b1");
 mod tests {
     use super::*;
 
-    use crate::sarzak::store::ObjectStore as SarzakStore;
-    use crate::sarzak::types::Object;
+    use crate::sarzak_domain::store::ObjectStore as SarzakStore;
+    use crate::sarzak_domain::types::Object;
 
     #[test]
     fn test() {

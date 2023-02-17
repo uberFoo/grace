@@ -4,15 +4,15 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referrer imports
-use crate::sarzak::types::supertype::Supertype;
+use crate::sarzak_domain::types::supertype::Supertype;
 
 // Referent imports
-use crate::sarzak::types::subtype::Subtype;
+use crate::sarzak_domain::types::subtype::Subtype;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-definition"}}}
@@ -28,7 +28,7 @@ pub struct Isa {
 impl Isa {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new"}}}
     /// Inter a new Isa in the store, and return it's `id`.
-    pub fn new(number: i64, supertype: &Supertype, store: &mut SarzakStore) -> Isa {
+    pub fn new(number: i64, supertype: &Supertype, store: &mut SarzakDomainStore) -> Isa {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, supertype).as_bytes());
         let new = Isa {
             number: number,
@@ -41,13 +41,13 @@ impl Isa {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-nav-forward-to-supertype"}}}
     /// Navigate to [`Supertype`] across R13(1-?)
-    pub fn r13_supertype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Supertype> {
+    pub fn r13_supertype<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Supertype> {
         vec![store.exhume_supertype(&self.supertype).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-nav-backward-1_M-to-subtype"}}}
     /// Navigate to [`Subtype`] across R27(1-M)
-    pub fn r27_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
+    pub fn r27_subtype<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Subtype> {
         store
             .iter_subtype()
             .filter_map(|subtype| {

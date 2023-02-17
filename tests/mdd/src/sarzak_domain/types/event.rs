@@ -4,13 +4,13 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
 // Referrer imports
-use crate::sarzak::types::acknowledged_event::AcknowledgedEvent;
-use crate::sarzak::types::object::Object;
+use crate::sarzak_domain::types::acknowledged_event::AcknowledgedEvent;
+use crate::sarzak_domain::types::object::Object;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-documentation"}}}
@@ -31,7 +31,7 @@ pub struct Event {
 impl Event {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
     /// Inter a new Event in the store, and return it's `id`.
-    pub fn new(name: String, obj_id: &Object, store: &mut SarzakStore) -> Event {
+    pub fn new(name: String, obj_id: &Object, store: &mut SarzakDomainStore) -> Event {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, obj_id).as_bytes());
         let new = Event {
             name: name,
@@ -44,13 +44,16 @@ impl Event {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R19(1-?)
-    pub fn r19_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
+    pub fn r19_object<'a>(&'a self, store: &'a SarzakDomainStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-backward-assoc_many-to-acknowledged_event"}}}
     /// Navigate to [`AcknowledgedEvent`] across R20(1-M)
-    pub fn r20_acknowledged_event<'a>(&'a self, store: &'a SarzakStore) -> Vec<&AcknowledgedEvent> {
+    pub fn r20_acknowledged_event<'a>(
+        &'a self,
+        store: &'a SarzakDomainStore,
+    ) -> Vec<&AcknowledgedEvent> {
         store
             .iter_acknowledged_event()
             .filter_map(|acknowledged_event| {

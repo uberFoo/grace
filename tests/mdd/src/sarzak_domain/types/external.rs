@@ -4,9 +4,9 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::sarzak::UUID_NS;
+use crate::sarzak_domain::UUID_NS;
 
-use crate::sarzak::store::ObjectStore as SarzakStore;
+use crate::sarzak_domain::store::ObjectStore as SarzakDomainStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-struct-documentation"}}}
@@ -42,7 +42,7 @@ pub struct External {
 impl External {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-struct-impl-new"}}}
     /// Inter a new External in the store, and return it's `id`.
-    pub fn new(name: String, path: String, store: &mut SarzakStore) -> External {
+    pub fn new(name: String, path: String, store: &mut SarzakDomainStore) -> External {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{}", name, path).as_bytes());
         let new = External {
             name: name,

@@ -22,7 +22,7 @@ use crate::one_to_one_domain::store::ObjectStore as OneToOneDomainStore;
 pub struct Parameter {
     pub id: Uuid,
     pub name: String,
-    /// R8: [`Parameter`] 'comes after' [`Parameter`]
+    /// R8: [`Parameter`] 'came before' [`Parameter`]
     pub next: Option<Uuid>,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -57,6 +57,7 @@ impl Parameter {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-nav-backward-cond-to-parameter"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-nav-backward-one-bi-cond-to-parameter"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-nav-backward-one-to-parameter"}}}
     /// Navigate to [`Parameter`] across R8(1c-1c)
     pub fn r8c_parameter<'a>(&'a self, store: &'a OneToOneDomainStore) -> Vec<&Parameter> {
         let parameter = store
