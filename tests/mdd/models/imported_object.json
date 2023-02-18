@@ -12,8 +12,8 @@
                 "width": 4000,
                 "height": 3200,
                 "offset": {
-                    "x": 0,
-                    "y": 0
+                    "x": -69,
+                    "y": -11
                 },
                 "objects": {
                     "7178e7a4-5131-504b-a7b3-c2c0cfedf343": {
@@ -27,6 +27,13 @@
                         "y": 403,
                         "width": 231,
                         "height": 162
+                    },
+                    "d01f2378-3539-5b5f-ad97-0d0558f7d40e": {
+                        "x": 1396,
+                        "y": 412,
+                        "width": 219,
+                        "height": 125,
+                        "id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e"
                     }
                 },
                 "relationships": {
@@ -53,6 +60,30 @@
                                 }
                             }
                         }
+                    },
+                    "21456cd2-c2ca-5a7f-ab6d-cef452710e8b": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+                                "x": 1166,
+                                "y": 495,
+                                "offset": {
+                                    "x": 13,
+                                    "y": 45
+                                },
+                                "dir": "East"
+                            },
+                            "to": {
+                                "id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e",
+                                "x": 1396,
+                                "y": 495,
+                                "offset": {
+                                    "x": -58,
+                                    "y": -39
+                                },
+                                "dir": "West"
+                            }
+                        }
                     }
                 },
                 "config": null
@@ -62,7 +93,8 @@
     "objects": {
         "ids": [
             "7178e7a4-5131-504b-a7b3-c2c0cfedf343",
-            "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a"
+            "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+            "d01f2378-3539-5b5f-ad97-0d0558f7d40e"
         ],
         "entities": {
             "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a": {
@@ -82,10 +114,23 @@
                 "id": "7178e7a4-5131-504b-a7b3-c2c0cfedf343",
                 "key_letter": "OBJ",
                 "name": "Object",
-                "description": "Imported Object\n\n🐶 { \"imported_object\": { \"domain\": \"sarzak_domain\", \"model_file\": \"../sarzak/models/sarzak_✨.json\" }}\n\n",
+                "description": "Imported Object\n\n🐶 { \"imported_object\": { \"domain\": \"domain::sarzak\", \"model_file\": \"../sarzak/models/sarzak_✨.json\" }}\n\n",
                 "attributes": {
                     "4717289d-ed9c-5931-94ce-a73a66b88856": {
                         "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "d01f2378-3539-5b5f-ad97-0d0558f7d40e": {
+                "id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e",
+                "key_letter": "S",
+                "name": "Super T",
+                "description": "Another Imported Object\n\nThis one is a supertype, and the code to access it's id needs to be different:\n\n```rust\n// Good\nsuper_t.id()\n// Bad\nsuper_t.id\n```\n\n🐶 { \"imported_object\": { \"domain\": \"domain::isa\", \"model_file\": \"tests/mdd/models/isa.json\" }}\n",
+                "attributes": {
+                    "7946cc86-f91d-5a3d-858d-b8dc226573f3": {
+                        "id": "7946cc86-f91d-5a3d-858d-b8dc226573f3",
                         "name": "id",
                         "type": "Uuid"
                     }
@@ -95,7 +140,8 @@
     },
     "relationships": {
         "ids": [
-            "0c2c0855-f162-5c0d-97c6-5609a2c86f58"
+            "0c2c0855-f162-5c0d-97c6-5609a2c86f58",
+            "21456cd2-c2ca-5a7f-ab6d-cef452710e8b"
         ],
         "entities": {
             "0c2c0855-f162-5c0d-97c6-5609a2c86f58": {
@@ -113,7 +159,26 @@
                         "obj_id": "7178e7a4-5131-504b-a7b3-c2c0cfedf343",
                         "description": "is pointed at by",
                         "cardinality": "One",
-                        "conditionality": "Unconditional"
+                        "conditionality": "Conditional"
+                    }
+                }
+            },
+            "21456cd2-c2ca-5a7f-ab6d-cef452710e8b": {
+                "Binary": {
+                    "id": "21456cd2-c2ca-5a7f-ab6d-cef452710e8b",
+                    "number": 2,
+                    "from": {
+                        "obj_id": "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+                        "description": "has an",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional",
+                        "formalizing_attribute_name": "edge"
+                    },
+                    "to": {
+                        "obj_id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e",
+                        "description": "has nothing to do with",
+                        "cardinality": "One",
+                        "conditionality": "Conditional"
                     }
                 }
             }

@@ -10,6 +10,7 @@ mod rustfmt;
 use std::{fmt::Write, iter::zip};
 
 use sarzak::{
+    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
@@ -17,7 +18,7 @@ use sarzak::{
             sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_sups_across_r14,
         },
         store::ObjectStore as SarzakStore,
-        types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype},
+        types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype, Type},
     },
     woog::{
         store::ObjectStore as WoogStore,
@@ -32,7 +33,7 @@ use crate::{
         buffer::{emit, Buffer},
         render::{RenderIdent, RenderType},
     },
-    todo::{GType, LValue, ObjectMethod, RValue},
+    todo::{External, GType, LValue, ObjectMethod, RValue},
 };
 
 macro_rules! get_objs_for_assoc_referrers {
@@ -423,4 +424,32 @@ pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buf
     }
 
     Ok(())
+}
+
+pub(crate) fn find_store(name: &str, domain: &Domain) -> External {
+    let name = name
+        .split("::")
+        .last()
+        .expect(format!("Can't parse store from {}", name).as_str());
+    let name = format!(
+        "{}Store",
+        name.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+    );
+
+    let mut iter = domain.sarzak().iter_ty();
+    loop {
+        let ty = iter.next();
+        match ty {
+            Some((_, ty)) => match ty {
+                Type::External(e) => {
+                    let ext = domain.sarzak().exhume_external(&e).unwrap();
+                    if ext.name == name {
+                        break External::new(ext.name.clone(), ext.path.clone(), None);
+                    }
+                }
+                _ => continue,
+            },
+            None => panic!("Could not find store type for {}", name),
+        }
+    }
 }

@@ -64,7 +64,7 @@ impl<'a> DomainTarget<'a> {
         // model as an imported object, and we wouldn't need this. We'd probably need
         // something else...
         let domain = {
-            let module = module.to_owned();
+            let module = module.replace("/", "::");
             let options = options.clone();
             domain
                 .post_load(move |sarzak, _| {
@@ -73,20 +73,29 @@ impl<'a> DomainTarget<'a> {
 
                     if let Some(domains) = options.imported_domains.as_ref() {
                         for domain in domains {
-                            external.insert(domain.clone());
+                            external.insert(domain.replace("/", "::"));
                         }
                     }
 
                     for store in external {
-                        log::debug!("Adding ObjectStore for {}", store);
+                        // Store is a rust path at this point. That's fine for the path,
+                        // but not so good for the name.
+                        let name = store
+                            .split("::")
+                            .last()
+                            // 🚧 Sigh, another expect.
+                            .expect("Failed to get last part of path")
+                            .to_string();
+
+                        log::debug!("Adding ObjectStore for {}", name);
                         let store_type = Type::External(
                             External::new(
                                 sarzak,
                                 format!(
                                     "{}Store",
-                                    store.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                                    name.as_type(&Mutability::Borrowed(BORROWED), sarzak)
                                 ),
-                                format!("crate::{}::store::ObjectStore", store.as_ident(),),
+                                format!("crate::{}::store::ObjectStore", store,),
                             )
                             .id,
                         );

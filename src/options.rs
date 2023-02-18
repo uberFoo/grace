@@ -350,8 +350,17 @@ mod tests {
                 assert_eq!(
                     config_value.imported_object,
                     Some(ImportedObject {
-                        domain: "sarzak_domain".to_string(),
+                        domain: "domain::sarzak".to_string(),
                         model_file: PathBuf::from("../sarzak/models/sarzak_✨.json"),
+                    })
+                );
+            } else if obj.name == "Super T" {
+                assert!(config.is_imported(id));
+                assert_eq!(
+                    config_value.imported_object,
+                    Some(ImportedObject {
+                        domain: "domain::isa".to_string(),
+                        model_file: PathBuf::from("tests/mdd/models/isa.json"),
                     })
                 );
             } else {

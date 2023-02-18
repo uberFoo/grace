@@ -34,7 +34,7 @@ macro_rules! test_target_domain {
                 .compile(
                     domain,
                     "mdd",
-                    format!("{}_domain", $domain).as_str(),
+                    format!("domain/{}", $domain).as_str(),
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
@@ -44,7 +44,7 @@ macro_rules! test_target_domain {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("{}_domain", $domain))
+                .arg(format!("domain/{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
@@ -87,7 +87,7 @@ macro_rules! test_target_domain {
                 .compile(
                     domain,
                     "mdd",
-                    format!("{}_domain", $domain).as_str(),
+                    format!("domain/{}", $domain).as_str(),
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
@@ -97,7 +97,7 @@ macro_rules! test_target_domain {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("{}_domain", $domain))
+                .arg(format!("domain/{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
@@ -128,7 +128,7 @@ macro_rules! test_target_application {
                 .compile(
                     domain,
                     "mdd",
-                    $domain,
+                    format!("app/{}", $domain).as_str(),
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
@@ -138,7 +138,7 @@ macro_rules! test_target_application {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("{}::", $domain))
+                .arg(format!("app/{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
@@ -154,6 +154,7 @@ macro_rules! test_target_application {
 
 // This is an imported domain that we need to build, so get it done early.
 test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak_✨.json");
+
 // Domain Target Tests
 test_target_domain!(
     everything_domain,
@@ -180,7 +181,8 @@ test_target_domain!(
     imported_object_domain,
     "imported_object",
     "tests/mdd/models/imported_object.json",
-    "sarzak_domain"
+    "domain/sarzak",
+    "domain/isa"
 );
 
 // Application Target Tests

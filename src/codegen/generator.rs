@@ -30,7 +30,7 @@ pub(crate) struct GeneratorBuilder<'a> {
     domain: Option<&'a Domain>,
     woog: Option<&'a mut WoogStore>,
     config: Option<&'a GraceConfig>,
-    module: Option<&'a str>,
+    module: Option<String>,
     obj_id: Option<&'a Uuid>,
 }
 
@@ -68,7 +68,7 @@ impl<'a> GeneratorBuilder<'a> {
     }
 
     pub(crate) fn module(mut self, module: &'a str) -> Self {
-        self.module = Some(module);
+        self.module = Some(module.replace("/", "::"));
 
         self
     }
@@ -139,7 +139,7 @@ impl<'a> GeneratorBuilder<'a> {
             &self.config.unwrap(),
             &self.domain.unwrap(),
             &mut self.woog.unwrap(),
-            self.module.unwrap(),
+            self.module.unwrap().as_str(),
             self.obj_id,
             &mut buffer,
         ) {
