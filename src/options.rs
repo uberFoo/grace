@@ -234,6 +234,7 @@ impl ConfigValue {
 pub(crate) struct ImportedObject {
     pub domain: String,
     pub model_file: PathBuf,
+    pub id: Uuid,
 }
 
 pub(crate) fn parse_config_value(input: &str) -> ConfigValue {
@@ -260,10 +261,11 @@ mod tests {
 
     #[test]
     fn test_parse_imported_object() {
-        let input = "Testing, 1, 2, 3...\nIt can handle junk at the beginning of the line, but not the end. 🐶 {\"imported_object\": {\"domain\": \"Super-Awesome Domain\", \"model_file\": \"../sarzak/models/sarzak.json\"}}";
+        let input = "Testing, 1, 2, 3...\nIt can handle junk at the beginning of the line, but not the end. 🐶 {\"imported_object\": {\"domain\": \"Super-Awesome Domain\", \"model_file\": \"../sarzak/models/sarzak.json\", \"id\": \"00000000-0000-0000-0000-000000000000\"}}";
         let expected = ImportedObject {
             domain: "Super-Awesome Domain".to_owned(),
             model_file: PathBuf::from("../sarzak/models/sarzak.json"),
+            id: Uuid::parse_str("00000000-0000-0000-0000-000000000000").unwrap(),
         };
 
         let actual: ConfigValue = parse_config_value(input);
@@ -352,6 +354,7 @@ mod tests {
                     Some(ImportedObject {
                         domain: "domain::sarzak".to_string(),
                         model_file: PathBuf::from("../sarzak/models/sarzak_✨.json"),
+                        id: Uuid::parse_str("7178e7a4-5131-504b-a7b3-c2c0cfedf343").unwrap(),
                     })
                 );
             } else if obj.name == "Super T" {
@@ -361,6 +364,7 @@ mod tests {
                     Some(ImportedObject {
                         domain: "domain::isa".to_string(),
                         model_file: PathBuf::from("tests/mdd/models/isa.json"),
+                        id: Uuid::parse_str("78833415-f92b-59be-9e0b-b35db2d119e9").unwrap(),
                     })
                 );
             } else {

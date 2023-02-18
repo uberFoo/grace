@@ -1,7 +1,10 @@
 //! Domain Struct Generation
 //!
 //! Your one-stop-shop for everything to do with structs in Rust!
-use std::{collections::HashSet, fmt::Write};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Write,
+};
 
 use log;
 use sarzak::{
@@ -422,13 +425,17 @@ impl CodeWriter for DomainImplementation {
 /// calculates the object's `id` based on the string representation of it's
 /// attributes.
 ///
+/// Sure wish I could figure out how to just take a reference to that HashMap...
+///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainStructNewImpl;
+pub(crate) struct DomainStructNewImpl {
+    imports: HashMap<String, Domain>,
+}
 
 impl DomainStructNewImpl {
-    pub(crate) fn new() -> Box<dyn MethodImplementation> {
-        Box::new(Self)
+    pub(crate) fn new(imports: HashMap<String, Domain>) -> Box<dyn MethodImplementation> {
+        Box::new(Self { imports })
     }
 }
 
@@ -437,7 +444,7 @@ impl MethodImplementation for DomainStructNewImpl {}
 impl CodeWriter for DomainStructNewImpl {
     fn write_code(
         &self,
-        _options: &GraceConfig,
+        options: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         module: &str,
@@ -626,7 +633,16 @@ impl CodeWriter for DomainStructNewImpl {
 
                 // Output code to create the instance
                 let new = LValue::new("new", GType::Reference(obj.id));
-                render_new_instance(buffer, obj, Some(&new), &fields, &rvals, domain.sarzak())?;
+                render_new_instance(
+                    buffer,
+                    obj,
+                    Some(&new),
+                    &fields,
+                    &rvals,
+                    domain.sarzak(),
+                    Some(&self.imports),
+                    &options,
+                )?;
 
                 emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                 emit!(buffer, "new");

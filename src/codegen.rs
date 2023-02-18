@@ -7,7 +7,7 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{fmt::Write, iter::zip};
+use std::{collections::HashMap, fmt::Write, iter::zip};
 
 use sarzak::{
     domain::Domain,
@@ -33,6 +33,7 @@ use crate::{
         buffer::{emit, Buffer},
         render::{RenderIdent, RenderType},
     },
+    options::GraceConfig,
     todo::{External, GType, LValue, ObjectMethod, RValue},
 };
 
@@ -243,6 +244,8 @@ pub(crate) fn render_new_instance(
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
     store: &SarzakStore,
+    imports: Option<&HashMap<String, Domain>>,
+    config: &GraceConfig,
 ) -> Result<()> {
     if let Some(lval) = lval {
         assert!(lval.ty == GType::Reference(object.id));
@@ -271,7 +274,13 @@ pub(crate) fn render_new_instance(
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
                 GType::Reference(obj_id) => {
                     let obj = store.exhume_object(&obj_id).unwrap();
-                    if object_is_supertype(obj, store) {
+                    let is_supertype = if let Some(imports) = imports {
+                        flubber_imports(obj, config, store, imports, object_is_supertype)
+                    } else {
+                        object_is_supertype(obj, store)
+                    };
+
+                    if is_supertype {
                         emit!(buffer, "{}: {}.id(),", field.name, rval.name)
                     } else {
                         emit!(buffer, "{}: {}.id,", field.name, rval.name)
@@ -291,7 +300,13 @@ pub(crate) fn render_new_instance(
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
                         let obj = store.exhume_object(&obj_id).unwrap();
-                        if object_is_supertype(obj, store) {
+                        let is_supertype = if let Some(imports) = imports {
+                            flubber_imports(obj, config, store, imports, object_is_supertype)
+                        } else {
+                            object_is_supertype(obj, store)
+                        };
+
+                        if is_supertype {
                             emit!(
                                 buffer,
                                 "{}: {}.map(|{}| {}.id()),",
@@ -357,6 +372,40 @@ pub(crate) fn render_new_instance(
 // pub(crate) fn introspect_object<G>(&object: &Object) -> G {
 // G::new()
 // }
+
+pub(crate) fn flubber_imports(
+    object: &Object,
+    config: &GraceConfig,
+    domain_store: &SarzakStore,
+    imports: &HashMap<String, Domain>,
+    function: fn(&Object, &SarzakStore) -> bool,
+) -> bool {
+    function(object, domain_store)
+        || imports
+            .iter()
+            .find(|(name, domain)| {
+                let object = if config.is_imported(&object.id) {
+                    let imported = config.get_imported(&object.id).unwrap();
+                    if let Some(object) = domain.sarzak().exhume_object(&imported.id) {
+                        object
+                    } else {
+                        object
+                    }
+                } else {
+                    object
+                };
+
+                log::debug!(
+                    "checking {}({}) against imported domain: {} ({})",
+                    object.name,
+                    object.id,
+                    domain.name(),
+                    name,
+                );
+                function(object, domain.sarzak())
+            })
+            .is_some()
+}
 
 pub(crate) fn object_is_supertype(object: &Object, store: &SarzakStore) -> bool {
     let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, store);

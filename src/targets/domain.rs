@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
 };
@@ -22,7 +22,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::{parse_config_value, GraceCompilerOptions, GraceConfig},
+    options::{GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
@@ -36,13 +36,13 @@ use crate::{
     },
     RS_EXT, TYPES,
 };
-
 pub(crate) struct DomainTarget<'a> {
     config: GraceConfig,
     _package: &'a str,
     module: &'a str,
     src_path: &'a Path,
     domain: sarzak::domain::Domain,
+    imports: HashMap<String, sarzak::domain::Domain>,
     woog: WoogStore,
     _test: bool,
 }
@@ -112,12 +112,33 @@ impl<'a> DomainTarget<'a> {
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
 
+        let mut imported_domains = HashMap::new();
+
+        for (id, _) in domain.sarzak().iter_object() {
+            if config.is_imported(&id) {
+                let io = config.get_imported(&id).unwrap();
+                if !imported_domains.contains_key(&io.domain) {
+                    let domain = DomainBuilder::new()
+                        .cuckoo_model(&io.model_file)
+                        .expect(
+                            format!("Failed to load domain {}", io.model_file.display()).as_str(),
+                        )
+                        .build()
+                        .expect("Failed to build domain");
+
+                    log::debug!("Loaded imported domain {}", io.domain);
+                    imported_domains.insert(io.domain.clone(), domain);
+                }
+            }
+        }
+
         Box::new(Self {
             config,
             _package,
             module,
             src_path: src_path.as_ref(),
             domain,
+            imports: imported_domains,
             woog,
             _test,
         })
@@ -169,20 +190,6 @@ impl<'a> DomainTarget<'a> {
                     .build()?
             } else if self.config.is_imported(id) {
                 // If the object is imported, we don't generate anything...here.
-                // But before we finish this, let's take a detour. Let's generate
-                // code for the imported domain. What do you say? Sound fun?
-                // Let's do it!
-                let imported = self.config.get_imported(id).unwrap();
-
-                // 🚧 Snafu is fighting me here, so unwrap it is. Figure it out
-                // later. It's important though, because this is likely to get
-                // screwed up.
-                // This belongs elsewhere...
-                let imported_domain = DomainBuilder::new()
-                    .cuckoo_model(&imported.model_file)
-                    .expect("Failed to build imported domain")
-                    .build()
-                    .expect("Failed to build imported domain");
 
                 NullGenerator::new()
             } else if object_is_singleton(obj, self.domain.sarzak()) {
@@ -199,7 +206,7 @@ impl<'a> DomainTarget<'a> {
                     .implementation(
                         DomainImplBuilder::new()
                             // New implementation
-                            .method(DomainStructNewImpl::new())
+                            .method(DomainStructNewImpl::new(self.imports.clone()))
                             // Relationship navigation implementations
                             .method(DomainRelNavImpl::new())
                             .build(),
