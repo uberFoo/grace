@@ -39,11 +39,13 @@ pub(crate) fn format(path: &Path, display_err: bool) -> Result<()> {
 
             let (_, fail_path) = fail_file.keep().expect("error with temporary file");
 
-            process::Command::new("code")
-                .args([format!("{}", fail_path.display())])
+            let mut child = process::Command::new("code")
+                .args(["-w", format!("{}", fail_path.display()).as_str()])
                 .stdin(process::Stdio::piped())
                 .spawn()
                 .context(IOSnafu)?;
+
+            child.wait().context(IOSnafu)?;
         } else {
             eprintln!("😱 rustfmt failed with:");
             eprintln!("{}", stderr);

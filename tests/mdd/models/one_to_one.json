@@ -16,6 +16,13 @@
                     "y": -515
                 },
                 "objects": {
+                    "6fc2a3e2-addc-5047-8dd0-245eca56d98b": {
+                        "x": 1421,
+                        "y": 1547,
+                        "width": 240,
+                        "height": 125,
+                        "id": "6fc2a3e2-addc-5047-8dd0-245eca56d98b"
+                    },
                     "91da8f64-33b3-58eb-923f-9adf702bdec3": {
                         "x": 1436,
                         "y": 772,
@@ -113,6 +120,30 @@
                                 }
                             }
                         }
+                    },
+                    "9420e913-3003-58a7-9645-d98b71381441": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "6fc2a3e2-addc-5047-8dd0-245eca56d98b",
+                                "x": 1630,
+                                "y": 1672,
+                                "offset": {
+                                    "x": -117,
+                                    "y": 30
+                                },
+                                "dir": "South"
+                            },
+                            "to": {
+                                "id": "6fc2a3e2-addc-5047-8dd0-245eca56d98b",
+                                "x": 1661,
+                                "y": 1625,
+                                "offset": {
+                                    "x": 14,
+                                    "y": -22
+                                },
+                                "dir": "East"
+                            }
+                        }
                     }
                 },
                 "config": null
@@ -124,9 +155,28 @@
             "92bc9be3-761f-5b31-a013-79a4d5343870",
             "91da8f64-33b3-58eb-923f-9adf702bdec3",
             "db839890-ce6f-51e8-91cb-07d494cb81c7",
-            "04f50b98-563e-5268-b6b4-7ea3b18d162b"
+            "04f50b98-563e-5268-b6b4-7ea3b18d162b",
+            "6fc2a3e2-addc-5047-8dd0-245eca56d98b"
         ],
         "entities": {
+            "6fc2a3e2-addc-5047-8dd0-245eca56d98b": {
+                "id": "6fc2a3e2-addc-5047-8dd0-245eca56d98b",
+                "key_letter": "PARAM",
+                "name": "Parameter",
+                "description": "Parameter\n\nA parameter is an input to a function.\n\nThis is testing a reflexive relationship.",
+                "attributes": {
+                    "441970f0-2ec1-5728-9f21-c054066f6d38": {
+                        "id": "441970f0-2ec1-5728-9f21-c054066f6d38",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "f1c83a89-9356-5b3b-86ca-006875b70685": {
+                        "id": "f1c83a89-9356-5b3b-86ca-006875b70685",
+                        "name": "name",
+                        "type": "String"
+                    }
+                }
+            },
             "91da8f64-33b3-58eb-923f-9adf702bdec3": {
                 "id": "91da8f64-33b3-58eb-923f-9adf702bdec3",
                 "key_letter": "A",
@@ -205,7 +255,8 @@
         "ids": [
             "937c3d7c-c43a-5359-888c-950cbf60574b",
             "a29e0fe5-6ba5-5af9-8f22-2ae8a8219cb3",
-            "dfe91224-6eaf-5b87-85db-8b7df06b620b"
+            "dfe91224-6eaf-5b87-85db-8b7df06b620b",
+            "9420e913-3003-58a7-9645-d98b71381441"
         ],
         "entities": {
             "dfe91224-6eaf-5b87-85db-8b7df06b620b": {
@@ -260,6 +311,25 @@
                     "to": {
                         "obj_id": "92bc9be3-761f-5b31-a013-79a4d5343870",
                         "description": "pointed at by",
+                        "cardinality": "One",
+                        "conditionality": "Conditional"
+                    }
+                }
+            },
+            "9420e913-3003-58a7-9645-d98b71381441": {
+                "Binary": {
+                    "id": "9420e913-3003-58a7-9645-d98b71381441",
+                    "number": 8,
+                    "from": {
+                        "obj_id": "6fc2a3e2-addc-5047-8dd0-245eca56d98b",
+                        "description": "came before",
+                        "cardinality": "One",
+                        "conditionality": "Conditional",
+                        "formalizing_attribute_name": "next"
+                    },
+                    "to": {
+                        "obj_id": "6fc2a3e2-addc-5047-8dd0-245eca56d98b",
+                        "description": "comes after",
                         "cardinality": "One",
                         "conditionality": "Conditional"
                     }

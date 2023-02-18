@@ -3,7 +3,7 @@
 //! Not that the whole things shouldn't be, but this stuff is low hanging fruit.
 //!
 
-use sarzak::sarzak::types::Type;
+use sarzak::sarzak::types::{External as SarzakExternal, Type};
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -32,6 +32,16 @@ impl External {
             name: name.as_ref().to_string(),
             path: path.as_ref().to_string(),
             lvalue,
+        }
+    }
+}
+
+impl From<External> for SarzakExternal {
+    fn from(value: External) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            name: value.name,
+            path: value.path,
         }
     }
 }

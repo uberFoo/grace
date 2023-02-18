@@ -8,7 +8,7 @@ use log;
 use sarzak::domain::DomainBuilder;
 
 macro_rules! test_target_domain {
-    ($name:ident, $domain:literal) => {
+    ($name:ident, $domain:literal, $path:literal) => {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
@@ -27,14 +27,14 @@ macro_rules! test_target_domain {
             // Build the domains
             log::debug!("Testing domain: {},  target: Domain.", $domain);
             let domain = DomainBuilder::new()
-                .cuckoo_model(format!("tests/mdd/models/{}.json", $domain))
+                .cuckoo_model($path)
                 .unwrap();
 
             grace
                 .compile(
                     domain,
                     "mdd",
-                    format!("{}_domain", $domain).as_str(),
+                    format!("domain/{}", $domain).as_str(),
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
@@ -44,7 +44,60 @@ macro_rules! test_target_domain {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("{}_domain", $domain))
+                .arg(format!("domain/{}", $domain))
+                .arg("--")
+                .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+    ($name:ident, $domain:literal, $path:literal, $($imports:literal),+) => {
+        #[test]
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain;
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            let mut imports = Vec::new();
+            $(
+                imports.push($imports.to_string());
+            )*
+            options.imported_domains = Some(imports);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                )
+                .unwrap();
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain/{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
@@ -59,7 +112,7 @@ macro_rules! test_target_domain {
 }
 
 macro_rules! test_target_application {
-    ($name:ident, $domain:literal) => {
+    ($name:ident, $domain:literal, $path:literal) => {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
@@ -69,15 +122,13 @@ macro_rules! test_target_application {
 
             // Build the domains
             log::debug!("Testing domain: {},  target: Domain.", $domain);
-            let domain = DomainBuilder::new()
-                .cuckoo_model(format!("tests/mdd/models/{}.json", $domain))
-                .unwrap();
+            let domain = DomainBuilder::new().cuckoo_model($path).unwrap();
 
             grace
                 .compile(
                     domain,
                     "mdd",
-                    $domain,
+                    format!("app/{}", $domain).as_str(),
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
@@ -87,7 +138,7 @@ macro_rules! test_target_application {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("{}::", $domain))
+                .arg(format!("app/{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
@@ -101,13 +152,42 @@ macro_rules! test_target_application {
     };
 }
 
+// This is an imported domain that we need to build, so get it done early.
+test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak_✨.json");
+
 // Domain Target Tests
-test_target_domain!(everything_domain, "everything");
-test_target_domain!(one_to_one_domain, "one_to_one");
-test_target_domain!(one_to_many_domain, "one_to_many");
-test_target_domain!(isa_domain, "isa");
-test_target_domain!(associative_domain, "associative");
-test_target_domain!(imported_object_domain, "imported_object");
+test_target_domain!(
+    everything_domain,
+    "everything",
+    "tests/mdd/models/everything.json"
+);
+test_target_domain!(
+    one_to_one_domain,
+    "one_to_one",
+    "tests/mdd/models/one_to_one.json"
+);
+test_target_domain!(
+    one_to_many_domain,
+    "one_to_many",
+    "tests/mdd/models/one_to_many.json"
+);
+test_target_domain!(isa_domain, "isa", "tests/mdd/models/isa.json");
+test_target_domain!(
+    associative_domain,
+    "associative",
+    "tests/mdd/models/associative.json"
+);
+test_target_domain!(
+    imported_object_domain,
+    "imported_object",
+    "tests/mdd/models/imported_object.json",
+    "domain/sarzak",
+    "domain/isa"
+);
 
 // Application Target Tests
-test_target_application!(everything_application, "everything");
+test_target_application!(
+    everything_application,
+    "everything",
+    "tests/mdd/models/everything.json"
+);

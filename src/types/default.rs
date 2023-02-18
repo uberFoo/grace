@@ -397,7 +397,7 @@ impl TypeImplementation for DefaultStructNewImpl {}
 impl CodeWriter for DefaultStructNewImpl {
     fn write_code(
         &self,
-        _config: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &mut WoogStore,
         _module: &str,
@@ -520,7 +520,16 @@ impl CodeWriter for DefaultStructNewImpl {
 
                 // Output code to create the instance
                 let new = LValue::new("new", GType::Reference(obj.id));
-                render_new_instance(buffer, obj, Some(&new), &fields, &rvals, domain.sarzak())?;
+                render_new_instance(
+                    buffer,
+                    obj,
+                    Some(&new),
+                    &fields,
+                    &rvals,
+                    domain.sarzak(),
+                    None,
+                    &config,
+                )?;
 
                 emit!(buffer, "new");
                 emit!(buffer, "}}");
