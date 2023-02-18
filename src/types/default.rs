@@ -16,7 +16,7 @@ use sarzak::{
         types::{Attribute, Object, Referrer},
     },
     v1::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
+    woog::{store::ObjectStore as WoogStore, Mutability, Parameter, BORROWED, PUBLIC},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -32,8 +32,8 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
-    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
-    types::{ModuleDefinition, TypeDefinition, TypeImplementation},
+    todo::{GType, LValue, RValue},
+    types::{MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation},
 };
 
 pub(crate) struct DefaultStructBuilder {
@@ -401,12 +401,12 @@ pub(crate) struct DefaultNewImpl {
 }
 
 impl DefaultNewImpl {
-    pub(crate) fn new(generate_tests: bool) -> Box<dyn StructImplementation> {
+    pub(crate) fn new(generate_tests: bool) -> Box<dyn MethodImplementation> {
         Box::new(Self { generate_tests })
     }
 }
 
-impl TypeImplementation for DefaultStructNewImpl {}
+impl MethodImplementation for DefaultStructNewImpl {}
 
 impl CodeWriter for DefaultStructNewImpl {
     fn write_code(
@@ -481,17 +481,19 @@ impl CodeWriter for DefaultStructNewImpl {
                 GType::Reference(r_obj.id),
             ));
             params.push(Parameter::new(
+                referrer.referential_attribute.as_ident(),
                 BORROWED,
                 None,
                 GType::Reference(r_obj.id),
                 PUBLIC,
-                referrer.referential_attribute.as_ident(),
+                woog,
             ));
 
-            rvals.push(RValue::new(
-                referrer.referential_attribute.as_ident(),
-                &Type::Reference(reference.id),
-            ));
+            // 🚧
+            // rvals.push(RValue::new(
+            // referrer.referential_attribute.as_ident(),
+            // &Type::Reference(reference.id),
+            // ));
         }
 
         // Find the method

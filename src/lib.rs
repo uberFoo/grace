@@ -16,7 +16,7 @@ pub use sarzak::{
     woog::types::{Mutability, BORROWED},
 };
 
-use sarzak::woog::store::ObjectStore as WoogStore;
+use init_woog::init_woog;
 use targets::{application::ApplicationTarget, domain::DomainTarget};
 
 pub(crate) const RS_EXT: &str = "rs";
@@ -47,7 +47,7 @@ impl SarzakModelCompiler for ModelCompiler {
         let mut target = match options.target {
             Target::Domain(_) => DomainTarget::new(
                 &options,
-                _package,
+                package,
                 module,
                 src_path.as_ref(),
                 domain,
@@ -56,7 +56,7 @@ impl SarzakModelCompiler for ModelCompiler {
             ),
             Target::Application => ApplicationTarget::new(
                 &options,
-                _package,
+                package,
                 module,
                 src_path.as_ref(),
                 domain,

@@ -9,7 +9,7 @@ use names::Generator;
 use sarzak::{
     sarzak::{
         store::ObjectStore as SarzakStore,
-        types::{Attribute, Event, External, Object, Reference, State, Type},
+        types::{Attribute, Event, External, Object, State, Type},
     },
     woog::{
         macros::woog_maybe_get_one_param_across_r5,
@@ -18,7 +18,7 @@ use sarzak::{
     },
 };
 
-use crate::todo::{External as TodoExternal, GType, LValue, ObjectMethod, RValue, Statement};
+use crate::todo::{External as TodoExternal, GType, LValue, RValue, Statement};
 
 macro_rules! render_ident {
     ($($t:ident),+) => {
@@ -67,7 +67,7 @@ pub(crate) trait RenderIdent {
 
 render_ident!(Attribute, Event, Object, State, Parameter);
 
-impl RenderIdent for ObjectMethod<'_> {
+impl RenderIdent for ObjectMethod {
     fn as_ident(&self) -> String {
         self.name.sanitize().to_snake_case()
     }

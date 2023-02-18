@@ -31,9 +31,11 @@ use sarzak::{
         },
     },
     v1::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::{Mutability, BORROWED, MUTABLE, PUBLIC,
-        Attribute, Referrer, Type, UUID}}
-    };
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{Mutability, ObjectMethod, Parameter, Visibility, BORROWED, MUTABLE, PUBLIC},
+    },
+};
 
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -51,7 +53,7 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
-    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
+    todo::{GType, LValue, RValue},
     types::{MethodImplementation, TypeDefinition, TypeImplementation},
 };
 
@@ -527,13 +529,14 @@ impl CodeWriter for DomainStructNewImpl {
                 let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
                 fields.push(LValue::new(attr.name.as_ident(), ty.into()));
                 params.push(Parameter::new(
-                    BORROWED,
+                    attr.as_ident(),
+                    &Mutability::Borrowed(BORROWED),
                     None,
                     ty.into(),
-                    PUBLIC,
-                    attr.as_ident(),
+                    &Visibility::Public(PUBLIC),
+                    woog,
                 ));
-                rvals.push(RValue::new(attr.as_ident(), &ty));
+                // rvals.push(RValue::new(attr.as_ident(), &ty));
             }
         }
 
@@ -553,11 +556,12 @@ impl CodeWriter for DomainStructNewImpl {
                         GType::Option(Box::new(GType::Uuid)),
                     ));
                     params.push(Parameter::new(
+                        referrer.referential_attribute.as_ident(),
                         BORROWED,
                         None,
                         GType::Option(Box::new(GType::Reference(r_obj.id))),
                         PUBLIC,
-                        referrer.referential_attribute.as_ident(),
+                        woog,
                     ));
                 }
                 Conditionality::Unconditional(_) => {
@@ -574,6 +578,11 @@ impl CodeWriter for DomainStructNewImpl {
                     ));
                 }
             }
+
+            //     rvals.push(RValue::new(
+            //         referrer.referential_attribute.as_ident(),
+            //         &Type::Reference(reference.id),
+            //     ));
         }
 
         for assoc_referrer in sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak()) {
@@ -661,30 +670,6 @@ impl CodeWriter for DomainStructNewImpl {
             "new".to_owned(),
             "Create a new instance".to_owned(),
         );
-
-            // 🚧
-            rvals.push(RValue::new(
-                referrer.referential_attribute.as_ident(),
-                &Type::Reference(reference.id),
-            ));
-        }
-        // Find the method
-        // This is going to suck. We don't have cross-domain relationship
-        // navigation -- somethinig to be addressed.
-        let mut iter = woog.iter_object_method();
-        let method = loop {
-            match iter.next() {
-                Some((_, method)) => {
-                    if method.object == obj.id && method.name == "new" {
-                        break method;
-                    }
-                }
-                None => {
-                    panic!("Unable to find the new method for {}", obj.name);
-                }
-            }
-        };
-            // 🚧
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
