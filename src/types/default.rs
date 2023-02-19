@@ -2,11 +2,10 @@
 //!
 //! This is the place to find all the default implementations for generating structs.
 //! These are meant to be used in an application domain.
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 use log;
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
@@ -16,6 +15,7 @@ use sarzak::{
         },
         types::{Attribute, Object, Referrer},
     },
+    v1::domain::Domain,
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
 };
 use snafu::prelude::*;
@@ -95,7 +95,8 @@ impl FileGenerator for DefaultStructGenerator {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -115,14 +116,22 @@ impl FileGenerator for DefaultStructGenerator {
             |buffer| {
                 // It's important that we maintain ordering for code injection and
                 // redaction. We begin with the struct definition.
-                self.definition
-                    .write_code(config, domain, woog, module, Some(obj_id), buffer)?;
+                self.definition.write_code(
+                    config,
+                    domain,
+                    woog,
+                    imports,
+                    module,
+                    Some(obj_id),
+                    buffer,
+                )?;
 
                 for implementation in &self.implementations {
                     implementation.write_code(
                         config,
                         domain,
                         woog,
+                        imports,
                         module,
                         Some(obj_id),
                         buffer,
@@ -156,7 +165,8 @@ impl CodeWriter for DefaultStruct {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -317,7 +327,8 @@ impl CodeWriter for DefaultImplementation {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -359,6 +370,7 @@ impl CodeWriter for DefaultImplementation {
                         config,
                         domain,
                         woog,
+                        imports,
                         module,
                         Some(obj_id),
                         buffer,
@@ -399,7 +411,8 @@ impl CodeWriter for DefaultStructNewImpl {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -410,8 +423,17 @@ impl CodeWriter for DefaultStructNewImpl {
                 description: "obj_id is required by DefaultNewImpl"
             }
         );
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DefaultNewImpl"
+            }
+        );
+        let woog = match woog {
+            Some(ref woog) => woog,
+            _ => unreachable!(),
+        };
         let obj_id = obj_id.unwrap();
-
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
         let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
@@ -587,7 +609,8 @@ impl FileGenerator for DefaultModuleGenerator {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -602,7 +625,7 @@ impl FileGenerator for DefaultModuleGenerator {
             format!("{}-module-definition-file", module),
             |buffer| {
                 self.definition
-                    .write_code(config, domain, woog, module, obj_id, buffer)?;
+                    .write_code(config, domain, woog, imports, module, obj_id, buffer)?;
 
                 Ok(())
             },
@@ -630,7 +653,8 @@ impl CodeWriter for DefaultModule {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

@@ -2,14 +2,15 @@
 //!
 //!
 use std::{
+    collections::HashMap,
     fs::{self, File},
     io::prelude::*,
     path::{Path, PathBuf},
 };
 
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
+    v1::domain::Domain,
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
@@ -32,6 +33,7 @@ pub(crate) struct GeneratorBuilder<'a> {
     config: Option<&'a GraceConfig>,
     module: Option<String>,
     obj_id: Option<&'a Uuid>,
+    imports: Option<&'a HashMap<String, Domain>>,
 }
 
 impl<'a> GeneratorBuilder<'a> {
@@ -44,6 +46,7 @@ impl<'a> GeneratorBuilder<'a> {
             config: None,
             module: None,
             obj_id: None,
+            imports: None,
         }
     }
 
@@ -91,6 +94,12 @@ impl<'a> GeneratorBuilder<'a> {
         self
     }
 
+    pub(crate) fn imports(mut self, imports: &'a HashMap<String, Domain>) -> Self {
+        self.imports = Some(imports);
+
+        self
+    }
+
     pub fn generate(self) -> Result<()> {
         ensure!(
             self.config.is_some(),
@@ -121,13 +130,6 @@ impl<'a> GeneratorBuilder<'a> {
         );
 
         ensure!(
-            self.woog.is_some(),
-            CompilerSnafu {
-                description: "missing compiler domain"
-            }
-        );
-
-        ensure!(
             self.module.is_some(),
             CompilerSnafu {
                 description: "missing module"
@@ -138,7 +140,8 @@ impl<'a> GeneratorBuilder<'a> {
         match self.generator.unwrap().generate(
             &self.config.unwrap(),
             &self.domain.unwrap(),
-            &mut self.woog.unwrap(),
+            &self.woog,
+            &self.imports,
             self.module.unwrap().as_str(),
             self.obj_id,
             &mut buffer,
@@ -205,7 +208,9 @@ impl<'a> GeneratorBuilder<'a> {
                                         let diffed = process_diff(
                                             orig.trim(),
                                             incoming.trim(),
-                                            DirectiveKind::AllowEditing,
+                                            // Default to overwriting so that doc comments are overwritten
+                                            // and not left to grow without bound.
+                                            DirectiveKind::IgnoreOrig,
                                         );
 
                                         // Write the file
@@ -267,7 +272,8 @@ pub(crate) trait FileGenerator {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -284,7 +290,8 @@ pub(crate) trait CodeWriter {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -306,7 +313,7 @@ mod tests {
         let _domain = sarzak::domain::DomainBuilder::new()
             .cuckoo_model("tests/mdd/models/everything.json")
             .unwrap()
-            .build()
+            .build_v1()
             .unwrap();
     }
 }

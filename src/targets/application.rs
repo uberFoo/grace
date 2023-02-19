@@ -27,7 +27,7 @@ pub(crate) struct ApplicationTarget<'a> {
     _package: &'a str,
     module: &'a str,
     src_path: &'a Path,
-    domain: sarzak::domain::Domain,
+    domain: sarzak::v1::domain::Domain,
     woog: WoogStore,
     _test: bool,
 }
@@ -42,7 +42,7 @@ impl<'a> ApplicationTarget<'a> {
         woog: WoogStore,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
-        let domain = domain.build().expect("Failed to build domain");
+        let domain = domain.build_v1().expect("Failed to build domain");
         let config: GraceConfig = (options, &domain).into();
 
         Box::new(Self {

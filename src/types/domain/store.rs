@@ -1,11 +1,11 @@
 //! Generate ObjectStore for use in sarzak Domain
 //!
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
+    v1::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -64,7 +64,8 @@ impl FileGenerator for DomainStoreGenerator {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -114,7 +115,7 @@ impl FileGenerator for DomainStoreGenerator {
                 }
 
                 self.definition
-                    .write_code(config, domain, woog, module, obj_id, buffer)?;
+                    .write_code(config, domain, woog, imports, module, obj_id, buffer)?;
 
                 Ok(())
             },
@@ -139,7 +140,8 @@ impl CodeWriter for DomainStore {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

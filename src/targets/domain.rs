@@ -22,13 +22,14 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
-    options::{GraceCompilerOptions, GraceConfig},
+    options::{FromDomain, GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
             consts::DomainConst,
             enums::{DomainEnum, DomainEnumGetIdImpl},
+            from::{DomainFromBuilder, DomainFromImpl},
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, DomainRelNavImpl, DomainStruct, DomainStructNewImpl},
         },
@@ -36,13 +37,16 @@ use crate::{
     },
     RS_EXT, TYPES,
 };
+
+const FROM: &str = "from";
+
 pub(crate) struct DomainTarget<'a> {
     config: GraceConfig,
     _package: &'a str,
     module: &'a str,
     src_path: &'a Path,
-    domain: sarzak::domain::Domain,
-    imports: HashMap<String, sarzak::domain::Domain>,
+    domain: sarzak::v1::domain::Domain,
+    imports: HashMap<String, sarzak::v1::domain::Domain>,
     woog: WoogStore,
     _test: bool,
 }
@@ -103,7 +107,7 @@ impl<'a> DomainTarget<'a> {
                         sarzak.inter_ty(store_type);
                     }
                 })
-                .build()
+                .build_v1()
                 // 🚧 Blow up here -- we don't return a result. We could fix this,
                 // but I'm not sure it's worth it.
                 .expect("Failed to build domain")
@@ -112,18 +116,37 @@ impl<'a> DomainTarget<'a> {
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
 
+        // Suck in the imported domains for later use.
         let mut imported_domains = HashMap::new();
+        // Include the from domain, if there is one.
+        if let Some(from_domain) = config.get_from_domain() {
+            let domain = DomainBuilder::new()
+                .cuckoo_model(&from_domain.path)
+                .expect(format!("Failed to load domain {}", &from_domain.path.display()).as_str())
+                .build_v1()
+                .expect("Failed to build domain");
+
+            log::debug!("Loaded imported domain {}", &from_domain.path.display());
+            let domain_name = from_domain
+                .module
+                .split("::")
+                .last()
+                .expect("Failed to get last part of path")
+                .to_string();
+            imported_domains.insert(domain_name, domain);
+        }
 
         for (id, _) in domain.sarzak().iter_object() {
             if config.is_imported(&id) {
                 let io = config.get_imported(&id).unwrap();
+                // Only import the domain once.
                 if !imported_domains.contains_key(&io.domain) {
                     let domain = DomainBuilder::new()
                         .cuckoo_model(&io.model_file)
                         .expect(
                             format!("Failed to load domain {}", io.model_file.display()).as_str(),
                         )
-                        .build()
+                        .build_v1()
                         .expect("Failed to build domain");
 
                     log::debug!("Loaded imported domain {}", io.domain);
@@ -206,7 +229,7 @@ impl<'a> DomainTarget<'a> {
                     .implementation(
                         DomainImplBuilder::new()
                             // New implementation
-                            .method(DomainStructNewImpl::new(self.imports.clone()))
+                            .method(DomainStructNewImpl::new())
                             // Relationship navigation implementations
                             .method(DomainRelNavImpl::new())
                             .build(),
@@ -224,6 +247,8 @@ impl<'a> DomainTarget<'a> {
                 .domain(&self.domain)
                 // Compiler Domain
                 .compiler_domain(&mut self.woog)
+                // Imported domains
+                .imports(&self.imports)
                 // Module name
                 .module(self.module)
                 .obj_id(&id)
@@ -245,7 +270,6 @@ impl<'a> DomainTarget<'a> {
             .config(&self.config)
             .path(&store)?
             .domain(&self.domain)
-            .compiler_domain(&mut self.woog)
             .module(self.module)
             .generator(
                 DomainStoreBuilder::new()
@@ -268,11 +292,34 @@ impl<'a> DomainTarget<'a> {
             .config(&self.config)
             .path(&types)?
             .domain(&self.domain)
-            .compiler_domain(&mut self.woog)
             .module(self.module)
             .generator(
                 DefaultModuleBuilder::new()
                     .definition(DefaultModule::new())
+                    .build()?,
+            )
+            .generate()?;
+
+        Ok(())
+    }
+
+    fn generate_from_module(&self, domain: &FromDomain) -> Result<(), ModelCompilerError> {
+        let mut from = PathBuf::from(self.src_path);
+        from.push(self.module);
+        from.push("discard");
+        from.set_file_name(FROM);
+        from.set_extension(RS_EXT);
+
+        GeneratorBuilder::new()
+            .config(&self.config)
+            .path(&from)?
+            .domain(&self.domain)
+            .module(self.module)
+            .imports(&self.imports)
+            .generator(
+                DomainFromBuilder::new()
+                    .domain(domain.clone())
+                    .definition(DomainFromImpl::new())
                     .build()?,
             )
             .generate()?;
@@ -293,6 +340,11 @@ impl<'a> Target for DomainTarget<'a> {
         // This needs to be done after the types are generated so that rustfmt
         // doesn't complain at us.
         self.generate_types_module()?;
+
+        // Generate From trait implementations
+        if let Some(domain) = self.config.get_from_domain() {
+            self.generate_from_module(&domain)?;
+        }
 
         Ok(())
     }

@@ -4,5 +4,6 @@
 
 pub mod consts;
 pub mod enums;
+pub mod from;
 pub mod store;
 pub mod structs;

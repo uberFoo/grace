@@ -8,7 +8,6 @@ use std::{
 
 use log;
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
@@ -31,6 +30,7 @@ use sarzak::{
             Conditionality, External as SarzakExternal, Object, Referent, Referrer, Type,
         },
     },
+    v1::domain::Domain,
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, MUTABLE, PUBLIC},
 };
 use snafu::prelude::*;
@@ -71,7 +71,8 @@ impl CodeWriter for DomainStruct {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -381,7 +382,8 @@ impl CodeWriter for DomainImplementation {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -408,7 +410,15 @@ impl CodeWriter for DomainImplementation {
                 );
 
                 for method in &self.methods {
-                    method.write_code(config, domain, woog, module, Some(obj_id), buffer)?;
+                    method.write_code(
+                        config,
+                        domain,
+                        woog,
+                        imports,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
                 }
 
                 emit!(buffer, "}}");
@@ -429,13 +439,11 @@ impl CodeWriter for DomainImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainStructNewImpl {
-    imports: HashMap<String, Domain>,
-}
+pub(crate) struct DomainStructNewImpl;
 
 impl DomainStructNewImpl {
-    pub(crate) fn new(imports: HashMap<String, Domain>) -> Box<dyn MethodImplementation> {
-        Box::new(Self { imports })
+    pub(crate) fn new() -> Box<dyn MethodImplementation> {
+        Box::new(Self)
     }
 }
 
@@ -446,7 +454,8 @@ impl CodeWriter for DomainStructNewImpl {
         &self,
         options: &GraceConfig,
         domain: &Domain,
-        woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -457,6 +466,16 @@ impl CodeWriter for DomainStructNewImpl {
                 description: "obj_id is required by DomainNewImpl"
             }
         );
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainNewImpl"
+            }
+        );
+        let woog = match woog {
+            Some(ref woog) => woog,
+            None => unreachable!(),
+        };
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
@@ -640,7 +659,7 @@ impl CodeWriter for DomainStructNewImpl {
                     &fields,
                     &rvals,
                     domain.sarzak(),
-                    Some(&self.imports),
+                    *imports,
                     &options,
                 )?;
 
@@ -1230,7 +1249,8 @@ impl CodeWriter for DomainRelNavImpl {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

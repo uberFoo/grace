@@ -1,11 +1,11 @@
 //! Domain Const Generation
 //!
 //! There we were.
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
+    v1::domain::Domain,
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
@@ -39,7 +39,8 @@ impl CodeWriter for DomainConst {
         &self,
         _config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

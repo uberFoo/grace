@@ -1,7 +1,8 @@
 //! A type for not generating anything
 //!
+use std::collections::HashMap;
 
-use sarzak::{domain::Domain, mc::Result, woog::store::ObjectStore as WoogStore};
+use sarzak::{mc::Result, v1::domain::Domain, woog::store::ObjectStore as WoogStore};
 use uuid::Uuid;
 
 use crate::{
@@ -25,7 +26,8 @@ impl FileGenerator for NullGenerator {
         &self,
         _config: &GraceConfig,
         _domain: &Domain,
-        _woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         _module: &str,
         _obj_id: Option<&Uuid>,
         _buffer: &mut Buffer,

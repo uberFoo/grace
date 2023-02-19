@@ -10,7 +10,6 @@ mod rustfmt;
 use std::{collections::HashMap, fmt::Write, iter::zip};
 
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
@@ -20,6 +19,7 @@ use sarzak::{
         store::ObjectStore as SarzakStore,
         types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype, Type},
     },
+    v1::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -268,7 +268,7 @@ pub(crate) fn render_new_instance(
     // weird, and I just need a template engine. But then again, I'll be generating
     // unit tests, and the more I have, the better I think I'll be.
     for (field, rval) in tuples {
-        // TODO: This type conversion should likely be a function.
+        // 🚧: This type conversion should likely be a function.
         match &field.ty {
             GType::Uuid => match &rval.ty {
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
@@ -373,6 +373,14 @@ pub(crate) fn render_new_instance(
 // G::new()
 // }
 
+/// I was at a loss for words.
+///
+/// I'm not even sure what it does right now.
+///
+/// It appears to apply a function and or it's results with the results of
+/// applying that function to objects the imported objects in this domain.
+///
+/// Flubber.
 pub(crate) fn flubber_imports(
     object: &Object,
     config: &GraceConfig,

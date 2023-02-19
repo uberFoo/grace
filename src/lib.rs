@@ -8,7 +8,7 @@ mod targets;
 mod todo;
 mod types;
 
-pub use options::{GraceCompilerOptions, Target};
+pub use options::{DomainConfig, GraceCompilerOptions, Target};
 pub use sarzak::{
     mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler},
     sarzak::types::{External, Type},
@@ -45,7 +45,7 @@ impl SarzakModelCompiler for ModelCompiler {
         sarzak::woog::init_instances(&mut woog);
 
         let mut target = match options.target {
-            Target::Domain => DomainTarget::new(
+            Target::Domain(_) => DomainTarget::new(
                 &options,
                 _package,
                 module,

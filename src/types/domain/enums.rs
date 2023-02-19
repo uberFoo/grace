@@ -1,10 +1,9 @@
 //! Domain Enum Generation
 //!
 //! Here we are.
-use std::fmt::Write;
+use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
-    domain::Domain,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
@@ -13,6 +12,7 @@ use sarzak::{
         },
         types::{Subtype, Supertype},
     },
+    v1::domain::Domain,
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
 };
 use snafu::prelude::*;
@@ -46,7 +46,8 @@ impl CodeWriter for DomainEnum {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -148,7 +149,8 @@ impl CodeWriter for DomainEnumGetIdImpl {
         &self,
         _config: &GraceConfig,
         domain: &Domain,
-        _woog: &mut WoogStore,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

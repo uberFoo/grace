@@ -17,9 +17,11 @@
 use std::{any::Any, collections::HashMap, path::PathBuf};
 
 use clap::{Args, Subcommand};
-use sarzak::{domain::Domain, mc::ModelCompilerOptions};
+use sarzak::{mc::ModelCompilerOptions, v1::domain::Domain};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use uuid::{uuid, Uuid};
+
+const _TARGET_: Uuid = uuid!("57c57c2b-a6ff-56fc-9289-4fd9fcb4413e");
 
 const DEFAULT_TARGET: Target = Target::Application;
 const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
@@ -27,15 +29,49 @@ const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Subcommand)]
+#[serde(tag = "target")]
+#[serde(rename_all = "lowercase")]
 pub enum Target {
     /// Target Domain Infrastructure
     ///
     /// This target is used by model compilers to generate code.
-    Domain,
+    Domain(DomainConfig),
     /// Target Application Code
     ///
     /// This target is intended to be run as an application.
     Application,
+}
+
+#[derive(Args, Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct DomainConfig {
+    /// Generate From Trait implementations
+    ///
+    /// From implementations are generated for each object in the domain,
+    /// if there is a corresponding object in the source domain.
+    ///
+    /// The source domain to be use for extrusion, using the `from` trait,
+    /// is specified using the `--from-domain` option.
+    ///
+    /// This is the path to a module, e.g., `generated::sarzak`.
+    #[arg(long)]
+    from_module: Option<String>,
+    /// Path to the source domain's model file
+    ///
+    /// When generating From implementations, the model file is loaded and
+    /// inspected for sources for the `From` trait.
+    ///
+    /// This is a file system path, relative to the current package.
+    #[arg(long, requires = "from_module")]
+    from_path: Option<PathBuf>,
+}
+
+impl Default for DomainConfig {
+    fn default() -> Self {
+        DomainConfig {
+            from_module: None,
+            from_path: None,
+        }
+    }
 }
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
@@ -115,6 +151,10 @@ impl Default for GraceCompilerOptions {
 ///
 /// The config is just a map from object id to [`ConfigValue`], therefore each
 /// object in the domain has a configuration.
+///
+/// There is a special key in the map, that corresponds to the target: _TARGET_
+///  (57c57c2b-a6ff-56fc-9289-4fd9fcb4413e). This entry contains any target
+/// specific options.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct GraceConfig {
     inner: HashMap<Uuid, ConfigValue>,
@@ -133,6 +173,39 @@ impl GraceConfig {
 
     fn get(&self, key: Uuid) -> Option<&ConfigValue> {
         self.inner.get(&key)
+    }
+
+    pub(crate) fn get_target(&self) -> &Target {
+        if let Some(config_value) = self.get(_TARGET_) {
+            if let Some(ref target) = config_value.target {
+                &target
+            } else {
+                &DEFAULT_TARGET
+            }
+        } else {
+            &DEFAULT_TARGET
+        }
+    }
+
+    /// Get the `from_domain` value for the target.
+    ///
+    /// This is sort of a special purpose function, because the target is assumed
+    /// to be Target::Domain.
+    pub(crate) fn get_from_domain(&self) -> Option<FromDomain> {
+        match self.get_target() {
+            Target::Domain(target) => {
+                if let Some(module) = target.from_module.clone() {
+                    if let Some(path) = target.from_path.clone() {
+                        Some(FromDomain { module, path })
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
     }
 
     pub(crate) fn get_use_paths(&self, key: &Uuid) -> Option<&Vec<String>> {
@@ -183,6 +256,8 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
     fn from((options, domain): (&GraceCompilerOptions, &Domain)) -> Self {
         let mut config = Self::new();
 
+        config.insert(_TARGET_, ConfigValue::from(options));
+
         for (key, object) in domain.sarzak().iter_object() {
             // We want to load the initial value from the object description, and then
             // layer the defaults on top, without overwriting what came from the
@@ -215,6 +290,7 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct ConfigValue {
+    pub(crate) target: Option<Target>,
     pub(crate) imported_object: Option<ImportedObject>,
     pub(crate) derive: Option<Vec<String>>,
     pub(crate) use_paths: Option<Vec<String>>,
@@ -223,11 +299,29 @@ pub(crate) struct ConfigValue {
 impl ConfigValue {
     pub(crate) fn new() -> Self {
         Self {
+            target: None,
             imported_object: None,
             derive: None,
             use_paths: None,
         }
     }
+}
+
+impl From<&GraceCompilerOptions> for ConfigValue {
+    fn from(options: &GraceCompilerOptions) -> Self {
+        Self {
+            target: Some(options.target.clone()),
+            imported_object: None,
+            derive: options.derive.clone(),
+            use_paths: options.use_paths.clone(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub(crate) struct FromDomain {
+    pub module: String,
+    pub path: PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
@@ -308,7 +402,7 @@ mod tests {
         let domain = DomainBuilder::new()
             .cuckoo_model("tests/mdd/models/one_to_one.json")
             .unwrap()
-            .build()
+            .build_v1()
             .unwrap();
 
         let config: GraceConfig = (&options, &domain).into();
@@ -339,7 +433,7 @@ mod tests {
         let domain = DomainBuilder::new()
             .cuckoo_model("tests/mdd/models/imported_object.json")
             .unwrap()
-            .build()
+            .build_v1()
             .unwrap();
 
         let config: GraceConfig = (&options, &domain).into();
