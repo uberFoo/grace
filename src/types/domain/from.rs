@@ -136,7 +136,7 @@ impl FileGenerator for DomainFromGenerator {
 
         // It's expected that this code will be edited, block accordingly.
         buffer.block(
-            DirectiveKind::IgnoreOrig,
+            DirectiveKind::IgnoreGenerated,
             format!("{}-from-impl-file", module),
             |buffer| {
                 self.definition
@@ -234,7 +234,7 @@ impl CodeWriter for DomainFromImpl {
         };
 
         buffer.block(
-            DirectiveKind::IgnoreOrig, // TODO -- change me
+            DirectiveKind::IgnoreGenerated,
             format!("{}-from-impl-definition", module),
             |buffer| {
                 // Generate the use statements
