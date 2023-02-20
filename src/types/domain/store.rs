@@ -152,6 +152,8 @@ impl CodeWriter for DomainStore {
             .iter()
             .filter(|(id, obj)| {
                 // We have this odd construction because a supertype may actually be a singleton.
+                // They are in fact singletons in the current implementation. What is this doing?
+                // if it's a supertype, or it's not a  singleton, and it's not imported.
                 object_is_supertype(obj, domain.sarzak())
                     || !object_is_singleton(obj, domain.sarzak())
                 // Don't include imported objects

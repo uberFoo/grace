@@ -203,12 +203,9 @@ impl CodeWriter for DomainFromImpl {
                     objects
                         .iter()
                         .filter(|(id, obj)| {
-                            if let Some(_) = store.sarzak().exhume_object(&id) {
-                                !object_is_singleton(obj, domain.sarzak())
+                            object_is_supertype(obj, domain.sarzak())
+                                || !object_is_singleton(obj, domain.sarzak())
                                     && !config.is_imported(*id)
-                            } else {
-                                false
-                            }
                         })
                         .collect::<Vec<_>>(),
                 )
@@ -287,8 +284,13 @@ impl CodeWriter for DomainFromImpl {
                             buffer,
                             "// These are just UUID's that are preserved across domains."
                         );
-                        emit!(buffer, "for instance in from.iter_{}() {{", obj.as_ident());
-                        emit!(buffer, "to.inter_{}(instance);", obj.as_ident());
+                        emit!(buffer, "for (id, _) in from.iter_{}() {{", obj.as_ident());
+                        emit!(
+                            buffer,
+                            "let instance = to.exhume_{}(&id).unwrap();",
+                            obj.as_ident()
+                        );
+                        emit!(buffer, "to.inter_{}(instance.clone());", obj.as_ident());
                         emit!(buffer, "}}");
                     } else {
                         emit!(
