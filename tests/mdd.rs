@@ -195,3 +195,56 @@ test_target_application!(
     "everything",
     "tests/mdd/models/everything.json"
 );
+
+#[test]
+fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
+    let _ = env_logger::builder().is_test(true).try_init();
+
+    let mut options = GraceCompilerOptions::default();
+    options.target = Target::Domain(DomainConfig {
+        from_module: Some("domain::isa".to_string()),
+        from_path: Some("tests/mdd/models/isa.json".into()),
+        persist: false,
+    });
+    if let Some(ref mut derive) = options.derive {
+        derive.push("Clone".to_string());
+        derive.push("Deserialize".to_string());
+        derive.push("Serialize".to_string());
+    }
+    options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+
+    let grace = ModelCompiler::default();
+
+    // Build the domains
+    log::debug!("Testing domain from extrusion,  target: Domain.");
+    let domain = DomainBuilder::new()
+        .cuckoo_model("tests/mdd/models/isa.json")
+        .unwrap();
+
+    grace
+        .compile(
+            domain,
+            "mdd",
+            "domain/isa_clone",
+            "tests/mdd/src",
+            Box::new(&options),
+            false,
+        )
+        .unwrap();
+
+    // Run cargo test
+    // let mut child = process::Command::new("cargo")
+    //     .arg("test")
+    //     .arg(format!("domain/{}", $domain))
+    //     .arg("--")
+    //     .arg("--nocapture")
+    //     .current_dir("tests/mdd")
+    //     .spawn()?;
+
+    // match child.wait() {
+    //     Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+    //     Err(e) => Err(e),
+    // }
+
+    Ok(ExitCode::SUCCESS)
+}

@@ -308,6 +308,9 @@ impl CodeWriter for DomainStruct {
                 {
                     let assoc = sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
 
+                    // ⛔️ It looks like r22 and r23 are aliased in the store.
+                    // Sometimes code comes out with one before other, and
+                    // sometimes other before one. See grace#39.
                     let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
                     let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
 

@@ -54,7 +54,7 @@ pub struct DomainConfig {
     ///
     /// This is the path to a module, e.g., `generated::sarzak`.
     #[arg(long)]
-    from_module: Option<String>,
+    pub from_module: Option<String>,
     /// Path to the source domain's model file
     ///
     /// When generating From implementations, the model file is loaded and
@@ -62,14 +62,14 @@ pub struct DomainConfig {
     ///
     /// This is a file system path, relative to the current package.
     #[arg(long, requires = "from_module")]
-    from_path: Option<PathBuf>,
+    pub from_path: Option<PathBuf>,
     /// Persist ObjectStore
     ///
     /// Wheen this option is specified, code will be generated that will persist
     /// the ObjectStore to disk. This is used to persist model files. It may be
     /// useful for persisting user domains.
     #[arg(long, short, action=ArgAction::SetTrue)]
-    persist: bool,
+    pub persist: bool,
 }
 
 const DOMAIN_FROM_MODULE: Option<String> = None;
