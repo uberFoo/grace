@@ -131,78 +131,19 @@ impl DomainStore {
     pub(crate) fn new() -> Box<dyn ObjectStoreDefinition> {
         Box::new(Self)
     }
-}
 
-impl ObjectStoreDefinition for DomainStore {}
-
-impl CodeWriter for DomainStore {
-    fn write_code(
+    fn generate_store(
         &self,
-        config: &GraceConfig,
-        domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
-        module: &str,
-        _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
+        objects: &Vec<&(&Uuid, &Object)>,
+        module: &str,
+        domain: &Domain,
     ) -> Result<()> {
-        let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
-        objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
-        let objects = objects
-            .iter()
-            .filter(|(id, obj)| {
-                // We have this odd construction because a supertype may actually be a singleton.
-                // They are in fact singletons in the current implementation. What is this doing?
-                // if it's a supertype, or it's not a  singleton, and it's not imported.
-                object_is_supertype(obj, domain.sarzak())
-                    || !object_is_singleton(obj, domain.sarzak())
-                // Don't include imported objects
-                && !config.is_imported(*id)
-            })
-            .collect::<Vec<_>>();
-
         buffer.block(
             DirectiveKind::IgnoreOrig,
-            format!("{}-object-store-definition", module),
+            format!("{}-object-store-methods", module),
             |buffer| {
-                emit!(buffer, "use std::collections::HashMap;");
-                emit!(buffer, "");
-                emit!(buffer, "use serde::{{Deserialize, Serialize}};");
-                emit!(buffer, "use uuid::Uuid;");
-                emit!(buffer, "");
-                emit!(buffer, "use crate::{}::types::{{", module);
-
-                for (_, obj) in &objects {
-                    emit!(
-                        buffer,
-                        "{},",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-                    );
-                }
-                emit!(buffer, "}};");
-                emit!(buffer, "");
-                emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");
-                emit!(buffer, "pub struct ObjectStore {{");
-                for (_, obj) in &objects {
-                    emit!(
-                        buffer,
-                        "{}: HashMap<Uuid,{}>,",
-                        obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-                    );
-                }
-                emit!(buffer, "}}");
-                emit!(buffer, "");
-                emit!(buffer, "impl ObjectStore {{");
-                emit!(buffer, "pub fn new() -> Self {{");
-                emit!(buffer, "Self {{");
-                for (_, obj) in &objects {
-                    emit!(buffer, "{}: HashMap::new(),", obj.as_ident());
-                }
-                emit!(buffer, "}}");
-                emit!(buffer, "}}");
-                emit!(buffer, "");
-                for (_, obj) in &objects {
+                for (_, obj) in objects {
                     emit!(
                         buffer,
                         "/// Inter [`{}`] into the store.",
@@ -279,8 +220,149 @@ impl CodeWriter for DomainStore {
                     emit!(buffer, "self.{}.iter()", obj.as_ident());
                     emit!(buffer, "}}");
                 }
+
+                Ok(())
+            },
+        )?;
+
+        Ok(())
+    }
+
+    fn generate_store_persistence(
+        &self,
+        buffer: &mut Buffer,
+        objects: &Vec<&(&Uuid, &Object)>,
+        module: &str,
+        domain: &Domain,
+    ) -> Result<()> {
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-object-store-persistence", module),
+            |buffer| {
+                emit!(buffer, "/// Persist the store.");
+                emit!(buffer, "///");
+                emit!(buffer, "/// The store is persisted as a directory of JSON files. The intention");
+                emit!(buffer, "/// is that this directory can be checked into version control.");
+                emit!(buffer, "/// In fact, I intend to add automaagic git integration as an option.");
+                emit!(
+                    buffer,
+                    "pub fn persist<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {{"
+                );
+                emit!(buffer, "let path = path.as_ref();");
+                // This is such a great joke! 🤣
+                emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
+                emit!(buffer, "fs::create_dir_all(&path)?;");
+                emit!(buffer, "");
+                for (_, obj) in objects {
+                    emit!(buffer, "// Persist {}.", obj.as_ident());
+                    emit!(buffer, "{{");
+                    emit!(buffer, "let path = path.join(\"{}.json\");", obj.as_ident());
+                    emit!(buffer, "let file = fs::File::create(path)?;");
+                    emit!(buffer, "let mut writer = io::BufWriter::new(file);");
+                    emit!(
+                        buffer,
+                        "serde_json::to_writer_pretty(&mut writer, &self.{}.values().map(|x| x).collect::<Vec<_>>())?;",
+                        obj.as_ident()
+                    );
+                    emit!(buffer, "}}");
+                }
+                emit!(buffer, "Ok(())");
                 emit!(buffer, "}}");
 
+                Ok(())
+            },
+        )?;
+
+        Ok(())
+    }
+}
+
+impl ObjectStoreDefinition for DomainStore {}
+
+impl CodeWriter for DomainStore {
+    fn write_code(
+        &self,
+        config: &GraceConfig,
+        domain: &Domain,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
+        module: &str,
+        _obj_id: Option<&Uuid>,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
+        let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+        let objects = objects
+            .iter()
+            .filter(|(id, obj)| {
+                // We have this odd construction because a supertype may actually be a singleton.
+                // They are in fact singletons in the current implementation. What is this doing?
+                // if it's a supertype, or it's not a  singleton, and it's not imported.
+                object_is_supertype(obj, domain.sarzak())
+                    || !object_is_singleton(obj, domain.sarzak())
+                // Don't include imported objects
+                && !config.is_imported(*id)
+            })
+            .collect::<Vec<_>>();
+
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-object-store-definition", module),
+            |buffer| {
+                let persist = if let Some(persist) = config.get_persist() {
+                    persist
+                } else {
+                    false
+                };
+
+                if persist {
+                    emit!(buffer, "use std::{{io, fs, path::Path}};");
+                }
+                emit!(buffer, "use std::collections::HashMap;");
+                emit!(buffer, "");
+                emit!(buffer, "use serde::{{Deserialize, Serialize}};");
+                emit!(buffer, "use uuid::Uuid;");
+                emit!(buffer, "");
+                emit!(buffer, "use crate::{}::types::{{", module);
+
+                for (_, obj) in &objects {
+                    emit!(
+                        buffer,
+                        "{},",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                }
+                emit!(buffer, "}};");
+                emit!(buffer, "");
+                emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");
+                emit!(buffer, "pub struct ObjectStore {{");
+                for (_, obj) in &objects {
+                    emit!(
+                        buffer,
+                        "{}: HashMap<Uuid,{}>,",
+                        obj.as_ident(),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                }
+                emit!(buffer, "}}");
+                emit!(buffer, "");
+                emit!(buffer, "impl ObjectStore {{");
+                emit!(buffer, "pub fn new() -> Self {{");
+                emit!(buffer, "Self {{");
+                for (_, obj) in &objects {
+                    emit!(buffer, "{}: HashMap::new(),", obj.as_ident());
+                }
+                emit!(buffer, "}}");
+                emit!(buffer, "}}");
+                emit!(buffer, "");
+
+                self.generate_store(buffer, &objects, module, domain)?;
+
+                if persist {
+                    self.generate_store_persistence(buffer, &objects, module, domain)?;
+                }
+
+                emit!(buffer, "}}");
                 Ok(())
             },
         )?;

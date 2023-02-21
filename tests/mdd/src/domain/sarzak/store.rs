@@ -28,6 +28,7 @@
 //! * [`Ty`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-definition"}}}
 use std::collections::HashMap;
+use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -86,6 +87,7 @@ impl ObjectStore {
         }
     }
 
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-methods"}}}
     /// Inter [`AcknowledgedEvent`] into the store.
     ///
     pub fn inter_acknowledged_event(&mut self, acknowledged_event: AcknowledgedEvent) {
@@ -495,6 +497,223 @@ impl ObjectStore {
     pub fn iter_ty(&self) -> impl Iterator<Item = (&Uuid, &Ty)> {
         self.ty.iter()
     }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-persistence"}}}
+    /// Persist the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn persist<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+        let path = path.as_ref();
+        let path = path.join("sarzak.json");
+        fs::create_dir_all(&path)?;
+
+        // Persist acknowledged_event.
+        {
+            let path = path.join("acknowledged_event.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self
+                    .acknowledged_event
+                    .values()
+                    .map(|x| x)
+                    .collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist associative.
+        {
+            let path = path.join("associative.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.associative.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist associative_referent.
+        {
+            let path = path.join("associative_referent.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self
+                    .associative_referent
+                    .values()
+                    .map(|x| x)
+                    .collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist associative_referrer.
+        {
+            let path = path.join("associative_referrer.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self
+                    .associative_referrer
+                    .values()
+                    .map(|x| x)
+                    .collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist attribute.
+        {
+            let path = path.join("attribute.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.attribute.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist binary.
+        {
+            let path = path.join("binary.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.binary.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist cardinality.
+        {
+            let path = path.join("cardinality.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.cardinality.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist conditionality.
+        {
+            let path = path.join("conditionality.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.conditionality.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist event.
+        {
+            let path = path.join("event.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.event.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist external.
+        {
+            let path = path.join("external.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.external.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist isa.
+        {
+            let path = path.join("isa.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.isa.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist object.
+        {
+            let path = path.join("object.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.object.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist referent.
+        {
+            let path = path.join("referent.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.referent.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist referrer.
+        {
+            let path = path.join("referrer.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.referrer.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist relationship.
+        {
+            let path = path.join("relationship.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.relationship.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist state.
+        {
+            let path = path.join("state.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.state.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist subtype.
+        {
+            let path = path.join("subtype.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.subtype.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist supertype.
+        {
+            let path = path.join("supertype.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.supertype.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist ty.
+        {
+            let path = path.join("ty.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.ty.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        Ok(())
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

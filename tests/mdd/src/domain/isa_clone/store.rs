@@ -40,6 +40,7 @@ impl ObjectStore {
         }
     }
 
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-methods"}}}
     /// Inter [`NotImportant`] into the store.
     ///
     pub fn inter_not_important(&mut self, not_important: NotImportant) {
@@ -146,6 +147,7 @@ impl ObjectStore {
     pub fn iter_super_t(&self) -> impl Iterator<Item = (&Uuid, &SuperT)> {
         self.super_t.iter()
     }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

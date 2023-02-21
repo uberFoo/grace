@@ -15,6 +15,7 @@
 //! * [`SubtypeAnchor`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative-object-store-definition"}}}
 use std::collections::HashMap;
+use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -45,6 +46,7 @@ impl ObjectStore {
         }
     }
 
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative-object-store-methods"}}}
     /// Inter [`AcknowledgedEvent`] into the store.
     ///
     pub fn inter_acknowledged_event(&mut self, acknowledged_event: AcknowledgedEvent) {
@@ -173,6 +175,85 @@ impl ObjectStore {
     pub fn iter_subtype_anchor(&self) -> impl Iterator<Item = (&Uuid, &SubtypeAnchor)> {
         self.subtype_anchor.iter()
     }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative-object-store-persistence"}}}
+    /// Persist the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn persist<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+        let path = path.as_ref();
+        let path = path.join("associative.json");
+        fs::create_dir_all(&path)?;
+
+        // Persist acknowledged_event.
+        {
+            let path = path.join("acknowledged_event.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self
+                    .acknowledged_event
+                    .values()
+                    .map(|x| x)
+                    .collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist anchor.
+        {
+            let path = path.join("anchor.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.anchor.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist event.
+        {
+            let path = path.join("event.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.event.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist isa_ui.
+        {
+            let path = path.join("isa_ui.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.isa_ui.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist state.
+        {
+            let path = path.join("state.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.state.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist subtype_anchor.
+        {
+            let path = path.join("subtype_anchor.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.subtype_anchor.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        Ok(())
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

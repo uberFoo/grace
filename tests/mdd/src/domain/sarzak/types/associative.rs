@@ -18,10 +18,10 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 pub struct Associative {
     pub id: Uuid,
     pub number: i64,
-    /// R23: [`Associative`] 'is formalized by' [`AssociativeReferent`]
-    pub one: Uuid,
     /// R22: [`Associative`] 'is formalized by' [`AssociativeReferent`]
     pub other: Uuid,
+    /// R23: [`Associative`] 'is formalized by' [`AssociativeReferent`]
+    pub one: Uuid,
     /// R21: [`Associative`] 'is formalized by' [`AssociativeReferrer`]
     pub from: Uuid,
 }
@@ -32,19 +32,19 @@ impl Associative {
     /// Inter a new Associative in the store, and return it's `id`.
     pub fn new(
         number: i64,
-        one: &AssociativeReferent,
         other: &AssociativeReferent,
+        one: &AssociativeReferent,
         from: &AssociativeReferrer,
         store: &mut SarzakStore,
     ) -> Associative {
         let id = Uuid::new_v5(
             &UUID_NS,
-            format!("{}:{:?}:{:?}:{:?}", number, one, other, from).as_bytes(),
+            format!("{}:{:?}:{:?}:{:?}", number, other, one, from).as_bytes(),
         );
         let new = Associative {
             number: number,
-            one: one.id,
             other: other.id,
+            one: one.id,
             from: from.id,
             id,
         };
@@ -54,22 +54,22 @@ impl Associative {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
-    /// Navigate to [`AssociativeReferent`] across R23(1-?)
-    pub fn r23_associative_referent<'a>(
-        &'a self,
-        store: &'a SarzakStore,
-    ) -> Vec<&AssociativeReferent> {
-        vec![store.exhume_associative_referent(&self.one).unwrap()]
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
     /// Navigate to [`AssociativeReferent`] across R22(1-?)
     pub fn r22_associative_referent<'a>(
         &'a self,
         store: &'a SarzakStore,
     ) -> Vec<&AssociativeReferent> {
         vec![store.exhume_associative_referent(&self.other).unwrap()]
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
+    /// Navigate to [`AssociativeReferent`] across R23(1-?)
+    pub fn r23_associative_referent<'a>(
+        &'a self,
+        store: &'a SarzakStore,
+    ) -> Vec<&AssociativeReferent> {
+        vec![store.exhume_associative_referent(&self.one).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-from"}}}

@@ -14,6 +14,7 @@
 //! * [`Referent`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_many-object-store-definition"}}}
 use std::collections::HashMap;
+use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -40,6 +41,7 @@ impl ObjectStore {
         }
     }
 
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_many-object-store-methods"}}}
     /// Inter [`A`] into the store.
     ///
     pub fn inter_a(&mut self, a: A) {
@@ -145,6 +147,71 @@ impl ObjectStore {
     pub fn iter_referent(&self) -> impl Iterator<Item = (&Uuid, &Referent)> {
         self.referent.iter()
     }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_many-object-store-persistence"}}}
+    /// Persist the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn persist<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+        let path = path.as_ref();
+        let path = path.join("one_to_many.json");
+        fs::create_dir_all(&path)?;
+
+        // Persist a.
+        {
+            let path = path.join("a.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.a.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist b.
+        {
+            let path = path.join("b.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.b.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist c.
+        {
+            let path = path.join("c.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.c.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist d.
+        {
+            let path = path.join("d.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.d.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist referent.
+        {
+            let path = path.join("referent.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.referent.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        Ok(())
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

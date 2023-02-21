@@ -210,9 +210,9 @@ impl GraceConfig {
     /// to be Target::Domain.
     pub(crate) fn get_from_domain(&self) -> Option<FromDomain> {
         match self.get_target() {
-            Target::Domain(target) => {
-                if let Some(module) = target.from_module.clone() {
-                    if let Some(path) = target.from_path.clone() {
+            Target::Domain(config) => {
+                if let Some(module) = config.from_module.clone() {
+                    if let Some(path) = config.from_path.clone() {
                         Some(FromDomain { module, path })
                     } else {
                         None
@@ -221,6 +221,16 @@ impl GraceConfig {
                     None
                 }
             }
+            _ => None,
+        }
+    }
+
+    /// Get the `persist` value for the target.
+    ///
+    /// As above, this is sort of a special purpose function.
+    pub(crate) fn get_persist(&self) -> Option<bool> {
+        match self.get_target() {
+            Target::Domain(config) => Some(config.persist),
             _ => None,
         }
     }
