@@ -50,10 +50,11 @@ pub struct DomainConfig {
     /// if there is a corresponding object in the source domain.
     ///
     /// The source domain to be use for extrusion, using the `from` trait,
-    /// is specified using the `--from-domain` option.
+    /// is specified using the `--from-path` option, which is required if
+    /// using this option.
     ///
     /// This is the path to a module, e.g., `generated::sarzak`.
-    #[arg(long)]
+    #[arg(long, requires = "from_path")]
     pub from_module: Option<String>,
     /// Path to the source domain's model file
     ///
@@ -61,13 +62,17 @@ pub struct DomainConfig {
     /// inspected for sources for the `From` trait.
     ///
     /// This is a file system path, relative to the current package.
+    ///
+    /// This option requires the `--from-module` option.
     #[arg(long, requires = "from_module")]
     pub from_path: Option<PathBuf>,
     /// Persist ObjectStore
     ///
     /// Wheen this option is specified, code will be generated that will persist
-    /// the ObjectStore to disk. This is used to persist model files. It may be
-    /// useful for persisting user domains.
+    /// the ObjectStore to disk.
+    ///
+    /// This is used to persist model files. It may be useful for persisting
+    /// user domains.
     #[arg(long, short, action=ArgAction::SetTrue)]
     pub persist: bool,
 }
