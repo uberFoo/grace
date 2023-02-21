@@ -70,18 +70,12 @@ pub(crate) struct RValue {
     pub ty: GType,
 }
 
-impl RValue {
-    pub(crate) fn new(name: String, ty: GType) -> Self {
-        Self { name, ty }
-    }
-}
-
 #[derive(Clone, Debug)]
 pub(crate) struct Parameter<'a> {
     pub mutability: Uuid,
     pub next: Option<&'a Parameter<'a>>,
     pub ty: GType,
-    pub visibility: Uuid,
+    pub _visibility: Uuid,
     pub name: String,
 }
 
@@ -90,14 +84,14 @@ impl<'a> Parameter<'a> {
         mutability: Uuid,
         next: Option<&'a Parameter<'a>>,
         ty: GType,
-        visibility: Uuid,
+        _visibility: Uuid,
         name: S,
     ) -> Self {
         Self {
             mutability,
             next,
             ty,
-            visibility,
+            _visibility,
             name: name.as_ref().to_string(),
         }
     }
@@ -105,29 +99,29 @@ impl<'a> Parameter<'a> {
 
 pub(crate) struct ObjectMethod<'a> {
     pub param: Option<&'a Parameter<'a>>,
-    pub object: Uuid,
+    pub _object: Uuid,
     pub ty: GType,
-    pub visibility: Uuid,
+    pub _visibility: Uuid,
     pub name: String,
-    pub description: String,
+    pub _description: String,
 }
 
 impl<'a> ObjectMethod<'a> {
     pub(crate) fn new<S: AsRef<str>>(
         param: Option<&'a Parameter>,
-        object: Uuid,
+        _object: Uuid,
         ty: GType,
-        visibility: Uuid,
+        _visibility: Uuid,
         name: S,
         description: S,
     ) -> Self {
         Self {
             param,
-            object,
+            _object,
             ty,
-            visibility,
+            _visibility,
             name: name.as_ref().to_string(),
-            description: description.as_ref().to_string(),
+            _description: description.as_ref().to_string(),
         }
     }
 }

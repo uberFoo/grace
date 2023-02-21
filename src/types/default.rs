@@ -412,7 +412,7 @@ impl CodeWriter for DefaultStructNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
+        _imports: &Option<&HashMap<String, Domain>>,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

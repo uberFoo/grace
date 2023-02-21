@@ -7,9 +7,7 @@ use sarzak::{
     sarzak::{
         macros::{
             sarzak_get_many_as_across_r1, sarzak_get_many_r_subs_across_r27,
-            sarzak_get_one_ass_to_across_r22, sarzak_get_one_ass_to_across_r23,
             sarzak_get_one_obj_across_r15, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_obj_across_r25, sarzak_get_one_r_assoc_across_r21,
             sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_isa_across_r13,
             sarzak_get_one_r_to_across_r5, sarzak_get_one_t_across_r2,
             sarzak_maybe_get_many_ass_froms_across_r26, sarzak_maybe_get_many_r_froms_across_r17,
@@ -198,7 +196,9 @@ impl CodeWriter for DomainFromImpl {
                 })?
                 .to_owned();
 
-            if let Some(store) = imports.get(&name) {
+            // 🚧 This is broken. It should be checking the old store for the object,
+            // and only output the implementation if it exists in that store as well.
+            if let Some(_store) = imports.get(&name) {
                 (
                     name,
                     from_domain.module,
@@ -402,10 +402,6 @@ impl CodeWriter for DomainFromImpl {
 
                         // Referential Attributes
                         for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
-                            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-                            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-                            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-
                             emit!(
                                 buffer,
                                 "{}: src.{},",
@@ -416,15 +412,6 @@ impl CodeWriter for DomainFromImpl {
                         for assoc_referrer in
                             sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak())
                         {
-                            let assoc =
-                                sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
-
-                            let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
-                            let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
-
-                            let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
-                            let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
-
                             emit!(
                                 buffer,
                                 "{}: src.{},",

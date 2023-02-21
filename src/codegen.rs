@@ -13,10 +13,8 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_many_r_subs_across_r27,
-            sarzak_get_one_obj_across_r15, sarzak_get_one_r_isa_across_r13,
-            sarzak_maybe_get_many_ass_froms_across_r26, sarzak_maybe_get_many_r_froms_across_r17,
-            sarzak_maybe_get_many_r_sups_across_r14,
+            sarzak_get_many_as_across_r1, sarzak_maybe_get_many_ass_froms_across_r26,
+            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_sups_across_r14,
         },
         store::ObjectStore as SarzakStore,
         types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype, Type},

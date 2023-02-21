@@ -16,7 +16,7 @@
 //! I should solve early.
 use std::{any::Any, collections::HashMap, path::PathBuf};
 
-use clap::{Args, Subcommand};
+use clap::{ArgAction, Args, Subcommand};
 use sarzak::{mc::ModelCompilerOptions, v1::domain::Domain};
 use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
@@ -63,13 +63,25 @@ pub struct DomainConfig {
     /// This is a file system path, relative to the current package.
     #[arg(long, requires = "from_module")]
     from_path: Option<PathBuf>,
+    /// Persist ObjectStore
+    ///
+    /// Wheen this option is specified, code will be generated that will persist
+    /// the ObjectStore to disk. This is used to persist model files. It may be
+    /// useful for persisting user domains.
+    #[arg(long, short, action=ArgAction::SetTrue)]
+    persist: bool,
 }
+
+const DOMAIN_FROM_MODULE: Option<String> = None;
+const DOMAIN_FROM_PATH: Option<PathBuf> = None;
+const DOMAIN_PERSIST: bool = false;
 
 impl Default for DomainConfig {
     fn default() -> Self {
         DomainConfig {
-            from_module: None,
-            from_path: None,
+            from_module: DOMAIN_FROM_MODULE,
+            from_path: DOMAIN_FROM_PATH,
+            persist: DOMAIN_PERSIST,
         }
     }
 }
