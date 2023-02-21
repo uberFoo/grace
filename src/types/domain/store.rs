@@ -8,7 +8,7 @@ use sarzak::{
     v1::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED},
+        types::{Mutability, BORROWED, MUTABLE},
     },
 };
 use snafu::prelude::*;
@@ -252,10 +252,24 @@ impl CodeWriter for DomainStore {
                     emit!(buffer, "}}");
                     emit!(
                         buffer,
+                        "/// Exhume [`{}`] from the store — mutably.",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                    emit!(buffer, "///");
+                    emit!(
+                        buffer,
+                        "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
+                        obj.as_ident(),
+                        obj.as_type(&Mutability::Mutable(MUTABLE), domain.sarzak())
+                    );
+                    emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
+                    emit!(buffer, "}}");
+                    emit!(
+                        buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
-                    emit!(buffer, "//");
+                    emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn iter_{}(&self) -> impl Iterator<Item = (&Uuid, &{})> {{",
