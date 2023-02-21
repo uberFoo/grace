@@ -40,8 +40,13 @@ impl ObjectStore {
     pub fn exhume_another_object(&self, id: &Uuid) -> Option<&AnotherObject> {
         self.another_object.get(id)
     }
+    /// Exhume [`AnotherObject`] from the store — mutably.
+    ///
+    pub fn exhume_another_object_mut(&mut self, id: &Uuid) -> Option<&mut AnotherObject> {
+        self.another_object.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, AnotherObject>`.
-    //
+    ///
     pub fn iter_another_object(&self) -> impl Iterator<Item = (&Uuid, &AnotherObject)> {
         self.another_object.iter()
     }

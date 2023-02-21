@@ -42,8 +42,13 @@ impl ObjectStore {
     pub fn exhume_everything(&self, id: &Uuid) -> Option<&Everything> {
         self.everything.get(id)
     }
+    /// Exhume [`Everything`] from the store — mutably.
+    ///
+    pub fn exhume_everything_mut(&mut self, id: &Uuid) -> Option<&mut Everything> {
+        self.everything.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, Everything>`.
-    //
+    ///
     pub fn iter_everything(&self) -> impl Iterator<Item = (&Uuid, &Everything)> {
         self.everything.iter()
     }
@@ -58,8 +63,13 @@ impl ObjectStore {
     pub fn exhume_rando_object(&self, id: &Uuid) -> Option<&RandoObject> {
         self.rando_object.get(id)
     }
+    /// Exhume [`RandoObject`] from the store — mutably.
+    ///
+    pub fn exhume_rando_object_mut(&mut self, id: &Uuid) -> Option<&mut RandoObject> {
+        self.rando_object.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
-    //
+    ///
     pub fn iter_rando_object(&self) -> impl Iterator<Item = (&Uuid, &RandoObject)> {
         self.rando_object.iter()
     }

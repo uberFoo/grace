@@ -42,8 +42,9 @@ use crate::{
         diff_engine::DirectiveKind,
         emit_object_comments, find_store,
         generator::CodeWriter,
-        get_objs_for_assoc_referents, get_objs_for_assoc_referrers, get_objs_for_referents,
-        get_objs_for_referrers, get_referents, get_referrers,
+        get_objs_for_assoc_referents_sorted, get_objs_for_assoc_referrers_sorted,
+        get_objs_for_referents_sorted, get_objs_for_referrers_sorted, get_referents_sorted,
+        get_referrers_sorted,
         render::{RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
@@ -88,8 +89,11 @@ impl CodeWriter for DomainStruct {
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
-        let mut referrer_objs = get_objs_for_referrers!(obj, domain.sarzak());
-        referrer_objs.append(&mut get_objs_for_assoc_referents!(obj, domain.sarzak()));
+        let mut referrer_objs = get_objs_for_referrers_sorted!(obj, domain.sarzak());
+        referrer_objs.append(&mut get_objs_for_assoc_referents_sorted!(
+            obj,
+            domain.sarzak()
+        ));
         let referrer_objs: HashSet<_> = referrer_objs.into_iter().collect();
         // Remove ourselves, should that happen. Spoiler alert: it does.
         let referrer_objs: HashSet<_> = referrer_objs
@@ -97,8 +101,11 @@ impl CodeWriter for DomainStruct {
             .filter(|r_obj| r_obj.id != obj.id)
             .collect();
 
-        let mut referent_objs = get_objs_for_referents!(obj, domain.sarzak());
-        referent_objs.append(&mut get_objs_for_assoc_referrers!(obj, domain.sarzak()));
+        let mut referent_objs = get_objs_for_referents_sorted!(obj, domain.sarzak());
+        referent_objs.append(&mut get_objs_for_assoc_referrers_sorted!(
+            obj,
+            domain.sarzak()
+        ));
         let referent_objs: HashSet<_> = referent_objs.into_iter().collect();
         // Remove ourselves, should that happen. Spoiler alert: it does.
         let referent_objs: HashSet<_> = referent_objs
@@ -220,7 +227,7 @@ impl CodeWriter for DomainStruct {
                     );
                 }
 
-                for referrer in get_referrers!(obj, domain.sarzak()) {
+                for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
                     let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                     let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
                     let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
@@ -480,7 +487,7 @@ impl CodeWriter for DomainStructNewImpl {
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
         // These are more attributes on our object, and they should be sorted.
-        let referrers = get_referrers!(obj, domain.sarzak());
+        let referrers = get_referrers_sorted!(obj, domain.sarzak());
 
         // Collect the attributes
         let mut params: Vec<Parameter> = Vec::new();
@@ -1265,9 +1272,9 @@ impl CodeWriter for DomainRelNavImpl {
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
         // These are relationships that we formalize
-        let referrers = get_referrers!(obj, domain.sarzak());
+        let referrers = get_referrers_sorted!(obj, domain.sarzak());
         // These are relationships of which we are the target
-        let referents = get_referents!(obj, domain.sarzak());
+        let referents = get_referents_sorted!(obj, domain.sarzak());
 
         for referrer in &referrers {
             let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());

@@ -13,8 +13,10 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_maybe_get_many_ass_froms_across_r26,
-            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_sups_across_r14,
+            sarzak_get_many_as_across_r1, sarzak_get_many_r_subs_across_r27,
+            sarzak_get_one_obj_across_r15, sarzak_get_one_r_isa_across_r13,
+            sarzak_maybe_get_many_ass_froms_across_r26, sarzak_maybe_get_many_r_froms_across_r17,
+            sarzak_maybe_get_many_r_sups_across_r14,
         },
         store::ObjectStore as SarzakStore,
         types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype, Type},
@@ -37,7 +39,24 @@ use crate::{
     todo::{External, GType, LValue, ObjectMethod, RValue},
 };
 
-macro_rules! get_objs_for_assoc_referrers {
+macro_rules! get_subtypes_sorted {
+    ($obj:expr, $store:expr) => {{
+        // I'm convinced that R14 and R15 are broken.
+        let sup = sarzak_maybe_get_many_r_sups_across_r14!($obj, $store);
+        let isa = sarzak_get_one_r_isa_across_r13!(sup[0], $store);
+        let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, $store);
+        subtypes.sort_by(|a, b| {
+            let a = sarzak_get_one_obj_across_r15!(a, $store);
+            let b = sarzak_get_one_obj_across_r15!(b, $store);
+            a.name.cmp(&b.name)
+        });
+
+        subtypes
+    }};
+}
+pub(crate) use get_subtypes_sorted;
+
+macro_rules! get_objs_for_assoc_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
         let referrers = sarzak_maybe_get_many_ass_froms_across_r26!($obj, $store);
@@ -49,12 +68,14 @@ macro_rules! get_objs_for_assoc_referrers {
             objs.push(sarzak_get_one_obj_across_r25!(other, $store));
         }
 
+        objs.sort_by(|a, b| a.name.cmp(&b.name));
+
         objs
     }};
 }
-pub(crate) use get_objs_for_assoc_referrers;
+pub(crate) use get_objs_for_assoc_referrers_sorted;
 
-macro_rules! get_objs_for_assoc_referents {
+macro_rules! get_objs_for_assoc_referents_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
         let referents = sarzak_maybe_get_many_ass_tos_across_r25!($obj, $store);
@@ -69,15 +90,17 @@ macro_rules! get_objs_for_assoc_referents {
             }
         }
 
+        objs.sort_by(|a, b| a.name.cmp(&b.name));
+
         objs
     }};
 }
-pub(crate) use get_objs_for_assoc_referents;
+pub(crate) use get_objs_for_assoc_referents_sorted;
 
-macro_rules! get_objs_for_referrers {
+macro_rules! get_objs_for_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
-        let referrers = get_referrers!($obj, $store);
+        let referrers = get_referrers_sorted!($obj, $store);
         for referrer in &referrers {
             let binary = sarzak_get_one_r_bin_across_r6!(referrer, $store);
             let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
@@ -88,12 +111,12 @@ macro_rules! get_objs_for_referrers {
         objs
     }};
 }
-pub(crate) use get_objs_for_referrers;
+pub(crate) use get_objs_for_referrers_sorted;
 
-macro_rules! get_objs_for_referents {
+macro_rules! get_objs_for_referents_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
-        let referents = get_referents!($obj, $store);
+        let referents = get_referents_sorted!($obj, $store);
         for referent in &referents {
             let binary = sarzak_get_one_r_bin_across_r5!(referent, $store);
             let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
@@ -104,9 +127,9 @@ macro_rules! get_objs_for_referents {
         objs
     }};
 }
-pub(crate) use get_objs_for_referents;
+pub(crate) use get_objs_for_referents_sorted;
 
-macro_rules! get_referrers {
+macro_rules! get_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!($obj, $store);
         referrers.sort_by(|a, b| {
@@ -124,9 +147,9 @@ macro_rules! get_referrers {
         referrers
     }};
 }
-pub(crate) use get_referrers;
+pub(crate) use get_referrers_sorted;
 
-macro_rules! get_referents {
+macro_rules! get_referents_sorted {
     ($obj:expr, $store:expr) => {{
         let mut referents = sarzak_maybe_get_many_r_tos_across_r16!($obj, $store);
         referents.sort_by(|a, b| {
@@ -144,7 +167,7 @@ macro_rules! get_referents {
         referents
     }};
 }
-pub(crate) use get_referents;
+pub(crate) use get_referents_sorted;
 
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,

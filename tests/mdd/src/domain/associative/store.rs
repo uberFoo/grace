@@ -57,8 +57,13 @@ impl ObjectStore {
     pub fn exhume_acknowledged_event(&self, id: &Uuid) -> Option<&AcknowledgedEvent> {
         self.acknowledged_event.get(id)
     }
+    /// Exhume [`AcknowledgedEvent`] from the store — mutably.
+    ///
+    pub fn exhume_acknowledged_event_mut(&mut self, id: &Uuid) -> Option<&mut AcknowledgedEvent> {
+        self.acknowledged_event.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, AcknowledgedEvent>`.
-    //
+    ///
     pub fn iter_acknowledged_event(&self) -> impl Iterator<Item = (&Uuid, &AcknowledgedEvent)> {
         self.acknowledged_event.iter()
     }
@@ -73,8 +78,13 @@ impl ObjectStore {
     pub fn exhume_anchor(&self, id: &Uuid) -> Option<&Anchor> {
         self.anchor.get(id)
     }
+    /// Exhume [`Anchor`] from the store — mutably.
+    ///
+    pub fn exhume_anchor_mut(&mut self, id: &Uuid) -> Option<&mut Anchor> {
+        self.anchor.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, Anchor>`.
-    //
+    ///
     pub fn iter_anchor(&self) -> impl Iterator<Item = (&Uuid, &Anchor)> {
         self.anchor.iter()
     }
@@ -89,8 +99,13 @@ impl ObjectStore {
     pub fn exhume_event(&self, id: &Uuid) -> Option<&Event> {
         self.event.get(id)
     }
+    /// Exhume [`Event`] from the store — mutably.
+    ///
+    pub fn exhume_event_mut(&mut self, id: &Uuid) -> Option<&mut Event> {
+        self.event.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
-    //
+    ///
     pub fn iter_event(&self) -> impl Iterator<Item = (&Uuid, &Event)> {
         self.event.iter()
     }
@@ -105,8 +120,13 @@ impl ObjectStore {
     pub fn exhume_isa_ui(&self, id: &Uuid) -> Option<&IsaUi> {
         self.isa_ui.get(id)
     }
+    /// Exhume [`IsaUi`] from the store — mutably.
+    ///
+    pub fn exhume_isa_ui_mut(&mut self, id: &Uuid) -> Option<&mut IsaUi> {
+        self.isa_ui.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, IsaUi>`.
-    //
+    ///
     pub fn iter_isa_ui(&self) -> impl Iterator<Item = (&Uuid, &IsaUi)> {
         self.isa_ui.iter()
     }
@@ -121,8 +141,13 @@ impl ObjectStore {
     pub fn exhume_state(&self, id: &Uuid) -> Option<&State> {
         self.state.get(id)
     }
+    /// Exhume [`State`] from the store — mutably.
+    ///
+    pub fn exhume_state_mut(&mut self, id: &Uuid) -> Option<&mut State> {
+        self.state.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.
-    //
+    ///
     pub fn iter_state(&self) -> impl Iterator<Item = (&Uuid, &State)> {
         self.state.iter()
     }
@@ -138,8 +163,13 @@ impl ObjectStore {
     pub fn exhume_subtype_anchor(&self, id: &Uuid) -> Option<&SubtypeAnchor> {
         self.subtype_anchor.get(id)
     }
+    /// Exhume [`SubtypeAnchor`] from the store — mutably.
+    ///
+    pub fn exhume_subtype_anchor_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeAnchor> {
+        self.subtype_anchor.get_mut(id)
+    }
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeAnchor>`.
-    //
+    ///
     pub fn iter_subtype_anchor(&self) -> impl Iterator<Item = (&Uuid, &SubtypeAnchor)> {
         self.subtype_anchor.iter()
     }

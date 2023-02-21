@@ -22,7 +22,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments, get_referents,
+        emit_object_comments, get_subtypes_sorted,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -46,8 +46,8 @@ impl CodeWriter for DomainEnum {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -61,15 +61,16 @@ impl CodeWriter for DomainEnum {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
+        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
         // I'm convinced that R14 and R15 are broken.
-        let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-        let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
-        let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
-        subtypes.sort_by(|a, b| {
-            let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
-            let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
-            a.name.cmp(&b.name)
-        });
+        // let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+        // let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
+        // let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
+        // subtypes.sort_by(|a, b| {
+        // let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
+        // let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
+        // a.name.cmp(&b.name)
+        // });
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -164,15 +165,17 @@ impl CodeWriter for DomainEnumGetIdImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
+        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+
         // I'm convinced that R14 and R15 are broken.
-        let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-        let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
-        let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
-        subtypes.sort_by(|a, b| {
-            let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
-            let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
-            a.name.cmp(&b.name)
-        });
+        // let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+        // let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
+        // let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
+        // subtypes.sort_by(|a, b| {
+        // let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
+        // let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
+        // a.name.cmp(&b.name)
+        // });
 
         buffer.block(
             DirectiveKind::IgnoreOrig,

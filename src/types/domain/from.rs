@@ -6,14 +6,16 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::{
         macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_one_ass_to_across_r22,
-            sarzak_get_one_ass_to_across_r23, sarzak_get_one_obj_across_r16,
+            sarzak_get_many_as_across_r1, sarzak_get_many_r_subs_across_r27,
+            sarzak_get_one_ass_to_across_r22, sarzak_get_one_ass_to_across_r23,
+            sarzak_get_one_obj_across_r15, sarzak_get_one_obj_across_r16,
             sarzak_get_one_obj_across_r25, sarzak_get_one_r_assoc_across_r21,
-            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
-            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_ass_froms_across_r26,
-            sarzak_maybe_get_many_r_froms_across_r17,
+            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_isa_across_r13,
+            sarzak_get_one_r_to_across_r5, sarzak_get_one_t_across_r2,
+            sarzak_maybe_get_many_ass_froms_across_r26, sarzak_maybe_get_many_r_froms_across_r17,
+            sarzak_maybe_get_many_r_sups_across_r14,
         },
-        types::{AssociativeReferrer, Attribute, Object, Referrer, Type},
+        types::{AssociativeReferrer, Attribute, Object, Referrer, Subtype, Supertype, Type},
     },
     v1::domain::Domain,
     woog::{
@@ -29,7 +31,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_referrers, object_is_singleton, object_is_supertype,
+        get_referrers_sorted, object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
@@ -279,33 +281,33 @@ impl CodeWriter for DomainFromImpl {
                 emit!(buffer, "let mut to = ObjectStore::new();");
                 for (_, obj) in &objects {
                     emit!(buffer, "");
-                    if object_is_supertype(obj, domain.sarzak()) {
-                        emit!(
-                            buffer,
-                            "// These are just UUID's that are preserved across domains."
-                        );
-                        emit!(buffer, "for (id, _) in from.iter_{}() {{", obj.as_ident());
-                        emit!(
-                            buffer,
-                            "let instance = to.exhume_{}(&id).unwrap();",
-                            obj.as_ident()
-                        );
-                        emit!(buffer, "to.inter_{}(instance.clone());", obj.as_ident());
-                        emit!(buffer, "}}");
-                    } else {
-                        emit!(
-                            buffer,
-                            "for (_, instance) in from.iter_{}() {{",
-                            obj.as_ident()
-                        );
-                        emit!(
-                            buffer,
-                            "let instance = {}::from(instance);",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
-                        );
-                        emit!(buffer, "to.inter_{}(instance);", obj.as_ident());
-                        emit!(buffer, "}}");
-                    }
+                    // if object_is_supertype(obj, domain.sarzak()) {
+                    //     emit!(
+                    //         buffer,
+                    //         "// These are just UUID's that are preserved across domains."
+                    //     );
+                    //     emit!(buffer, "for (id, _) in from.iter_{}() {{", obj.as_ident());
+                    //     emit!(
+                    //         buffer,
+                    //         "let instance = to.exhume_{}(&id).unwrap();",
+                    //         obj.as_ident()
+                    //     );
+                    //     emit!(buffer, "to.inter_{}(instance.clone());", obj.as_ident());
+                    //     emit!(buffer, "}}");
+                    // } else {
+                    emit!(
+                        buffer,
+                        "for (_, instance) in from.iter_{}() {{",
+                        obj.as_ident()
+                    );
+                    emit!(
+                        buffer,
+                        "let instance = {}::from(instance);",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                    emit!(buffer, "to.inter_{}(instance);", obj.as_ident());
+                    emit!(buffer, "}}");
+                    // }
                 }
                 emit!(buffer, "");
                 emit!(buffer, "to");
@@ -315,7 +317,48 @@ impl CodeWriter for DomainFromImpl {
 
                 // Generate the individual From implementations
                 for (_, obj) in &objects {
-                    if !object_is_supertype(obj, domain.sarzak()) {
+                    if object_is_supertype(obj, domain.sarzak()) {
+                        emit!(buffer, "");
+                        emit!(
+                            buffer,
+                            "impl From<&From{}> for {} {{",
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        );
+                        emit!(
+                            buffer,
+                            "fn from(src: &From{}) -> Self {{",
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        );
+                        emit!(buffer, "match src {{");
+                        // Darnedest thing. Uncommenting the line below causes the compiler to
+                        // freak out.
+                        // let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+                        // I'm convinced that R14 and R15 are broken.
+                        let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+                        let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
+                        let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
+                        subtypes.sort_by(|a, b| {
+                            let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
+                            let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
+                            a.name.cmp(&b.name)
+                        });
+
+                        for subtype in subtypes {
+                            let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                            emit!(
+                                buffer,
+                                "From{}::{}(src) => {}::{}(src.clone()),",
+                                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                            );
+                        }
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}}");
+                    } else {
                         emit!(
                             buffer,
                             "impl From<&From{}> for {} {{",
@@ -358,7 +401,7 @@ impl CodeWriter for DomainFromImpl {
                         }
 
                         // Referential Attributes
-                        for referrer in get_referrers!(obj, domain.sarzak()) {
+                        for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
                             let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
                             let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
                             let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
