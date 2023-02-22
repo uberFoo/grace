@@ -36,14 +36,18 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        Self {
+        let store = Self {
             acknowledged_event: HashMap::new(),
             anchor: HashMap::new(),
             event: HashMap::new(),
             isa_ui: HashMap::new(),
             state: HashMap::new(),
             subtype_anchor: HashMap::new(),
-        }
+        };
+
+        // Initialize Singleton Subtypes
+
+        store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative-object-store-methods"}}}

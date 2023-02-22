@@ -22,8 +22,8 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments, get_subtypes_sorted,
-        render::{RenderIdent, RenderType},
+        emit_object_comments, find_store, get_subtypes_sorted, object_is_singleton,
+        render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
     types::{CodeWriter, MethodImplementation, TypeDefinition},
@@ -31,24 +31,24 @@ use crate::{
 
 /// Domain Enum Generator / CodeWriter
 ///
-pub(crate) struct DomainEnum;
+pub(crate) struct Enum;
 
-impl DomainEnum {
+impl Enum {
     pub(crate) fn new() -> Box<dyn TypeDefinition> {
         Box::new(Self)
     }
 }
 
-impl TypeDefinition for DomainEnum {}
+impl TypeDefinition for Enum {}
 
-impl CodeWriter for DomainEnum {
+impl CodeWriter for Enum {
     fn write_code(
         &self,
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
-        _module: &str,
+        module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
@@ -91,6 +91,31 @@ impl CodeWriter for DomainEnum {
                 Ok(())
             },
         )?;
+
+        for subtype in &subtypes {
+            let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+            if object_is_singleton(&s_obj, domain.sarzak()) {
+                emit!(
+                    buffer,
+                    "use crate::{}::types::{}::{};",
+                    module,
+                    s_obj.as_ident(),
+                    s_obj.as_const()
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "use crate::{}::types::{}::{};",
+                    module,
+                    s_obj.as_ident(),
+                    s_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                );
+            }
+        }
+
+        let store = find_store(module, domain);
+        emit!(buffer, "use {} as {};", store.path, store.name);
+
         emit!(buffer, "");
 
         log::debug!("writing Enum Definition for {}", obj.name);
@@ -135,17 +160,17 @@ impl CodeWriter for DomainEnum {
     }
 }
 
-pub(crate) struct DomainEnumGetIdImpl;
+pub(crate) struct EnumGetIdImpl;
 
-impl DomainEnumGetIdImpl {
+impl EnumGetIdImpl {
     pub(crate) fn new() -> Box<dyn MethodImplementation> {
         Box::new(Self)
     }
 }
 
-impl MethodImplementation for DomainEnumGetIdImpl {}
+impl MethodImplementation for EnumGetIdImpl {}
 
-impl CodeWriter for DomainEnumGetIdImpl {
+impl CodeWriter for EnumGetIdImpl {
     fn write_code(
         &self,
         _config: &GraceConfig,
@@ -159,7 +184,7 @@ impl CodeWriter for DomainEnumGetIdImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DomainNewImpl"
+                description: "obj_id is required by EnumGetIdImpl"
             }
         );
         let obj_id = obj_id.unwrap();
@@ -194,6 +219,97 @@ impl CodeWriter for DomainEnumGetIdImpl {
                 }
                 emit!(buffer, "}}");
                 emit!(buffer, "}}");
+                Ok(())
+            },
+        )?;
+
+        Ok(())
+    }
+}
+
+pub(crate) struct EnumNewImpl;
+
+impl EnumNewImpl {
+    pub(crate) fn new() -> Box<dyn MethodImplementation> {
+        Box::new(Self)
+    }
+}
+
+impl MethodImplementation for EnumNewImpl {}
+
+impl CodeWriter for EnumNewImpl {
+    fn write_code(
+        &self,
+        _config: &GraceConfig,
+        domain: &Domain,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
+        module: &str,
+        obj_id: Option<&Uuid>,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
+        ensure!(
+            obj_id.is_some(),
+            CompilerSnafu {
+                description: "obj_id is required by DomainNewImpl"
+            }
+        );
+        let obj_id = obj_id.unwrap();
+        let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+
+        let store = find_store(module, domain);
+        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-new-impl", obj.as_ident()),
+            |buffer| {
+                for subtype in subtypes {
+                    let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                    emit!(
+                        buffer,
+                        "/// Create a new instance of {}::{}",
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                    if object_is_singleton(&s_obj, domain.sarzak()) {
+                        emit!(
+                            buffer,
+                            "pub fn new_{}(_store: &mut {}) -> Self {{",
+                            s_obj.as_ident(),
+                            store.name
+                        );
+                        emit!(
+                            buffer,
+                            "// This is already in the store, see associated function `new` above."
+                        );
+                        emit!(
+                            buffer,
+                            "Self::{}({})",
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                            s_obj.as_const()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
+                            s_obj.as_ident(),
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                            store.name
+                        );
+                        emit!(
+                            buffer,
+                            "let new = Self::{}({}.id);",
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                            s_obj.as_ident()
+                        );
+                        emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                        emit!(buffer, "new");
+                    }
+                    emit!(buffer, "}}");
+                    emit!(buffer, "");
+                }
                 Ok(())
             },
         )?;

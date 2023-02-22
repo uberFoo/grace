@@ -26,10 +26,14 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        Self {
+        let store = Self {
             everything: HashMap::new(),
             rando_object: HashMap::new(),
-        }
+        };
+
+        // Initialize Singleton Subtypes
+
+        store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything-object-store-methods"}}}

@@ -19,7 +19,9 @@ use std::{fs, io, path::Path};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::domain::isa::types::{NotImportant, SimpleSupertype, SubtypeA, SubtypeB, SuperT};
+use crate::domain::isa::types::{
+    NotImportant, SimpleSupertype, SubtypeA, SubtypeB, SuperT, SIMPLE_SUBTYPE_A, SIMPLE_SUBTYPE_B,
+};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
@@ -32,13 +34,19 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        Self {
+        let mut store = Self {
             not_important: HashMap::new(),
             simple_supertype: HashMap::new(),
             subtype_a: HashMap::new(),
             subtype_b: HashMap::new(),
             super_t: HashMap::new(),
-        }
+        };
+
+        // Initialize Singleton Subtypes
+        store.inter_simple_supertype(SimpleSupertype::SimpleSubtypeA(SIMPLE_SUBTYPE_A));
+        store.inter_simple_supertype(SimpleSupertype::SimpleSubtypeB(SIMPLE_SUBTYPE_B));
+
+        store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa-object-store-methods"}}}

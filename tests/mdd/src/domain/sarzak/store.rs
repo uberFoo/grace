@@ -36,7 +36,8 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::{
     AcknowledgedEvent, Associative, AssociativeReferent, AssociativeReferrer, Attribute, Binary,
     Cardinality, Conditionality, Event, External, Isa, Object, Referent, Referrer, Relationship,
-    State, Subtype, Supertype, Ty,
+    State, Subtype, Supertype, Ty, BOOLEAN, CONDITIONAL, FLOAT, INTEGER, MANY, ONE, STRING,
+    UNCONDITIONAL, UUID,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -64,7 +65,7 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        Self {
+        let mut store = Self {
             acknowledged_event: HashMap::new(),
             associative: HashMap::new(),
             associative_referent: HashMap::new(),
@@ -84,7 +85,20 @@ impl ObjectStore {
             subtype: HashMap::new(),
             supertype: HashMap::new(),
             ty: HashMap::new(),
-        }
+        };
+
+        // Initialize Singleton Subtypes
+        store.inter_cardinality(Cardinality::Many(MANY));
+        store.inter_cardinality(Cardinality::One(ONE));
+        store.inter_conditionality(Conditionality::Conditional(CONDITIONAL));
+        store.inter_conditionality(Conditionality::Unconditional(UNCONDITIONAL));
+        store.inter_ty(Ty::Boolean(BOOLEAN));
+        store.inter_ty(Ty::Float(FLOAT));
+        store.inter_ty(Ty::Integer(INTEGER));
+        store.inter_ty(Ty::String(STRING));
+        store.inter_ty(Ty::Uuid(UUID));
+
+        store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-methods"}}}

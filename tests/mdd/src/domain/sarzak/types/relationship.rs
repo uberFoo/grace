@@ -5,6 +5,10 @@ use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+use crate::domain::sarzak::store::ObjectStore as SarzakStore;
+use crate::domain::sarzak::types::associative::Associative;
+use crate::domain::sarzak::types::binary::Binary;
+use crate::domain::sarzak::types::isa::Isa;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-enum-documentation"}}}
 /// A `Relationship` indicates that a set of objects are connected to each other in some manner
@@ -27,6 +31,29 @@ pub enum Relationship {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-implementation"}}}
 impl Relationship {
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-new-impl"}}}
+    /// Create a new instance of Relationship::Associative
+    pub fn new_associative(associative: &Associative, store: &mut SarzakStore) -> Self {
+        let new = Self::Associative(associative.id);
+        store.inter_relationship(new.clone());
+        new
+    }
+
+    /// Create a new instance of Relationship::Binary
+    pub fn new_binary(binary: &Binary, store: &mut SarzakStore) -> Self {
+        let new = Self::Binary(binary.id);
+        store.inter_relationship(new.clone());
+        new
+    }
+
+    /// Create a new instance of Relationship::Isa
+    pub fn new_isa(isa: &Isa, store: &mut SarzakStore) -> Self {
+        let new = Self::Isa(isa.id);
+        store.inter_relationship(new.clone());
+        new
+    }
+
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {

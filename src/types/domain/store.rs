@@ -4,7 +4,13 @@ use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::Object,
+    sarzak::{
+        macros::{
+            sarzak_get_many_r_subs_across_r27, sarzak_get_one_obj_across_r15,
+            sarzak_get_one_r_isa_across_r13, sarzak_maybe_get_many_r_sups_across_r14,
+        },
+        types::{Object, Subtype, Supertype},
+    },
     v1::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
@@ -20,7 +26,7 @@ use crate::{
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         object_is_singleton, object_is_supertype,
-        render::{RenderIdent, RenderType},
+        render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
     types::ObjectStoreDefinition,
@@ -292,6 +298,10 @@ impl CodeWriter for DomainStore {
     ) -> Result<()> {
         let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+        let supertypes = objects
+            .iter()
+            .filter(|(_, obj)| object_is_supertype(obj, domain.sarzak()))
+            .collect::<Vec<_>>();
         let objects = objects
             .iter()
             .filter(|(id, obj)| {
@@ -314,6 +324,7 @@ impl CodeWriter for DomainStore {
                 } else {
                     false
                 };
+                let mut singleton_subs = false;
 
                 if persist {
                     emit!(buffer, "use std::{{io, fs, path::Path}};");
@@ -332,6 +343,25 @@ impl CodeWriter for DomainStore {
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
                 }
+                for (_, obj) in &supertypes {
+                    // I'm convinced that R14 and R15 are broken.
+                    let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+                    let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
+                    let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
+                    subtypes.sort_by(|a, b| {
+                        let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
+                        let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
+                        a.name.cmp(&b.name)
+                    });
+
+                    for subtype in subtypes {
+                        let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                        if object_is_singleton(&s_obj, domain.sarzak()) {
+                            singleton_subs = true;
+                            emit!(buffer, "{},", s_obj.as_const());
+                        }
+                    }
+                }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
                 emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");
@@ -348,11 +378,44 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "");
                 emit!(buffer, "impl ObjectStore {{");
                 emit!(buffer, "pub fn new() -> Self {{");
-                emit!(buffer, "Self {{");
+                if singleton_subs {
+                    emit!(buffer, "let mut store = Self {{");
+                } else {
+                    emit!(buffer, "let store = Self {{");
+                }
                 for (_, obj) in &objects {
                     emit!(buffer, "{}: HashMap::new(),", obj.as_ident());
                 }
-                emit!(buffer, "}}");
+                emit!(buffer, "}};");
+                emit!(buffer, "");
+                emit!(buffer, "// Initialize Singleton Subtypes");
+                for (_, obj) in &supertypes {
+                    // I'm convinced that R14 and R15 are broken.
+                    let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
+                    let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
+                    let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
+                    subtypes.sort_by(|a, b| {
+                        let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
+                        let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
+                        a.name.cmp(&b.name)
+                    });
+
+                    for subtype in subtypes {
+                        let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                        if object_is_singleton(&s_obj, domain.sarzak()) {
+                            emit!(
+                                buffer,
+                                "store.inter_{}({}::{}({}));",
+                                obj.as_ident(),
+                                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                                s_obj.as_const()
+                            );
+                        }
+                    }
+                }
+                emit!(buffer, "");
+                emit!(buffer, "store");
                 emit!(buffer, "}}");
                 emit!(buffer, "");
 

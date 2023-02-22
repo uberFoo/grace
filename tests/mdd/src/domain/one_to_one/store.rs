@@ -32,13 +32,17 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        Self {
+        let store = Self {
             a: HashMap::new(),
             b: HashMap::new(),
             c: HashMap::new(),
             parameter: HashMap::new(),
             referent: HashMap::new(),
-        }
+        };
+
+        // Initialize Singleton Subtypes
+
+        store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_one-object-store-methods"}}}
