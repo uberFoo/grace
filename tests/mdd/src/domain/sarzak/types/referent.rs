@@ -85,13 +85,10 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-to-binary"}}}
     /// Navigate to [`Binary`] across R5(1-1)
     pub fn r5_binary<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Binary> {
-        vec![
-            store
-                .iter_binary()
-                .find(|binary| binary.1.to == self.id)
-                .unwrap()
-                .1,
-        ]
+        vec![store
+            .iter_binary()
+            .find(|binary| binary.to == self.id)
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

@@ -42,9 +42,9 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-cond-to-a"}}}
     /// Navigate to [`A`] across R1(1-1c)
     pub fn r1c_a<'a>(&'a self, store: &'a OneToOneStore) -> Vec<&A> {
-        let a = store.iter_a().find(|a| a.1.ptr == self.id);
+        let a = store.iter_a().find(|a| a.ptr == self.id);
         match a {
-            Some(ref a) => vec![a.1],
+            Some(ref a) => vec![a],
             None => Vec::new(),
         }
     }
@@ -52,15 +52,15 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-to-b"}}}
     /// Navigate to [`B`] across R2(1-1)
     pub fn r2_b<'a>(&'a self, store: &'a OneToOneStore) -> Vec<&B> {
-        vec![store.iter_b().find(|b| b.1.ptr == self.id).unwrap().1]
+        vec![store.iter_b().find(|b| b.ptr == self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-bi-cond-to-c"}}}
     /// Navigate to [`C`] across R3(1c-1c)
     pub fn r3c_c<'a>(&'a self, store: &'a OneToOneStore) -> Vec<&C> {
-        let c = store.iter_c().find(|c| c.1.ptr == Some(self.id));
+        let c = store.iter_c().find(|c| c.ptr == Some(self.id));
         match c {
-            Some(ref c) => vec![c.1],
+            Some(ref c) => vec![c],
             None => Vec::new(),
         }
     }

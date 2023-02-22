@@ -5,6 +5,9 @@ use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+use crate::domain::isa::store::ObjectStore as IsaStore;
+use crate::domain::isa::types::subtype_a::SubtypeA;
+use crate::domain::isa::types::subtype_b::SubtypeB;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-documentation"}}}
 /// A [`Supertype`] with normal [`Subtype`]s
@@ -22,6 +25,22 @@ pub enum SuperT {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-implementation"}}}
 impl SuperT {
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-new-impl"}}}
+    /// Create a new instance of SuperT::SubtypeA
+    pub fn new_subtype_a(subtype_a: &SubtypeA, store: &mut IsaStore) -> Self {
+        let new = Self::SubtypeA(subtype_a.id);
+        store.inter_super_t(new.clone());
+        new
+    }
+
+    /// Create a new instance of SuperT::SubtypeB
+    pub fn new_subtype_b(subtype_b: &SubtypeB, store: &mut IsaStore) -> Self {
+        let new = Self::SubtypeB(subtype_b.id);
+        store.inter_super_t(new.clone());
+        new
+    }
+
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {

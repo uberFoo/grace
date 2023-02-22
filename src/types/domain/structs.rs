@@ -825,7 +825,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
                 emit!(
                     buffer,
-                    ".find(|{}| {}.1.{} == self.id).unwrap().1]",
+                    ".find(|{}| {}.{} == self.id).unwrap()]",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident()
@@ -876,7 +876,7 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    ".find(|{}| {}.1.{} == self.id);",
+                    ".find(|{}| {}.{} == self.id);",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident()
@@ -884,7 +884,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "match {} {{", r_obj.as_ident());
                 emit!(
                     buffer,
-                    "Some(ref {}) => vec![{}.1],",
+                    "Some(ref {}) => vec![{}],",
                     r_obj.as_ident(),
                     r_obj.as_ident()
                 );
@@ -936,7 +936,7 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    ".find(|{}| {}.1.{} == Some(self.id));",
+                    ".find(|{}| {}.{} == Some(self.id));",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident()
@@ -944,7 +944,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "match {} {{", r_obj.as_ident());
                 emit!(
                     buffer,
-                    "Some(ref {}) => vec![{}.1],",
+                    "Some(ref {}) => vec![{}],",
                     r_obj.as_ident(),
                     r_obj.as_ident()
                 );
@@ -991,7 +991,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
                     buffer,
-                    ".filter_map(|{}| if {}.1.{} == self.id {{ Some({}.1) }} else {{ None }})",
+                    ".filter_map(|{}| if {}.{} == self.id {{ Some({}) }} else {{ None }})",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident(),
@@ -1039,7 +1039,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
                     buffer,
-                    ".filter_map(|{}| if {}.1.{} == Some(self.id) {{ Some({}.1) }} else {{ None }})",
+                    ".filter_map(|{}| if {}.{} == Some(self.id) {{ Some({}) }} else {{ None }})",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident(),
@@ -1131,7 +1131,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
                 emit!(
                     buffer,
-                    ".find(|{}| {}.1.{} == self.id).unwrap().1]",
+                    ".find(|{}| {}.{} == self.id).unwrap()]",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referential_attribute.as_ident()
@@ -1182,7 +1182,7 @@ impl DomainRelNavImpl {
                 );
                 emit!(
                     buffer,
-                    ".find(|{}| {}.1.{} == self.id);",
+                    ".find(|{}| {}.{} == self.id);",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referential_attribute.as_ident()
@@ -1190,7 +1190,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "match {} {{", r_obj.as_ident());
                 emit!(
                     buffer,
-                    "Some(ref {}) => vec![{}.1],",
+                    "Some(ref {}) => vec![{}],",
                     r_obj.as_ident(),
                     r_obj.as_ident()
                 );
@@ -1237,7 +1237,7 @@ impl DomainRelNavImpl {
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
                     buffer,
-                    ".filter_map(|{}| if {}.1.{} == self.id {{ Some({}.1) }} else {{ None }})",
+                    ".filter_map(|{}| if {}.{} == self.id {{ Some({}) }} else {{ None }})",
                     r_obj.as_ident(),
                     r_obj.as_ident(),
                     referential_attribute.as_ident(),

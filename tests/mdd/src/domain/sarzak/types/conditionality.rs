@@ -5,6 +5,9 @@ use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+use crate::domain::sarzak::store::ObjectStore as SarzakStore;
+use crate::domain::sarzak::types::conditional::CONDITIONAL;
+use crate::domain::sarzak::types::unconditional::UNCONDITIONAL;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditionality-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -15,6 +18,20 @@ pub enum Conditionality {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditionality-implementation"}}}
 impl Conditionality {
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditionality-new-impl"}}}
+    /// Create a new instance of Conditionality::Conditional
+    pub fn new_conditional(_store: &mut SarzakStore) -> Self {
+        // This is already in the store, see associated function `new` above.
+        Self::Conditional(CONDITIONAL)
+    }
+
+    /// Create a new instance of Conditionality::Unconditional
+    pub fn new_unconditional(_store: &mut SarzakStore) -> Self {
+        // This is already in the store, see associated function `new` above.
+        Self::Unconditional(UNCONDITIONAL)
+    }
+
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditionality-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {

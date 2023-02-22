@@ -44,7 +44,7 @@ impl Referent {
     pub fn r1_a<'a>(&'a self, store: &'a OneToManyStore) -> Vec<&A> {
         store
             .iter_a()
-            .filter_map(|a| if a.1.ptr == self.id { Some(a.1) } else { None })
+            .filter_map(|a| if a.ptr == self.id { Some(a) } else { None })
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -54,8 +54,8 @@ impl Referent {
         store
             .iter_b()
             .filter_map(|b| {
-                if b.1.ptr == Some(self.id) {
-                    Some(b.1)
+                if b.ptr == Some(self.id) {
+                    Some(b)
                 } else {
                     None
                 }
@@ -68,7 +68,7 @@ impl Referent {
     pub fn r3_c<'a>(&'a self, store: &'a OneToManyStore) -> Vec<&C> {
         store
             .iter_c()
-            .filter_map(|c| if c.1.ptr == self.id { Some(c.1) } else { None })
+            .filter_map(|c| if c.ptr == self.id { Some(c) } else { None })
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -78,8 +78,8 @@ impl Referent {
         store
             .iter_d()
             .filter_map(|d| {
-                if d.1.ptr == Some(self.id) {
-                    Some(d.1)
+                if d.ptr == Some(self.id) {
+                    Some(d)
                 } else {
                     None
                 }

@@ -18,7 +18,9 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::domain::isa_clone::types::{NotImportant, SimpleSupertype, SubtypeA, SubtypeB, SuperT};
+use crate::domain::isa_clone::types::{
+    NotImportant, SimpleSupertype, SubtypeA, SubtypeB, SuperT, SIMPLE_SUBTYPE_A, SIMPLE_SUBTYPE_B,
+};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
@@ -31,15 +33,22 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        Self {
+        let mut store = Self {
             not_important: HashMap::new(),
             simple_supertype: HashMap::new(),
             subtype_a: HashMap::new(),
             subtype_b: HashMap::new(),
             super_t: HashMap::new(),
-        }
+        };
+
+        // Initialize Singleton Subtypes
+        store.inter_simple_supertype(SimpleSupertype::SimpleSubtypeA(SIMPLE_SUBTYPE_A));
+        store.inter_simple_supertype(SimpleSupertype::SimpleSubtypeB(SIMPLE_SUBTYPE_B));
+
+        store
     }
 
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-methods"}}}
     /// Inter [`NotImportant`] into the store.
     ///
     pub fn inter_not_important(&mut self, not_important: NotImportant) {
@@ -58,8 +67,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, NotImportant>`.
     ///
-    pub fn iter_not_important(&self) -> impl Iterator<Item = (&Uuid, &NotImportant)> {
-        self.not_important.iter()
+    pub fn iter_not_important(&self) -> impl Iterator<Item = &NotImportant> {
+        self.not_important.values()
     }
     /// Inter [`SimpleSupertype`] into the store.
     ///
@@ -80,8 +89,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSupertype>`.
     ///
-    pub fn iter_simple_supertype(&self) -> impl Iterator<Item = (&Uuid, &SimpleSupertype)> {
-        self.simple_supertype.iter()
+    pub fn iter_simple_supertype(&self) -> impl Iterator<Item = &SimpleSupertype> {
+        self.simple_supertype.values()
     }
     /// Inter [`SubtypeA`] into the store.
     ///
@@ -101,8 +110,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeA>`.
     ///
-    pub fn iter_subtype_a(&self) -> impl Iterator<Item = (&Uuid, &SubtypeA)> {
-        self.subtype_a.iter()
+    pub fn iter_subtype_a(&self) -> impl Iterator<Item = &SubtypeA> {
+        self.subtype_a.values()
     }
     /// Inter [`SubtypeB`] into the store.
     ///
@@ -122,8 +131,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeB>`.
     ///
-    pub fn iter_subtype_b(&self) -> impl Iterator<Item = (&Uuid, &SubtypeB)> {
-        self.subtype_b.iter()
+    pub fn iter_subtype_b(&self) -> impl Iterator<Item = &SubtypeB> {
+        self.subtype_b.values()
     }
     /// Inter [`SuperT`] into the store.
     ///
@@ -143,9 +152,10 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SuperT>`.
     ///
-    pub fn iter_super_t(&self) -> impl Iterator<Item = (&Uuid, &SuperT)> {
-        self.super_t.iter()
+    pub fn iter_super_t(&self) -> impl Iterator<Item = &SuperT> {
+        self.super_t.values()
     }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

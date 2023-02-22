@@ -49,9 +49,9 @@ impl Anchor {
     pub fn r10_subtype_anchor<'a>(&'a self, store: &'a AssociativeStore) -> Vec<&SubtypeAnchor> {
         let subtype_anchor = store
             .iter_subtype_anchor()
-            .find(|subtype_anchor| subtype_anchor.1.anchor_id == self.id);
+            .find(|subtype_anchor| subtype_anchor.anchor_id == self.id);
         match subtype_anchor {
-            Some(ref subtype_anchor) => vec![subtype_anchor.1],
+            Some(ref subtype_anchor) => vec![subtype_anchor],
             None => Vec::new(),
         }
     }

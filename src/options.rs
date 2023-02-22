@@ -50,10 +50,11 @@ pub struct DomainConfig {
     /// if there is a corresponding object in the source domain.
     ///
     /// The source domain to be use for extrusion, using the `from` trait,
-    /// is specified using the `--from-domain` option.
+    /// is specified using the `--from-path` option, which is required if
+    /// using this option.
     ///
     /// This is the path to a module, e.g., `generated::sarzak`.
-    #[arg(long)]
+    #[arg(long, requires = "from_path")]
     pub from_module: Option<String>,
     /// Path to the source domain's model file
     ///
@@ -61,13 +62,17 @@ pub struct DomainConfig {
     /// inspected for sources for the `From` trait.
     ///
     /// This is a file system path, relative to the current package.
+    ///
+    /// This option requires the `--from-module` option.
     #[arg(long, requires = "from_module")]
     pub from_path: Option<PathBuf>,
     /// Persist ObjectStore
     ///
     /// Wheen this option is specified, code will be generated that will persist
-    /// the ObjectStore to disk. This is used to persist model files. It may be
-    /// useful for persisting user domains.
+    /// the ObjectStore to disk.
+    ///
+    /// This is used to persist model files. It may be useful for persisting
+    /// user domains.
     #[arg(long, short, action=ArgAction::SetTrue)]
     pub persist: bool,
 }
@@ -205,9 +210,9 @@ impl GraceConfig {
     /// to be Target::Domain.
     pub(crate) fn get_from_domain(&self) -> Option<FromDomain> {
         match self.get_target() {
-            Target::Domain(target) => {
-                if let Some(module) = target.from_module.clone() {
-                    if let Some(path) = target.from_path.clone() {
+            Target::Domain(config) => {
+                if let Some(module) = config.from_module.clone() {
+                    if let Some(path) = config.from_path.clone() {
                         Some(FromDomain { module, path })
                     } else {
                         None
@@ -216,6 +221,16 @@ impl GraceConfig {
                     None
                 }
             }
+            _ => None,
+        }
+    }
+
+    /// Get the `persist` value for the target.
+    ///
+    /// As above, this is sort of a special purpose function.
+    pub(crate) fn get_persist(&self) -> Option<bool> {
+        match self.get_target() {
+            Target::Domain(config) => Some(config.persist),
             _ => None,
         }
     }

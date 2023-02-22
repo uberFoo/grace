@@ -28,7 +28,7 @@ use crate::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
             consts::DomainConst,
-            enums::{DomainEnum, DomainEnumGetIdImpl},
+            enums::{Enum, EnumGetIdImpl, EnumNewImpl},
             from::{DomainFromBuilder, DomainFromImpl},
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, DomainRelNavImpl, DomainStruct, DomainStructNewImpl},
@@ -204,10 +204,11 @@ impl<'a> DomainTarget<'a> {
             // Test if the object is a supertype. Those we generate as enums.
             let generator = if object_is_supertype(obj, self.domain.sarzak()) {
                 DefaultStructBuilder::new()
-                    .definition(DomainEnum::new())
+                    .definition(Enum::new())
                     .implementation(
                         DomainImplBuilder::new()
-                            .method(DomainEnumGetIdImpl::new())
+                            .method(EnumNewImpl::new())
+                            .method(EnumGetIdImpl::new())
                             .build(),
                     )
                     .build()?

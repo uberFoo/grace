@@ -10,6 +10,7 @@
 //! * [`AnotherObject`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-definition"}}}
 use std::collections::HashMap;
+use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -23,11 +24,16 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        Self {
+        let store = Self {
             another_object: HashMap::new(),
-        }
+        };
+
+        // Initialize Singleton Subtypes
+
+        store
     }
 
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-methods"}}}
     /// Inter [`AnotherObject`] into the store.
     ///
     pub fn inter_another_object(&mut self, another_object: AnotherObject) {
@@ -47,9 +53,58 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, AnotherObject>`.
     ///
-    pub fn iter_another_object(&self) -> impl Iterator<Item = (&Uuid, &AnotherObject)> {
-        self.another_object.iter()
+    pub fn iter_another_object(&self) -> impl Iterator<Item = &AnotherObject> {
+        self.another_object.values()
     }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-persistence"}}}
+    /// Persist the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn persist<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+        let path = path.as_ref();
+        let path = path.join("imported_object.json");
+        fs::create_dir_all(&path)?;
+
+        // Persist another_object.
+        {
+            let path = path.join("another_object.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.another_object.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let path = path.join("imported_object.json");
+
+        let mut store = Self::new();
+
+        // Load another_object.
+        {
+            let path = path.join("another_object.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let another_object: Vec<AnotherObject> = serde_json::from_reader(reader)?;
+            store.another_object = another_object.into_iter().map(|道| (道.id, 道)).collect();
+        }
+
+        Ok(store)
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

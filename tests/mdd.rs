@@ -1,9 +1,6 @@
 //! Model Driven Development FTW! ✨
 //!
-use std::{
-    path::PathBuf,
-    process::{self, ExitCode},
-};
+use std::process::{self, ExitCode};
 
 use env_logger;
 use grace::{DomainConfig, GraceCompilerOptions, ModelCompiler, SarzakModelCompiler, Target};
@@ -17,7 +14,11 @@ macro_rules! test_target_domain {
             let _ = env_logger::builder().is_test(true).try_init();
 
             let mut options = GraceCompilerOptions::default();
-            options.target = Target::Domain(DomainConfig::default());
+            options.target = Target::Domain(DomainConfig {
+                from_module: None,
+                from_path: None,
+                persist: true,
+            });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
                 derive.push("Deserialize".to_string());
@@ -66,7 +67,11 @@ macro_rules! test_target_domain {
             let _ = env_logger::builder().is_test(true).try_init();
 
             let mut options = GraceCompilerOptions::default();
-            options.target = Target::Domain(DomainConfig::default());
+            options.target = Target::Domain(DomainConfig {
+                from_module: None,
+                from_path: None,
+                persist: true,
+            });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
                 derive.push("Deserialize".to_string());
@@ -181,6 +186,7 @@ test_target_domain!(
     "associative",
     "tests/mdd/models/associative.json"
 );
+// This one has imports
 test_target_domain!(
     imported_object_domain,
     "imported_object",

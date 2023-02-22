@@ -72,8 +72,8 @@ impl Object {
         store
             .iter_associative_referent()
             .filter_map(|associative_referent| {
-                if associative_referent.1.obj_id == self.id {
-                    Some(associative_referent.1)
+                if associative_referent.obj_id == self.id {
+                    Some(associative_referent)
                 } else {
                     None
                 }
@@ -90,8 +90,8 @@ impl Object {
         store
             .iter_associative_referrer()
             .filter_map(|associative_referrer| {
-                if associative_referrer.1.obj_id == self.id {
-                    Some(associative_referrer.1)
+                if associative_referrer.obj_id == self.id {
+                    Some(associative_referrer)
                 } else {
                     None
                 }
@@ -105,8 +105,8 @@ impl Object {
         store
             .iter_attribute()
             .filter_map(|attribute| {
-                if attribute.1.obj_id == Some(self.id) {
-                    Some(attribute.1)
+                if attribute.obj_id == Some(self.id) {
+                    Some(attribute)
                 } else {
                     None
                 }
@@ -120,8 +120,8 @@ impl Object {
         store
             .iter_event()
             .filter_map(|event| {
-                if event.1.obj_id == self.id {
-                    Some(event.1)
+                if event.obj_id == self.id {
+                    Some(event)
                 } else {
                     None
                 }
@@ -135,8 +135,8 @@ impl Object {
         store
             .iter_referent()
             .filter_map(|referent| {
-                if referent.1.obj_id == self.id {
-                    Some(referent.1)
+                if referent.obj_id == self.id {
+                    Some(referent)
                 } else {
                     None
                 }
@@ -150,8 +150,8 @@ impl Object {
         store
             .iter_referrer()
             .filter_map(|referrer| {
-                if referrer.1.obj_id == self.id {
-                    Some(referrer.1)
+                if referrer.obj_id == self.id {
+                    Some(referrer)
                 } else {
                     None
                 }
@@ -165,8 +165,8 @@ impl Object {
         store
             .iter_state()
             .filter_map(|state| {
-                if state.1.obj_id == self.id {
-                    Some(state.1)
+                if state.obj_id == self.id {
+                    Some(state)
                 } else {
                     None
                 }
@@ -180,8 +180,8 @@ impl Object {
         store
             .iter_subtype()
             .filter_map(|subtype| {
-                if subtype.1.obj_id == self.id {
-                    Some(subtype.1)
+                if subtype.obj_id == self.id {
+                    Some(subtype)
                 } else {
                     None
                 }
@@ -195,8 +195,8 @@ impl Object {
         store
             .iter_supertype()
             .filter_map(|supertype| {
-                if supertype.1.obj_id == self.id {
-                    Some(supertype.1)
+                if supertype.obj_id == self.id {
+                    Some(supertype)
                 } else {
                     None
                 }

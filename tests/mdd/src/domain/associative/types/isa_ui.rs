@@ -41,8 +41,8 @@ impl IsaUi {
         store
             .iter_subtype_anchor()
             .filter_map(|subtype_anchor| {
-                if subtype_anchor.1.isaui_id == self.id {
-                    Some(subtype_anchor.1)
+                if subtype_anchor.isaui_id == self.id {
+                    Some(subtype_anchor)
                 } else {
                     None
                 }
