@@ -59,18 +59,18 @@ pub struct NotImportant {
     pub id: Uuid,
     pub name: Uuid,
     /// R888: [`NotImportant`] 'is referring to' [`SuperT`]
-    pub x_ref: Option<Uuid>,
+    pub x_ref: Uuid,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-implementation"}}}
 impl NotImportant {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new"}}}
     /// Inter a new NotImportant in the store, and return it's `id`.
-    pub fn new(name: Uuid, x_ref: Option<&SuperT>, store: &mut IsaStore) -> NotImportant {
+    pub fn new(name: Uuid, x_ref: &SuperT, store: &mut IsaStore) -> NotImportant {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, x_ref).as_bytes());
         let new = NotImportant {
             name: name,
-            x_ref: x_ref.map(|super_t| super_t.id()),
+            x_ref: x_ref.id(),
             id,
         };
         store.inter_not_important(new.clone());
@@ -78,12 +78,10 @@ impl NotImportant {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-cond-to-x_ref"}}}
-    /// Navigate to [`SuperT`] across R888(1-?c)
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-to-x_ref"}}}
+    /// Navigate to [`SuperT`] across R888(1-?)
     pub fn r888_super_t<'a>(&'a self, store: &'a IsaStore) -> Vec<&SuperT> {
-        match self.x_ref {
-            Some(ref x_ref) => vec![store.exhume_super_t(x_ref).unwrap()],
-            None => Vec::new(),
-        }
+        vec![store.exhume_super_t(&self.x_ref).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

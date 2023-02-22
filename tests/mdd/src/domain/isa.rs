@@ -14,41 +14,25 @@ pub const UUID_NS: Uuid = uuid!("fdd6c56b-f3fb-59ba-b387-31dd1ff762ea");
 
 #[cfg(test)]
 mod tests {
-    //! I'm not sure what to test here. Making macros to traverse the Isa
-    //! relationship is just weird. I don't think it makes any sense, but
-    //! if it does in the future, I'll come back to it. For now, this
-    //! half-baked attempt at a test. I hate deleting stuff. Bits are cheap.
-    //!
-    //! Update — so maybe this is an enum test? I don't currently do enums,
-    //! and this should be creating enums.
-    // use super::*;
+    use super::*;
 
     #[test]
     fn test_r1() {
-        // let mut store = ObjectStore::new();
-        // What's the point of navigating this? So, let's agree that supertype
-        // to subtype navigation is trivial.
-        //
-        // > Care to explain?
-        //
-        // I have no idea what I _was_ thinking, but if you have a supertype it's
-        // easy enough to get the subtype: `super.id()` will do it. But you have
-        // no idea which subtype you are holding. You'd need to match on self
-        // to really get it done.
-        //
-        // Let's go the other way. This is
-        // opposite to the "owned property" of e.g., objects and attributes.
-        //
-        // > The other way makes no sense.
-        //
-        // For one what would be the point? As it is supertypes are barren wastelands
-        // when it comes to attributes. They don't even have a real id. Their id
-        // is that of their current subtype.
-        //
-        // But beyond that, there is no supertype. It's just a UUID that points at
-        // a subtype. So there. No point going forward, no point going backward.
-        //
-        // Still, we can test the store, I suppose.
-        //
+        let mut store = ObjectStore::new();
+
+        let a = SimpleSupertype::new_simple_subtype_a(&mut store);
+        let b = SimpleSupertype::new_simple_subtype_b(&mut store);
+        assert_eq!(&a, store.exhume_simple_supertype(&a.id()).unwrap());
+        assert_eq!(&b, store.exhume_simple_supertype(&b.id()).unwrap());
+
+        let a = SubtypeA::new("a".to_owned(), &mut store);
+        let sa = SuperT::new_subtype_a(&a, &mut store);
+        let b = SubtypeB::new(8, &mut store);
+        let sb = SuperT::new_subtype_b(&b, &mut store);
+
+        assert_eq!(&a, store.exhume_subtype_a(&a.id).unwrap());
+        assert_eq!(&b, store.exhume_subtype_b(&b.id).unwrap());
+        assert_eq!(&sa, store.exhume_super_t(&sa.id()).unwrap());
+        assert_eq!(&sb, store.exhume_super_t(&sb.id()).unwrap());
     }
 }
