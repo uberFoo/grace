@@ -75,6 +75,8 @@ impl CodeWriter for DomainConst {
         )?;
 
         let domain_id = Uuid::from_slice(domain.id().as_bytes()).unwrap();
+        // 🚧 There is a domain_ns attribute on paper, that we should probably use here.
+        // It's not currently being captured by nut. Maybe we just stick with this.
         let id = Uuid::new_v5(&domain_id, obj.name.as_bytes());
         buffer.block(
             DirectiveKind::IgnoreOrig,
