@@ -53,13 +53,10 @@ impl AssociativeReferrer {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-backward-one-to-associative"}}}
     /// Navigate to [`Associative`] across R21(1-1)
     pub fn r21_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
-        vec![
-            store
-                .iter_associative()
-                .find(|associative| associative.1.from == self.id)
-                .unwrap()
-                .1,
-        ]
+        vec![store
+            .iter_associative()
+            .find(|associative| associative.from == self.id)
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

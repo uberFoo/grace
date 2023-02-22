@@ -53,10 +53,11 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, AnotherObject>`.
     ///
-    pub fn iter_another_object(&self) -> impl Iterator<Item = (&Uuid, &AnotherObject)> {
-        self.another_object.iter()
+    pub fn iter_another_object(&self) -> impl Iterator<Item = &AnotherObject> {
+        self.another_object.values()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-persistence"}}}
     /// Persist the store.
     ///
@@ -79,6 +80,29 @@ impl ObjectStore {
             )?;
         }
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let path = path.join("imported_object.json");
+
+        let mut store = Self::new();
+
+        // Load another_object.
+        {
+            let path = path.join("another_object.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let another_object: Vec<AnotherObject> = serde_json::from_reader(reader)?;
+            store.another_object = another_object.into_iter().map(|道| (道.id, 道)).collect();
+        }
+
+        Ok(store)
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

@@ -55,8 +55,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Everything>`.
     ///
-    pub fn iter_everything(&self) -> impl Iterator<Item = (&Uuid, &Everything)> {
-        self.everything.iter()
+    pub fn iter_everything(&self) -> impl Iterator<Item = &Everything> {
+        self.everything.values()
     }
     /// Inter [`RandoObject`] into the store.
     ///
@@ -76,10 +76,11 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
     ///
-    pub fn iter_rando_object(&self) -> impl Iterator<Item = (&Uuid, &RandoObject)> {
-        self.rando_object.iter()
+    pub fn iter_rando_object(&self) -> impl Iterator<Item = &RandoObject> {
+        self.rando_object.values()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything-object-store-persistence"}}}
     /// Persist the store.
     ///
@@ -112,6 +113,37 @@ impl ObjectStore {
             )?;
         }
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let path = path.join("everything.json");
+
+        let mut store = Self::new();
+
+        // Load everything.
+        {
+            let path = path.join("everything.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let everything: Vec<Everything> = serde_json::from_reader(reader)?;
+            store.everything = everything.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load rando_object.
+        {
+            let path = path.join("rando_object.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let rando_object: Vec<RandoObject> = serde_json::from_reader(reader)?;
+            store.rando_object = rando_object.into_iter().map(|道| (道.id, 道)).collect();
+        }
+
+        Ok(store)
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

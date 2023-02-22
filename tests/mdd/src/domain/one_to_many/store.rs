@@ -64,8 +64,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, A>`.
     ///
-    pub fn iter_a(&self) -> impl Iterator<Item = (&Uuid, &A)> {
-        self.a.iter()
+    pub fn iter_a(&self) -> impl Iterator<Item = &A> {
+        self.a.values()
     }
     /// Inter [`B`] into the store.
     ///
@@ -85,8 +85,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, B>`.
     ///
-    pub fn iter_b(&self) -> impl Iterator<Item = (&Uuid, &B)> {
-        self.b.iter()
+    pub fn iter_b(&self) -> impl Iterator<Item = &B> {
+        self.b.values()
     }
     /// Inter [`C`] into the store.
     ///
@@ -106,8 +106,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, C>`.
     ///
-    pub fn iter_c(&self) -> impl Iterator<Item = (&Uuid, &C)> {
-        self.c.iter()
+    pub fn iter_c(&self) -> impl Iterator<Item = &C> {
+        self.c.values()
     }
     /// Inter [`D`] into the store.
     ///
@@ -127,8 +127,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, D>`.
     ///
-    pub fn iter_d(&self) -> impl Iterator<Item = (&Uuid, &D)> {
-        self.d.iter()
+    pub fn iter_d(&self) -> impl Iterator<Item = &D> {
+        self.d.values()
     }
     /// Inter [`Referent`] into the store.
     ///
@@ -148,10 +148,11 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
     ///
-    pub fn iter_referent(&self) -> impl Iterator<Item = (&Uuid, &Referent)> {
-        self.referent.iter()
+    pub fn iter_referent(&self) -> impl Iterator<Item = &Referent> {
+        self.referent.values()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_many-object-store-persistence"}}}
     /// Persist the store.
     ///
@@ -214,6 +215,61 @@ impl ObjectStore {
             )?;
         }
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let path = path.join("one_to_many.json");
+
+        let mut store = Self::new();
+
+        // Load a.
+        {
+            let path = path.join("a.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let a: Vec<A> = serde_json::from_reader(reader)?;
+            store.a = a.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load b.
+        {
+            let path = path.join("b.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let b: Vec<B> = serde_json::from_reader(reader)?;
+            store.b = b.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load c.
+        {
+            let path = path.join("c.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let c: Vec<C> = serde_json::from_reader(reader)?;
+            store.c = c.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load d.
+        {
+            let path = path.join("d.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let d: Vec<D> = serde_json::from_reader(reader)?;
+            store.d = d.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load referent.
+        {
+            let path = path.join("referent.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let referent: Vec<Referent> = serde_json::from_reader(reader)?;
+            store.referent = referent.into_iter().map(|道| (道.id, 道)).collect();
+        }
+
+        Ok(store)
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

@@ -219,11 +219,11 @@ impl DomainStore {
                     emit!(buffer, "///");
                     emit!(
                         buffer,
-                        "pub fn iter_{}(&self) -> impl Iterator<Item = (&Uuid, &{})> {{",
+                        "pub fn iter_{}(&self) -> impl Iterator<Item = &{}> {{",
                         obj.as_ident(),
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
                     );
-                    emit!(buffer, "self.{}.iter()", obj.as_ident());
+                    emit!(buffer, "self.{}.values()", obj.as_ident());
                     emit!(buffer, "}}");
                 }
 
@@ -274,6 +274,51 @@ impl DomainStore {
                 }
                 emit!(buffer, "Ok(())");
                 emit!(buffer, "}}");
+                emit!(buffer, "");
+
+                emit!(buffer, "/// Load the store.");
+                emit!(buffer, "///");
+                emit!(buffer, "/// The store is persisted as a directory of JSON files. The intention");
+                emit!(buffer, "/// is that this directory can be checked into version control.");
+                emit!(buffer, "/// In fact, I intend to add automaagic git integration as an option.");
+                emit!(
+                    buffer,
+                    "pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {{"
+                );
+                emit!(buffer, "let path = path.as_ref();");
+                emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
+                emit!(buffer, "");
+                emit!(buffer, "let mut store = Self::new();");
+                emit!(buffer, "");
+                for (_, obj) in objects {
+                    emit!(buffer, "// Load {}.", obj.as_ident());
+                    emit!(buffer, "{{");
+                    emit!(buffer, "let path = path.join(\"{}.json\");", obj.as_ident());
+                    emit!(buffer, "let file = fs::File::open(path)?;");
+                    emit!(buffer, "let reader = io::BufReader::new(file);");
+                    emit!(
+                        buffer,
+                        "let {}: Vec<{}> = serde_json::from_reader(reader)?;",
+                        obj.as_ident(),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    );
+                    if object_is_supertype(obj, domain.sarzak()) {
+                        emit!(buffer,
+                            "store.{} = {}.into_iter().map(|道| ( 道.id(),  道)).collect();",
+                            obj.as_ident(),
+                            obj.as_ident());
+                    } else {
+                        emit!(buffer,
+                            "store.{} = {}.into_iter().map(|道| ( 道.id,  道)).collect();",
+                            obj.as_ident(),
+                            obj.as_ident());
+                    }
+                    emit!(buffer, "}}");
+                }
+                emit!(buffer, "");
+                emit!(buffer, "Ok(store)");
+                emit!(buffer, "}}");
+
 
                 Ok(())
             },
@@ -420,6 +465,8 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "");
 
                 self.generate_store(buffer, &objects, module, domain)?;
+
+                emit!(buffer, "");
 
                 if persist {
                     self.generate_store_persistence(buffer, &objects, module, domain)?;

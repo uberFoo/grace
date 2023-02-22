@@ -89,13 +89,10 @@ impl Referrer {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-struct-impl-nav-backward-one-to-binary"}}}
     /// Navigate to [`Binary`] across R6(1-1)
     pub fn r6_binary<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Binary> {
-        vec![
-            store
-                .iter_binary()
-                .find(|binary| binary.1.from == self.id)
-                .unwrap()
-                .1,
-        ]
+        vec![store
+            .iter_binary()
+            .find(|binary| binary.from == self.id)
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

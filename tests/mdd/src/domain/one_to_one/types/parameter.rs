@@ -55,9 +55,9 @@ impl Parameter {
     pub fn r8c_parameter<'a>(&'a self, store: &'a OneToOneStore) -> Vec<&Parameter> {
         let parameter = store
             .iter_parameter()
-            .find(|parameter| parameter.1.next == Some(self.id));
+            .find(|parameter| parameter.next == Some(self.id));
         match parameter {
-            Some(ref parameter) => vec![parameter.1],
+            Some(ref parameter) => vec![parameter],
             None => Vec::new(),
         }
     }

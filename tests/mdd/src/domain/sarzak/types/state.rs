@@ -53,8 +53,8 @@ impl State {
         store
             .iter_acknowledged_event()
             .filter_map(|acknowledged_event| {
-                if acknowledged_event.1.state_id == self.id {
-                    Some(acknowledged_event.1)
+                if acknowledged_event.state_id == self.id {
+                    Some(acknowledged_event)
                 } else {
                     None
                 }

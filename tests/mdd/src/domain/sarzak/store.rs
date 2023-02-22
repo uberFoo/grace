@@ -121,8 +121,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, AcknowledgedEvent>`.
     ///
-    pub fn iter_acknowledged_event(&self) -> impl Iterator<Item = (&Uuid, &AcknowledgedEvent)> {
-        self.acknowledged_event.iter()
+    pub fn iter_acknowledged_event(&self) -> impl Iterator<Item = &AcknowledgedEvent> {
+        self.acknowledged_event.values()
     }
     /// Inter [`Associative`] into the store.
     ///
@@ -142,8 +142,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Associative>`.
     ///
-    pub fn iter_associative(&self) -> impl Iterator<Item = (&Uuid, &Associative)> {
-        self.associative.iter()
+    pub fn iter_associative(&self) -> impl Iterator<Item = &Associative> {
+        self.associative.values()
     }
     /// Inter [`AssociativeReferent`] into the store.
     ///
@@ -167,8 +167,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, AssociativeReferent>`.
     ///
-    pub fn iter_associative_referent(&self) -> impl Iterator<Item = (&Uuid, &AssociativeReferent)> {
-        self.associative_referent.iter()
+    pub fn iter_associative_referent(&self) -> impl Iterator<Item = &AssociativeReferent> {
+        self.associative_referent.values()
     }
     /// Inter [`AssociativeReferrer`] into the store.
     ///
@@ -192,8 +192,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, AssociativeReferrer>`.
     ///
-    pub fn iter_associative_referrer(&self) -> impl Iterator<Item = (&Uuid, &AssociativeReferrer)> {
-        self.associative_referrer.iter()
+    pub fn iter_associative_referrer(&self) -> impl Iterator<Item = &AssociativeReferrer> {
+        self.associative_referrer.values()
     }
     /// Inter [`Attribute`] into the store.
     ///
@@ -213,8 +213,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Attribute>`.
     ///
-    pub fn iter_attribute(&self) -> impl Iterator<Item = (&Uuid, &Attribute)> {
-        self.attribute.iter()
+    pub fn iter_attribute(&self) -> impl Iterator<Item = &Attribute> {
+        self.attribute.values()
     }
     /// Inter [`Binary`] into the store.
     ///
@@ -234,8 +234,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Binary>`.
     ///
-    pub fn iter_binary(&self) -> impl Iterator<Item = (&Uuid, &Binary)> {
-        self.binary.iter()
+    pub fn iter_binary(&self) -> impl Iterator<Item = &Binary> {
+        self.binary.values()
     }
     /// Inter [`Cardinality`] into the store.
     ///
@@ -255,8 +255,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Cardinality>`.
     ///
-    pub fn iter_cardinality(&self) -> impl Iterator<Item = (&Uuid, &Cardinality)> {
-        self.cardinality.iter()
+    pub fn iter_cardinality(&self) -> impl Iterator<Item = &Cardinality> {
+        self.cardinality.values()
     }
     /// Inter [`Conditionality`] into the store.
     ///
@@ -277,8 +277,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Conditionality>`.
     ///
-    pub fn iter_conditionality(&self) -> impl Iterator<Item = (&Uuid, &Conditionality)> {
-        self.conditionality.iter()
+    pub fn iter_conditionality(&self) -> impl Iterator<Item = &Conditionality> {
+        self.conditionality.values()
     }
     /// Inter [`Event`] into the store.
     ///
@@ -298,8 +298,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
     ///
-    pub fn iter_event(&self) -> impl Iterator<Item = (&Uuid, &Event)> {
-        self.event.iter()
+    pub fn iter_event(&self) -> impl Iterator<Item = &Event> {
+        self.event.values()
     }
     /// Inter [`External`] into the store.
     ///
@@ -319,8 +319,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, External>`.
     ///
-    pub fn iter_external(&self) -> impl Iterator<Item = (&Uuid, &External)> {
-        self.external.iter()
+    pub fn iter_external(&self) -> impl Iterator<Item = &External> {
+        self.external.values()
     }
     /// Inter [`Isa`] into the store.
     ///
@@ -340,8 +340,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Isa>`.
     ///
-    pub fn iter_isa(&self) -> impl Iterator<Item = (&Uuid, &Isa)> {
-        self.isa.iter()
+    pub fn iter_isa(&self) -> impl Iterator<Item = &Isa> {
+        self.isa.values()
     }
     /// Inter [`Object`] into the store.
     ///
@@ -361,8 +361,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Object>`.
     ///
-    pub fn iter_object(&self) -> impl Iterator<Item = (&Uuid, &Object)> {
-        self.object.iter()
+    pub fn iter_object(&self) -> impl Iterator<Item = &Object> {
+        self.object.values()
     }
     /// Inter [`Referent`] into the store.
     ///
@@ -382,8 +382,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
     ///
-    pub fn iter_referent(&self) -> impl Iterator<Item = (&Uuid, &Referent)> {
-        self.referent.iter()
+    pub fn iter_referent(&self) -> impl Iterator<Item = &Referent> {
+        self.referent.values()
     }
     /// Inter [`Referrer`] into the store.
     ///
@@ -403,8 +403,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Referrer>`.
     ///
-    pub fn iter_referrer(&self) -> impl Iterator<Item = (&Uuid, &Referrer)> {
-        self.referrer.iter()
+    pub fn iter_referrer(&self) -> impl Iterator<Item = &Referrer> {
+        self.referrer.values()
     }
     /// Inter [`Relationship`] into the store.
     ///
@@ -424,8 +424,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Relationship>`.
     ///
-    pub fn iter_relationship(&self) -> impl Iterator<Item = (&Uuid, &Relationship)> {
-        self.relationship.iter()
+    pub fn iter_relationship(&self) -> impl Iterator<Item = &Relationship> {
+        self.relationship.values()
     }
     /// Inter [`State`] into the store.
     ///
@@ -445,8 +445,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.
     ///
-    pub fn iter_state(&self) -> impl Iterator<Item = (&Uuid, &State)> {
-        self.state.iter()
+    pub fn iter_state(&self) -> impl Iterator<Item = &State> {
+        self.state.values()
     }
     /// Inter [`Subtype`] into the store.
     ///
@@ -466,8 +466,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Subtype>`.
     ///
-    pub fn iter_subtype(&self) -> impl Iterator<Item = (&Uuid, &Subtype)> {
-        self.subtype.iter()
+    pub fn iter_subtype(&self) -> impl Iterator<Item = &Subtype> {
+        self.subtype.values()
     }
     /// Inter [`Supertype`] into the store.
     ///
@@ -487,8 +487,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Supertype>`.
     ///
-    pub fn iter_supertype(&self) -> impl Iterator<Item = (&Uuid, &Supertype)> {
-        self.supertype.iter()
+    pub fn iter_supertype(&self) -> impl Iterator<Item = &Supertype> {
+        self.supertype.values()
     }
     /// Inter [`Ty`] into the store.
     ///
@@ -508,10 +508,11 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Ty>`.
     ///
-    pub fn iter_ty(&self) -> impl Iterator<Item = (&Uuid, &Ty)> {
-        self.ty.iter()
+    pub fn iter_ty(&self) -> impl Iterator<Item = &Ty> {
+        self.ty.values()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-persistence"}}}
     /// Persist the store.
     ///
@@ -726,6 +727,182 @@ impl ObjectStore {
             )?;
         }
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let path = path.join("sarzak.json");
+
+        let mut store = Self::new();
+
+        // Load acknowledged_event.
+        {
+            let path = path.join("acknowledged_event.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let acknowledged_event: Vec<AcknowledgedEvent> = serde_json::from_reader(reader)?;
+            store.acknowledged_event = acknowledged_event
+                .into_iter()
+                .map(|道| (道.id, 道))
+                .collect();
+        }
+        // Load associative.
+        {
+            let path = path.join("associative.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let associative: Vec<Associative> = serde_json::from_reader(reader)?;
+            store.associative = associative.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load associative_referent.
+        {
+            let path = path.join("associative_referent.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let associative_referent: Vec<AssociativeReferent> = serde_json::from_reader(reader)?;
+            store.associative_referent = associative_referent
+                .into_iter()
+                .map(|道| (道.id, 道))
+                .collect();
+        }
+        // Load associative_referrer.
+        {
+            let path = path.join("associative_referrer.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let associative_referrer: Vec<AssociativeReferrer> = serde_json::from_reader(reader)?;
+            store.associative_referrer = associative_referrer
+                .into_iter()
+                .map(|道| (道.id, 道))
+                .collect();
+        }
+        // Load attribute.
+        {
+            let path = path.join("attribute.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let attribute: Vec<Attribute> = serde_json::from_reader(reader)?;
+            store.attribute = attribute.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load binary.
+        {
+            let path = path.join("binary.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let binary: Vec<Binary> = serde_json::from_reader(reader)?;
+            store.binary = binary.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load cardinality.
+        {
+            let path = path.join("cardinality.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let cardinality: Vec<Cardinality> = serde_json::from_reader(reader)?;
+            store.cardinality = cardinality.into_iter().map(|道| (道.id(), 道)).collect();
+        }
+        // Load conditionality.
+        {
+            let path = path.join("conditionality.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let conditionality: Vec<Conditionality> = serde_json::from_reader(reader)?;
+            store.conditionality = conditionality.into_iter().map(|道| (道.id(), 道)).collect();
+        }
+        // Load event.
+        {
+            let path = path.join("event.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let event: Vec<Event> = serde_json::from_reader(reader)?;
+            store.event = event.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load external.
+        {
+            let path = path.join("external.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let external: Vec<External> = serde_json::from_reader(reader)?;
+            store.external = external.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load isa.
+        {
+            let path = path.join("isa.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let isa: Vec<Isa> = serde_json::from_reader(reader)?;
+            store.isa = isa.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load object.
+        {
+            let path = path.join("object.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let object: Vec<Object> = serde_json::from_reader(reader)?;
+            store.object = object.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load referent.
+        {
+            let path = path.join("referent.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let referent: Vec<Referent> = serde_json::from_reader(reader)?;
+            store.referent = referent.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load referrer.
+        {
+            let path = path.join("referrer.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let referrer: Vec<Referrer> = serde_json::from_reader(reader)?;
+            store.referrer = referrer.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load relationship.
+        {
+            let path = path.join("relationship.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let relationship: Vec<Relationship> = serde_json::from_reader(reader)?;
+            store.relationship = relationship.into_iter().map(|道| (道.id(), 道)).collect();
+        }
+        // Load state.
+        {
+            let path = path.join("state.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let state: Vec<State> = serde_json::from_reader(reader)?;
+            store.state = state.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load subtype.
+        {
+            let path = path.join("subtype.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let subtype: Vec<Subtype> = serde_json::from_reader(reader)?;
+            store.subtype = subtype.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load supertype.
+        {
+            let path = path.join("supertype.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let supertype: Vec<Supertype> = serde_json::from_reader(reader)?;
+            store.supertype = supertype.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load ty.
+        {
+            let path = path.join("ty.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let ty: Vec<Ty> = serde_json::from_reader(reader)?;
+            store.ty = ty.into_iter().map(|道| (道.id(), 道)).collect();
+        }
+
+        Ok(store)
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

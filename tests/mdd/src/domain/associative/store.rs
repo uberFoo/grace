@@ -70,8 +70,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, AcknowledgedEvent>`.
     ///
-    pub fn iter_acknowledged_event(&self) -> impl Iterator<Item = (&Uuid, &AcknowledgedEvent)> {
-        self.acknowledged_event.iter()
+    pub fn iter_acknowledged_event(&self) -> impl Iterator<Item = &AcknowledgedEvent> {
+        self.acknowledged_event.values()
     }
     /// Inter [`Anchor`] into the store.
     ///
@@ -91,8 +91,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Anchor>`.
     ///
-    pub fn iter_anchor(&self) -> impl Iterator<Item = (&Uuid, &Anchor)> {
-        self.anchor.iter()
+    pub fn iter_anchor(&self) -> impl Iterator<Item = &Anchor> {
+        self.anchor.values()
     }
     /// Inter [`Event`] into the store.
     ///
@@ -112,8 +112,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
     ///
-    pub fn iter_event(&self) -> impl Iterator<Item = (&Uuid, &Event)> {
-        self.event.iter()
+    pub fn iter_event(&self) -> impl Iterator<Item = &Event> {
+        self.event.values()
     }
     /// Inter [`IsaUi`] into the store.
     ///
@@ -133,8 +133,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, IsaUi>`.
     ///
-    pub fn iter_isa_ui(&self) -> impl Iterator<Item = (&Uuid, &IsaUi)> {
-        self.isa_ui.iter()
+    pub fn iter_isa_ui(&self) -> impl Iterator<Item = &IsaUi> {
+        self.isa_ui.values()
     }
     /// Inter [`State`] into the store.
     ///
@@ -154,8 +154,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.
     ///
-    pub fn iter_state(&self) -> impl Iterator<Item = (&Uuid, &State)> {
-        self.state.iter()
+    pub fn iter_state(&self) -> impl Iterator<Item = &State> {
+        self.state.values()
     }
     /// Inter [`SubtypeAnchor`] into the store.
     ///
@@ -176,10 +176,11 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeAnchor>`.
     ///
-    pub fn iter_subtype_anchor(&self) -> impl Iterator<Item = (&Uuid, &SubtypeAnchor)> {
-        self.subtype_anchor.iter()
+    pub fn iter_subtype_anchor(&self) -> impl Iterator<Item = &SubtypeAnchor> {
+        self.subtype_anchor.values()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative-object-store-persistence"}}}
     /// Persist the store.
     ///
@@ -256,6 +257,72 @@ impl ObjectStore {
             )?;
         }
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is persisted as a directory of JSON files. The intention
+    /// is that this directory can be checked into version control.
+    /// In fact, I intend to add automaagic git integration as an option.
+    pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let path = path.join("associative.json");
+
+        let mut store = Self::new();
+
+        // Load acknowledged_event.
+        {
+            let path = path.join("acknowledged_event.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let acknowledged_event: Vec<AcknowledgedEvent> = serde_json::from_reader(reader)?;
+            store.acknowledged_event = acknowledged_event
+                .into_iter()
+                .map(|道| (道.id, 道))
+                .collect();
+        }
+        // Load anchor.
+        {
+            let path = path.join("anchor.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let anchor: Vec<Anchor> = serde_json::from_reader(reader)?;
+            store.anchor = anchor.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load event.
+        {
+            let path = path.join("event.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let event: Vec<Event> = serde_json::from_reader(reader)?;
+            store.event = event.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load isa_ui.
+        {
+            let path = path.join("isa_ui.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let isa_ui: Vec<IsaUi> = serde_json::from_reader(reader)?;
+            store.isa_ui = isa_ui.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load state.
+        {
+            let path = path.join("state.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let state: Vec<State> = serde_json::from_reader(reader)?;
+            store.state = state.into_iter().map(|道| (道.id, 道)).collect();
+        }
+        // Load subtype_anchor.
+        {
+            let path = path.join("subtype_anchor.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let subtype_anchor: Vec<SubtypeAnchor> = serde_json::from_reader(reader)?;
+            store.subtype_anchor = subtype_anchor.into_iter().map(|道| (道.id, 道)).collect();
+        }
+
+        Ok(store)
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

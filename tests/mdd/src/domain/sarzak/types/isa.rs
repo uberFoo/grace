@@ -51,8 +51,8 @@ impl Isa {
         store
             .iter_subtype()
             .filter_map(|subtype| {
-                if subtype.1.isa == self.id {
-                    Some(subtype.1)
+                if subtype.isa == self.id {
+                    Some(subtype)
                 } else {
                     None
                 }

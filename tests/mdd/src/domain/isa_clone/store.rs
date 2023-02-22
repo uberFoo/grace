@@ -67,8 +67,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, NotImportant>`.
     ///
-    pub fn iter_not_important(&self) -> impl Iterator<Item = (&Uuid, &NotImportant)> {
-        self.not_important.iter()
+    pub fn iter_not_important(&self) -> impl Iterator<Item = &NotImportant> {
+        self.not_important.values()
     }
     /// Inter [`SimpleSupertype`] into the store.
     ///
@@ -89,8 +89,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSupertype>`.
     ///
-    pub fn iter_simple_supertype(&self) -> impl Iterator<Item = (&Uuid, &SimpleSupertype)> {
-        self.simple_supertype.iter()
+    pub fn iter_simple_supertype(&self) -> impl Iterator<Item = &SimpleSupertype> {
+        self.simple_supertype.values()
     }
     /// Inter [`SubtypeA`] into the store.
     ///
@@ -110,8 +110,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeA>`.
     ///
-    pub fn iter_subtype_a(&self) -> impl Iterator<Item = (&Uuid, &SubtypeA)> {
-        self.subtype_a.iter()
+    pub fn iter_subtype_a(&self) -> impl Iterator<Item = &SubtypeA> {
+        self.subtype_a.values()
     }
     /// Inter [`SubtypeB`] into the store.
     ///
@@ -131,8 +131,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeB>`.
     ///
-    pub fn iter_subtype_b(&self) -> impl Iterator<Item = (&Uuid, &SubtypeB)> {
-        self.subtype_b.iter()
+    pub fn iter_subtype_b(&self) -> impl Iterator<Item = &SubtypeB> {
+        self.subtype_b.values()
     }
     /// Inter [`SuperT`] into the store.
     ///
@@ -152,8 +152,8 @@ impl ObjectStore {
     }
     /// Get an iterator over the internal `HashMap<&Uuid, SuperT>`.
     ///
-    pub fn iter_super_t(&self) -> impl Iterator<Item = (&Uuid, &SuperT)> {
-        self.super_t.iter()
+    pub fn iter_super_t(&self) -> impl Iterator<Item = &SuperT> {
+        self.super_t.values()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
