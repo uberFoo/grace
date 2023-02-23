@@ -3,35 +3,17 @@
 //! This involves creating instances in Woog that the compiler stages depend
 //! upon.
 
-use sarzak::{
-    sarzak::{
-        macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
-            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
-        },
-        store::ObjectStore as SarzakStore,
-        types::{Attribute, Object, Referrer, Type},
-    },
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Mutability, ObjectMethod, Parameter, Visibility, BORROWED, MUTABLE, PUBLIC},
-    },
-};
-use uuid::Uuid;
+use sarzak::{sarzak::store::ObjectStore as SarzakStore, woog::store::ObjectStore as WoogStore};
 
-use crate::{
-    codegen::render::{RenderIdent, RenderType},
-    options::{GraceCompilerOptions, Target},
-};
+use crate::options::GraceCompilerOptions;
 
 /// Woog post-load domain processing
 ///
 /// Below we add an ObjectMethod instance for each object in the domain.
 pub(crate) fn init_woog(
-    module: &str,
-    options: &GraceCompilerOptions,
-    sarzak: &SarzakStore,
+    _module: &str,
+    _options: &GraceCompilerOptions,
+    _sarzak: &SarzakStore,
 ) -> WoogStore {
     let mut woog = WoogStore::new();
     sarzak::woog::init_instances(&mut woog);

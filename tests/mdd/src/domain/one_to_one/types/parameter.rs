@@ -42,7 +42,7 @@ impl Parameter {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-nav-forward-cond-to-next"}}}
-    /// Navigate to [`Parameter`] across R8(1-?c)
+    /// Navigate to [`Parameter`] across R8(1-*c)
     pub fn r8_parameter<'a>(&'a self, store: &'a OneToOneStore) -> Vec<&Parameter> {
         match self.next {
             Some(ref next) => vec![store.exhume_parameter(next).unwrap()],

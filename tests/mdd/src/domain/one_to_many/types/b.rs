@@ -43,7 +43,7 @@ impl B {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
-    /// Navigate to [`Referent`] across R2(1-?c)
+    /// Navigate to [`Referent`] across R2(1-*c)
     pub fn r2_referent<'a>(&'a self, store: &'a OneToManyStore) -> Vec<&Referent> {
         match self.ptr {
             Some(ref ptr) => vec![store.exhume_referent(ptr).unwrap()],

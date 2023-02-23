@@ -45,18 +45,9 @@ impl AssociativeReferent {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-forward-to-obj_id"}}}
-    /// Navigate to [`Object`] across R25(1-?)
+    /// Navigate to [`Object`] across R25(1-*)
     pub fn r25_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
-    /// Navigate to [`Associative`] across R22(1-1)
-    pub fn r22_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
-        vec![store
-            .iter_associative()
-            .find(|associative| associative.other == self.id)
-            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
@@ -65,6 +56,15 @@ impl AssociativeReferent {
         vec![store
             .iter_associative()
             .find(|associative| associative.one == self.id)
+            .unwrap()]
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
+    /// Navigate to [`Associative`] across R22(1-1)
+    pub fn r22_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
+        vec![store
+            .iter_associative()
+            .find(|associative| associative.other == self.id)
             .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

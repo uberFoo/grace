@@ -40,7 +40,7 @@ impl Isa {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-nav-forward-to-supertype"}}}
-    /// Navigate to [`Supertype`] across R13(1-?)
+    /// Navigate to [`Supertype`] across R13(1-*)
     pub fn r13_supertype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Supertype> {
         vec![store.exhume_supertype(&self.supertype).unwrap()]
     }

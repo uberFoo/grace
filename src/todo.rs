@@ -158,19 +158,19 @@ impl From<&Type> for GType {
     }
 }
 
-pub(crate) struct Statement {
-    pub(crate) lvalue: LValue,
-    pub(crate) rvalue: RValue,
-}
+// pub(crate) struct Statement {
+//     pub(crate) lvalue: LValue,
+//     pub(crate) rvalue: RValue,
+// }
 
-impl Statement {
-    pub(crate) fn new(lvalue: LValue, rvalue: RValue) -> Self {
-        Self { lvalue, rvalue }
-    }
-}
+// impl Statement {
+//     pub(crate) fn new(lvalue: LValue, rvalue: RValue) -> Self {
+//         Self { lvalue, rvalue }
+//     }
+// }
 
-pub(crate) struct ExternalInvocation {
-    pub is_initialized: bool,
-    pub init_func: String,
-    pub external: Uuid,
-}
+// pub(crate) struct ExternalInvocation {
+//     pub is_initialized: bool,
+//     pub init_func: String,
+//     pub external: Uuid,
+// }

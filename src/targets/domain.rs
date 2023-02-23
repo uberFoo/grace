@@ -4,23 +4,19 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use heck::ToUpperCamelCase;
 use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::types::{External, Object, Type},
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED},
-    },
+    woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
 use uuid::Uuid;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder,
-        object_is_singleton, object_is_supertype,
-        render::{RenderIdent, RenderType},
+        generator::GeneratorBuilder, object_is_singleton, object_is_supertype, render::RenderIdent,
     },
     init_woog::init_woog,
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
@@ -95,9 +91,16 @@ impl<'a> DomainTarget<'a> {
                         let store_type = Type::External(
                             External::new(
                                 sarzak,
+                                // 🚧 Hmmm. Well, I don't have a domain here, and I think that
+                                // as_type should take one. So I'm going to do the gross thing,
+                                // and hardcode what I need. It's really not that gross, since
+                                // all the as_type stuff is overly complicated, in order to be
+                                // used to generate code in places that maybe I don't know
+                                // what it should be. Like here.
                                 format!(
                                     "{}Store",
-                                    name.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                                    // name.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                                    name.to_upper_camel_case()
                                 ),
                                 format!("crate::{}::store::ObjectStore", store,),
                             )
@@ -156,7 +159,7 @@ impl<'a> DomainTarget<'a> {
         }
 
         // Create our local compiler domain.
-        let mut woog = init_woog(module, &options, &domain.sarzak());
+        let woog = init_woog(module, &options, &domain.sarzak());
 
         Box::new(Self {
             config,
@@ -205,7 +208,7 @@ impl<'a> DomainTarget<'a> {
             );
 
             // Test if the object is a supertype. Those we generate as enums.
-            let generator = if object_is_supertype(obj, self.domain.sarzak()) {
+            let generator = if object_is_supertype(obj, &self.domain) {
                 DefaultStructBuilder::new()
                     .definition(Enum::new())
                     .implementation(
@@ -219,7 +222,7 @@ impl<'a> DomainTarget<'a> {
                 // If the object is imported, we don't generate anything...here.
 
                 NullGenerator::new()
-            } else if object_is_singleton(obj, self.domain.sarzak()) {
+            } else if object_is_singleton(obj, &self.domain) {
                 // Look for naked objects, and generate a singleton for them.
 
                 log::debug!("Generating singleton for {}", obj.name);

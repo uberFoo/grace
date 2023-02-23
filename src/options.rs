@@ -241,17 +241,18 @@ impl GraceConfig {
         }
     }
 
-    pub(crate) fn get_doc_test(&self) -> bool {
-        if let Some(config_value) = self.get(_TARGET_) {
-            if let Some(doc_test) = config_value.doc_test {
-                doc_test
-            } else {
-                DEFAULT_DOC_TEST
-            }
-        } else {
-            DEFAULT_DOC_TEST
-        }
-    }
+    // 🚧 Put it back when we are back to generating tests, after v2.
+    // pub(crate) fn get_doc_test(&self) -> bool {
+    //     if let Some(config_value) = self.get(_TARGET_) {
+    //         if let Some(doc_test) = config_value.doc_test {
+    //             doc_test
+    //         } else {
+    //             DEFAULT_DOC_TEST
+    //         }
+    //     } else {
+    //         DEFAULT_DOC_TEST
+    //     }
+    // }
 
     pub(crate) fn get_use_paths(&self, key: &Uuid) -> Option<&Vec<String>> {
         if let Some(config_value) = self.get(*key) {

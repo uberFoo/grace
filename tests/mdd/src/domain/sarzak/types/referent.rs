@@ -65,19 +65,19 @@ impl Referent {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-forward-to-cardinality"}}}
-    /// Navigate to [`Cardinality`] across R8(1-?)
+    /// Navigate to [`Cardinality`] across R8(1-*)
     pub fn r8_cardinality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Cardinality> {
         vec![store.exhume_cardinality(&self.cardinality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-forward-to-conditionality"}}}
-    /// Navigate to [`Conditionality`] across R12(1-?)
+    /// Navigate to [`Conditionality`] across R12(1-*)
     pub fn r12_conditionality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Conditionality> {
         vec![store.exhume_conditionality(&self.conditionality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-forward-to-obj_id"}}}
-    /// Navigate to [`Object`] across R16(1-?)
+    /// Navigate to [`Object`] across R16(1-*)
     pub fn r16_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }

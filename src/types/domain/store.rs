@@ -98,8 +98,8 @@ impl FileGenerator for DomainStoreGenerator {
             .iter()
             .filter(|(id, obj)| {
                 // We have this odd construction because a supertype may actually be a singleton.
-                object_is_supertype(obj, domain.sarzak())
-                    || !object_is_singleton(obj, domain.sarzak())
+                object_is_supertype(obj, domain)
+                    || !object_is_singleton(obj, domain)
                 // Don't include imported objects
                 && !config.is_imported(*id)
             })
@@ -117,7 +117,7 @@ impl FileGenerator for DomainStoreGenerator {
                     emit!(
                         buffer,
                         "//! * [`{}`]",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -155,7 +155,7 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Inter [`{}`] into the store.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
@@ -163,10 +163,10 @@ impl DomainStore {
                         "pub fn inter_{}(&mut self, {}: {}) {{",
                         obj.as_ident(),
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
 
-                    if object_is_supertype(obj, domain.sarzak()) {
+                    if object_is_supertype(obj, domain) {
                         emit!(
                             buffer,
                             "self.{}.insert({}.id(), {});",
@@ -188,42 +188,42 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}(&self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "self.{}.get(id)", obj.as_ident());
                     emit!(buffer, "}}");
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store — mutably.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Mutable(MUTABLE), domain.sarzak())
+                        obj.as_type(&Mutability::Mutable(MUTABLE), domain)
                     );
                     emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
                     emit!(buffer, "}}");
                     emit!(
                         buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn iter_{}(&self) -> impl Iterator<Item = &{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "self.{}.values()", obj.as_ident());
                     emit!(buffer, "}}");
@@ -302,9 +302,9 @@ impl DomainStore {
                         buffer,
                         "let {}: Vec<{}> = serde_json::from_reader(reader)?;",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
-                    if object_is_supertype(obj, domain.sarzak()) {
+                    if object_is_supertype(obj, domain) {
                         emit!(buffer,
                             "store.{} = {}.into_iter().map(|道| ( 道.id(),  道)).collect();",
                             obj.as_ident(),
@@ -348,7 +348,7 @@ impl CodeWriter for DomainStore {
         objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
         let supertypes = objects
             .iter()
-            .filter(|(_, obj)| object_is_supertype(obj, domain.sarzak()))
+            .filter(|(_, obj)| object_is_supertype(obj, domain))
             .collect::<Vec<_>>();
         let objects = objects
             .iter()
@@ -356,8 +356,8 @@ impl CodeWriter for DomainStore {
                 // We have this odd construction because a supertype may actually be a singleton.
                 // They are in fact singletons in the current implementation. What is this doing?
                 // if it's a supertype, or it's not a  singleton, and it's not imported.
-                object_is_supertype(obj, domain.sarzak())
-                    || !object_is_singleton(obj, domain.sarzak())
+                object_is_supertype(obj, domain)
+                    || !object_is_singleton(obj, domain)
                 // Don't include imported objects
                 && !config.is_imported(*id)
             })
@@ -388,7 +388,7 @@ impl CodeWriter for DomainStore {
                     emit!(
                         buffer,
                         "{},",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
                 for (_, obj) in &supertypes {
@@ -404,7 +404,7 @@ impl CodeWriter for DomainStore {
 
                     for subtype in subtypes {
                         let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
-                        if object_is_singleton(&s_obj, domain.sarzak()) {
+                        if object_is_singleton(&s_obj, domain) {
                             singleton_subs = true;
                             emit!(buffer, "{},", s_obj.as_const());
                         }
@@ -419,7 +419,7 @@ impl CodeWriter for DomainStore {
                         buffer,
                         "{}: HashMap<Uuid,{}>,",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
                 emit!(buffer, "}}");
@@ -450,13 +450,13 @@ impl CodeWriter for DomainStore {
 
                     for subtype in subtypes {
                         let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
-                        if object_is_singleton(&s_obj, domain.sarzak()) {
+                        if object_is_singleton(&s_obj, domain) {
                             emit!(
                                 buffer,
                                 "store.inter_{}({}::{}({}));",
                                 obj.as_ident(),
-                                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                                obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                                 s_obj.as_const()
                             );
                         }

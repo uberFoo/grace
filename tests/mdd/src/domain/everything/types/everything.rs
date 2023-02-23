@@ -75,7 +75,7 @@ impl Everything {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-nav-forward-to-rando"}}}
-    /// Navigate to [`RandoObject`] across R1(1-?)
+    /// Navigate to [`RandoObject`] across R1(1-*)
     pub fn r1_rando_object<'a>(&'a self, store: &'a EverythingStore) -> Vec<&RandoObject> {
         vec![store.exhume_rando_object(&self.rando).unwrap()]
     }
