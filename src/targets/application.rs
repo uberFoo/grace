@@ -13,18 +13,19 @@ use uuid::Uuid;
 
 use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
+    init_woog::init_woog,
     options::{GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::default::{
-        DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultStruct,
-        DefaultStructBuilder, DefaultStructNewImpl,
+        DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultNewImpl, DefaultStruct,
+        DefaultStructBuilder,
     },
     RS_EXT, TYPES,
 };
 
 pub(crate) struct ApplicationTarget<'a> {
     config: GraceConfig,
-    _package: &'a str,
+    package: &'a str,
     module: &'a str,
     src_path: &'a Path,
     domain: sarzak::v1::domain::Domain,
@@ -35,19 +36,21 @@ pub(crate) struct ApplicationTarget<'a> {
 impl<'a> ApplicationTarget<'a> {
     pub(crate) fn new(
         options: &'a GraceCompilerOptions,
-        _package: &'a str,
+        package: &'a str,
         module: &'a str,
         src_path: &'a Path,
         domain: sarzak::domain::DomainBuilder,
-        woog: WoogStore,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
         let domain = domain.build_v1().expect("Failed to build domain");
         let config: GraceConfig = (options, &domain).into();
 
+        // Create our local compiler domain.
+        let mut woog = init_woog(module, &options, &domain.sarzak());
+
         Box::new(Self {
             config,
-            _package,
+            package,
             module,
             src_path: src_path.as_ref(),
             domain,
@@ -79,6 +82,7 @@ impl<'a> Target for ApplicationTarget<'a> {
 
             // Here's the generation.
             GeneratorBuilder::new()
+                .package(&self.package)
                 .config(&self.config)
                 // Where to write
                 .path(&types)?
@@ -98,7 +102,7 @@ impl<'a> Target for ApplicationTarget<'a> {
                         // Implementation
                         .implementation(
                             DefaultImplBuilder::new()
-                                .implementation(DefaultStructNewImpl::new())
+                                .method(DefaultNewImpl::new())
                                 .build(),
                         )
                         // Go!
@@ -118,6 +122,7 @@ impl<'a> Target for ApplicationTarget<'a> {
         types.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
+            .package(&self.package)
             .config(&self.config)
             .path(&types)?
             .domain(&self.domain)

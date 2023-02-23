@@ -23,8 +23,7 @@ impl RandoObject {
     /// Inter a new RandoObject in the store, and return it's `id`.
     pub fn new(name: String) -> RandoObject {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
-        let new = RandoObject { name: name, id };
-        new
+        RandoObject { name: name, id }
     }
     // {"magic":"","directive":{"End":{"directive":"comment-orig"}}}
 }

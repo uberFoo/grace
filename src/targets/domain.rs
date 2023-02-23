@@ -22,6 +22,7 @@ use crate::{
         object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
+    init_woog::init_woog,
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
@@ -31,7 +32,7 @@ use crate::{
             enums::{Enum, EnumGetIdImpl, EnumNewImpl},
             from::{DomainFromBuilder, DomainFromImpl},
             store::{DomainStore, DomainStoreBuilder},
-            structs::{DomainImplBuilder, DomainRelNavImpl, DomainStruct, DomainStructNewImpl},
+            structs::{DomainImplBuilder, DomainNewImpl, DomainRelNavImpl, DomainStruct},
         },
         null::NullGenerator,
     },
@@ -42,7 +43,7 @@ const FROM: &str = "from";
 
 pub(crate) struct DomainTarget<'a> {
     config: GraceConfig,
-    _package: &'a str,
+    package: &'a str,
     module: &'a str,
     src_path: &'a Path,
     domain: sarzak::v1::domain::Domain,
@@ -54,11 +55,10 @@ pub(crate) struct DomainTarget<'a> {
 impl<'a> DomainTarget<'a> {
     pub(crate) fn new(
         options: &'a GraceCompilerOptions,
-        _package: &'a str,
+        package: &'a str,
         module: &'a str,
         src_path: &'a Path,
         domain: sarzak::domain::DomainBuilder,
-        woog: WoogStore,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
         // This post_load script creates an external entity of the ObjectStore so that
@@ -155,9 +155,12 @@ impl<'a> DomainTarget<'a> {
             }
         }
 
+        // Create our local compiler domain.
+        let mut woog = init_woog(module, &options, &domain.sarzak());
+
         Box::new(Self {
             config,
-            _package,
+            package,
             module,
             src_path: src_path.as_ref(),
             domain,
@@ -230,7 +233,7 @@ impl<'a> DomainTarget<'a> {
                     .implementation(
                         DomainImplBuilder::new()
                             // New implementation
-                            .method(DomainStructNewImpl::new())
+                            .method(DomainNewImpl::new())
                             // Relationship navigation implementations
                             .method(DomainRelNavImpl::new())
                             .build(),
@@ -241,6 +244,7 @@ impl<'a> DomainTarget<'a> {
 
             // Here's the generation.
             GeneratorBuilder::new()
+                .package(&self.package)
                 .config(&self.config)
                 // Where to write
                 .path(&types)?
@@ -268,6 +272,7 @@ impl<'a> DomainTarget<'a> {
         store.push("store.rs");
 
         GeneratorBuilder::new()
+            .package(&self.package)
             .config(&self.config)
             .path(&store)?
             .domain(&self.domain)
@@ -290,6 +295,7 @@ impl<'a> DomainTarget<'a> {
         types.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
+            .package(&self.package)
             .config(&self.config)
             .path(&types)?
             .domain(&self.domain)
@@ -312,6 +318,7 @@ impl<'a> DomainTarget<'a> {
         from.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
+            .package(&self.package)
             .config(&self.config)
             .path(&from)?
             .domain(&self.domain)

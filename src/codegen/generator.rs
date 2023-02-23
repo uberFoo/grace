@@ -55,10 +55,11 @@ pub(crate) struct GeneratorBuilder<'a> {
     /// to make it generic, but Rust things are creeping in. Like mutability,
     /// and crate public.
     woog: Option<&'a mut WoogStore>,
-    /// Grace Compiler Options
+    /// Grace Compiler Configuration
     ///
-    /// These are the [`Options`] to the model compiler.
-    options: Option<&'a GraceCompilerOptions>,
+    /// These are the [`ConfigValue`]s to the model compiler -- the compiler's
+    /// configuration options.
+    config: Option<&'a GraceConfig>,
     /// Package Name
     ///
     /// The Rust package for which we are generating code. Some may call this
@@ -69,7 +70,7 @@ pub(crate) struct GeneratorBuilder<'a> {
     /// The Rust module to which we are generating code. It's not quite synonymous
     /// with a domain name. There is a 1:M relationship between domains and modules,
     /// so we need to have a module name.
-    module: Option<&'a str>,
+    module: Option<String>,
     /// Object ID
     ///
     /// Here's an optional one, that is indeed optional. It's used by the
@@ -87,7 +88,7 @@ impl<'a> GeneratorBuilder<'a> {
             generator: None,
             domain: None,
             woog: None,
-            options: None,
+            config: None,
             package: None,
             module: None,
             obj_id: None,
@@ -95,8 +96,8 @@ impl<'a> GeneratorBuilder<'a> {
         }
     }
 
-    pub(crate) fn options(mut self, options: &'a GraceCompilerOptions) -> Self {
-        self.options = Some(options);
+    pub(crate) fn config(mut self, config: &'a GraceConfig) -> Self {
+        self.config = Some(config);
 
         self
     }

@@ -3,10 +3,7 @@
 //! Not that the whole things shouldn't be, but this stuff is low hanging fruit.
 //!
 
-use sarzak::{
-    sarzak::types::{External as SarzakExternal, Type},
-    woog::types::Parameter,
-};
+use sarzak::sarzak::types::{External as SarzakExternal, Type};
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -71,6 +68,15 @@ impl LValue {
 pub(crate) struct RValue {
     pub name: String,
     pub ty: GType,
+}
+
+impl RValue {
+    pub(crate) fn new<S: AsRef<str>>(name: S, ty: GType) -> Self {
+        Self {
+            name: name.as_ref().to_string(),
+            ty,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

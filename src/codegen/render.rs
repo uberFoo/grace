@@ -14,11 +14,13 @@ use sarzak::{
     woog::{
         macros::woog_maybe_get_one_param_across_r5,
         store::ObjectStore as WoogStore,
-        types::{Mutability, ObjectMethod, Parameter, BORROWED},
+        types::{Mutability, BORROWED},
     },
 };
 
-use crate::todo::{External as TodoExternal, GType, LValue, RValue, Statement};
+use crate::todo::{
+    External as TodoExternal, GType, LValue, ObjectMethod, Parameter, RValue, Statement,
+};
 
 macro_rules! render_ident {
     ($($t:ident),+) => {
@@ -65,9 +67,15 @@ pub(crate) trait RenderIdent {
     fn as_ident(&self) -> String;
 }
 
-render_ident!(Attribute, Event, Object, State, Parameter);
+render_ident!(Attribute, Event, Object, State);
 
-impl RenderIdent for ObjectMethod {
+impl<'a> RenderIdent for ObjectMethod<'a> {
+    fn as_ident(&self) -> String {
+        self.name.sanitize().to_snake_case()
+    }
+}
+
+impl<'a> RenderIdent for Parameter<'a> {
     fn as_ident(&self) -> String {
         self.name.sanitize().to_snake_case()
     }
@@ -123,232 +131,232 @@ pub(crate) trait RenderStatement {
     ) -> Vec<Statement>;
 }
 
-impl RenderStatement for Type {
-    fn as_statement(
-        &self,
-        package: &str,
-        module: &str,
-        woog: &WoogStore,
-        sarzak: &SarzakStore,
-        uses: &mut HashSet<String>,
-    ) -> Vec<Statement> {
-        match self {
-            Type::Boolean(_) => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), &self),
-                    RValue::new("true".to_owned(), &self),
-                );
-                vec![stmt]
-            }
-            Type::Object(o) => {
-                let object = sarzak.exhume_object(&o).unwrap();
-                let mut iter = woog.iter_object_method();
-                let method = loop {
-                    match iter.next() {
-                        Some((_, method)) => {
-                            if method.object == object.id && method.name == "new" {
-                                break method;
-                            }
-                        }
-                        None => {
-                            panic!("Unable to find the new method for {}", object.name);
-                        }
-                    }
-                };
+// impl RenderStatement for Type {
+//     fn as_statement(
+//         &self,
+//         package: &str,
+//         module: &str,
+//         woog: &WoogStore,
+//         sarzak: &SarzakStore,
+//         uses: &mut HashSet<String>,
+//     ) -> Vec<Statement> {
+//         match self {
+//             Type::Boolean(_) => {
+//                 let var = Generator::default().next().unwrap().to_snake_case();
+//                 let stmt = Statement::new(
+//                     LValue::new(var.clone(), &self),
+//                     RValue::new("true".to_owned(), &self),
+//                 );
+//                 vec![stmt]
+//             }
+//             Type::Object(o) => {
+//                 let object = sarzak.exhume_object(&o).unwrap();
+//                 let mut iter = woog.iter_object_method();
+//                 let method = loop {
+//                     match iter.next() {
+//                         Some((_, method)) => {
+//                             if method.object == object.id && method.name == "new" {
+//                                 break method;
+//                             }
+//                         }
+//                         None => {
+//                             panic!("Unable to find the new method for {}", object.name);
+//                         }
+//                     }
+//                 };
 
-                uses.insert(format!(
-                    "use mdd::{}::types::{};",
-                    module,
-                    object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
-                ));
+//                 uses.insert(format!(
+//                     "use mdd::{}::types::{};",
+//                     module,
+//                     object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+//                 ));
 
-                // Recurse into the method
-                method.as_statement(package, module, woog, sarzak, uses)
-            }
-            Type::Reference(r) => {
-                // If the type is a reference, we want to create a new object?
-                let reference = sarzak.exhume_reference(&r).unwrap();
-                let object = sarzak.exhume_object(&reference.object).unwrap();
-                let mut iter = woog.iter_object_method();
-                let method = loop {
-                    match iter.next() {
-                        Some((_, method)) => {
-                            if method.object == object.id && method.name == "new" {
-                                break method;
-                            }
-                        }
-                        None => {
-                            panic!("Unable to find the new method for {}", object.name);
-                        }
-                    }
-                };
+//                 // Recurse into the method
+//                 method.as_statement(package, module, woog, sarzak, uses)
+//             }
+//             Type::Reference(r) => {
+//                 // If the type is a reference, we want to create a new object?
+//                 let reference = sarzak.exhume_reference(&r).unwrap();
+//                 let object = sarzak.exhume_object(&reference.object).unwrap();
+//                 let mut iter = woog.iter_object_method();
+//                 let method = loop {
+//                     match iter.next() {
+//                         Some((_, method)) => {
+//                             if method.object == object.id && method.name == "new" {
+//                                 break method;
+//                             }
+//                         }
+//                         None => {
+//                             panic!("Unable to find the new method for {}", object.name);
+//                         }
+//                     }
+//                 };
 
-                uses.insert(format!(
-                    "use mdd::{}::types::{};",
-                    module,
-                    object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
-                ));
+//                 uses.insert(format!(
+//                     "use mdd::{}::types::{};",
+//                     module,
+//                     object.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+//                 ));
 
-                // Recurse into the method
-                method.as_statement(package, module, woog, sarzak, uses)
-            }
-            Type::String(_) => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), &self),
-                    RValue::new(Generator::default().next().unwrap(), &self),
-                );
+//                 // Recurse into the method
+//                 method.as_statement(package, module, woog, sarzak, uses)
+//             }
+//             Type::String(_) => {
+//                 let var = Generator::default().next().unwrap().to_snake_case();
+//                 let stmt = Statement::new(
+//                     LValue::new(var.clone(), &self),
+//                     RValue::new(Generator::default().next().unwrap(), &self),
+//                 );
 
-                vec![stmt]
-            }
-            Type::Uuid(_) => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), &self),
-                    RValue::new(
-                        format!(
-                            "Uuid::new_v5(&UUID_NS, \"{}\")",
-                            Generator::default().next().unwrap().to_snake_case()
-                        ),
-                        &self,
-                    ),
-                );
-                uses.insert("use uuid::Uuid;".to_owned());
-                vec![stmt]
-            }
-            Type::External(e) => {
-                let ext = sarzak.exhume_external(&e).unwrap();
-                let var = if let Some(lvalue) = ext.lvalue {
-                    lvalue
-                } else {
-                    let var = Generator::default().next().unwrap().to_snake_case();
-                    uses.insert(format!(
-                        "use {}::{} as {};",
-                        package,
-                        ext.path,
-                        ext.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
-                    ));
-                    ext.lvalue = Some(var.clone());
-                    var
-                };
-                let stmt = Statement::new(
-                    LValue::new(var, &self),
-                    RValue::new(
-                        format!(
-                            "{}::{};",
-                            ext.as_type(&Mutability::Borrowed(BORROWED), &sarzak),
-                            ext.initialization,
-                        ),
-                        &self,
-                    ),
-                );
-                vec![stmt]
-            }
-            Type::Float(_) => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), &self),
-                    RValue::new("42.0".to_owned(), &self),
-                );
-                vec![stmt]
-            }
-            Type::Integer(_) => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), &self),
-                    RValue::new("42".to_owned(), &self),
-                );
-                vec![stmt]
-            }
-        }
-    }
-}
+//                 vec![stmt]
+//             }
+//             Type::Uuid(_) => {
+//                 let var = Generator::default().next().unwrap().to_snake_case();
+//                 let stmt = Statement::new(
+//                     LValue::new(var.clone(), &self),
+//                     RValue::new(
+//                         format!(
+//                             "Uuid::new_v5(&UUID_NS, \"{}\")",
+//                             Generator::default().next().unwrap().to_snake_case()
+//                         ),
+//                         &self,
+//                     ),
+//                 );
+//                 uses.insert("use uuid::Uuid;".to_owned());
+//                 vec![stmt]
+//             }
+//             Type::External(e) => {
+//                 let ext = sarzak.exhume_external(&e).unwrap();
+//                 let var = if let Some(lvalue) = ext.lvalue {
+//                     lvalue
+//                 } else {
+//                     let var = Generator::default().next().unwrap().to_snake_case();
+//                     uses.insert(format!(
+//                         "use {}::{} as {};",
+//                         package,
+//                         ext.path,
+//                         ext.as_type(&Mutability::Borrowed(BORROWED), &sarzak)
+//                     ));
+//                     ext.lvalue = Some(var.clone());
+//                     var
+//                 };
+//                 let stmt = Statement::new(
+//                     LValue::new(var, &self),
+//                     RValue::new(
+//                         format!(
+//                             "{}::{};",
+//                             ext.as_type(&Mutability::Borrowed(BORROWED), &sarzak),
+//                             ext.initialization,
+//                         ),
+//                         &self,
+//                     ),
+//                 );
+//                 vec![stmt]
+//             }
+//             Type::Float(_) => {
+//                 let var = Generator::default().next().unwrap().to_snake_case();
+//                 let stmt = Statement::new(
+//                     LValue::new(var.clone(), &self),
+//                     RValue::new("42.0".to_owned(), &self),
+//                 );
+//                 vec![stmt]
+//             }
+//             Type::Integer(_) => {
+//                 let var = Generator::default().next().unwrap().to_snake_case();
+//                 let stmt = Statement::new(
+//                     LValue::new(var.clone(), &self),
+//                     RValue::new("42".to_owned(), &self),
+//                 );
+//                 vec![stmt]
+//             }
+//         }
+//     }
+// }
 
 /// Render a Parameter as an Rval
 ///
 /// This function is recursive.
-impl RenderStatement for Parameter {
-    fn as_statement(
-        &self,
-        package: &str,
-        module: &str,
-        woog: &WoogStore,
-        sarzak: &SarzakStore,
-        uses: &mut HashSet<String>,
-    ) -> Vec<Statement> {
-        log::trace!("{}:{} as rval, next: {:?}", self.name, self.id, self.next);
-        let mut statements = Vec::new();
+// impl RenderStatement for Parameter {
+//     fn as_statement(
+//         &self,
+//         package: &str,
+//         module: &str,
+//         woog: &WoogStore,
+//         sarzak: &SarzakStore,
+//         uses: &mut HashSet<String>,
+//     ) -> Vec<Statement> {
+//         log::trace!("{}:{} as rval, next: {:?}", self.name, self.id, self.next);
+//         let mut statements = Vec::new();
 
-        // Get an instance of our type
-        let ty = sarzak.exhume_ty(&self.ty).unwrap();
-        let stmt = ty.as_statement(package, module, woog, sarzak, uses);
-        statements.push(stmt);
+//         // Get an instance of our type
+//         let ty = sarzak.exhume_ty(&self.ty).unwrap();
+//         let stmt = ty.as_statement(package, module, woog, sarzak, uses);
+//         statements.push(stmt);
 
-        match self.next {
-            Some(p) => {
-                let param = woog.exhume_parameter(&p).unwrap();
-                log::trace!("invoking next: {}:{}", param.name, param.id);
-                // Recurse
-                let stmt = param.as_statement(package, module, woog, sarzak, uses);
-                statements.push(stmt);
-            }
-            _ => {}
-        };
+//         match self.next {
+//             Some(p) => {
+//                 let param = woog.exhume_parameter(&p).unwrap();
+//                 log::trace!("invoking next: {}:{}", param.name, param.id);
+//                 // Recurse
+//                 let stmt = param.as_statement(package, module, woog, sarzak, uses);
+//                 statements.push(stmt);
+//             }
+//             _ => {}
+//         };
 
-        statements.into_iter().flatten().collect()
-    }
-}
+//         statements.into_iter().flatten().collect()
+//     }
+// }
 
-impl RenderStatement for ObjectMethod {
-    fn as_statement(
-        &self,
-        package: &str,
-        module: &str,
-        woog: &WoogStore,
-        sarzak: &SarzakStore,
-        uses: &mut HashSet<String>,
-    ) -> Vec<Statement> {
-        log::trace!("{}:{} as rval", self.name, self.id);
-        let mut use_statements = String::new();
-        let mut statements = Vec::new();
+// impl RenderStatement for ObjectMethod {
+//     fn as_statement(
+//         &self,
+//         package: &str,
+//         module: &str,
+//         woog: &WoogStore,
+//         sarzak: &SarzakStore,
+//         uses: &mut HashSet<String>,
+//     ) -> Vec<Statement> {
+//         log::trace!("{}:{} as rval", self.name, self.id);
+//         let mut use_statements = String::new();
+//         let mut statements = Vec::new();
 
-        let obj = sarzak.exhume_object(&self.object).unwrap();
-        let mut param = woog_maybe_get_one_param_across_r5!(self, woog);
-        match param {
-            Some(p) => {
-                // Recurse
-                let stmt = p.as_statement(package, module, woog, sarzak, uses);
-                statements.push(stmt);
-            }
-            _ => {}
-        }
+//         let obj = sarzak.exhume_object(&self.object).unwrap();
+//         let mut param = woog_maybe_get_one_param_across_r5!(self, woog);
+//         match param {
+//             Some(p) => {
+//                 // Recurse
+//                 let stmt = p.as_statement(package, module, woog, sarzak, uses);
+//                 statements.push(stmt);
+//             }
+//             _ => {}
+//         }
 
-        // Add the method call
-        let var = Generator::default().next().unwrap().to_snake_case();
-        // I let copilot write the following code. It's what I had after the
-        // for loop, before it was here. I don't love the forced return, or the
-        // panic at the end (which I added), but it does work.
-        for (id, reference) in sarzak.iter_reference() {
-            if reference.object == self.object {
-                let ty = Type::Reference(*id);
-                statements.push(vec![Statement::new(
-                    LValue::new(var.clone(), &ty),
-                    RValue::new(
-                        format!(
-                            "{}::{}()",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), sarzak),
-                            self.name.as_ident(),
-                        ),
-                        &ty,
-                    ),
-                )]);
-                return statements.into_iter().flatten().collect();
-            }
-        }
-        panic!("Could not find reference for object method: {}", self.id);
-    }
-}
+//         // Add the method call
+//         let var = Generator::default().next().unwrap().to_snake_case();
+//         // I let copilot write the following code. It's what I had after the
+//         // for loop, before it was here. I don't love the forced return, or the
+//         // panic at the end (which I added), but it does work.
+//         for (id, reference) in sarzak.iter_reference() {
+//             if reference.object == self.object {
+//                 let ty = Type::Reference(*id);
+//                 statements.push(vec![Statement::new(
+//                     LValue::new(var.clone(), &ty),
+//                     RValue::new(
+//                         format!(
+//                             "{}::{}()",
+//                             obj.as_type(&Mutability::Borrowed(BORROWED), sarzak),
+//                             self.name.as_ident(),
+//                         ),
+//                         &ty,
+//                     ),
+//                 )]);
+//                 return statements.into_iter().flatten().collect();
+//             }
+//         }
+//         panic!("Could not find reference for object method: {}", self.id);
+//     }
+// }
 
 /// Trait for rendering type as a Type
 ///

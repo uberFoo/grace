@@ -16,7 +16,7 @@ use sarzak::{
         types::{Attribute, Object, Referrer},
     },
     v1::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Mutability, Parameter, BORROWED, PUBLIC},
+    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -32,7 +32,7 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
-    todo::{GType, LValue, RValue},
+    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation},
 };
 
@@ -291,31 +291,31 @@ impl CodeWriter for DefaultStruct {
 }
 
 pub(crate) struct DefaultImplBuilder {
-    implementation: Option<Box<dyn TypeImplementation>>,
+    methods: Vec<Box<dyn MethodImplementation>>,
 }
 
 impl DefaultImplBuilder {
     pub(crate) fn new() -> DefaultImplBuilder {
         Self {
-            implementation: None,
+            methods: Vec::new(),
         }
     }
 
-    pub(crate) fn implementation(mut self, implementation: Box<dyn TypeImplementation>) -> Self {
-        self.implementation = Some(implementation);
+    pub(crate) fn method(mut self, method: Box<dyn MethodImplementation>) -> Self {
+        self.methods.push(method);
 
         self
     }
 
     pub(crate) fn build(self) -> Box<dyn TypeImplementation> {
         Box::new(DefaultImplementation {
-            implementation: self.implementation,
+            methods: self.methods,
         })
     }
 }
 
 pub(crate) struct DefaultImplementation {
-    implementation: Option<Box<dyn TypeImplementation>>,
+    methods: Vec<Box<dyn MethodImplementation>>,
 }
 
 impl TypeImplementation for DefaultImplementation {}
@@ -364,8 +364,8 @@ impl CodeWriter for DefaultImplementation {
                     );
                 }
 
-                if let Some(implementation) = &self.implementation {
-                    implementation.write_code(
+                for method in &self.methods {
+                    method.write_code(
                         config,
                         domain,
                         woog,
@@ -396,19 +396,17 @@ impl CodeWriter for DefaultImplementation {
 ///
 /// I think that I may add optional references to the non-formalizing side of
 /// relationships.
-pub(crate) struct DefaultNewImpl {
-    generate_tests: bool,
-}
+pub(crate) struct DefaultNewImpl;
 
 impl DefaultNewImpl {
-    pub(crate) fn new(generate_tests: bool) -> Box<dyn MethodImplementation> {
-        Box::new(Self { generate_tests })
+    pub(crate) fn new() -> Box<dyn MethodImplementation> {
+        Box::new(Self)
     }
 }
 
-impl MethodImplementation for DefaultStructNewImpl {}
+impl MethodImplementation for DefaultNewImpl {}
 
-impl CodeWriter for DefaultStructNewImpl {
+impl CodeWriter for DefaultNewImpl {
     fn write_code(
         &self,
         config: &GraceConfig,
@@ -447,6 +445,7 @@ impl CodeWriter for DefaultStructNewImpl {
         });
 
         // Collect the attributes
+        let mut params: Vec<Parameter> = Vec::new();
         let mut rvals: Vec<RValue> = Vec::new();
         let mut fields: Vec<LValue> = Vec::new();
         let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
@@ -464,7 +463,7 @@ impl CodeWriter for DefaultStructNewImpl {
                     PUBLIC,
                     attr.as_ident(),
                 ));
-                rvals.push(RValue::new(attr.as_ident(), &ty));
+                rvals.push(RValue::new(attr.as_ident(), ty.into()));
             }
         }
 
@@ -481,37 +480,70 @@ impl CodeWriter for DefaultStructNewImpl {
                 GType::Reference(r_obj.id),
             ));
             params.push(Parameter::new(
-                referrer.referential_attribute.as_ident(),
                 BORROWED,
                 None,
                 GType::Reference(r_obj.id),
                 PUBLIC,
-                woog,
+                referrer.referential_attribute.as_ident(),
             ));
 
             // 🚧
-            // rvals.push(RValue::new(
-            // referrer.referential_attribute.as_ident(),
-            // &Type::Reference(reference.id),
-            // ));
+            rvals.push(RValue::new(
+                referrer.referential_attribute.as_ident(),
+                GType::Reference(r_obj.id),
+            ));
         }
+
+        // Link the params. The result is the head of the list.
+        let param = if params.len() > 0 {
+            let mut iter = params.iter_mut().rev();
+            let mut last = iter.next().unwrap();
+            loop {
+                match iter.next() {
+                    Some(param) => {
+                        param.next = Some(last);
+                        last = param;
+                    }
+                    None => break,
+                }
+            }
+            log::trace!("param: {:?}", last);
+            Some(last.clone())
+        } else {
+            None
+        };
 
         // Find the method
         // This is going to suck. We don't have cross-domain relationship
-        // navigation -- somethinig to be addressed.
-        let mut iter = woog.iter_object_method();
-        let method = loop {
-            match iter.next() {
-                Some((_, method)) => {
-                    if method.object == obj.id && method.name == "new" {
-                        break method;
-                    }
-                }
-                None => {
-                    panic!("Unable to find the new method for {}", obj.name);
-                }
-            }
-        };
+        // navigation -- something to be addressed.
+        // let mut iter = woog.iter_object_method();
+        // let method = loop {
+        // match iter.next() {
+        // Some((_, method)) => {
+        // if method.object == obj.id && method.name == "new" {
+        // break method;
+        // }
+        // }
+        // None => {
+        // panic!("Unable to find the new method for {}", obj.name);
+        // }
+        // }
+        // };
+
+        // Create an ObjectMethod
+        // The uniqueness of this instance depends on the inputs to it's
+        // new method. Param can be None, and two methods on the same
+        // object will have the same obj. So it comes down to a unique
+        // name for each object. So just "new" should suffice for name,
+        // because it's scoped by obj already.
+        let method = ObjectMethod::new(
+            param.as_ref(),
+            obj.id,
+            GType::Object(obj.id),
+            PUBLIC,
+            "new".to_owned(),
+            "Create a new instance".to_owned(),
+        );
 
         buffer.block(
             DirectiveKind::CommentOrig,
@@ -532,21 +564,16 @@ impl CodeWriter for DefaultStructNewImpl {
                 render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
 
                 // Output code to create the instance
-                let new = LValue::new("new", GType::Reference(obj.id));
                 render_new_instance(
                     buffer,
                     obj,
-                    Some(&new),
+                    None,
                     &fields,
                     &rvals,
                     domain.sarzak(),
                     None,
                     &config,
                 )?;
-
-                // 🚧 Below is the new code. I'm not sure why the third parameter is None.
-                // let rvals = params.iter().map(|p| p.into()).collect();
-                // render_new_instance(buffer, obj, None, &fields, &rvals, domain.sarzak())?;
 
                 emit!(buffer, "}}");
 
@@ -619,9 +646,9 @@ impl FileGenerator for DefaultModuleGenerator {
             DirectiveKind::AllowEditing,
             format!("{}-module-definition-file", module),
             |buffer| {
-                self.definition
-                    .write_code(config, domain, woog, imports, module, obj_id, buffer)?;
-                    .write_code(config, domain, woog, package, module, obj_id, buffer)?;
+                self.definition.write_code(
+                    config, domain, woog, imports, package, module, obj_id, buffer,
+                )?;
 
                 Ok(())
             },

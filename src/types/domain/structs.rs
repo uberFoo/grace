@@ -33,7 +33,7 @@ use sarzak::{
     v1::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, ObjectMethod, Parameter, Visibility, BORROWED, MUTABLE, PUBLIC},
+        types::{Mutability, Visibility, BORROWED, MUTABLE, PUBLIC},
     },
 };
 
@@ -53,7 +53,7 @@ use crate::{
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
-    todo::{GType, LValue, RValue},
+    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{MethodImplementation, TypeDefinition, TypeImplementation},
 };
 
@@ -456,26 +456,17 @@ impl CodeWriter for DomainImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainStructNewImpl {
-    generate_tests: bool,
-    imports: HashMap<String, Domain>,
-}
+pub(crate) struct DomainNewImpl;
 
-impl DomainStructNewImpl {
-    pub(crate) fn new(
-        generate_tests: bool,
-        imports: HashMap<String, Domain>,
-    ) -> Box<dyn MethodImplementation> {
-        Box::new(Self {
-            generate_tests,
-            imports,
-        })
+impl DomainNewImpl {
+    pub(crate) fn new() -> Box<dyn MethodImplementation> {
+        Box::new(Self)
     }
 }
 
-impl MethodImplementation for DomainStructNewImpl {}
+impl MethodImplementation for DomainNewImpl {}
 
-impl CodeWriter for DomainStructNewImpl {
+impl CodeWriter for DomainNewImpl {
     fn write_code(
         &self,
         options: &GraceConfig,
@@ -529,12 +520,11 @@ impl CodeWriter for DomainStructNewImpl {
                 let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
                 fields.push(LValue::new(attr.name.as_ident(), ty.into()));
                 params.push(Parameter::new(
-                    attr.as_ident(),
-                    &Mutability::Borrowed(BORROWED),
+                    BORROWED,
                     None,
                     ty.into(),
-                    &Visibility::Public(PUBLIC),
-                    woog,
+                    PUBLIC,
+                    attr.as_ident(),
                 ));
                 // rvals.push(RValue::new(attr.as_ident(), &ty));
             }
@@ -556,12 +546,11 @@ impl CodeWriter for DomainStructNewImpl {
                         GType::Option(Box::new(GType::Uuid)),
                     ));
                     params.push(Parameter::new(
-                        referrer.referential_attribute.as_ident(),
                         BORROWED,
                         None,
                         GType::Option(Box::new(GType::Reference(r_obj.id))),
                         PUBLIC,
-                        woog,
+                        referrer.referential_attribute.as_ident(),
                     ));
                 }
                 Conditionality::Unconditional(_) => {
@@ -682,37 +671,37 @@ impl CodeWriter for DomainStructNewImpl {
                     obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
                 );
 
-                if self.generate_tests {
-                    buffer.block(
-                        DirectiveKind::IgnoreGenerated,
-                        format!("{}-struct-test-new", obj.as_ident()),
-                        |buffer| {
-                            let mut uses = HashSet::new();
-                            let stmts = method.as_statement(
-                                package,
-                                module,
-                                woog,
-                                domain.sarzak(),
-                                &mut uses,
-                            );
-                            emit!(buffer, "/// # Example");
-                            emit!(buffer, "///");
-                            emit!(buffer, "///```ignore");
-                            // for s in use_stmts.split_terminator('\n') {
-                            for s in uses.iter() {
-                                emit!(buffer, "/// {}", s);
-                            }
-                            emit!(buffer, "///");
-                            // for s in stmts.split_terminator('\n') {
-                            for s in stmts.iter() {
-                                emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
-                            }
-                            emit!(buffer, "///```");
+                // if options.get_doc_test() {
+                //     buffer.block(
+                //         DirectiveKind::IgnoreGenerated,
+                //         format!("{}-struct-test-new", obj.as_ident()),
+                //         |buffer| {
+                //             let mut uses = HashSet::new();
+                //             let stmts = method.as_statement(
+                //                 package,
+                //                 module,
+                //                 woog,
+                //                 domain.sarzak(),
+                //                 &mut uses,
+                //             );
+                //             emit!(buffer, "/// # Example");
+                //             emit!(buffer, "///");
+                //             emit!(buffer, "///```ignore");
+                //             // for s in use_stmts.split_terminator('\n') {
+                //             for s in uses.iter() {
+                //                 emit!(buffer, "/// {}", s);
+                //             }
+                //             emit!(buffer, "///");
+                //             // for s in stmts.split_terminator('\n') {
+                //             for s in stmts.iter() {
+                //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
+                //             }
+                //             emit!(buffer, "///```");
 
-                            Ok(())
-                        },
-                    )?;
-                }
+                //             Ok(())
+                //         },
+                //     )?;
+                // }
 
                 // Output the top of the function definition
                 render_method_definition(buffer, &method, woog, domain.sarzak())?;
@@ -775,7 +764,7 @@ impl DomainRelNavImpl {
             |buffer| {
                 emit!(
                     buffer,
-                    "/// Navigate to [`{}`] across R{}(1-?)",
+                    "/// Navigate to [`{}`] across R{}(1-*)",
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
                     binary.number,
                 );
@@ -819,7 +808,7 @@ impl DomainRelNavImpl {
             |buffer| {
                 emit!(
                     buffer,
-                    "/// Navigate to [`{}`] across R{}(1-?c)",
+                    "/// Navigate to [`{}`] across R{}(1-*c)",
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
                     binary.number,
                 );
@@ -1133,7 +1122,7 @@ impl DomainRelNavImpl {
             |buffer| {
                 emit!(
                     buffer,
-                    "/// Navigate to [`{}`] across R{}(1-?)",
+                    "/// Navigate to [`{}`] across R{}(1-*)",
                     r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
                     number,
                 );
@@ -1322,6 +1311,7 @@ impl CodeWriter for DomainRelNavImpl {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

@@ -21,13 +21,13 @@ use sarzak::{mc::ModelCompilerOptions, v1::domain::Domain};
 use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
 
-const _TARGET_: Uuid = uuid!("57c57c2b-a6ff-56fc-9289-4fd9fcb4413e");
+const _TARGET_: Uuid = uuid!("a42b46ea-820a-5132-b1d2-b1a6363e4cc1");
 
 const DEFAULT_TARGET: Target = Target::Application;
 const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
 const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
-const DEFAULT_TEST: bool = true;
+const DEFAULT_DOC_TEST: bool = true;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Subcommand)]
 #[serde(tag = "target")]
@@ -144,7 +144,7 @@ pub struct GraceCompilerOptions {
     ///
     /// Document tests are generated for all generated functions.
     #[arg(long, short)]
-    pub tests: Option<bool>,
+    pub doc_test: Option<bool>,
 }
 
 impl ModelCompilerOptions for GraceCompilerOptions {
@@ -160,7 +160,7 @@ impl Default for GraceCompilerOptions {
             derive: Some(DEFAULT_DERIVE.iter().map(|&x| x.to_owned()).collect()),
             use_paths: DEFAULT_USE_PATHS,
             imported_domains: DEFAULT_IMPORTED_DOMAINS,
-            tests: Some(DEFAULT_TEST),
+            doc_test: Some(DEFAULT_DOC_TEST),
         }
     }
 }
@@ -176,9 +176,8 @@ impl Default for GraceCompilerOptions {
 /// The config is just a map from object id to [`ConfigValue`], therefore each
 /// object in the domain has a configuration.
 ///
-/// There is a special key in the map, that corresponds to the target: _TARGET_
-///  (57c57c2b-a6ff-56fc-9289-4fd9fcb4413e). This entry contains any target
-/// specific options.
+/// There is a special key in the map, that corresponds to the target: _TARGET_.
+/// This entry contains any target specific options.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct GraceConfig {
     inner: HashMap<Uuid, ConfigValue>,
@@ -239,6 +238,18 @@ impl GraceConfig {
         match self.get_target() {
             Target::Domain(config) => Some(config.persist),
             _ => None,
+        }
+    }
+
+    pub(crate) fn get_doc_test(&self) -> bool {
+        if let Some(config_value) = self.get(_TARGET_) {
+            if let Some(doc_test) = config_value.doc_test {
+                doc_test
+            } else {
+                DEFAULT_DOC_TEST
+            }
+        } else {
+            DEFAULT_DOC_TEST
         }
     }
 
@@ -303,6 +314,8 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
             // Something to worry about later. For now, I'm not layering.
             let mut config_value = parse_config_value(object.description.as_str());
 
+            // Except that this appears to be taking the default if it's not
+            // in the description. 🤔
             if let Some(ref derive) = options.derive {
                 if config_value.derive.is_none() {
                     config_value.derive = Some(derive.clone());
@@ -322,12 +335,19 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
     }
 }
 
+/// A configuration value for a single object.
+///
+/// These are built in the From GraceConfig implementation for GraceCompilerOptions.
+///
+/// Note that there is the special key _TARGET_, which is used to pass target
+/// specific options. We also use this key to store compiler-wide options.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct ConfigValue {
     pub(crate) target: Option<Target>,
     pub(crate) imported_object: Option<ImportedObject>,
     pub(crate) derive: Option<Vec<String>>,
     pub(crate) use_paths: Option<Vec<String>>,
+    pub(crate) doc_test: Option<bool>,
 }
 
 impl ConfigValue {
@@ -337,6 +357,7 @@ impl ConfigValue {
             imported_object: None,
             derive: None,
             use_paths: None,
+            doc_test: None,
         }
     }
 }
@@ -348,6 +369,7 @@ impl From<&GraceCompilerOptions> for ConfigValue {
             imported_object: None,
             derive: options.derive.clone(),
             use_paths: options.use_paths.clone(),
+            doc_test: options.doc_test.clone(),
         }
     }
 }

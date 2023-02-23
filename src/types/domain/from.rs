@@ -95,6 +95,7 @@ impl FileGenerator for DomainFromGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -139,8 +140,9 @@ impl FileGenerator for DomainFromGenerator {
             DirectiveKind::IgnoreGenerated,
             format!("{}-from-impl-file", module),
             |buffer| {
-                self.definition
-                    .write_code(config, domain, woog, imports, module, obj_id, buffer)?;
+                self.definition.write_code(
+                    config, domain, woog, imports, package, module, obj_id, buffer,
+                )?;
 
                 Ok(())
             },
@@ -167,6 +169,7 @@ impl CodeWriter for DomainFromImpl {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

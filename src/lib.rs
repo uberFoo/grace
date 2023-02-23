@@ -16,7 +16,6 @@ pub use sarzak::{
     woog::types::{Mutability, BORROWED},
 };
 
-use init_woog::init_woog;
 use targets::{application::ApplicationTarget, domain::DomainTarget};
 
 pub(crate) const RS_EXT: &str = "rs";
@@ -41,28 +40,13 @@ impl SarzakModelCompiler for ModelCompiler {
             None => GraceCompilerOptions::default(),
         };
 
-        // Create our local compiler domain
-        let mut woog = init_woog(module, &options, &domain.sarzak());
-
         let mut target = match options.target {
-            Target::Domain(_) => DomainTarget::new(
-                &options,
-                package,
-                module,
-                src_path.as_ref(),
-                domain,
-                woog,
-                test,
-            ),
-            Target::Application => ApplicationTarget::new(
-                &options,
-                package,
-                module,
-                src_path.as_ref(),
-                domain,
-                woog,
-                test,
-            ),
+            Target::Domain(_) => {
+                DomainTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+            }
+            Target::Application => {
+                ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+            }
         };
 
         log::debug!(

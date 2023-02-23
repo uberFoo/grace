@@ -339,6 +339,7 @@ impl CodeWriter for DomainStore {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
