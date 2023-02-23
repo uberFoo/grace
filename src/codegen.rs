@@ -16,7 +16,6 @@ use sarzak::{
             sarzak_get_many_as_across_r1, sarzak_maybe_get_many_ass_froms_across_r26,
             sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_sups_across_r14,
         },
-        store::ObjectStore as SarzakStore,
         types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype, Type},
     },
     v1::domain::Domain,
@@ -171,7 +170,7 @@ pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
     method: &ObjectMethod,
     woog: &WoogStore,
-    sarzak: &SarzakStore,
+    domain: &Domain,
 ) -> Result<()> {
     // Write the beginning of the definition
     write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
@@ -184,7 +183,7 @@ pub(crate) fn render_method_definition(
             buffer,
             "{}: {},",
             param.name.as_ident(),
-            param.ty.as_type(&mutability, &sarzak),
+            param.ty.as_type(&mutability, domain),
         )
         .context(FormatSnafu)?;
 
@@ -195,7 +194,7 @@ pub(crate) fn render_method_definition(
                 "{}: {},",
                 // Why do I need to drill down to name?
                 next_param.name.as_ident(),
-                next_param.ty.as_type(&mutability, &sarzak),
+                next_param.ty.as_type(&mutability, domain),
             )
             .context(FormatSnafu)?;
 
@@ -207,7 +206,7 @@ pub(crate) fn render_method_definition(
     writeln!(
         buffer,
         ") -> {} {{",
-        method.ty.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+        method.ty.as_type(&Mutability::Borrowed(BORROWED), domain)
     )
     .context(FormatSnafu)?;
 
@@ -221,7 +220,7 @@ pub(crate) fn render_make_uuid(
     buffer: &mut Buffer,
     lval: &LValue,
     rvals: &Vec<RValue>,
-    _store: &SarzakStore,
+    _domain: &Domain,
 ) -> Result<()> {
     assert!(lval.ty == GType::Uuid);
 
@@ -264,7 +263,7 @@ pub(crate) fn render_new_instance(
     lval: Option<&LValue>,
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
-    store: &SarzakStore,
+    domain: &Domain,
     imports: Option<&HashMap<String, Domain>>,
     config: &GraceConfig,
 ) -> Result<()> {
@@ -275,7 +274,7 @@ pub(crate) fn render_new_instance(
     emit!(
         buffer,
         "{} {{",
-        object.as_type(&Mutability::Borrowed(BORROWED), &store)
+        object.as_type(&Mutability::Borrowed(BORROWED), domain)
     );
 
     let tuples = zip(fields, rvals);
@@ -294,11 +293,11 @@ pub(crate) fn render_new_instance(
             GType::Uuid => match &rval.ty {
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
                 GType::Reference(obj_id) => {
-                    let obj = store.exhume_object(&obj_id).unwrap();
+                    let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
                     let is_supertype = if let Some(imports) = imports {
-                        flubber_imports(obj, config, store, imports, object_is_supertype)
+                        flubber_imports(obj, config, domain, imports, object_is_supertype)
                     } else {
-                        object_is_supertype(obj, store)
+                        object_is_supertype(obj, domain)
                     };
 
                     if is_supertype {
@@ -320,11 +319,11 @@ pub(crate) fn render_new_instance(
             GType::Option(_left) => match &rval.ty {
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
-                        let obj = store.exhume_object(&obj_id).unwrap();
+                        let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
                         let is_supertype = if let Some(imports) = imports {
-                            flubber_imports(obj, config, store, imports, object_is_supertype)
+                            flubber_imports(obj, config, domain, imports, object_is_supertype)
                         } else {
-                            object_is_supertype(obj, store)
+                            object_is_supertype(obj, domain)
                         };
 
                         if is_supertype {
@@ -385,7 +384,12 @@ pub(crate) fn render_new_instance(
     }
 
     emit!(buffer, "id");
-    emit!(buffer, "}};");
+
+    if lval.is_some() {
+        emit!(buffer, "}};");
+    } else {
+        emit!(buffer, "}}")
+    };
 
     Ok(())
 }
@@ -405,11 +409,11 @@ pub(crate) fn render_new_instance(
 pub(crate) fn flubber_imports(
     object: &Object,
     config: &GraceConfig,
-    domain_store: &SarzakStore,
+    domain: &Domain,
     imports: &HashMap<String, Domain>,
-    function: fn(&Object, &SarzakStore) -> bool,
+    function: fn(&Object, &Domain) -> bool,
 ) -> bool {
-    function(object, domain_store)
+    function(object, domain)
         || imports
             .iter()
             .find(|(name, domain)| {
@@ -431,21 +435,21 @@ pub(crate) fn flubber_imports(
                     domain.name(),
                     name,
                 );
-                function(object, domain.sarzak())
+                function(object, domain)
             })
             .is_some()
 }
 
-pub(crate) fn object_is_supertype(object: &Object, store: &SarzakStore) -> bool {
-    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, store);
+pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
+    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, domain.sarzak());
 
     is_super.len() > 0
 }
 
-pub(crate) fn object_is_singleton(object: &Object, store: &SarzakStore) -> bool {
-    let attrs = sarzak_get_many_as_across_r1!(object, store);
-    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, store);
-    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, store);
+pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
+    let attrs = sarzak_get_many_as_across_r1!(object, domain.sarzak());
+    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, domain.sarzak());
+    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, domain.sarzak());
 
     attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
 }
@@ -511,7 +515,7 @@ pub(crate) fn find_store(name: &str, domain: &Domain) -> External {
         .expect(format!("Can't parse store from {}", name).as_str());
     let name = format!(
         "{}Store",
-        name.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+        name.as_type(&Mutability::Borrowed(BORROWED), domain)
     );
 
     let mut iter = domain.sarzak().iter_ty();

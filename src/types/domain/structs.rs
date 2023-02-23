@@ -31,8 +31,12 @@ use sarzak::{
         },
     },
     v1::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, MUTABLE, PUBLIC},
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{Mutability, BORROWED, MUTABLE, PUBLIC},
+    },
 };
+
 use snafu::prelude::*;
 use uuid::Uuid;
 
@@ -74,6 +78,7 @@ impl CodeWriter for DomainStruct {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -148,7 +153,7 @@ impl CodeWriter for DomainStruct {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                     } else {
                         emit!(
@@ -156,7 +161,7 @@ impl CodeWriter for DomainStruct {
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                     }
                 }
@@ -172,7 +177,7 @@ impl CodeWriter for DomainStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -212,7 +217,7 @@ impl CodeWriter for DomainStruct {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
 
                 let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
@@ -223,7 +228,7 @@ impl CodeWriter for DomainStruct {
                         buffer,
                         "pub {}: {},",
                         attr.as_ident(),
-                        ty.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        ty.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -285,9 +290,9 @@ impl CodeWriter for DomainStruct {
                         buffer,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         binary.number,
-                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                         referrer.description,
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     match cond {
                         Conditionality::Conditional(_) => emit!(
@@ -321,10 +326,10 @@ impl CodeWriter for DomainStruct {
                         buffer,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         assoc.number,
-                        one_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        one_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                         // one_obj.description,
                         "🚧 Out of order — see sarzak#14.".to_owned(),
-                        one_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        one_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(
                         buffer,
@@ -336,10 +341,10 @@ impl CodeWriter for DomainStruct {
                         buffer,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         assoc.number,
-                        other_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        other_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                         // other_obj.description,
                         "🚧 Out of order — see sarzak#14.".to_owned(),
-                        other_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        other_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(
                         buffer,
@@ -394,6 +399,7 @@ impl CodeWriter for DomainImplementation {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -416,7 +422,7 @@ impl CodeWriter for DomainImplementation {
                 emit!(
                     buffer,
                     "impl {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
 
                 for method in &self.methods {
@@ -425,6 +431,7 @@ impl CodeWriter for DomainImplementation {
                         domain,
                         woog,
                         imports,
+                        package,
                         module,
                         Some(obj_id),
                         buffer,
@@ -449,23 +456,24 @@ impl CodeWriter for DomainImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainStructNewImpl;
+pub(crate) struct DomainNewImpl;
 
-impl DomainStructNewImpl {
+impl DomainNewImpl {
     pub(crate) fn new() -> Box<dyn MethodImplementation> {
         Box::new(Self)
     }
 }
 
-impl MethodImplementation for DomainStructNewImpl {}
+impl MethodImplementation for DomainNewImpl {}
 
-impl CodeWriter for DomainStructNewImpl {
+impl CodeWriter for DomainNewImpl {
     fn write_code(
         &self,
         options: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -498,9 +506,10 @@ impl CodeWriter for DomainStructNewImpl {
         // matched up with the input arguments, and type checked. Since I'm
         // generating both, I'm beginning to wonder what the point is.
         //
-        // So just now the type system reminded me that I need to turn a referince
+        // So just now the type system reminded me that I need to turn a reference
         // into a UUID. So maybe it's worth keeping.
         let mut fields: Vec<LValue> = Vec::new();
+        // Collect the attributes
         let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
         for attr in attrs {
@@ -516,6 +525,7 @@ impl CodeWriter for DomainStructNewImpl {
                     PUBLIC,
                     attr.as_ident(),
                 ));
+                // rvals.push(RValue::new(attr.as_ident(), &ty));
             }
         }
 
@@ -556,6 +566,11 @@ impl CodeWriter for DomainStructNewImpl {
                     ));
                 }
             }
+
+            //     rvals.push(RValue::new(
+            //         referrer.referential_attribute.as_ident(),
+            //         &Type::Reference(reference.id),
+            //     ));
         }
 
         for assoc_referrer in sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak()) {
@@ -567,6 +582,8 @@ impl CodeWriter for DomainStructNewImpl {
             let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
             let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
 
+            // This determines how a reference is stored in the struct. In this
+            // case a reference.
             fields.push(LValue::new(
                 assoc_referrer.one_referential_attribute.as_ident(),
                 GType::Uuid,
@@ -650,15 +667,43 @@ impl CodeWriter for DomainStructNewImpl {
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
 
+                // 🚧 Put this back in once I'm done moving to v2.
+                // if options.get_doc_test() {
+                //     buffer.block(
+                //         DirectiveKind::IgnoreGenerated,
+                //         format!("{}-struct-test-new", obj.as_ident()),
+                //         |buffer| {
+                //             let mut uses = HashSet::new();
+                //             let stmts =
+                //                 method.as_statement(package, module, woog, domain, &mut uses);
+                //             emit!(buffer, "/// # Example");
+                //             emit!(buffer, "///");
+                //             emit!(buffer, "///```ignore");
+                //             // for s in use_stmts.split_terminator('\n') {
+                //             for s in uses.iter() {
+                //                 emit!(buffer, "/// {}", s);
+                //             }
+                //             emit!(buffer, "///");
+                //             // for s in stmts.split_terminator('\n') {
+                //             for s in stmts.iter() {
+                //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
+                //             }
+                //             emit!(buffer, "///```");
+
+                //             Ok(())
+                //         },
+                //     )?;
+                // }
+
                 // Output the top of the function definition
-                render_method_definition(buffer, &method, woog, domain.sarzak())?;
+                render_method_definition(buffer, &method, woog, domain)?;
 
                 // Output the code to create the `id`.
                 let id = LValue::new("id", GType::Uuid);
-                render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
+                render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance
                 let new = LValue::new("new", GType::Reference(obj.id));
@@ -668,7 +713,7 @@ impl CodeWriter for DomainStructNewImpl {
                     Some(&new),
                     &fields,
                     &rvals,
-                    domain.sarzak(),
+                    domain,
                     *imports,
                     &options,
                 )?;
@@ -714,8 +759,8 @@ impl DomainRelNavImpl {
             |buffer| {
                 emit!(
                     buffer,
-                    "/// Navigate to [`{}`] across R{}(1-?)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    "/// Navigate to [`{}`] across R{}(1-*)",
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     binary.number,
                 );
                 emit!(
@@ -724,7 +769,7 @@ impl DomainRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -758,8 +803,8 @@ impl DomainRelNavImpl {
             |buffer| {
                 emit!(
                     buffer,
-                    "/// Navigate to [`{}`] across R{}(1-?c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    "/// Navigate to [`{}`] across R{}(1-*c)",
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     binary.number,
                 );
                 emit!(
@@ -768,7 +813,7 @@ impl DomainRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -811,7 +856,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -820,7 +865,7 @@ impl DomainRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -857,7 +902,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -866,7 +911,7 @@ impl DomainRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -917,7 +962,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1c-1c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -926,7 +971,7 @@ impl DomainRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -977,7 +1022,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-M)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -986,7 +1031,7 @@ impl DomainRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -1025,7 +1070,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-Mc)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -1034,7 +1079,7 @@ impl DomainRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -1072,8 +1117,8 @@ impl DomainRelNavImpl {
             |buffer| {
                 emit!(
                     buffer,
-                    "/// Navigate to [`{}`] across R{}(1-?)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    "/// Navigate to [`{}`] across R{}(1-*)",
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     number,
                 );
                 emit!(
@@ -1082,7 +1127,7 @@ impl DomainRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -1117,7 +1162,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     number
                 );
                 emit!(
@@ -1126,7 +1171,7 @@ impl DomainRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -1163,7 +1208,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     number
                 );
                 emit!(
@@ -1172,7 +1217,7 @@ impl DomainRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -1223,7 +1268,7 @@ impl DomainRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-M)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     number
                 );
                 emit!(
@@ -1232,7 +1277,7 @@ impl DomainRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -1261,6 +1306,7 @@ impl CodeWriter for DomainRelNavImpl {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

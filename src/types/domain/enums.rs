@@ -48,6 +48,7 @@ impl CodeWriter for Enum {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -94,7 +95,7 @@ impl CodeWriter for Enum {
 
         for subtype in &subtypes {
             let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
-            if object_is_singleton(&s_obj, domain.sarzak()) {
+            if object_is_singleton(s_obj, domain) {
                 emit!(
                     buffer,
                     "use crate::{}::types::{}::{};",
@@ -108,7 +109,7 @@ impl CodeWriter for Enum {
                     "use crate::{}::types::{}::{};",
                     module,
                     s_obj.as_ident(),
-                    s_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
             }
         }
@@ -141,14 +142,14 @@ impl CodeWriter for Enum {
                 emit!(
                     buffer,
                     "pub enum {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 for subtype in &subtypes {
                     let obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -177,6 +178,7 @@ impl CodeWriter for EnumGetIdImpl {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -213,8 +215,8 @@ impl CodeWriter for EnumGetIdImpl {
                     emit!(
                         buffer,
                         "{}::{}(id) => *id,",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -244,6 +246,7 @@ impl CodeWriter for EnumNewImpl {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -269,10 +272,10 @@ impl CodeWriter for EnumNewImpl {
                     emit!(
                         buffer,
                         "/// Create a new instance of {}::{}",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
-                    if object_is_singleton(&s_obj, domain.sarzak()) {
+                    if object_is_singleton(s_obj, domain) {
                         emit!(
                             buffer,
                             "pub fn new_{}(_store: &mut {}) -> Self {{",
@@ -286,7 +289,7 @@ impl CodeWriter for EnumNewImpl {
                         emit!(
                             buffer,
                             "Self::{}({})",
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                             s_obj.as_const()
                         );
                     } else {
@@ -295,13 +298,13 @@ impl CodeWriter for EnumNewImpl {
                             "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
                             s_obj.as_ident(),
                             s_obj.as_ident(),
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                             store.name
                         );
                         emit!(
                             buffer,
                             "let new = Self::{}({}.id);",
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                             s_obj.as_ident()
                         );
                         emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());

@@ -51,13 +51,13 @@ impl AnotherObject {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-nav-forward-to-edge"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-nav-forward-to-ptr"}}}
-    /// Navigate to [`Object`] across R1(1-?)
+    /// Navigate to [`Object`] across R1(1-*)
     pub fn r1_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-nav-forward-to-edge"}}}
-    /// Navigate to [`SuperT`] across R2(1-?)
+    /// Navigate to [`SuperT`] across R2(1-*)
     pub fn r2_super_t<'a>(&'a self, store: &'a IsaStore) -> Vec<&SuperT> {
         vec![store.exhume_super_t(&self.edge).unwrap()]
     }

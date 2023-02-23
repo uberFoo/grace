@@ -28,6 +28,7 @@ impl FileGenerator for NullGenerator {
         _domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         _module: &str,
         _obj_id: Option<&Uuid>,
         _buffer: &mut Buffer,

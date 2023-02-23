@@ -55,7 +55,7 @@ impl Attribute {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-cond-to-obj_id"}}}
-    /// Navigate to [`Object`] across R1(1-?c)
+    /// Navigate to [`Object`] across R1(1-*c)
     pub fn r1_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         match self.obj_id {
             Some(ref obj_id) => vec![store.exhume_object(obj_id).unwrap()],
@@ -64,7 +64,7 @@ impl Attribute {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-to-ty"}}}
-    /// Navigate to [`Ty`] across R2(1-?)
+    /// Navigate to [`Ty`] across R2(1-*)
     pub fn r2_ty<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Ty> {
         vec![store.exhume_ty(&self.ty).unwrap()]
     }

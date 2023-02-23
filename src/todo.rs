@@ -70,6 +70,15 @@ pub(crate) struct RValue {
     pub ty: GType,
 }
 
+impl RValue {
+    pub(crate) fn new<S: AsRef<str>>(name: S, ty: GType) -> Self {
+        Self {
+            name: name.as_ref().to_string(),
+            ty,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct Parameter<'a> {
     pub mutability: Uuid,
@@ -148,3 +157,20 @@ impl From<&Type> for GType {
         }
     }
 }
+
+// pub(crate) struct Statement {
+//     pub(crate) lvalue: LValue,
+//     pub(crate) rvalue: RValue,
+// }
+
+// impl Statement {
+//     pub(crate) fn new(lvalue: LValue, rvalue: RValue) -> Self {
+//         Self { lvalue, rvalue }
+//     }
+// }
+
+// pub(crate) struct ExternalInvocation {
+//     pub is_initialized: bool,
+//     pub init_func: String,
+//     pub external: Uuid,
+// }

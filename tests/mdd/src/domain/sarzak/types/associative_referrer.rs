@@ -45,7 +45,7 @@ impl AssociativeReferrer {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-forward-to-obj_id"}}}
-    /// Navigate to [`Object`] across R26(1-?)
+    /// Navigate to [`Object`] across R26(1-*)
     pub fn r26_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }

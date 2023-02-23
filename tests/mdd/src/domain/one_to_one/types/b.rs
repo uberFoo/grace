@@ -43,7 +43,7 @@ impl B {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-nav-forward-to-ptr"}}}
-    /// Navigate to [`Referent`] across R2(1-?)
+    /// Navigate to [`Referent`] across R2(1-*)
     pub fn r2_referent<'a>(&'a self, store: &'a OneToOneStore) -> Vec<&Referent> {
         vec![store.exhume_referent(&self.ptr).unwrap()]
     }

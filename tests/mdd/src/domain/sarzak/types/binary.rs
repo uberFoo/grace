@@ -57,13 +57,13 @@ impl Binary {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-to"}}}
-    /// Navigate to [`Referent`] across R5(1-?)
+    /// Navigate to [`Referent`] across R5(1-*)
     pub fn r5_referent<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referent> {
         vec![store.exhume_referent(&self.to).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-from"}}}
-    /// Navigate to [`Referrer`] across R6(1-?)
+    /// Navigate to [`Referrer`] across R6(1-*)
     pub fn r6_referrer<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referrer> {
         vec![store.exhume_referrer(&self.from).unwrap()]
     }

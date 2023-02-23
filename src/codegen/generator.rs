@@ -25,13 +25,58 @@ use crate::{
     options::GraceConfig,
 };
 
+/// Generator Builder
+///
+/// This is the builder for a [`Generator`], and what the end user will be
+/// interacting with to generate files. That's what this does, it generates
+/// a file, given a bunch of possible inputs.
+///
+/// To be honest, most of the inputs are required, and it will continue to
+/// evolve to meet the needs of code generation.
 pub(crate) struct GeneratorBuilder<'a> {
+    /// Output Path
+    ///
+    /// This is the path where the generated file will be written.
     path: Option<PathBuf>,
+    /// File Generator
+    ///
+    /// This is the specific code generate that will be invoked to generate
+    /// code for the output file.
     generator: Option<Box<dyn FileGenerator + 'a>>,
+    /// Domain
+    ///
+    /// This is the domain of instances from the sarzak/cuckoo model. It
+    /// contains [`ObjectStore`]s for both sarzak and the drawing domains.
     domain: Option<&'a Domain>,
+    /// Woog Store
+    ///
+    /// The woog ObjectStore. The woog domain contains types specific to code
+    /// generation, and perhaps this code generator specifically. I am intending
+    /// to make it generic, but Rust things are creeping in. Like mutability,
+    /// and crate public.
     woog: Option<&'a mut WoogStore>,
+    /// Grace Compiler Configuration
+    ///
+    /// These are the [`ConfigValue`]s to the model compiler -- the compiler's
+    /// configuration options.
     config: Option<&'a GraceConfig>,
+    /// Package Name
+    ///
+    /// The Rust package for which we are generating code. Some may call this
+    /// the crate, although that's technically incorrect.
+    package: Option<&'a str>,
+    /// Module Name
+    ///
+    /// The Rust module to which we are generating code. It's not quite synonymous
+    /// with a domain name. There is a 1:M relationship between domains and modules,
+    /// so we need to have a module name.
     module: Option<String>,
+    /// Object ID
+    ///
+    /// Here's an optional one, that is indeed optional. It's used by the
+    /// [`DefaultStructGenerator`] to pass on the specific object for which
+    /// structs will be built. I expect that there will be a [`DefaultEnumGenerator`]
+    /// eventually as well.
     obj_id: Option<&'a Uuid>,
     imports: Option<&'a HashMap<String, Domain>>,
 }
@@ -44,19 +89,20 @@ impl<'a> GeneratorBuilder<'a> {
             domain: None,
             woog: None,
             config: None,
+            package: None,
             module: None,
             obj_id: None,
             imports: None,
         }
     }
 
-    pub fn config(mut self, config: &'a GraceConfig) -> Self {
+    pub(crate) fn config(mut self, config: &'a GraceConfig) -> Self {
         self.config = Some(config);
 
         self
     }
 
-    pub fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
+    pub(crate) fn path<P: AsRef<Path>>(mut self, path: P) -> Result<Self> {
         let path = path.as_ref();
 
         self.path = Some(path.to_path_buf());
@@ -64,7 +110,7 @@ impl<'a> GeneratorBuilder<'a> {
         Ok(self)
     }
 
-    pub fn generator(mut self, generator: Box<dyn FileGenerator + 'a>) -> Self {
+    pub(crate) fn generator(mut self, generator: Box<dyn FileGenerator + 'a>) -> Self {
         self.generator = Some(generator);
 
         self
@@ -72,6 +118,12 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub(crate) fn module(mut self, module: &'a str) -> Self {
         self.module = Some(module.replace("/", "::"));
+
+        self
+    }
+
+    pub(crate) fn package(mut self, package: &'a str) -> Self {
+        self.package = Some(package);
 
         self
     }
@@ -136,12 +188,20 @@ impl<'a> GeneratorBuilder<'a> {
             }
         );
 
+        ensure!(
+            self.package.is_some(),
+            CompilerSnafu {
+                description: "missing package"
+            }
+        );
+
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
             &self.config.unwrap(),
             &self.domain.unwrap(),
             &self.woog,
             &self.imports,
+            self.package.unwrap(),
             self.module.unwrap().as_str(),
             self.obj_id,
             &mut buffer,
@@ -274,6 +334,7 @@ pub(crate) trait FileGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -292,6 +353,7 @@ pub(crate) trait CodeWriter {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,

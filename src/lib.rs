@@ -3,6 +3,7 @@ use std::path::Path;
 use sarzak::mc::ModelCompilerOptions;
 
 mod codegen;
+mod init_woog;
 pub mod options;
 mod targets;
 mod todo;
@@ -15,7 +16,6 @@ pub use sarzak::{
     woog::types::{Mutability, BORROWED},
 };
 
-use sarzak::woog::store::ObjectStore as WoogStore;
 use targets::{application::ApplicationTarget, domain::DomainTarget};
 
 pub(crate) const RS_EXT: &str = "rs";
@@ -28,7 +28,7 @@ impl SarzakModelCompiler for ModelCompiler {
     fn compile<P: AsRef<Path>>(
         &self,
         domain: sarzak::domain::DomainBuilder,
-        _package: &str,
+        package: &str,
         module: &str,
         src_path: P,
         options: Box<&dyn ModelCompilerOptions>,
@@ -40,29 +40,13 @@ impl SarzakModelCompiler for ModelCompiler {
             None => GraceCompilerOptions::default(),
         };
 
-        // Create our local compiler domain
-        let mut woog = WoogStore::new();
-        sarzak::woog::init_instances(&mut woog);
-
         let mut target = match options.target {
-            Target::Domain(_) => DomainTarget::new(
-                &options,
-                _package,
-                module,
-                src_path.as_ref(),
-                domain,
-                woog,
-                test,
-            ),
-            Target::Application => ApplicationTarget::new(
-                &options,
-                _package,
-                module,
-                src_path.as_ref(),
-                domain,
-                woog,
-                test,
-            ),
+            Target::Domain(_) => {
+                DomainTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+            }
+            Target::Application => {
+                ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+            }
         };
 
         log::debug!(

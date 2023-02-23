@@ -33,7 +33,7 @@ use crate::{
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
-    types::{ModuleDefinition, TypeDefinition, TypeImplementation},
+    types::{MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation},
 };
 
 pub(crate) struct DefaultStructBuilder {
@@ -76,15 +76,9 @@ impl DefaultStructBuilder {
     }
 }
 
-/// Generator -- Code Generator Engine
+/// Default Struct Generator
 ///
-/// This is supposed to be general, but it's very much geared towards generating
-/// a file that contains a struct definition and implementations. I need to
-/// do some refactoring.
-///
-/// As just hinted at, the idea is that you plug in different code writers that
-/// know how to write different parts of some rust code. This one is for
-/// structs.
+/// Called by the [`Generator`] to write code for a struct.
 pub(crate) struct DefaultStructGenerator {
     definition: Box<dyn TypeDefinition>,
     implementations: Vec<Box<dyn TypeImplementation>>,
@@ -97,6 +91,7 @@ impl FileGenerator for DefaultStructGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -121,6 +116,7 @@ impl FileGenerator for DefaultStructGenerator {
                     domain,
                     woog,
                     imports,
+                    package,
                     module,
                     Some(obj_id),
                     buffer,
@@ -132,6 +128,7 @@ impl FileGenerator for DefaultStructGenerator {
                         domain,
                         woog,
                         imports,
+                        package,
                         module,
                         Some(obj_id),
                         buffer,
@@ -167,6 +164,7 @@ impl CodeWriter for DefaultStruct {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -210,22 +208,22 @@ impl CodeWriter for DefaultStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
 
                     emit!(
                         paste,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         binary.number,
-                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak()),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                         referrer.description,
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(
                         paste,
                         "pub {}: &'a {},",
                         referrer.referential_attribute.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -258,13 +256,13 @@ impl CodeWriter for DefaultStruct {
                     emit!(
                         buffer,
                         "pub struct {}<'a> {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 } else {
                     emit!(
                         buffer,
                         "pub struct {} {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -276,7 +274,7 @@ impl CodeWriter for DefaultStruct {
                         buffer,
                         "pub {}: {},",
                         attr.as_ident(),
-                        ty.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        ty.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -293,31 +291,31 @@ impl CodeWriter for DefaultStruct {
 }
 
 pub(crate) struct DefaultImplBuilder {
-    implementation: Option<Box<dyn TypeImplementation>>,
+    methods: Vec<Box<dyn MethodImplementation>>,
 }
 
 impl DefaultImplBuilder {
     pub(crate) fn new() -> DefaultImplBuilder {
         Self {
-            implementation: None,
+            methods: Vec::new(),
         }
     }
 
-    pub(crate) fn implementation(mut self, implementation: Box<dyn TypeImplementation>) -> Self {
-        self.implementation = Some(implementation);
+    pub(crate) fn method(mut self, method: Box<dyn MethodImplementation>) -> Self {
+        self.methods.push(method);
 
         self
     }
 
     pub(crate) fn build(self) -> Box<dyn TypeImplementation> {
         Box::new(DefaultImplementation {
-            implementation: self.implementation,
+            methods: self.methods,
         })
     }
 }
 
 pub(crate) struct DefaultImplementation {
-    implementation: Option<Box<dyn TypeImplementation>>,
+    methods: Vec<Box<dyn MethodImplementation>>,
 }
 
 impl TypeImplementation for DefaultImplementation {}
@@ -329,6 +327,7 @@ impl CodeWriter for DefaultImplementation {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -355,22 +354,23 @@ impl CodeWriter for DefaultImplementation {
                     emit!(
                         buffer,
                         "impl<'a> {}<'a> {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 } else {
                     emit!(
                         buffer,
                         "impl {} {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
 
-                if let Some(implementation) = &self.implementation {
-                    implementation.write_code(
+                for method in &self.methods {
+                    method.write_code(
                         config,
                         domain,
                         woog,
                         imports,
+                        package,
                         module,
                         Some(obj_id),
                         buffer,
@@ -396,23 +396,24 @@ impl CodeWriter for DefaultImplementation {
 ///
 /// I think that I may add optional references to the non-formalizing side of
 /// relationships.
-pub(crate) struct DefaultStructNewImpl;
+pub(crate) struct DefaultNewImpl;
 
-impl DefaultStructNewImpl {
-    pub(crate) fn new() -> Box<dyn TypeImplementation> {
+impl DefaultNewImpl {
+    pub(crate) fn new() -> Box<dyn MethodImplementation> {
         Box::new(Self)
     }
 }
 
-impl TypeImplementation for DefaultStructNewImpl {}
+impl MethodImplementation for DefaultNewImpl {}
 
-impl CodeWriter for DefaultStructNewImpl {
+impl CodeWriter for DefaultNewImpl {
     fn write_code(
         &self,
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -445,6 +446,7 @@ impl CodeWriter for DefaultStructNewImpl {
 
         // Collect the attributes
         let mut params: Vec<Parameter> = Vec::new();
+        let mut rvals: Vec<RValue> = Vec::new();
         let mut fields: Vec<LValue> = Vec::new();
         let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -461,6 +463,7 @@ impl CodeWriter for DefaultStructNewImpl {
                     PUBLIC,
                     attr.as_ident(),
                 ));
+                rvals.push(RValue::new(attr.as_ident(), ty.into()));
             }
         }
 
@@ -483,11 +486,13 @@ impl CodeWriter for DefaultStructNewImpl {
                 PUBLIC,
                 referrer.referential_attribute.as_ident(),
             ));
-        }
 
-        // Collect rvals for rendering the method.
-        let rvals = params.clone();
-        let rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
+            // 🚧
+            rvals.push(RValue::new(
+                referrer.referential_attribute.as_ident(),
+                GType::Reference(r_obj.id),
+            ));
+        }
 
         // Link the params. The result is the head of the list.
         let param = if params.len() > 0 {
@@ -502,10 +507,28 @@ impl CodeWriter for DefaultStructNewImpl {
                     None => break,
                 }
             }
+            log::trace!("param: {:?}", last);
             Some(last.clone())
         } else {
             None
         };
+
+        // Find the method
+        // This is going to suck. We don't have cross-domain relationship
+        // navigation -- something to be addressed.
+        // let mut iter = woog.iter_object_method();
+        // let method = loop {
+        // match iter.next() {
+        // Some((_, method)) => {
+        // if method.object == obj.id && method.name == "new" {
+        // break method;
+        // }
+        // }
+        // None => {
+        // panic!("Unable to find the new method for {}", obj.name);
+        // }
+        // }
+        // };
 
         // Create an ObjectMethod
         // The uniqueness of this instance depends on the inputs to it's
@@ -530,30 +553,19 @@ impl CodeWriter for DefaultStructNewImpl {
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), &domain.sarzak())
+                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
 
                 // Output the top of the function definition
-                render_method_definition(buffer, &method, woog, domain.sarzak())?;
+                render_method_definition(buffer, &method, woog, domain)?;
 
                 // Output the code to create the `id`.
                 let id = LValue::new("id", GType::Uuid);
-                render_make_uuid(buffer, &id, &rvals, domain.sarzak())?;
+                render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance
-                let new = LValue::new("new", GType::Reference(obj.id));
-                render_new_instance(
-                    buffer,
-                    obj,
-                    Some(&new),
-                    &fields,
-                    &rvals,
-                    domain.sarzak(),
-                    None,
-                    &config,
-                )?;
+                render_new_instance(buffer, obj, None, &fields, &rvals, domain, None, &config)?;
 
-                emit!(buffer, "new");
                 emit!(buffer, "}}");
 
                 Ok(())
@@ -611,6 +623,7 @@ impl FileGenerator for DefaultModuleGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -624,8 +637,9 @@ impl FileGenerator for DefaultModuleGenerator {
             DirectiveKind::AllowEditing,
             format!("{}-module-definition-file", module),
             |buffer| {
-                self.definition
-                    .write_code(config, domain, woog, imports, module, obj_id, buffer)?;
+                self.definition.write_code(
+                    config, domain, woog, imports, package, module, obj_id, buffer,
+                )?;
 
                 Ok(())
             },
@@ -655,6 +669,7 @@ impl CodeWriter for DefaultModule {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -678,9 +693,7 @@ impl CodeWriter for DefaultModule {
                 }
                 emit!(buffer, "");
                 for (_, obj) in &objects {
-                    if object_is_singleton(obj, domain.sarzak())
-                        && !object_is_supertype(obj, domain.sarzak())
-                    {
+                    if object_is_singleton(obj, domain) && !object_is_supertype(obj, domain) {
                         emit!(
                             buffer,
                             "pub use crate::{}::{}::{};",
@@ -694,7 +707,7 @@ impl CodeWriter for DefaultModule {
                             "pub use crate::{}::{}::{};",
                             module,
                             obj.as_ident(),
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                     }
                 }

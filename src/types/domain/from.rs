@@ -95,6 +95,7 @@ impl FileGenerator for DomainFromGenerator {
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -139,8 +140,9 @@ impl FileGenerator for DomainFromGenerator {
             DirectiveKind::IgnoreGenerated,
             format!("{}-from-impl-file", module),
             |buffer| {
-                self.definition
-                    .write_code(config, domain, woog, imports, module, obj_id, buffer)?;
+                self.definition.write_code(
+                    config, domain, woog, imports, package, module, obj_id, buffer,
+                )?;
 
                 Ok(())
             },
@@ -167,6 +169,7 @@ impl CodeWriter for DomainFromImpl {
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -205,9 +208,8 @@ impl CodeWriter for DomainFromImpl {
                     objects
                         .iter()
                         .filter(|(id, obj)| {
-                            object_is_supertype(obj, domain.sarzak())
-                                || !object_is_singleton(obj, domain.sarzak())
-                                    && !config.is_imported(*id)
+                            object_is_supertype(obj, domain)
+                                || !object_is_singleton(obj, domain) && !config.is_imported(*id)
                         })
                         .collect::<Vec<_>>(),
                 )
@@ -243,7 +245,7 @@ impl CodeWriter for DomainFromImpl {
                     emit!(
                         buffer,
                         "{},",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
                 emit!(buffer, "}};");
@@ -253,15 +255,15 @@ impl CodeWriter for DomainFromImpl {
                     buffer,
                     "use crate::{}::ObjectStore as {}Store;",
                     from_module,
-                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "use crate::{}::types::{{", from_module);
                 for (_, obj) in &objects {
                     emit!(
                         buffer,
                         "{} as From{},",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                 }
                 emit!(buffer, "}};");
@@ -271,17 +273,17 @@ impl CodeWriter for DomainFromImpl {
                 emit!(
                     buffer,
                     "impl From<&{}Store> for ObjectStore {{",
-                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
                     "fn from(from: &{}Store) -> Self {{",
-                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "let mut to = ObjectStore::new();");
                 for (_, obj) in &objects {
                     emit!(buffer, "");
-                    // if object_is_supertype(obj, domain.sarzak()) {
+                    // if object_is_supertype(obj, domain) {
                     //     emit!(
                     //         buffer,
                     //         "// These are just UUID's that are preserved across domains."
@@ -303,7 +305,7 @@ impl CodeWriter for DomainFromImpl {
                     emit!(
                         buffer,
                         "let instance = {}::from(instance);",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "to.inter_{}(instance);", obj.as_ident());
                     emit!(buffer, "}}");
@@ -317,18 +319,18 @@ impl CodeWriter for DomainFromImpl {
 
                 // Generate the individual From implementations
                 for (_, obj) in &objects {
-                    if object_is_supertype(obj, domain.sarzak()) {
+                    if object_is_supertype(obj, domain) {
                         emit!(buffer, "");
                         emit!(
                             buffer,
                             "impl From<&From{}> for {} {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                         emit!(
                             buffer,
                             "fn from(src: &From{}) -> Self {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                         emit!(buffer, "match src {{");
                         // Darnedest thing. Uncommenting the line below causes the compiler to
@@ -349,10 +351,10 @@ impl CodeWriter for DomainFromImpl {
                             emit!(
                                 buffer,
                                 "From{}::{}(src) => {}::{}(src.clone()),",
-                                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                                obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                                obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                             );
                         }
                         emit!(buffer, "}}");
@@ -362,13 +364,13 @@ impl CodeWriter for DomainFromImpl {
                         emit!(
                             buffer,
                             "impl From<&From{}> for {} {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak()),
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                         emit!(
                             buffer,
                             "fn from(src: &From{}) -> Self {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain.sarzak())
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                         emit!(buffer, "Self {{");
 

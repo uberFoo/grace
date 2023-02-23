@@ -42,7 +42,7 @@ impl State {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-nav-forward-to-obj_id"}}}
-    /// Navigate to [`Object`] across R18(1-?)
+    /// Navigate to [`Object`] across R18(1-*)
     pub fn r18_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
