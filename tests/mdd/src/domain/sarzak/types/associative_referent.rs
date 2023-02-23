@@ -51,20 +51,20 @@ impl AssociativeReferent {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
-    /// Navigate to [`Associative`] across R23(1-1)
-    pub fn r23_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
-        vec![store
-            .iter_associative()
-            .find(|associative| associative.one == self.id)
-            .unwrap()]
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
     /// Navigate to [`Associative`] across R22(1-1)
     pub fn r22_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
         vec![store
             .iter_associative()
             .find(|associative| associative.other == self.id)
+            .unwrap()]
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
+    /// Navigate to [`Associative`] across R23(1-1)
+    pub fn r23_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
+        vec![store
+            .iter_associative()
+            .find(|associative| associative.one == self.id)
             .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
