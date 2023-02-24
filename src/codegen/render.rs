@@ -2,15 +2,22 @@
 //!
 //! And implementations. This needs some housecleaning.
 //!
+use std::fmt::Write;
+
 use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 // use names::Generator;
 use sarzak::{
-    sarzak::types::{Attribute, Event, External as SarzakExternal, Object, State, Type},
-    v1::domain::Domain,
-    woog::types::Mutability,
+    mc::{FormatSnafu, Result},
+    sarzak::types::{Attribute, Event, External as SarzakExternal, Object, State, Ty},
+    v2::domain::Domain,
+    woog::types::{Mutability, BORROWED},
 };
+use snafu::prelude::*;
 
-use crate::todo::{External, GType, ObjectMethod, Parameter};
+use crate::{
+    codegen::buffer::{emit, Buffer},
+    todo::{External, GType, ObjectMethod, Parameter},
+};
 
 macro_rules! render_ident {
     ($($t:ident),+) => {
@@ -398,22 +405,22 @@ impl RenderType for &str {
 /// sized types. Probably need more types too. we'll just have to see.
 ///
 /// One thing that worries me is what happens when we get to references?
-impl RenderType for Type {
+impl RenderType for Ty {
     fn as_type(&self, mutability: &Mutability, domain: &Domain) -> String {
         match self {
-            Type::Boolean(_) => "bool".to_owned(),
-            Type::Object(o) => {
+            Self::Boolean(_) => "bool".to_owned(),
+            Self::Object(o) => {
                 let object = domain.sarzak().exhume_object(&o).unwrap();
                 format!("{}", object.as_type(mutability, domain))
             }
-            Type::String(_) => "String".to_owned(),
-            Type::Uuid(_) => "Uuid".to_owned(),
-            Type::External(e) => {
+            Self::String(_) => "String".to_owned(),
+            Self::Uuid(_) => "Uuid".to_owned(),
+            Self::External(e) => {
                 let ext = domain.sarzak().exhume_external(&e).unwrap();
                 format!("&{}", ext.as_type(mutability, domain))
             }
-            Type::Float(_) => "f64".to_owned(),
-            Type::Integer(_) => "i64".to_owned(),
+            Self::Float(_) => "f64".to_owned(),
+            Self::Integer(_) => "i64".to_owned(),
         }
     }
 }
@@ -503,4 +510,20 @@ impl Sanitize for String {
             _ => self.to_owned(),
         }
     }
+}
+
+pub(crate) fn render_attributes(buffer: &mut Buffer, obj: &Object, domain: &Domain) -> Result<()> {
+    let mut attrs = obj.r1_attribute(domain.sarzak());
+    attrs.sort_by(|a, b| a.name.cmp(&b.name));
+    for attr in attrs {
+        let ty = attr.r2_ty(domain.sarzak())[0];
+        emit!(
+            buffer,
+            "pub {}: {},",
+            attr.as_ident(),
+            ty.as_type(&Mutability::Borrowed(BORROWED), domain)
+        );
+    }
+
+    Ok(())
 }

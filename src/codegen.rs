@@ -11,14 +11,8 @@ use std::{collections::HashMap, fmt::Write, iter::zip};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        macros::{
-            sarzak_get_many_as_across_r1, sarzak_maybe_get_many_ass_froms_across_r26,
-            sarzak_maybe_get_many_r_froms_across_r17, sarzak_maybe_get_many_r_sups_across_r14,
-        },
-        types::{AssociativeReferrer, Attribute, Object, Referrer, Supertype, Type},
-    },
-    v1::domain::Domain,
+    sarzak::types::{Object, Ty},
+    v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -39,12 +33,13 @@ use crate::{
 macro_rules! get_subtypes_sorted {
     ($obj:expr, $store:expr) => {{
         // I'm convinced that R14 and R15 are broken.
-        let sup = sarzak_maybe_get_many_r_sups_across_r14!($obj, $store);
-        let isa = sarzak_get_one_r_isa_across_r13!(sup[0], $store);
-        let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, $store);
+        // They are probably aliased. I wonder why I was convinced of that...
+        let sup = $obj.r14_supertype($store)[0];
+        let isa = sup.r13_isa($store)[0];
+        let mut subtypes = isa.r27_subtype($store);
         subtypes.sort_by(|a, b| {
-            let a = sarzak_get_one_obj_across_r15!(a, $store);
-            let b = sarzak_get_one_obj_across_r15!(b, $store);
+            let a = a.r15_object($store)[0];
+            let b = b.r15_object($store)[0];
             a.name.cmp(&b.name)
         });
 
@@ -56,13 +51,13 @@ pub(crate) use get_subtypes_sorted;
 macro_rules! get_objs_for_assoc_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
-        let referrers = sarzak_maybe_get_many_ass_froms_across_r26!($obj, $store);
+        let referrers = $obj.r26_associative_referrer($store);
         for referrer in &referrers {
-            let assoc = sarzak_get_one_r_assoc_across_r21!(referrer, $store);
-            let one = sarzak_get_one_ass_to_across_r23!(assoc, $store);
-            let other = sarzak_get_one_ass_to_across_r22!(assoc, $store);
-            objs.push(sarzak_get_one_obj_across_r25!(one, $store));
-            objs.push(sarzak_get_one_obj_across_r25!(other, $store));
+            let assoc = referrer.r21_associative($store)[0];
+            let one = assoc.r23_associative_referent($store)[0];
+            let other = assoc.r22_associative_referent($store)[0];
+            objs.push(one.r25_object($store)[0]);
+            objs.push(other.r25_object($store)[0]);
         }
 
         objs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -75,16 +70,28 @@ pub(crate) use get_objs_for_assoc_referrers_sorted;
 macro_rules! get_objs_for_assoc_referents_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
-        let referents = sarzak_maybe_get_many_ass_tos_across_r25!($obj, $store);
+        let referents = $obj.r25_associative_referent($store);
         for referent in &referents {
-            if let Some(assoc) = sarzak_get_one_r_assoc_across_r23!(referent, $store) {
-                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
-                objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
+            let r23 = referent.r23c_associative($store);
+
+            if r23.is_empty() {
+                let assoc = referent.r22c_associative($store)[0];
+                let referrer = assoc.r21_associative_referrer($store)[0];
+                objs.push(referrer.r26_object($store)[0]);
             } else {
-                let assoc = sarzak_get_one_r_assoc_across_r22!(referent, $store);
-                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
-                objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
+                let assoc = r23[0];
+                let referrer = assoc.r21_associative_referrer($store)[0];
+                objs.push(referrer.r26_object($store)[0]);
             }
+
+            // if let Some(assoc) = sarzak_get_one_r_assoc_across_r23!(referent, $store) {
+            //     let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
+            //     objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
+            // } else {
+            //     let assoc = sarzak_get_one_r_assoc_across_r22!(referent, $store);
+            //     let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
+            //     objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
+            // }
         }
 
         objs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -99,9 +106,9 @@ macro_rules! get_objs_for_referrers_sorted {
         let mut objs = Vec::new();
         let referrers = get_referrers_sorted!($obj, $store);
         for referrer in &referrers {
-            let binary = sarzak_get_one_r_bin_across_r6!(referrer, $store);
-            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
-            let obj = sarzak_get_one_obj_across_r16!(referent, $store);
+            let binary = referrer.r6_binary($store)[0];
+            let referent = binary.r5_referent($store)[0];
+            let obj = referent.r16_object($store)[0];
             objs.push(obj);
         }
 
@@ -115,9 +122,9 @@ macro_rules! get_objs_for_referents_sorted {
         let mut objs = Vec::new();
         let referents = get_referents_sorted!($obj, $store);
         for referent in &referents {
-            let binary = sarzak_get_one_r_bin_across_r5!(referent, $store);
-            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
-            let obj = sarzak_get_one_obj_across_r17!(referrer, $store);
+            let binary = referent.r5_binary($store)[0];
+            let referrer = binary.r6_referrer($store)[0];
+            let obj = referrer.r17_object($store)[0];
             objs.push(obj);
         }
 
@@ -128,15 +135,15 @@ pub(crate) use get_objs_for_referents_sorted;
 
 macro_rules! get_referrers_sorted {
     ($obj:expr, $store:expr) => {{
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!($obj, $store);
+        let mut referrers = $obj.r17_referrer($store);
         referrers.sort_by(|a, b| {
-            let binary = sarzak_get_one_r_bin_across_r6!(&a, $store);
-            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
-            let obj_a = sarzak_get_one_obj_across_r16!(referent, $store);
+            let binary = a.r6_binary($store)[0];
+            let referent = binary.r5_referent($store)[0];
+            let obj_a = referent.r16_object($store)[0];
 
-            let binary = sarzak_get_one_r_bin_across_r6!(&b, $store);
-            let referent = sarzak_get_one_r_to_across_r5!(binary, $store);
-            let obj_b = sarzak_get_one_obj_across_r16!(referent, $store);
+            let binary = b.r6_binary($store)[0];
+            let referent = binary.r5_referent($store)[0];
+            let obj_b = referent.r16_object($store)[0];
 
             obj_a.name.cmp(&obj_b.name)
         });
@@ -148,15 +155,15 @@ pub(crate) use get_referrers_sorted;
 
 macro_rules! get_referents_sorted {
     ($obj:expr, $store:expr) => {{
-        let mut referents = sarzak_maybe_get_many_r_tos_across_r16!($obj, $store);
+        let mut referents = $obj.r16_referent($store);
         referents.sort_by(|a, b| {
-            let binary = sarzak_get_one_r_bin_across_r5!(&a, $store);
-            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
-            let obj_a = sarzak_get_one_obj_across_r17!(referrer, $store);
+            let binary = a.r5_binary($store)[0];
+            let referrer = binary.r6_referrer($store)[0];
+            let obj_a = referrer.r17_object($store)[0];
 
-            let binary = sarzak_get_one_r_bin_across_r5!(&b, $store);
-            let referrer = sarzak_get_one_r_from_across_r6!(binary, $store);
-            let obj_b = sarzak_get_one_obj_across_r17!(referrer, $store);
+            let binary = b.r5_binary($store)[0];
+            let referrer = binary.r6_referrer($store)[0];
+            let obj_b = referrer.r17_object($store)[0];
 
             obj_a.name.cmp(&obj_b.name)
         });
@@ -441,15 +448,15 @@ pub(crate) fn flubber_imports(
 }
 
 pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
-    let is_super = sarzak_maybe_get_many_r_sups_across_r14!(object, domain.sarzak());
+    let is_super = object.r14_supertype(domain.sarzak());
 
     is_super.len() > 0
 }
 
 pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
-    let attrs = sarzak_get_many_as_across_r1!(object, domain.sarzak());
-    let referrers = sarzak_maybe_get_many_r_froms_across_r17!(object, domain.sarzak());
-    let assoc_referrers = sarzak_maybe_get_many_ass_froms_across_r26!(object, domain.sarzak());
+    let attrs = object.r1_attribute(domain.sarzak());
+    let referrers = object.r17_referrer(domain.sarzak());
+    let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
 
     attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
 }
@@ -522,8 +529,8 @@ pub(crate) fn find_store(name: &str, domain: &Domain) -> External {
     loop {
         let ty = iter.next();
         match ty {
-            Some((_, ty)) => match ty {
-                Type::External(e) => {
+            Some(ty) => match ty {
+                Ty::External(e) => {
                     let ext = domain.sarzak().exhume_external(&e).unwrap();
                     if ext.name == name {
                         break External::new(ext.name.clone(), ext.path.clone(), None);

@@ -17,7 +17,7 @@
 use std::{any::Any, collections::HashMap, path::PathBuf};
 
 use clap::{ArgAction, Args, Subcommand};
-use sarzak::{mc::ModelCompilerOptions, v1::domain::Domain};
+use sarzak::{mc::ModelCompilerOptions, v2::domain::Domain};
 use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
 
@@ -304,7 +304,7 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
 
         config.insert(_TARGET_, ConfigValue::from(options));
 
-        for (key, object) in domain.sarzak().iter_object() {
+        for object in domain.sarzak().iter_object() {
             // We want to load the initial value from the object description, and then
             // layer the defaults on top, without overwriting what came from the
             // description.
@@ -329,7 +329,7 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
                 }
             }
 
-            config.insert(*key, config_value);
+            config.insert(object.id, config_value);
         }
 
         config
@@ -459,13 +459,13 @@ mod tests {
         let domain = DomainBuilder::new()
             .cuckoo_model("tests/mdd/models/one_to_one.json")
             .unwrap()
-            .build_v1()
+            .build_v2()
             .unwrap();
 
         let config: GraceConfig = (&options, &domain).into();
 
-        for (id, _) in domain.sarzak().iter_object() {
-            let config_value = config.get(*id).unwrap();
+        for obj in domain.sarzak().iter_object() {
+            let config_value = config.get(obj.id).unwrap();
             assert_eq!(
                 config_value.derive,
                 Some(vec![
@@ -490,16 +490,16 @@ mod tests {
         let domain = DomainBuilder::new()
             .cuckoo_model("tests/mdd/models/imported_object.json")
             .unwrap()
-            .build_v1()
+            .build_v2()
             .unwrap();
 
         let config: GraceConfig = (&options, &domain).into();
 
-        for (id, obj) in domain.sarzak().iter_object() {
-            let config_value = config.get(*id).unwrap();
+        for obj in domain.sarzak().iter_object() {
+            let config_value = config.get(obj.id).unwrap();
 
             if obj.name == "Object" {
-                assert!(config.is_imported(id));
+                assert!(config.is_imported(&obj.id));
                 assert_eq!(
                     config_value.imported_object,
                     Some(ImportedObject {
@@ -509,7 +509,7 @@ mod tests {
                     })
                 );
             } else if obj.name == "Super T" {
-                assert!(config.is_imported(id));
+                assert!(config.is_imported(&obj.id));
                 assert_eq!(
                     config_value.imported_object,
                     Some(ImportedObject {

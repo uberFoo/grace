@@ -26,12 +26,16 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 ///
 /// `Object`s contain [Attribute]s that represent the data that the
 /// `Object`encapsulates. All `Object`s have an attribute called `id`, which
-/// is a unique idenifier for each class of `Object`. The `id` attribute is a
+/// is a unique identifier for each class of `Object`. The `id` attribute is a
 /// version 5 UUID.
+///
+/// 🐶 {"derive": ["Clone", "Debug", "Deserialize", "Eq", "Hash", "PartialEq", "Serialize
+///"]}
+///
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct Object {
     pub description: String,
     pub id: Uuid,

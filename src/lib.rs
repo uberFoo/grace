@@ -12,7 +12,7 @@ mod types;
 pub use options::{DomainConfig, GraceCompilerOptions, Target};
 pub use sarzak::{
     mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler},
-    sarzak::types::{External, Type},
+    sarzak::types::{External, Ty},
     woog::types::{Mutability, BORROWED},
 };
 

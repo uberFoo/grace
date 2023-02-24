@@ -3,7 +3,7 @@
 //! Not that the whole things shouldn't be, but this stuff is low hanging fruit.
 //!
 
-use sarzak::sarzak::types::{External as SarzakExternal, Type};
+use sarzak::sarzak::types::{External as SarzakExternal, Ty};
 use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -144,15 +144,15 @@ impl<'a> From<&'a Parameter<'a>> for RValue {
     }
 }
 
-impl From<&Type> for GType {
-    fn from(value: &Type) -> Self {
+impl From<&Ty> for GType {
+    fn from(value: &Ty) -> Self {
         match value {
-            Type::Integer(_) => Self::Integer,
-            Type::Boolean(_) => Self::Boolean,
-            Type::Float(_) => Self::Float,
-            Type::String(_) => Self::String,
-            Type::Uuid(_) => Self::Uuid,
-            Type::Object(uuid) => Self::Object(uuid.clone()),
+            Ty::Integer(_) => Self::Integer,
+            Ty::Boolean(_) => Self::Boolean,
+            Ty::Float(_) => Self::Float,
+            Ty::String(_) => Self::String,
+            Ty::Uuid(_) => Self::Uuid,
+            Ty::Object(uuid) => Self::Object(uuid.clone()),
             _ => unimplemented!(),
         }
     }

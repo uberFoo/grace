@@ -9,28 +9,10 @@ use std::{
 use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_one_ass_from_across_r21,
-            sarzak_get_one_ass_to_across_r22, sarzak_get_one_ass_to_across_r23,
-            sarzak_get_one_card_across_r89, sarzak_get_one_card_across_r9,
-            sarzak_get_one_cond_across_r11, sarzak_get_one_cond_across_r12,
-            sarzak_get_one_cond_across_r77, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_obj_across_r17, sarzak_get_one_obj_across_r25,
-            sarzak_get_one_obj_across_r26, sarzak_get_one_r_assoc_across_r21,
-            sarzak_get_one_r_assoc_across_r22, sarzak_get_one_r_assoc_across_r23,
-            sarzak_get_one_r_bin_across_r5, sarzak_get_one_r_bin_across_r6,
-            sarzak_get_one_r_from_across_r6, sarzak_get_one_r_to_across_r5,
-            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_ass_froms_across_r26,
-            sarzak_maybe_get_many_ass_tos_across_r25, sarzak_maybe_get_many_r_froms_across_r17,
-            sarzak_maybe_get_many_r_tos_across_r16,
-        },
-        types::{
-            AssociativeReferent, AssociativeReferrer, Attribute, Binary, Cardinality,
-            Conditionality, External as SarzakExternal, Object, Referent, Referrer,
-        },
+    sarzak::types::{
+        Binary, Cardinality, Conditionality, External as SarzakExternal, Object, Referrer,
     },
-    v1::domain::Domain,
+    v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED, MUTABLE, PUBLIC},
@@ -49,7 +31,7 @@ use crate::{
         get_objs_for_assoc_referents_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_referents_sorted, get_objs_for_referrers_sorted, get_referents_sorted,
         get_referrers_sorted,
-        render::{RenderIdent, RenderType},
+        render::{render_attributes, RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
@@ -220,22 +202,13 @@ impl CodeWriter for DomainStruct {
                     obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
 
-                let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-                attrs.sort_by(|a, b| a.name.cmp(&b.name));
-                for attr in attrs {
-                    let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
-                    emit!(
-                        buffer,
-                        "pub {}: {},",
-                        attr.as_ident(),
-                        ty.as_type(&Mutability::Borrowed(BORROWED), domain)
-                    );
-                }
+                render_attributes(buffer, obj, domain)?;
 
                 for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
-                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-                    let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-                    let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+                    let binary = referrer.r6_binary(domain.sarzak())[0];
+                    let referent = binary.r5_referent(domain.sarzak())[0];
+                    let r_obj = referent.r16_object(domain.sarzak())[0];
+
                     // Conditionality is confusing for me to think about for some reason,
                     // so I'm going to put it down here. I should probably remove this and
                     // put it in the book, once I'm done.
@@ -284,7 +257,7 @@ impl CodeWriter for DomainStruct {
                     // We should only wrap our pointer in an option when we are conditional.
                     // That means that we need to check the conditionality of the referrer.
                     //
-                    let cond = sarzak_get_one_cond_across_r11!(referrer, domain.sarzak());
+                    let cond = referrer.r11_conditionality(domain.sarzak())[0];
 
                     emit!(
                         buffer,
@@ -308,19 +281,17 @@ impl CodeWriter for DomainStruct {
                     }
                 }
 
-                for assoc_referrer in
-                    sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak())
-                {
-                    let assoc = sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
+                for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+                    let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
 
                     // ⛔️ It looks like r22 and r23 are aliased in the store.
                     // Sometimes code comes out with one before other, and
                     // sometimes other before one. See grace#39.
-                    let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
-                    let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
+                    let one = assoc.r23_associative_referent(domain.sarzak())[0];
+                    let one_obj = one.r25_object(domain.sarzak())[0];
 
-                    let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
-                    let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
+                    let other = assoc.r22_associative_referent(domain.sarzak())[0];
+                    let other_obj = other.r25_object(domain.sarzak())[0];
 
                     emit!(
                         buffer,
@@ -510,13 +481,13 @@ impl CodeWriter for DomainNewImpl {
         // into a UUID. So maybe it's worth keeping.
         let mut fields: Vec<LValue> = Vec::new();
         // Collect the attributes
-        let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
+        let mut attrs = obj.r1_attribute(domain.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
         for attr in attrs {
             // We are going to generate the id, so don't include it in the
             // list of parameters.
             if attr.name != "id" {
-                let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
+                let ty = attr.r2_ty(domain.sarzak())[0];
                 fields.push(LValue::new(attr.name.as_ident(), ty.into()));
                 params.push(Parameter::new(
                     BORROWED,
@@ -531,10 +502,10 @@ impl CodeWriter for DomainNewImpl {
 
         // And the referential attributes
         for referrer in &referrers {
-            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-            let cond = sarzak_get_one_cond_across_r11!(referrer, domain.sarzak());
+            let binary = referrer.r6_binary(domain.sarzak())[0];
+            let referent = binary.r5_referent(domain.sarzak())[0];
+            let r_obj = referent.r16_object(domain.sarzak())[0];
+            let cond = referrer.r11_conditionality(domain.sarzak())[0];
 
             // If the relationship is conditional, then we need to make the
             // parameter an Option, and make the field match.
@@ -573,14 +544,14 @@ impl CodeWriter for DomainNewImpl {
             //     ));
         }
 
-        for assoc_referrer in sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak()) {
-            let assoc = sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
+        for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
 
-            let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
-            let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
+            let one = assoc.r23_associative_referent(domain.sarzak())[0];
+            let one_obj = one.r25_object(domain.sarzak())[0];
 
-            let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
-            let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
+            let other = assoc.r22_associative_referent(domain.sarzak())[0];
+            let other_obj = other.r25_object(domain.sarzak())[0];
 
             // This determines how a reference is stored in the struct. In this
             // case a reference.
@@ -1326,10 +1297,10 @@ impl CodeWriter for DomainRelNavImpl {
         let referents = get_referents_sorted!(obj, domain.sarzak());
 
         for referrer in &referrers {
-            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
-            let cond = sarzak_get_one_cond_across_r12!(referrer, domain.sarzak());
+            let binary = referrer.r6_binary(domain.sarzak())[0];
+            let referent = binary.r5_referent(domain.sarzak())[0];
+            let r_obj = referent.r16_object(domain.sarzak())[0];
+            let cond = referrer.r11_conditionality(domain.sarzak())[0];
 
             let module = if config.is_imported(&r_obj.id) {
                 config.get_imported(&r_obj.id).unwrap().domain.as_str()
@@ -1367,14 +1338,15 @@ impl CodeWriter for DomainRelNavImpl {
         }
 
         for referent in &referents {
-            let binary = sarzak_get_one_r_bin_across_r5!(referent, domain.sarzak());
-            let referrer = sarzak_get_one_r_from_across_r6!(binary, domain.sarzak());
-            let r_obj = sarzak_get_one_obj_across_r17!(referrer, domain.sarzak());
-            let my_cond = sarzak_get_one_cond_across_r11!(referent, domain.sarzak());
-            let other_cond = sarzak_get_one_cond_across_r12!(referrer, domain.sarzak());
+            let binary = referent.r5_binary(domain.sarzak())[0];
+            let referrer = binary.r6_referrer(domain.sarzak())[0];
+            let r_obj = referrer.r17_object(domain.sarzak())[0];
+            let my_cond = referent.r12_conditionality(domain.sarzak())[0];
+            let other_cond = referrer.r11_conditionality(domain.sarzak())[0];
+
             // The non-formalizing side will only ever be one, unless it's in an associative
             // relationship. We do however need to check the cardinality of the formalizing side.
-            let card = sarzak_get_one_card_across_r9!(referrer, domain.sarzak());
+            let card = referrer.r9_cardinality(domain.sarzak())[0];
 
             let module = if config.is_imported(&r_obj.id) {
                 config.get_imported(&r_obj.id).unwrap().domain.as_str()
@@ -1447,14 +1419,14 @@ impl CodeWriter for DomainRelNavImpl {
             }
         }
 
-        for assoc_referrer in sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak()) {
-            let assoc = sarzak_get_one_r_assoc_across_r21!(assoc_referrer, domain.sarzak());
+        for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
 
-            let one = sarzak_get_one_ass_to_across_r23!(assoc, domain.sarzak());
-            let one_obj = sarzak_get_one_obj_across_r25!(one, domain.sarzak());
+            let one = assoc.r23_associative_referent(domain.sarzak())[0];
+            let one_obj = one.r25_object(domain.sarzak())[0];
 
-            let other = sarzak_get_one_ass_to_across_r22!(assoc, domain.sarzak());
-            let other_obj = sarzak_get_one_obj_across_r25!(other, domain.sarzak());
+            let other = assoc.r22_associative_referent(domain.sarzak())[0];
+            let other_obj = other.r25_object(domain.sarzak())[0];
 
             let module = if config.is_imported(&one_obj.id) {
                 config.get_imported(&one_obj.id).unwrap().domain.as_str()
@@ -1496,20 +1468,20 @@ impl CodeWriter for DomainRelNavImpl {
             )?;
         }
 
-        for assoc_referent in sarzak_maybe_get_many_ass_tos_across_r25!(obj, domain.sarzak()) {
-            let (assoc, referrer, referential_attribute) = if let Some(assoc) =
-                sarzak_get_one_r_assoc_across_r23!(assoc_referent, domain.sarzak())
-            {
-                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, domain.sarzak());
-                (assoc, referrer, &referrer.one_referential_attribute)
-            } else {
-                let assoc = sarzak_get_one_r_assoc_across_r22!(assoc_referent, domain.sarzak());
-                let referrer = sarzak_get_one_ass_from_across_r21!(assoc, domain.sarzak());
+        for assoc_referent in obj.r25_associative_referent(domain.sarzak()) {
+            let r23 = assoc_referent.r23c_associative(domain.sarzak());
+            let (assoc, referrer, referential_attribute) = if r23.is_empty() {
+                let assoc = assoc_referent.r22c_associative(domain.sarzak())[0];
+                let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
                 (assoc, referrer, &referrer.other_referential_attribute)
+            } else {
+                let assoc = r23[0];
+                let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
+                (assoc, referrer, &referrer.one_referential_attribute)
             };
-            let card = sarzak_get_one_card_across_r89!(assoc_referent, domain.sarzak());
-            let cond = sarzak_get_one_cond_across_r77!(assoc_referent, domain.sarzak());
-            let r_obj = sarzak_get_one_obj_across_r26!(referrer, domain.sarzak());
+            let card = assoc_referent.r88_cardinality(domain.sarzak())[0];
+            let cond = assoc_referent.r77_conditionality(domain.sarzak())[0];
+            let r_obj = referrer.r26_object(domain.sarzak())[0];
 
             let module = if config.is_imported(&r_obj.id) {
                 config.get_imported(&r_obj.id).unwrap().domain.as_str()

@@ -8,11 +8,11 @@ use heck::ToUpperCamelCase;
 use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
-    sarzak::types::{External, Object, Type},
+    sarzak::types::Object,
+    v1::sarzak::types::{External as v1_External, Type},
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
-use uuid::Uuid;
 
 use crate::{
     codegen::{
@@ -42,8 +42,8 @@ pub(crate) struct DomainTarget<'a> {
     package: &'a str,
     module: &'a str,
     src_path: &'a Path,
-    domain: sarzak::v1::domain::Domain,
-    imports: HashMap<String, sarzak::v1::domain::Domain>,
+    domain: sarzak::v2::domain::Domain,
+    imports: HashMap<String, sarzak::v2::domain::Domain>,
     woog: WoogStore,
     _test: bool,
 }
@@ -66,6 +66,8 @@ impl<'a> DomainTarget<'a> {
         let domain = {
             let module = module.replace("/", "::");
             let options = options.clone();
+            // NB — This closure is run on a v1 domain, so we need to create v1
+            // types inside of it.
             domain
                 .post_load(move |sarzak, _| {
                     let mut external = HashSet::new();
@@ -89,7 +91,7 @@ impl<'a> DomainTarget<'a> {
 
                         log::debug!("Adding ObjectStore for {}", name);
                         let store_type = Type::External(
-                            External::new(
+                            v1_External::new(
                                 sarzak,
                                 // 🚧 Hmmm. Well, I don't have a domain here, and I think that
                                 // as_type should take one. So I'm going to do the gross thing,
@@ -110,7 +112,7 @@ impl<'a> DomainTarget<'a> {
                         sarzak.inter_ty(store_type);
                     }
                 })
-                .build_v1()
+                .build_v2()
                 // 🚧 Blow up here -- we don't return a result. We could fix this,
                 // but I'm not sure it's worth it.
                 .expect("Failed to build domain")
@@ -126,7 +128,7 @@ impl<'a> DomainTarget<'a> {
             let domain = DomainBuilder::new()
                 .cuckoo_model(&from_domain.path)
                 .expect(format!("Failed to load domain {}", &from_domain.path.display()).as_str())
-                .build_v1()
+                .build_v2()
                 .expect("Failed to build domain");
 
             log::debug!("Loaded imported domain {}", &from_domain.path.display());
@@ -139,9 +141,9 @@ impl<'a> DomainTarget<'a> {
             imported_domains.insert(domain_name, domain);
         }
 
-        for (id, _) in domain.sarzak().iter_object() {
-            if config.is_imported(&id) {
-                let io = config.get_imported(&id).unwrap();
+        for obj in domain.sarzak().iter_object() {
+            if config.is_imported(&obj.id) {
+                let io = config.get_imported(&obj.id).unwrap();
                 // Only import the domain once.
                 if !imported_domains.contains_key(&io.domain) {
                     let domain = DomainBuilder::new()
@@ -149,7 +151,7 @@ impl<'a> DomainTarget<'a> {
                         .expect(
                             format!("Failed to load domain {}", io.model_file.display()).as_str(),
                         )
-                        .build_v1()
+                        .build_v2()
                         .expect("Failed to build domain");
 
                     log::debug!("Loaded imported domain {}", io.domain);
@@ -182,8 +184,8 @@ impl<'a> DomainTarget<'a> {
         types.push("discard");
 
         // Sort the objects -- I need to figure out how to do this automagically.
-        let mut objects: Vec<(&Uuid, &Object)> = self.domain.sarzak().iter_object().collect();
-        objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+        let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.name.cmp(&b.name));
 
         // Iterate over the objects, generating an implementation for file each.
         // Now things get tricky. We need to generate an enum if the objects is
@@ -197,7 +199,7 @@ impl<'a> DomainTarget<'a> {
         // Talk about tricky? Now things are going to get tricky. If the object
         // is imported, we are going to suck it in and generate a module for
         // it! Whoohoo! Note also, that we have a NullGenerator that does nothing.
-        for (id, obj) in objects {
+        for obj in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
@@ -218,7 +220,7 @@ impl<'a> DomainTarget<'a> {
                             .build(),
                     )
                     .build()?
-            } else if self.config.is_imported(id) {
+            } else if self.config.is_imported(&obj.id) {
                 // If the object is imported, we don't generate anything...here.
 
                 NullGenerator::new()
@@ -259,7 +261,7 @@ impl<'a> DomainTarget<'a> {
                 .imports(&self.imports)
                 // Module name
                 .module(self.module)
-                .obj_id(&id)
+                .obj_id(&obj.id)
                 // What to write
                 .generator(generator)
                 // Go!

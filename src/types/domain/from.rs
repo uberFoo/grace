@@ -4,18 +4,8 @@ use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_many_r_subs_across_r27,
-            sarzak_get_one_obj_across_r15, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_isa_across_r13,
-            sarzak_get_one_r_to_across_r5, sarzak_get_one_t_across_r2,
-            sarzak_maybe_get_many_ass_froms_across_r26, sarzak_maybe_get_many_r_froms_across_r17,
-            sarzak_maybe_get_many_r_sups_across_r14,
-        },
-        types::{AssociativeReferrer, Attribute, Object, Referrer, Subtype, Supertype, Type},
-    },
-    v1::domain::Domain,
+    sarzak::types::{Object, Ty},
+    v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
         types::{Mutability, BORROWED},
@@ -29,7 +19,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_referrers_sorted, object_is_singleton, object_is_supertype,
+        get_referrers_sorted, get_subtypes_sorted, object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
@@ -186,8 +176,8 @@ impl CodeWriter for DomainFromImpl {
         };
 
         // Get a list of objects that aren't imported, aren't enums, and aren't singletons.
-        let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
-        objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+        let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.name.cmp(&b.name));
         let (from_name, from_module, objects) = if let Some(from_domain) = config.get_from_domain()
         {
             let name = from_domain
@@ -207,9 +197,9 @@ impl CodeWriter for DomainFromImpl {
                     from_domain.module,
                     objects
                         .iter()
-                        .filter(|(id, obj)| {
+                        .filter(|obj| {
                             object_is_supertype(obj, domain)
-                                || !object_is_singleton(obj, domain) && !config.is_imported(*id)
+                                || !object_is_singleton(obj, domain) && !config.is_imported(&obj.id)
                         })
                         .collect::<Vec<_>>(),
                 )
@@ -241,7 +231,7 @@ impl CodeWriter for DomainFromImpl {
                 // Generate the use statements
                 emit!(buffer, "use crate::{}::ObjectStore;", module,);
                 emit!(buffer, "use crate::{}::types::{{", module);
-                for (_, obj) in &objects {
+                for obj in &objects {
                     emit!(
                         buffer,
                         "{},",
@@ -258,7 +248,7 @@ impl CodeWriter for DomainFromImpl {
                     from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "use crate::{}::types::{{", from_module);
-                for (_, obj) in &objects {
+                for obj in &objects {
                     emit!(
                         buffer,
                         "{} as From{},",
@@ -281,7 +271,7 @@ impl CodeWriter for DomainFromImpl {
                     from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "let mut to = ObjectStore::new();");
-                for (_, obj) in &objects {
+                for obj in &objects {
                     emit!(buffer, "");
                     // if object_is_supertype(obj, domain) {
                     //     emit!(
@@ -297,11 +287,7 @@ impl CodeWriter for DomainFromImpl {
                     //     emit!(buffer, "to.inter_{}(instance.clone());", obj.as_ident());
                     //     emit!(buffer, "}}");
                     // } else {
-                    emit!(
-                        buffer,
-                        "for (_, instance) in from.iter_{}() {{",
-                        obj.as_ident()
-                    );
+                    emit!(buffer, "for instance in from.iter_{}() {{", obj.as_ident());
                     emit!(
                         buffer,
                         "let instance = {}::from(instance);",
@@ -318,7 +304,7 @@ impl CodeWriter for DomainFromImpl {
                 emit!(buffer, "");
 
                 // Generate the individual From implementations
-                for (_, obj) in &objects {
+                for obj in &objects {
                     if object_is_supertype(obj, domain) {
                         emit!(buffer, "");
                         emit!(
@@ -333,21 +319,9 @@ impl CodeWriter for DomainFromImpl {
                             obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                         );
                         emit!(buffer, "match src {{");
-                        // Darnedest thing. Uncommenting the line below causes the compiler to
-                        // freak out.
-                        // let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
-                        // I'm convinced that R14 and R15 are broken.
-                        let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-                        let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
-                        let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
-                        subtypes.sort_by(|a, b| {
-                            let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
-                            let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
-                            a.name.cmp(&b.name)
-                        });
-
+                        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
                         for subtype in subtypes {
-                            let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                            let s_obj = subtype.r15_object(domain.sarzak())[0];
                             emit!(
                                 buffer,
                                 "From{}::{}(src) => {}::{}(src.clone()),",
@@ -375,10 +349,10 @@ impl CodeWriter for DomainFromImpl {
                         emit!(buffer, "Self {{");
 
                         // Attributes
-                        let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
+                        let mut attrs = obj.r1_attribute(domain.sarzak());
                         attrs.sort_by(|a, b| a.name.cmp(&b.name));
                         for attr in attrs {
-                            let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
+                            let ty = attr.r2_ty(domain.sarzak())[0];
 
                             // 🚧: This is sort of a hack. What we really want to do is notice
                             // that the lhs is OWNED, and that the rhs is BORROWED. Then we'd
@@ -388,7 +362,7 @@ impl CodeWriter for DomainFromImpl {
                             // now is tricky because over there we're using GType's. That should
                             // maybe get unified somehow by then?
                             match ty {
-                                Type::String(_) => {
+                                Ty::String(_) => {
                                     emit!(
                                         buffer,
                                         "{}: src.{}.clone(),",
@@ -411,9 +385,7 @@ impl CodeWriter for DomainFromImpl {
                                 referrer.referential_attribute.as_ident(),
                             );
                         }
-                        for assoc_referrer in
-                            sarzak_maybe_get_many_ass_froms_across_r26!(obj, domain.sarzak())
-                        {
+                        for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
                             emit!(
                                 buffer,
                                 "{}: src.{},",

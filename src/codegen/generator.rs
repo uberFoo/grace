@@ -10,7 +10,7 @@ use std::{
 
 use sarzak::{
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
-    v1::domain::Domain,
+    v2::domain::Domain,
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
@@ -375,7 +375,7 @@ mod tests {
         let _domain = sarzak::domain::DomainBuilder::new()
             .cuckoo_model("tests/mdd/models/everything.json")
             .unwrap()
-            .build_v1()
+            .build_v2()
             .unwrap();
     }
 }

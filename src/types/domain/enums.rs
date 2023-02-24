@@ -5,14 +5,7 @@ use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        macros::{
-            sarzak_get_many_r_subs_across_r27, sarzak_get_one_obj_across_r15,
-            sarzak_get_one_r_isa_across_r13, sarzak_maybe_get_many_r_sups_across_r14,
-        },
-        types::{Subtype, Supertype},
-    },
-    v1::domain::Domain,
+    v2::domain::Domain,
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
 };
 use snafu::prelude::*;
@@ -94,7 +87,7 @@ impl CodeWriter for Enum {
         )?;
 
         for subtype in &subtypes {
-            let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+            let s_obj = subtype.r15_object(domain.sarzak())[0];
             if object_is_singleton(s_obj, domain) {
                 emit!(
                     buffer,
@@ -145,11 +138,11 @@ impl CodeWriter for Enum {
                     obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                 );
                 for subtype in &subtypes {
-                    let obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                    let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -194,16 +187,6 @@ impl CodeWriter for EnumGetIdImpl {
 
         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
 
-        // I'm convinced that R14 and R15 are broken.
-        // let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-        // let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
-        // let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
-        // subtypes.sort_by(|a, b| {
-        // let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
-        // let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
-        // a.name.cmp(&b.name)
-        // });
-
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-get-id-impl", obj.as_ident()),
@@ -211,7 +194,7 @@ impl CodeWriter for EnumGetIdImpl {
                 emit!(buffer, "pub fn id(&self) -> Uuid {{");
                 emit!(buffer, "match self {{");
                 for subtype in subtypes {
-                    let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                    let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}::{}(id) => *id,",
@@ -268,7 +251,7 @@ impl CodeWriter for EnumNewImpl {
             format!("{}-new-impl", obj.as_ident()),
             |buffer| {
                 for subtype in subtypes {
-                    let s_obj = sarzak_get_one_obj_across_r15!(subtype, domain.sarzak());
+                    let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "/// Create a new instance of {}::{}",

@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::domain::sarzak::UUID_NS;
 
 // Referrer imports
+use crate::domain::sarzak::types::cardinality::Cardinality;
+use crate::domain::sarzak::types::conditionality::Conditionality;
 use crate::domain::sarzak::types::object::Object;
 
 // Referent imports
@@ -25,7 +27,12 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct AssociativeReferent {
+    pub description: String,
     pub id: Uuid,
+    /// R88: [`AssociativeReferent`] 'has' [`Cardinality`]
+    pub cardinality: Uuid,
+    /// R77: [`AssociativeReferent`] 'has' [`Conditionality`]
+    pub conditionality: Uuid,
     /// R25: [`AssociativeReferent`] 'has other' [`Object`]
     pub obj_id: Uuid,
 }
@@ -34,14 +41,42 @@ pub struct AssociativeReferent {
 impl AssociativeReferent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new"}}}
     /// Inter a new AssociativeReferent in the store, and return it's `id`.
-    pub fn new(obj_id: &Object, store: &mut SarzakStore) -> AssociativeReferent {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}", obj_id).as_bytes());
+    pub fn new(
+        description: String,
+        cardinality: &Cardinality,
+        conditionality: &Conditionality,
+        obj_id: &Object,
+        store: &mut SarzakStore,
+    ) -> AssociativeReferent {
+        let id = Uuid::new_v5(
+            &UUID_NS,
+            format!(
+                "{}:{:?}:{:?}:{:?}",
+                description, cardinality, conditionality, obj_id
+            )
+            .as_bytes(),
+        );
         let new = AssociativeReferent {
+            description: description,
+            cardinality: cardinality.id(),
+            conditionality: conditionality.id(),
             obj_id: obj_id.id,
             id,
         };
         store.inter_associative_referent(new.clone());
         new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-forward-to-cardinality"}}}
+    /// Navigate to [`Cardinality`] across R88(1-*)
+    pub fn r88_cardinality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Cardinality> {
+        vec![store.exhume_cardinality(&self.cardinality).unwrap()]
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-forward-to-conditionality"}}}
+    /// Navigate to [`Conditionality`] across R77(1-*)
+    pub fn r77_conditionality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Conditionality> {
+        vec![store.exhume_conditionality(&self.conditionality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-forward-to-obj_id"}}}
@@ -51,21 +86,29 @@ impl AssociativeReferent {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
-    /// Navigate to [`Associative`] across R22(1-1)
-    pub fn r22_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
-        vec![store
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-cond-to-associative"}}}
+    /// Navigate to [`Associative`] across R23(1-1c)
+    pub fn r23c_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
+        let associative = store
             .iter_associative()
-            .find(|associative| associative.other == self.id)
-            .unwrap()]
+            .find(|associative| associative.one == self.id);
+        match associative {
+            Some(ref associative) => vec![associative],
+            None => Vec::new(),
+        }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
-    /// Navigate to [`Associative`] across R23(1-1)
-    pub fn r23_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
-        vec![store
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-cond-to-associative"}}}
+    /// Navigate to [`Associative`] across R22(1-1c)
+    pub fn r22c_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
+        let associative = store
             .iter_associative()
-            .find(|associative| associative.one == self.id)
-            .unwrap()]
+            .find(|associative| associative.other == self.id);
+        match associative {
+            Some(ref associative) => vec![associative],
+            None => Vec::new(),
+        }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

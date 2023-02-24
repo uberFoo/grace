@@ -2,7 +2,7 @@
 //!
 use std::collections::HashMap;
 
-use sarzak::{mc::Result, v1::domain::Domain, woog::store::ObjectStore as WoogStore};
+use sarzak::{mc::Result, v2::domain::Domain, woog::store::ObjectStore as WoogStore};
 use uuid::Uuid;
 
 use crate::{

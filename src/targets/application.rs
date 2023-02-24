@@ -9,7 +9,6 @@ use sarzak::{
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
-use uuid::Uuid;
 
 use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
@@ -28,7 +27,7 @@ pub(crate) struct ApplicationTarget<'a> {
     package: &'a str,
     module: &'a str,
     src_path: &'a Path,
-    domain: sarzak::v1::domain::Domain,
+    domain: sarzak::v2::domain::Domain,
     woog: WoogStore,
     _test: bool,
 }
@@ -42,7 +41,7 @@ impl<'a> ApplicationTarget<'a> {
         domain: sarzak::domain::DomainBuilder,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
-        let domain = domain.build_v1().expect("Failed to build domain");
+        let domain = domain.build_v2().expect("Failed to build domain");
         let config: GraceConfig = (options, &domain).into();
 
         // Create our local compiler domain.
@@ -72,11 +71,11 @@ impl<'a> Target for ApplicationTarget<'a> {
         types.push("discard");
 
         // Sort the objects -- I need to figure out how to do this automagically.
-        let mut objects: Vec<(&Uuid, &Object)> = self.domain.sarzak().iter_object().collect();
-        objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+        let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.name.cmp(&b.name));
 
         // Iterate over the objects, generating an implementation for file each.
-        for (id, obj) in objects {
+        for obj in objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
@@ -92,7 +91,7 @@ impl<'a> Target for ApplicationTarget<'a> {
                 .compiler_domain(&mut self.woog)
                 // Module name
                 .module(self.module)
-                .obj_id(&id)
+                .obj_id(&obj.id)
                 // What to write
                 .generator(
                     // Struct

@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::domain::sarzak::UUID_NS;
 
 // Referrer imports
+use crate::domain::sarzak::types::cardinality::Cardinality;
 use crate::domain::sarzak::types::object::Object;
 
 // Referent imports
@@ -26,6 +27,10 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct AssociativeReferrer {
     pub id: Uuid,
+    pub one_referential_attribute: String,
+    pub other_referential_attribute: String,
+    /// R89: [`AssociativeReferrer`] 'has' [`Cardinality`]
+    pub cardinality: Uuid,
     /// R26: [`AssociativeReferrer`] 'is also an' [`Object`]
     pub obj_id: Uuid,
 }
@@ -34,14 +39,36 @@ pub struct AssociativeReferrer {
 impl AssociativeReferrer {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
     /// Inter a new AssociativeReferrer in the store, and return it's `id`.
-    pub fn new(obj_id: &Object, store: &mut SarzakStore) -> AssociativeReferrer {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}", obj_id).as_bytes());
+    pub fn new(
+        one_referential_attribute: String,
+        other_referential_attribute: String,
+        cardinality: &Cardinality,
+        obj_id: &Object,
+        store: &mut SarzakStore,
+    ) -> AssociativeReferrer {
+        let id = Uuid::new_v5(
+            &UUID_NS,
+            format!(
+                "{}:{}:{:?}:{:?}",
+                one_referential_attribute, other_referential_attribute, cardinality, obj_id
+            )
+            .as_bytes(),
+        );
         let new = AssociativeReferrer {
+            one_referential_attribute: one_referential_attribute,
+            other_referential_attribute: other_referential_attribute,
+            cardinality: cardinality.id(),
             obj_id: obj_id.id,
             id,
         };
         store.inter_associative_referrer(new.clone());
         new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-forward-to-cardinality"}}}
+    /// Navigate to [`Cardinality`] across R89(1-*)
+    pub fn r89_cardinality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Cardinality> {
+        vec![store.exhume_cardinality(&self.cardinality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-forward-to-obj_id"}}}

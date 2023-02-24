@@ -5,7 +5,7 @@ use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    v1::domain::Domain,
+    v2::domain::Domain,
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;

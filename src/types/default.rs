@@ -7,15 +7,8 @@ use std::{collections::HashMap, fmt::Write};
 use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::{
-        macros::{
-            sarzak_get_many_as_across_r1, sarzak_get_one_obj_across_r16,
-            sarzak_get_one_r_bin_across_r6, sarzak_get_one_r_to_across_r5,
-            sarzak_get_one_t_across_r2, sarzak_maybe_get_many_r_froms_across_r17,
-        },
-        types::{Attribute, Object, Referrer},
-    },
-    v1::domain::Domain,
+    sarzak::types::Object,
+    v2::domain::Domain,
     woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
 };
 use snafu::prelude::*;
@@ -27,8 +20,8 @@ use crate::{
         diff_engine::DirectiveKind,
         emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        object_is_singleton, object_is_supertype,
-        render::{RenderConst, RenderIdent, RenderType},
+        get_referrers_sorted, object_is_singleton, object_is_supertype,
+        render::{render_attributes, RenderConst, RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
@@ -179,13 +172,7 @@ impl CodeWriter for DefaultStruct {
 
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
-
+        let referrers = get_referrers_sorted!(obj, domain.sarzak());
         let has_referential_attrs = referrers.len() > 0;
 
         // Everything has an `id`, everything needs these.
@@ -199,9 +186,9 @@ impl CodeWriter for DefaultStruct {
             format!("{}-referrer-use-statements", obj.as_ident()),
             |buffer| {
                 for referrer in &referrers {
-                    let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-                    let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-                    let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+                    let binary = referrer.r6_binary(domain.sarzak())[0];
+                    let referent = binary.r5_referent(domain.sarzak())[0];
+                    let r_obj = referent.r16_object(domain.sarzak())[0];
 
                     emit!(
                         buffer,
@@ -266,17 +253,7 @@ impl CodeWriter for DefaultStruct {
                     );
                 }
 
-                let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
-                attrs.sort_by(|a, b| a.name.cmp(&b.name));
-                for attr in attrs {
-                    let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
-                    emit!(
-                        buffer,
-                        "pub {}: {},",
-                        attr.as_ident(),
-                        ty.as_type(&Mutability::Borrowed(BORROWED), domain)
-                    );
-                }
+                render_attributes(buffer, obj, domain)?;
 
                 // Paste in the referential attributes, computed above.
                 *buffer += paste;
@@ -347,7 +324,7 @@ impl CodeWriter for DefaultImplementation {
             |buffer| {
                 let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                let referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
+                let referrers = obj.r17_referrer(domain.sarzak());
                 let has_referential_attrs = referrers.len() > 0;
 
                 if has_referential_attrs {
@@ -437,24 +414,20 @@ impl CodeWriter for DefaultNewImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        let mut referrers = sarzak_maybe_get_many_r_froms_across_r17!(obj, domain.sarzak());
-        referrers.sort_by(|a, b| {
-            let obj_a = domain.sarzak().exhume_object(&a.obj_id).unwrap();
-            let obj_b = domain.sarzak().exhume_object(&b.obj_id).unwrap();
-            obj_a.name.cmp(&obj_b.name)
-        });
+        let referrers = get_referrers_sorted!(obj, domain.sarzak());
 
         // Collect the attributes
         let mut params: Vec<Parameter> = Vec::new();
         let mut rvals: Vec<RValue> = Vec::new();
         let mut fields: Vec<LValue> = Vec::new();
-        let mut attrs = sarzak_get_many_as_across_r1!(obj, domain.sarzak());
+
+        let mut attrs = obj.r1_attribute(domain.sarzak());
         attrs.sort_by(|a, b| a.name.cmp(&b.name));
         for attr in attrs {
             // We are going to generate the id, so don't include it in the
             // list of parameters.
             if attr.name != "id" {
-                let ty = sarzak_get_one_t_across_r2!(attr, domain.sarzak());
+                let ty = attr.r2_ty(domain.sarzak())[0];
                 fields.push(LValue::new(attr.name.as_ident(), ty.into()));
                 params.push(Parameter::new(
                     BORROWED,
@@ -469,9 +442,9 @@ impl CodeWriter for DefaultNewImpl {
 
         // And the referential attributes
         for referrer in &referrers {
-            let binary = sarzak_get_one_r_bin_across_r6!(referrer, domain.sarzak());
-            let referent = sarzak_get_one_r_to_across_r5!(binary, domain.sarzak());
-            let r_obj = sarzak_get_one_obj_across_r16!(referent, domain.sarzak());
+            let binary = referrer.r6_binary(domain.sarzak())[0];
+            let referent = binary.r5_referent(domain.sarzak())[0];
+            let r_obj = referent.r16_object(domain.sarzak())[0];
 
             // This determines how a reference is stored in the struct. In this
             // case a reference.
@@ -678,21 +651,21 @@ impl CodeWriter for DefaultModule {
             DirectiveKind::IgnoreOrig,
             format!("{}-module-definition", module),
             |buffer| {
-                let mut objects: Vec<(&Uuid, &Object)> = domain.sarzak().iter_object().collect();
-                objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+                let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+                objects.sort_by(|a, b| a.name.cmp(&b.name));
                 let objects = objects
                     .iter()
-                    .filter(|(id, _)| {
+                    .filter(|obj| {
                         // Don't include imported objects
-                        !config.is_imported(*id)
+                        !config.is_imported(&obj.id)
                     })
                     .collect::<Vec<_>>();
 
-                for (_, obj) in &objects {
+                for obj in &objects {
                     emit!(buffer, "pub mod {};", obj.as_ident());
                 }
                 emit!(buffer, "");
-                for (_, obj) in &objects {
+                for obj in &objects {
                     if object_is_singleton(obj, domain) && !object_is_supertype(obj, domain) {
                         emit!(
                             buffer,
