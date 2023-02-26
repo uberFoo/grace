@@ -15,7 +15,8 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments, find_store, get_subtypes_sorted, object_is_singleton,
+        emit_object_comments, find_store, get_subtypes_sorted, object_is_enum, object_is_singleton,
+        object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -74,9 +75,10 @@ impl CodeWriter for Enum {
                 }
 
                 let mut only_singletons = true;
+                emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    if object_is_singleton(s_obj, domain) {
+                    if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",
@@ -97,6 +99,7 @@ impl CodeWriter for Enum {
                 }
 
                 if !only_singletons {
+                    emit!(buffer, "");
                     let store = find_store(module, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
@@ -253,7 +256,7 @@ impl CodeWriter for EnumNewImpl {
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                         s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
-                    if object_is_singleton(s_obj, domain) {
+                    if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
                         emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
                         emit!(
                             buffer,
@@ -274,12 +277,28 @@ impl CodeWriter for EnumNewImpl {
                             s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                             store.name
                         );
-                        emit!(
-                            buffer,
-                            "let new = Self::{}({}.id);",
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                            s_obj.as_ident()
-                        );
+                        // I feel sort of gross doing this, but also sort of not. Part of me feels
+                        // like I should move this, and the same idea in codegen::render_new_instance,
+                        // into a function. Refactor the bits. But then the other part of me wants to
+                        // see how this plays out once woog comes into play. I have a feeling that
+                        // I should be able to build the let statement in terms of woog and then
+                        // have it write itself. So for now, here we are. I'm only here because I'm
+                        // trying to get woog working, so that's sort of funny.
+                        if object_is_enum(s_obj, domain) {
+                            emit!(
+                                buffer,
+                                "let new = Self::{}({}.id());",
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "let new = Self::{}({}.id);",
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_ident()
+                            );
+                        }
                         emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                         emit!(buffer, "new");
                     }

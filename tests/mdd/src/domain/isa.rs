@@ -20,7 +20,8 @@ mod tests {
     fn test_r1() {
         let mut store = ObjectStore::new();
 
-        let a = SimpleSupertype::new_simple_subtype_a();
+        let z = SimpleSubtypeA::new_oh_boy();
+        let a = SimpleSupertype::new_simple_subtype_a(&z, &mut store);
         let b = SimpleSupertype::new_simple_subtype_b();
         assert_eq!(&a, store.exhume_simple_supertype(&a.id()).unwrap());
         assert_eq!(&b, store.exhume_simple_supertype(&b.id()).unwrap());

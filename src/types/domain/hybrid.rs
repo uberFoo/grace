@@ -25,7 +25,7 @@ use crate::{
         emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
         get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
         get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
-        get_subtypes_sorted, object_is_singleton,
+        get_subtypes_sorted, object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
@@ -125,7 +125,7 @@ impl CodeWriter for Hybrid {
                 emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    if object_is_singleton(s_obj, domain) {
+                    if object_is_singleton(s_obj, domain) && object_is_supertype(s_obj, domain) {
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",

@@ -19,7 +19,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_subtypes_sorted, object_is_enum, object_is_singleton,
+        get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -388,7 +388,8 @@ impl CodeWriter for DomainStore {
                 for obj in &supertypes {
                     for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                         let s_obj = subtype.r15_object(domain.sarzak())[0];
-                        if object_is_singleton(&s_obj, domain) {
+                        if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain)
+                        {
                             singleton_subs = true;
                             emit!(buffer, "{},", s_obj.as_const());
                         }
@@ -424,7 +425,8 @@ impl CodeWriter for DomainStore {
                 for obj in &supertypes {
                     for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                         let s_obj = subtype.r15_object(domain.sarzak())[0];
-                        if object_is_singleton(&s_obj, domain) {
+                        if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain)
+                        {
                             emit!(
                                 buffer,
                                 "store.inter_{}({}::{}({}));",

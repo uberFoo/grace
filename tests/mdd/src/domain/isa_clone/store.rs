@@ -7,8 +7,10 @@
 //!
 //! # Contents:
 //!
+//! * [`Henry`]
 //! * [`NotImportant`]
 //! * [`Reference`]
+//! * [`SimpleSubtypeA`]
 //! * [`SimpleSupertype`]
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
@@ -20,14 +22,16 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::{
-    NotImportant, Reference, SimpleSupertype, SubtypeA, SubtypeB, SuperT, SIMPLE_SUBTYPE_A,
-    SIMPLE_SUBTYPE_B,
+    Henry, NotImportant, Reference, SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB, SuperT,
+    OH_BOY, SIMPLE_SUBTYPE_B,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
+    henry: HashMap<Uuid, Henry>,
     not_important: HashMap<Uuid, NotImportant>,
     reference: HashMap<Uuid, Reference>,
+    simple_subtype_a: HashMap<Uuid, SimpleSubtypeA>,
     simple_supertype: HashMap<Uuid, SimpleSupertype>,
     subtype_a: HashMap<Uuid, SubtypeA>,
     subtype_b: HashMap<Uuid, SubtypeB>,
@@ -37,8 +41,10 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
+            henry: HashMap::new(),
             not_important: HashMap::new(),
             reference: HashMap::new(),
+            simple_subtype_a: HashMap::new(),
             simple_supertype: HashMap::new(),
             subtype_a: HashMap::new(),
             subtype_b: HashMap::new(),
@@ -46,13 +52,34 @@ impl ObjectStore {
         };
 
         // Initialize Singleton Subtypes
-        store.inter_simple_supertype(SimpleSupertype::SimpleSubtypeA(SIMPLE_SUBTYPE_A));
+        store.inter_simple_subtype_a(SimpleSubtypeA::OhBoy(OH_BOY));
         store.inter_simple_supertype(SimpleSupertype::SimpleSubtypeB(SIMPLE_SUBTYPE_B));
 
         store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-methods"}}}
+    /// Inter [`Henry`] into the store.
+    ///
+    pub fn inter_henry(&mut self, henry: Henry) {
+        self.henry.insert(henry.id, henry);
+    }
+
+    /// Exhume [`Henry`] from the store.
+    ///
+    pub fn exhume_henry(&self, id: &Uuid) -> Option<&Henry> {
+        self.henry.get(id)
+    }
+    /// Exhume [`Henry`] from the store — mutably.
+    ///
+    pub fn exhume_henry_mut(&mut self, id: &Uuid) -> Option<&mut Henry> {
+        self.henry.get_mut(id)
+    }
+    /// Get an iterator over the internal `HashMap<&Uuid, Henry>`.
+    ///
+    pub fn iter_henry(&self) -> impl Iterator<Item = &Henry> {
+        self.henry.values()
+    }
     /// Inter [`NotImportant`] into the store.
     ///
     pub fn inter_not_important(&mut self, not_important: NotImportant) {
@@ -94,6 +121,28 @@ impl ObjectStore {
     ///
     pub fn iter_reference(&self) -> impl Iterator<Item = &Reference> {
         self.reference.values()
+    }
+    /// Inter [`SimpleSubtypeA`] into the store.
+    ///
+    pub fn inter_simple_subtype_a(&mut self, simple_subtype_a: SimpleSubtypeA) {
+        self.simple_subtype_a
+            .insert(simple_subtype_a.id(), simple_subtype_a);
+    }
+
+    /// Exhume [`SimpleSubtypeA`] from the store.
+    ///
+    pub fn exhume_simple_subtype_a(&self, id: &Uuid) -> Option<&SimpleSubtypeA> {
+        self.simple_subtype_a.get(id)
+    }
+    /// Exhume [`SimpleSubtypeA`] from the store — mutably.
+    ///
+    pub fn exhume_simple_subtype_a_mut(&mut self, id: &Uuid) -> Option<&mut SimpleSubtypeA> {
+        self.simple_subtype_a.get_mut(id)
+    }
+    /// Get an iterator over the internal `HashMap<&Uuid, SimpleSubtypeA>`.
+    ///
+    pub fn iter_simple_subtype_a(&self) -> impl Iterator<Item = &SimpleSubtypeA> {
+        self.simple_subtype_a.values()
     }
     /// Inter [`SimpleSupertype`] into the store.
     ///
