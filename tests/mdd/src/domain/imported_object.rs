@@ -22,7 +22,7 @@ mod tests {
     use crate::domain::sarzak::types::Object;
 
     use crate::domain::isa::store::ObjectStore as IsaStore;
-    use crate::domain::isa::types::{SimpleSubtypeA, SimpleSupertype};
+    use crate::domain::isa::types::{OhBoy, SimpleSubtypeA, SimpleSupertype};
 
     #[test]
     fn test() {
@@ -37,8 +37,9 @@ mod tests {
             &mut sarzak_store,
         );
 
-        let oh_boy = SimpleSubtypeA::new_oh_boy();
-        let st = SimpleSupertype::new_simple_subtype_a(&oh_boy, &mut isa_store);
+        let oh_boy = OhBoy::new("The Wall Street Journal".to_owned(), &mut isa_store);
+        let z = SimpleSubtypeA::new_oh_boy(&oh_boy, &mut isa_store);
+        let st = SimpleSupertype::new_simple_subtype_a(true, &z, &mut isa_store);
         let _ao = AnotherObject::new(&obj, &st, &mut store);
     }
 }

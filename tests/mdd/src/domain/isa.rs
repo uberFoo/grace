@@ -20,11 +20,12 @@ mod tests {
     fn test_r1() {
         let mut store = ObjectStore::new();
 
-        let z = SimpleSubtypeA::new_oh_boy();
-        let a = SimpleSupertype::new_simple_subtype_a(&z, &mut store);
-        let b = SimpleSupertype::new_simple_subtype_b();
-        assert_eq!(&a, store.exhume_simple_supertype(&a.id()).unwrap());
-        assert_eq!(&b, store.exhume_simple_supertype(&b.id()).unwrap());
+        let oh_boy = OhBoy::new("The Wall Street Journal".to_owned(), &mut store);
+        let z = SimpleSubtypeA::new_oh_boy(&oh_boy, &mut store);
+        let a = SimpleSupertype::new_simple_subtype_a(true, &z, &mut store);
+        let b = SimpleSupertype::new_simple_subtype_b(false, &mut store);
+        assert_eq!(&a, store.exhume_simple_supertype(&a.id).unwrap());
+        assert_eq!(&b, store.exhume_simple_supertype(&b.id).unwrap());
 
         let r = Reference::new("this is a reference".to_owned(), &mut store);
         let a = SubtypeA::new("a".to_owned(), &mut store);

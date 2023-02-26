@@ -125,7 +125,7 @@ impl CodeWriter for Hybrid {
                 emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    if object_is_singleton(s_obj, domain) && object_is_supertype(s_obj, domain) {
+                    if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",
@@ -451,10 +451,29 @@ impl CodeWriter for HybridNewImpl {
             let mut params_ = params.clone();
 
             // Insert the subtype here.
+            //
+            // There's a certain level of complexity that entertains such antics as
+            // witnessed below. I'm pretty tired, so maybe there's a much better way,
+            // but honestly, shit's getting complicated.
+            // if object_is_singleton(&s_obj, domain) && !object_is_supertype(s_obj, domain) {
+            //     fields_.push(LValue::new(
+            //         SUBTYPE_ATTR.to_owned(),
+            //         GType::Object(s_obj.id),
+            //     ));
+            // } else {
             fields_.push(LValue::new(
                 SUBTYPE_ATTR.to_owned(),
                 GType::Object(s_obj.id),
             ));
+            // if object_is_singleton(&s_obj, domain) && !object_is_supertype(s_obj, domain) {
+            // params_.push(Parameter::new(
+            // BORROWED,
+            // None,
+            // GType::Uuid,
+            // PUBLIC,
+            // SUBTYPE_ATTR.to_owned(),
+            // ));
+            // } else {
             params_.push(Parameter::new(
                 BORROWED,
                 None,
@@ -462,6 +481,18 @@ impl CodeWriter for HybridNewImpl {
                 PUBLIC,
                 SUBTYPE_ATTR.to_owned(),
             ));
+            // }
+            // }
+
+            // Collect rvals for rendering the method.
+            let mut rvals: Vec<RValue> = params_.iter().map(|p| p.into()).collect();
+
+            // We don't want a parameter for a const, and we'll need to change the rval...
+            if object_is_singleton(&s_obj, domain) && !object_is_supertype(s_obj, domain) {
+                params_.pop();
+                rvals.pop();
+                rvals.push(RValue::new(format!("{}", s_obj.as_const()), GType::Uuid));
+            }
 
             // Add the store to the end of the  input parameters
             let store = find_store(module, domain);
@@ -472,12 +503,6 @@ impl CodeWriter for HybridNewImpl {
                 PUBLIC,
                 "store".to_owned(),
             ));
-
-            // Collect rvals for rendering the method.
-            let rvals = params_.clone();
-            let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
-            // Remove the store.
-            rvals.pop();
 
             // Link the params. The result is the head of the list.
             let param = if params_.len() > 0 {

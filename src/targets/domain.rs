@@ -16,7 +16,7 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, object_is_referrer, object_is_singleton, object_is_supertype,
+        generator::GeneratorBuilder, object_is_hybrid, object_is_singleton, object_is_supertype,
         render::RenderIdent,
     },
     init_woog::init_woog,
@@ -217,7 +217,7 @@ impl<'a> DomainTarget<'a> {
                 // I now dub, a _hybrid_. What about regular attributes you ask?
                 // Well, I don't have a use case for that at the moment, so they
                 // will be done in due time.
-                if object_is_referrer(obj, &self.domain) {
+                if object_is_hybrid(obj, &self.domain) {
                     DefaultStructBuilder::new()
                         .definition(Hybrid::new())
                         .implementation(

@@ -14,7 +14,7 @@ pub mod super_t;
 
 pub use crate::domain::isa_clone::henry::Henry;
 pub use crate::domain::isa_clone::not_important::NotImportant;
-pub use crate::domain::isa_clone::oh_boy::OH_BOY;
+pub use crate::domain::isa_clone::oh_boy::OhBoy;
 pub use crate::domain::isa_clone::reference::Reference;
 pub use crate::domain::isa_clone::simple_subtype_a::SimpleSubtypeA;
 pub use crate::domain::isa_clone::simple_subtype_b::SIMPLE_SUBTYPE_B;

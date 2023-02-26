@@ -246,7 +246,7 @@ pub(crate) fn render_make_uuid(
             }
         }
 
-        params.extend([val.name.as_ident(), ",".to_owned()]);
+        params.extend([val.name.to_owned(), ",".to_owned()]);
     }
     // Remove the trailing ":"
     format_string.pop();
@@ -299,18 +299,56 @@ pub(crate) fn render_new_instance(
         match &field.ty {
             GType::Object(obj) => {
                 let obj = domain.sarzak().exhume_object(&obj).unwrap();
+                // If this is a subtype, grab the supertype object and if it's a hybrid, we need to
+                // handle the inner enum specially.
                 if let Some(sub) = obj.r15c_subtype(domain.sarzak()).pop() {
                     let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
                         .r14_object(domain.sarzak())[0];
-                    if !object_is_enum(s_obj, domain) {
-                        emit!(
-                            buffer,
-                            "{}: {}Enum::{}({}.id),",
-                            field.name,
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                            rval.name
-                        )
+                    if object_is_hybrid(s_obj, domain) {
+                        match rval.ty {
+                            GType::Uuid => {
+                                emit!(
+                                    buffer,
+                                    "{}: {}Enum::{}({}),",
+                                    field.name,
+                                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    rval.name
+                                )
+                            }
+                            GType::Reference(r_obj) => {
+                                let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
+                                if object_is_enum(r_obj, domain) {
+                                    emit!(
+                                        buffer,
+                                        "{}: {}Enum::{}({}.id()),",
+                                        field.name,
+                                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                        rval.name
+                                    )
+                                } else {
+                                    emit!(
+                                        buffer,
+                                        "{}: {}Enum::{}({}.id),",
+                                        field.name,
+                                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                        rval.name
+                                    )
+                                }
+                            }
+                            _ => {
+                                emit!(
+                                    buffer,
+                                    "{}: {}Enum::{}({}.id),",
+                                    field.name,
+                                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    rval.name
+                                )
+                            }
+                        }
                     } else {
                         emit!(buffer, "{}: {},", field.name, rval.name)
                     }
@@ -472,8 +510,12 @@ pub(crate) fn flubber_imports(
             .is_some()
 }
 
+pub(crate) fn object_is_hybrid(object: &Object, domain: &Domain) -> bool {
+    object_is_supertype(object, domain) && !object_is_singleton(object, domain)
+}
+
 pub(crate) fn object_is_enum(object: &Object, domain: &Domain) -> bool {
-    object_is_supertype(object, domain) && !object_is_referrer(object, domain)
+    object_is_supertype(object, domain) && object_is_singleton(object, domain)
 }
 
 pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
