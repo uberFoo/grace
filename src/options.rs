@@ -508,14 +508,14 @@ mod tests {
                         id: Uuid::parse_str("7178e7a4-5131-504b-a7b3-c2c0cfedf343").unwrap(),
                     })
                 );
-            } else if obj.name == "Super T" {
+            } else if obj.name == "Simple Supertype" {
                 assert!(config.is_imported(&obj.id));
                 assert_eq!(
                     config_value.imported_object,
                     Some(ImportedObject {
                         domain: "domain::isa".to_string(),
                         model_file: PathBuf::from("tests/mdd/models/isa.json"),
-                        id: Uuid::parse_str("78833415-f92b-59be-9e0b-b35db2d119e9").unwrap(),
+                        id: Uuid::parse_str("6339b18b-3929-51ae-ad1a-f0cb4dc73362").unwrap(),
                     })
                 );
             } else {

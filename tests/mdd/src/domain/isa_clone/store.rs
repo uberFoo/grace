@@ -8,6 +8,7 @@
 //! # Contents:
 //!
 //! * [`NotImportant`]
+//! * [`Reference`]
 //! * [`SimpleSupertype`]
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
@@ -19,12 +20,14 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::{
-    NotImportant, SimpleSupertype, SubtypeA, SubtypeB, SuperT, SIMPLE_SUBTYPE_A, SIMPLE_SUBTYPE_B,
+    NotImportant, Reference, SimpleSupertype, SubtypeA, SubtypeB, SuperT, SIMPLE_SUBTYPE_A,
+    SIMPLE_SUBTYPE_B,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
     not_important: HashMap<Uuid, NotImportant>,
+    reference: HashMap<Uuid, Reference>,
     simple_supertype: HashMap<Uuid, SimpleSupertype>,
     subtype_a: HashMap<Uuid, SubtypeA>,
     subtype_b: HashMap<Uuid, SubtypeB>,
@@ -35,6 +38,7 @@ impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
             not_important: HashMap::new(),
+            reference: HashMap::new(),
             simple_supertype: HashMap::new(),
             subtype_a: HashMap::new(),
             subtype_b: HashMap::new(),
@@ -69,6 +73,27 @@ impl ObjectStore {
     ///
     pub fn iter_not_important(&self) -> impl Iterator<Item = &NotImportant> {
         self.not_important.values()
+    }
+    /// Inter [`Reference`] into the store.
+    ///
+    pub fn inter_reference(&mut self, reference: Reference) {
+        self.reference.insert(reference.id, reference);
+    }
+
+    /// Exhume [`Reference`] from the store.
+    ///
+    pub fn exhume_reference(&self, id: &Uuid) -> Option<&Reference> {
+        self.reference.get(id)
+    }
+    /// Exhume [`Reference`] from the store — mutably.
+    ///
+    pub fn exhume_reference_mut(&mut self, id: &Uuid) -> Option<&mut Reference> {
+        self.reference.get_mut(id)
+    }
+    /// Get an iterator over the internal `HashMap<&Uuid, Reference>`.
+    ///
+    pub fn iter_reference(&self) -> impl Iterator<Item = &Reference> {
+        self.reference.values()
     }
     /// Inter [`SimpleSupertype`] into the store.
     ///
@@ -137,7 +162,7 @@ impl ObjectStore {
     /// Inter [`SuperT`] into the store.
     ///
     pub fn inter_super_t(&mut self, super_t: SuperT) {
-        self.super_t.insert(super_t.id(), super_t);
+        self.super_t.insert(super_t.id, super_t);
     }
 
     /// Exhume [`SuperT`] from the store.

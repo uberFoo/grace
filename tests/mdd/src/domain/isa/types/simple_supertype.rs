@@ -4,10 +4,9 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-use crate::domain::isa::store::ObjectStore as IsaStore;
 use crate::domain::isa::types::simple_subtype_a::SIMPLE_SUBTYPE_A;
 use crate::domain::isa::types::simple_subtype_b::SIMPLE_SUBTYPE_B;
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-enum-documentation"}}}
 /// This [`Supertype`] is Simple
@@ -26,13 +25,13 @@ pub enum SimpleSupertype {
 impl SimpleSupertype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-new-impl"}}}
     /// Create a new instance of SimpleSupertype::SimpleSubtypeA
-    pub fn new_simple_subtype_a(_store: &mut IsaStore) -> Self {
+    pub fn new_simple_subtype_a() -> Self {
         // This is already in the store, see associated function `new` above.
         Self::SimpleSubtypeA(SIMPLE_SUBTYPE_A)
     }
 
     /// Create a new instance of SimpleSupertype::SimpleSubtypeB
-    pub fn new_simple_subtype_b(_store: &mut IsaStore) -> Self {
+    pub fn new_simple_subtype_b() -> Self {
         // This is already in the store, see associated function `new` above.
         Self::SimpleSubtypeB(SIMPLE_SUBTYPE_B)
     }

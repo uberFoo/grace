@@ -49,22 +49,13 @@ impl CodeWriter for Enum {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DomainStruct"
+                description: "obj_id is required by Enum"
             }
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
-        // I'm convinced that R14 and R15 are broken.
-        // let sup = sarzak_maybe_get_many_r_sups_across_r14!(obj, domain.sarzak());
-        // let isa = sarzak_get_one_r_isa_across_r13!(sup[0], domain.sarzak());
-        // let mut subtypes = sarzak_get_many_r_subs_across_r27!(isa, domain.sarzak());
-        // subtypes.sort_by(|a, b| {
-        // let a = sarzak_get_one_obj_across_r15!(a, domain.sarzak());
-        // let b = sarzak_get_one_obj_across_r15!(b, domain.sarzak());
-        // a.name.cmp(&b.name)
-        // });
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -82,33 +73,37 @@ impl CodeWriter for Enum {
                     emit!(buffer, "");
                 }
 
+                let mut only_singletons = true;
+                for subtype in &subtypes {
+                    let s_obj = subtype.r15_object(domain.sarzak())[0];
+                    if object_is_singleton(s_obj, domain) {
+                        emit!(
+                            buffer,
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_const()
+                        );
+                    } else {
+                        only_singletons = false;
+                        emit!(
+                            buffer,
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        );
+                    }
+                }
+
+                if !only_singletons {
+                    let store = find_store(module, domain);
+                    emit!(buffer, "use {} as {};", store.path, store.name);
+                }
+
                 Ok(())
             },
         )?;
-
-        for subtype in &subtypes {
-            let s_obj = subtype.r15_object(domain.sarzak())[0];
-            if object_is_singleton(s_obj, domain) {
-                emit!(
-                    buffer,
-                    "use crate::{}::types::{}::{};",
-                    module,
-                    s_obj.as_ident(),
-                    s_obj.as_const()
-                );
-            } else {
-                emit!(
-                    buffer,
-                    "use crate::{}::types::{}::{};",
-                    module,
-                    s_obj.as_ident(),
-                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
-                );
-            }
-        }
-
-        let store = find_store(module, domain);
-        emit!(buffer, "use {} as {};", store.path, store.name);
 
         emit!(buffer, "");
 
@@ -259,12 +254,7 @@ impl CodeWriter for EnumNewImpl {
                         s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
                     if object_is_singleton(s_obj, domain) {
-                        emit!(
-                            buffer,
-                            "pub fn new_{}(_store: &mut {}) -> Self {{",
-                            s_obj.as_ident(),
-                            store.name
-                        );
+                        emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
                         emit!(
                             buffer,
                             "// This is already in the store, see associated function `new` above."

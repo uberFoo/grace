@@ -8,14 +8,19 @@ use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 // use names::Generator;
 use sarzak::{
     mc::{FormatSnafu, Result},
-    sarzak::types::{Attribute, Event, External as SarzakExternal, Object, State, Ty},
+    sarzak::types::{
+        Attribute, Conditionality, Event, External as SarzakExternal, Object, State, Ty,
+    },
     v2::domain::Domain,
     woog::types::{Mutability, BORROWED},
 };
 use snafu::prelude::*;
 
 use crate::{
-    codegen::buffer::{emit, Buffer},
+    codegen::{
+        buffer::{emit, Buffer},
+        get_referrers_sorted,
+    },
     todo::{External, GType, ObjectMethod, Parameter},
 };
 
@@ -494,6 +499,10 @@ impl Sanitize for &str {
             "crate" => "krate".to_owned(),
             "Crate" => "krate".to_owned(),
             "ref" => "x_ref".to_owned(),
+            "macro" => "x_macro".to_owned(),
+            "Macro" => "x_macro".to_owned(),
+            "let" => "x_let".to_owned(),
+            "Let" => "x_let".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -507,6 +516,10 @@ impl Sanitize for String {
             "crate" => "krate".to_owned(),
             "Crate" => "krate".to_owned(),
             "ref" => "x_ref".to_owned(),
+            "macro" => "x_macro".to_owned(),
+            "Macro" => "x_macro".to_owned(),
+            "let" => "x_let".to_owned(),
+            "Let" => "x_let".to_owned(),
             _ => self.to_owned(),
         }
     }
@@ -516,12 +529,153 @@ pub(crate) fn render_attributes(buffer: &mut Buffer, obj: &Object, domain: &Doma
     let mut attrs = obj.r1_attribute(domain.sarzak());
     attrs.sort_by(|a, b| a.name.cmp(&b.name));
     for attr in attrs {
+        log::trace!(
+            "Rendering attribute: {}, for object: {}.",
+            attr.name,
+            obj.name
+        );
         let ty = attr.r2_ty(domain.sarzak())[0];
         emit!(
             buffer,
             "pub {}: {},",
             attr.as_ident(),
             ty.as_type(&Mutability::Borrowed(BORROWED), domain)
+        );
+    }
+
+    Ok(())
+}
+
+pub(crate) fn render_referential_attributes(
+    buffer: &mut Buffer,
+    obj: &Object,
+    domain: &Domain,
+) -> Result<()> {
+    for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
+        let binary = referrer.r6_binary(domain.sarzak())[0];
+        let referent = binary.r5_referent(domain.sarzak())[0];
+        let r_obj = referent.r16_object(domain.sarzak())[0];
+
+        // Conditionality is confusing for me to think about for some reason,
+        // so I'm going to put it down here. I should probably remove this and
+        // put it in the book, once I'm done.
+        //
+        // These aren't really all that tricky, they just get jumbled about
+        // in my head.
+        //
+        // # 1-1
+        // This is the easy case. Just output a field for the referential attribute.
+        //
+        // It's also easy creating the navigation functions. The formalizing side
+        // just does a lookup on the store. The other side has to iterate over
+        // the instances of the formalizing side (from the store) and find the
+        // one that matches it's id. It'll be there. Easy peasy.
+        //
+        // # 1-1c
+        // This is when my brain starts to hurt. For one, the referential
+        // attribute should always be on the side that is unconditional.
+        // Therefore, there is no need for an Option when we output the
+        // field that contains the id of the referent.
+        //
+        // Navigation is slightly trickier. Going from referrer to referent
+        // is the same as 1-1. Going from referent to referrer is a bit
+        // trickier. We have to iterate over the instances of the referrer,
+        // looking for an id that matches the referent. However, we can't
+        // assume that there will always be one.
+        //
+        // # 1c-1c
+        // Here is where we start getting into Options. The referrer side
+        // still has a pointer to the referent, but there may not be a
+        // referent on the other side. So we need to store it in an Option.
+        //
+        // Navigation is different going from the referrer to the referent
+        // because the referential attribute is inside of an Option. Otherwise
+        // the store lookup is the same.
+        //
+        // Going from referent to referrer is the same as 1-1c.
+        //
+
+        // So, what that means, practically, is that I need to check the
+        // conditionality of the referent side here.
+        //
+        // Fuck me. I just came to the opposite conclusion! 😱💩 Maybe
+        // I was thinking of where the 'c' is drawn?
+        //
+        // We should only wrap our pointer in an option when we are conditional.
+        // That means that we need to check the conditionality of the referrer.
+        //
+        let cond = referrer.r11_conditionality(domain.sarzak())[0];
+
+        emit!(
+            buffer,
+            "/// R{}: [`{}`] '{}' [`{}`]",
+            binary.number,
+            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+            referrer.description,
+            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+        );
+        match cond {
+            Conditionality::Conditional(_) => emit!(
+                buffer,
+                "pub {}: Option<Uuid>,",
+                referrer.referential_attribute.as_ident(),
+            ),
+            Conditionality::Unconditional(_) => emit!(
+                buffer,
+                "pub {}: Uuid,",
+                referrer.referential_attribute.as_ident(),
+            ),
+        }
+    }
+
+    Ok(())
+}
+
+pub(crate) fn render_associative_attributes(
+    buffer: &mut Buffer,
+    obj: &Object,
+    domain: &Domain,
+) -> Result<()> {
+    for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+        let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+
+        // ⛔️ It looks like r22 and r23 are aliased in the store.
+        // Sometimes code comes out with one before other, and
+        // sometimes other before one. See grace#39.
+        let one = assoc.r23_associative_referent(domain.sarzak())[0];
+        let one_obj = one.r25_object(domain.sarzak())[0];
+
+        let other = assoc.r22_associative_referent(domain.sarzak())[0];
+        let other_obj = other.r25_object(domain.sarzak())[0];
+
+        emit!(
+            buffer,
+            "/// R{}: [`{}`] '{}' [`{}`]",
+            assoc.number,
+            one_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+            // one_obj.description,
+            "🚧 Out of order — see sarzak#14.".to_owned(),
+            one_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+        );
+        emit!(
+            buffer,
+            "pub {}: Uuid,",
+            assoc_referrer.one_referential_attribute.as_ident(),
+        );
+
+        emit!(
+            buffer,
+            "/// R{}: [`{}`] '{}' [`{}`]",
+            assoc.number,
+            other_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+            // other_obj.description,
+            "🚧 Out of order — see sarzak#14.".to_owned(),
+            other_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+        );
+        emit!(
+            buffer,
+            "pub {}: Uuid,",
+            assoc_referrer.other_referential_attribute.as_ident(),
         );
     }
 

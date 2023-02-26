@@ -189,7 +189,7 @@ pub(crate) fn render_method_definition(
         write!(
             buffer,
             "{}: {},",
-            param.name.as_ident(),
+            param.as_ident(),
             param.ty.as_type(&mutability, domain),
         )
         .context(FormatSnafu)?;
@@ -297,14 +297,37 @@ pub(crate) fn render_new_instance(
     for (field, rval) in tuples {
         // 🚧: This type conversion should likely be a function.
         match &field.ty {
+            GType::Object(obj) => {
+                let obj = domain.sarzak().exhume_object(&obj).unwrap();
+                if let Some(sub) = obj.r15c_subtype(domain.sarzak()).pop() {
+                    let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
+                        .r14_object(domain.sarzak())[0];
+                    if !object_is_enum(s_obj, domain) {
+                        emit!(
+                            buffer,
+                            "{}: {}Enum::{}({}.id),",
+                            field.name,
+                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            rval.name
+                        )
+                    } else {
+                        emit!(buffer, "{}: {},", field.name, rval.name)
+                    }
+                } else {
+                    emit!(buffer, "{}: {},", field.name, rval.name)
+                }
+            }
+            // The LHS is a Uuid, so we need to surface the correct means of
+            // getting to the Uuid, given the RHS.
             GType::Uuid => match &rval.ty {
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
                     let is_supertype = if let Some(imports) = imports {
-                        flubber_imports(obj, config, domain, imports, object_is_supertype)
+                        flubber_imports(obj, config, domain, imports, object_is_enum)
                     } else {
-                        object_is_supertype(obj, domain)
+                        object_is_enum(obj, domain)
                     };
 
                     if is_supertype {
@@ -323,14 +346,16 @@ pub(crate) fn render_new_instance(
                     }
                 ),
             },
+            // The LHS is an Option<Uuid>, so we need to surface the correct means of
+            // getting to the Uuid, given the RHS.
             GType::Option(_left) => match &rval.ty {
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
                         let is_supertype = if let Some(imports) = imports {
-                            flubber_imports(obj, config, domain, imports, object_is_supertype)
+                            flubber_imports(obj, config, domain, imports, object_is_enum)
                         } else {
-                            object_is_supertype(obj, domain)
+                            object_is_enum(obj, domain)
                         };
 
                         if is_supertype {
@@ -447,6 +472,10 @@ pub(crate) fn flubber_imports(
             .is_some()
 }
 
+pub(crate) fn object_is_enum(object: &Object, domain: &Domain) -> bool {
+    object_is_supertype(object, domain) && !object_is_referrer(object, domain)
+}
+
 pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
     let is_super = object.r14_supertype(domain.sarzak());
 
@@ -459,6 +488,13 @@ pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
     let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
 
     attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
+}
+
+pub(crate) fn object_is_referrer(object: &Object, domain: &Domain) -> bool {
+    let referrers = object.r17_referrer(domain.sarzak());
+    let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
+
+    referrers.len() > 0 || assoc_referrers.len() > 0
 }
 
 /// Generate struct/enum Documentation

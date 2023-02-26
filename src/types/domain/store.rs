@@ -19,7 +19,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_subtypes_sorted, object_is_singleton, object_is_supertype,
+        get_subtypes_sorted, object_is_enum, object_is_singleton,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -92,7 +92,7 @@ impl FileGenerator for DomainStoreGenerator {
             .iter()
             .filter(|obj| {
                 // We have this odd construction because a supertype may actually be a singleton.
-                object_is_supertype(obj, domain)
+                object_is_enum(obj, domain)
                     || !object_is_singleton(obj, domain)
                 // Don't include imported objects
                 && !config.is_imported(&obj.id)
@@ -160,7 +160,7 @@ impl DomainStore {
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
 
-                    if object_is_supertype(obj, domain) {
+                    if object_is_enum(obj, domain) {
                         emit!(
                             buffer,
                             "self.{}.insert({}.id(), {});",
@@ -298,7 +298,7 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
-                    if object_is_supertype(obj, domain) {
+                    if object_is_enum(obj, domain) {
                         emit!(buffer,
                             "store.{} = {}.into_iter().map(|道| ( 道.id(),  道)).collect();",
                             obj.as_ident(),
@@ -342,7 +342,7 @@ impl CodeWriter for DomainStore {
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
             .iter()
-            .filter(|obj| object_is_supertype(obj, domain))
+            .filter(|obj| object_is_enum(obj, domain))
             .collect::<Vec<_>>();
         let objects = objects
             .iter()
@@ -350,7 +350,7 @@ impl CodeWriter for DomainStore {
                 // We have this odd construction because a supertype may actually be a singleton.
                 // They are in fact singletons in the current implementation. What is this doing?
                 // if it's a supertype, or it's not a  singleton, and it's not imported.
-                object_is_supertype(obj, domain)
+                object_is_enum(obj, domain)
                     || !object_is_singleton(obj, domain)
                 // Don't include imported objects
                 && !config.is_imported(&obj.id)

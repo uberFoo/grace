@@ -31,7 +31,10 @@ use crate::{
         get_objs_for_assoc_referents_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_referents_sorted, get_objs_for_referrers_sorted, get_referents_sorted,
         get_referrers_sorted,
-        render::{render_attributes, RenderIdent, RenderType},
+        render::{
+            render_associative_attributes, render_attributes, render_referential_attributes,
+            RenderIdent, RenderType,
+        },
         render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
@@ -43,17 +46,17 @@ use crate::{
 ///
 /// We need a builder for this so that we can add privacy modifiers, as
 /// well as derives.
-pub(crate) struct DomainStruct;
+pub(crate) struct Struct;
 
-impl DomainStruct {
+impl Struct {
     pub(crate) fn new() -> Box<dyn TypeDefinition> {
         Box::new(Self)
     }
 }
 
-impl TypeDefinition for DomainStruct {}
+impl TypeDefinition for Struct {}
 
-impl CodeWriter for DomainStruct {
+impl CodeWriter for Struct {
     fn write_code(
         &self,
         config: &GraceConfig,
@@ -204,125 +207,9 @@ impl CodeWriter for DomainStruct {
 
                 render_attributes(buffer, obj, domain)?;
 
-                for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
-                    let binary = referrer.r6_binary(domain.sarzak())[0];
-                    let referent = binary.r5_referent(domain.sarzak())[0];
-                    let r_obj = referent.r16_object(domain.sarzak())[0];
+                render_referential_attributes(buffer, obj, domain)?;
 
-                    // Conditionality is confusing for me to think about for some reason,
-                    // so I'm going to put it down here. I should probably remove this and
-                    // put it in the book, once I'm done.
-                    //
-                    // These aren't really all that tricky, they just get jumbled about
-                    // in my head.
-                    //
-                    // # 1-1
-                    // This is the easy case. Just output a field for the referential attribute.
-                    //
-                    // It's also easy creating the navigation functions. The formalizing side
-                    // just does a lookup on the store. The other side has to iterate over
-                    // the instances of the formalizing side (from the store) and find the
-                    // one that matches it's id. It'll be there. Easy peasy.
-                    //
-                    // # 1-1c
-                    // This is when my brain starts to hurt. For one, the referential
-                    // attribute should always be on the side that is unconditional.
-                    // Therefore, there is no need for an Option when we output the
-                    // field that contains the id of the referent.
-                    //
-                    // Navigation is slightly trickier. Going from referrer to referent
-                    // is the same as 1-1. Going from referent to referrer is a bit
-                    // trickier. We have to iterate over the instances of the referrer,
-                    // looking for an id that matches the referent. However, we can't
-                    // assume that there will always be one.
-                    //
-                    // # 1c-1c
-                    // Here is where we start getting into Options. The referrer side
-                    // still has a pointer to the referent, but there may not be a
-                    // referent on the other side. So we need to store it in an Option.
-                    //
-                    // Navigation is different going from the referrer to the referent
-                    // because the referential attribute is inside of an Option. Otherwise
-                    // the store lookup is the same.
-                    //
-                    // Going from referent to referrer is the same as 1-1c.
-                    //
-
-                    // So, what that means, practically, is that I need to check the
-                    // conditionality of the referent side here.
-                    //
-                    // Fuck me. I just came to the opposite conclusion! 😱💩 Maybe
-                    // I was thinking of where the 'c' is drawn?
-                    //
-                    // We should only wrap our pointer in an option when we are conditional.
-                    // That means that we need to check the conditionality of the referrer.
-                    //
-                    let cond = referrer.r11_conditionality(domain.sarzak())[0];
-
-                    emit!(
-                        buffer,
-                        "/// R{}: [`{}`] '{}' [`{}`]",
-                        binary.number,
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        referrer.description,
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
-                    );
-                    match cond {
-                        Conditionality::Conditional(_) => emit!(
-                            buffer,
-                            "pub {}: Option<Uuid>,",
-                            referrer.referential_attribute.as_ident(),
-                        ),
-                        Conditionality::Unconditional(_) => emit!(
-                            buffer,
-                            "pub {}: Uuid,",
-                            referrer.referential_attribute.as_ident(),
-                        ),
-                    }
-                }
-
-                for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-                    let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
-
-                    // ⛔️ It looks like r22 and r23 are aliased in the store.
-                    // Sometimes code comes out with one before other, and
-                    // sometimes other before one. See grace#39.
-                    let one = assoc.r23_associative_referent(domain.sarzak())[0];
-                    let one_obj = one.r25_object(domain.sarzak())[0];
-
-                    let other = assoc.r22_associative_referent(domain.sarzak())[0];
-                    let other_obj = other.r25_object(domain.sarzak())[0];
-
-                    emit!(
-                        buffer,
-                        "/// R{}: [`{}`] '{}' [`{}`]",
-                        assoc.number,
-                        one_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        // one_obj.description,
-                        "🚧 Out of order — see sarzak#14.".to_owned(),
-                        one_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
-                    );
-                    emit!(
-                        buffer,
-                        "pub {}: Uuid,",
-                        assoc_referrer.one_referential_attribute.as_ident(),
-                    );
-
-                    emit!(
-                        buffer,
-                        "/// R{}: [`{}`] '{}' [`{}`]",
-                        assoc.number,
-                        other_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        // other_obj.description,
-                        "🚧 Out of order — see sarzak#14.".to_owned(),
-                        other_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
-                    );
-                    emit!(
-                        buffer,
-                        "pub {}: Uuid,",
-                        assoc_referrer.other_referential_attribute.as_ident(),
-                    );
-                }
+                render_associative_attributes(buffer, obj, domain)?;
 
                 emit!(buffer, "}}");
                 Ok(())
@@ -417,7 +304,7 @@ impl CodeWriter for DomainImplementation {
     }
 }
 
-/// Domain New Implementation
+/// Domain Struct New Implementation
 ///
 /// This generates a new implementation for the object. The new implementation
 /// calculates the object's `id` based on the string representation of it's
@@ -427,17 +314,17 @@ impl CodeWriter for DomainImplementation {
 ///
 /// __NB__ --- this implies that the lexicographical sum of it's attributes,
 /// across all instances, must be unique.
-pub(crate) struct DomainNewImpl;
+pub(crate) struct StructNewImpl;
 
-impl DomainNewImpl {
+impl StructNewImpl {
     pub(crate) fn new() -> Box<dyn MethodImplementation> {
         Box::new(Self)
     }
 }
 
-impl MethodImplementation for DomainNewImpl {}
+impl MethodImplementation for StructNewImpl {}
 
-impl CodeWriter for DomainNewImpl {
+impl CodeWriter for StructNewImpl {
     fn write_code(
         &self,
         options: &GraceConfig,
@@ -554,7 +441,7 @@ impl CodeWriter for DomainNewImpl {
             let other_obj = other.r25_object(domain.sarzak())[0];
 
             // This determines how a reference is stored in the struct. In this
-            // case a reference.
+            // case a UUID.
             fields.push(LValue::new(
                 assoc_referrer.one_referential_attribute.as_ident(),
                 GType::Uuid,
@@ -704,9 +591,9 @@ impl CodeWriter for DomainNewImpl {
 /// This generates relationship navigation methods for a type. A method will be
 /// generated for each relationship in which this object participates. This
 /// applies to both formalizing and non-formalizing relationships.
-pub(crate) struct DomainRelNavImpl;
+pub(crate) struct StructRelNavImpl;
 
-impl DomainRelNavImpl {
+impl StructRelNavImpl {
     pub(crate) fn new() -> Box<dyn MethodImplementation> {
         Box::new(Self)
     }
@@ -1268,9 +1155,9 @@ impl DomainRelNavImpl {
     }
 }
 
-impl MethodImplementation for DomainRelNavImpl {}
+impl MethodImplementation for StructRelNavImpl {}
 
-impl CodeWriter for DomainRelNavImpl {
+impl CodeWriter for StructRelNavImpl {
     fn write_code(
         &self,
         config: &GraceConfig,
@@ -1316,7 +1203,7 @@ impl CodeWriter for DomainRelNavImpl {
             // one. This is because of the normalized, table-nature of the store,
             // and more importantly the method.
             match cond {
-                Conditionality::Unconditional(_) => DomainRelNavImpl::forward(
+                Conditionality::Unconditional(_) => StructRelNavImpl::forward(
                     buffer,
                     obj,
                     referrer,
@@ -1325,7 +1212,7 @@ impl CodeWriter for DomainRelNavImpl {
                     r_obj,
                     &domain,
                 )?,
-                Conditionality::Conditional(_) => DomainRelNavImpl::forward_conditional(
+                Conditionality::Conditional(_) => StructRelNavImpl::forward_conditional(
                     buffer,
                     obj,
                     referrer,
@@ -1360,7 +1247,7 @@ impl CodeWriter for DomainRelNavImpl {
 
             match card {
                 Cardinality::One(_) => match my_cond {
-                    Conditionality::Unconditional(_) => DomainRelNavImpl::backward_one(
+                    Conditionality::Unconditional(_) => StructRelNavImpl::backward_one(
                         buffer,
                         obj,
                         r_obj,
@@ -1371,7 +1258,7 @@ impl CodeWriter for DomainRelNavImpl {
                     )?,
                     Conditionality::Conditional(_) => match other_cond {
                         Conditionality::Unconditional(_) => {
-                            DomainRelNavImpl::backward_one_conditional(
+                            StructRelNavImpl::backward_one_conditional(
                                 buffer,
                                 obj,
                                 r_obj,
@@ -1382,7 +1269,7 @@ impl CodeWriter for DomainRelNavImpl {
                             )?
                         }
                         Conditionality::Conditional(_) => {
-                            DomainRelNavImpl::backward_one_biconditional(
+                            StructRelNavImpl::backward_one_biconditional(
                                 buffer,
                                 obj,
                                 r_obj,
@@ -1397,7 +1284,7 @@ impl CodeWriter for DomainRelNavImpl {
                 // It's interesting that there are only really two possibilities, and
                 // that neither of them depend on the conditionality of the this side.
                 Cardinality::Many(_) => match other_cond {
-                    Conditionality::Unconditional(_) => DomainRelNavImpl::backward_1_m(
+                    Conditionality::Unconditional(_) => StructRelNavImpl::backward_1_m(
                         buffer,
                         obj,
                         r_obj,
@@ -1406,7 +1293,7 @@ impl CodeWriter for DomainRelNavImpl {
                         referrer,
                         &domain,
                     )?,
-                    Conditionality::Conditional(_) => DomainRelNavImpl::backward_1_mc(
+                    Conditionality::Conditional(_) => StructRelNavImpl::backward_1_mc(
                         buffer,
                         obj,
                         r_obj,
@@ -1438,7 +1325,7 @@ impl CodeWriter for DomainRelNavImpl {
             // things.
             let store = find_store(module, domain);
 
-            DomainRelNavImpl::forward_assoc(
+            StructRelNavImpl::forward_assoc(
                 buffer,
                 obj,
                 &assoc_referrer.one_referential_attribute,
@@ -1457,7 +1344,7 @@ impl CodeWriter for DomainRelNavImpl {
             // Grab a reference to the store so that we can use it to exhume
             // things.
             let store = find_store(module, domain);
-            DomainRelNavImpl::forward_assoc(
+            StructRelNavImpl::forward_assoc(
                 buffer,
                 obj,
                 &assoc_referrer.other_referential_attribute,
@@ -1496,7 +1383,7 @@ impl CodeWriter for DomainRelNavImpl {
             match card {
                 Cardinality::One(_) => match cond {
                     Conditionality::Conditional(_) => {
-                        DomainRelNavImpl::backward_assoc_one_conditional(
+                        StructRelNavImpl::backward_assoc_one_conditional(
                             buffer,
                             obj,
                             r_obj,
@@ -1506,7 +1393,7 @@ impl CodeWriter for DomainRelNavImpl {
                             &domain,
                         )?
                     }
-                    Conditionality::Unconditional(_) => DomainRelNavImpl::backward_assoc_one(
+                    Conditionality::Unconditional(_) => StructRelNavImpl::backward_assoc_one(
                         buffer,
                         obj,
                         r_obj,
@@ -1516,7 +1403,7 @@ impl CodeWriter for DomainRelNavImpl {
                         &domain,
                     )?,
                 },
-                Cardinality::Many(_) => DomainRelNavImpl::backward_assoc_many(
+                Cardinality::Many(_) => StructRelNavImpl::backward_assoc_many(
                     buffer,
                     obj,
                     r_obj,

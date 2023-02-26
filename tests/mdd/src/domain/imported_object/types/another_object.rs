@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::domain::imported_object::UUID_NS;
 
 // Referrer imports
-use crate::domain::isa::types::super_t::SuperT;
+use crate::domain::isa::types::simple_supertype::SimpleSupertype;
 use crate::domain::sarzak::types::object::Object;
 
 use crate::domain::imported_object::store::ObjectStore as ImportedObjectStore;
@@ -29,7 +29,7 @@ pub struct AnotherObject {
     pub id: Uuid,
     /// R1: [`AnotherObject`] 'points at' [`Object`]
     pub ptr: Uuid,
-    /// R2: [`AnotherObject`] 'has an' [`SuperT`]
+    /// R2: [`AnotherObject`] 'has a' [`SimpleSupertype`]
     pub edge: Uuid,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -37,7 +37,11 @@ pub struct AnotherObject {
 impl AnotherObject {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new"}}}
     /// Inter a new AnotherObject in the store, and return it's `id`.
-    pub fn new(ptr: &Object, edge: &SuperT, store: &mut ImportedObjectStore) -> AnotherObject {
+    pub fn new(
+        ptr: &Object,
+        edge: &SimpleSupertype,
+        store: &mut ImportedObjectStore,
+    ) -> AnotherObject {
         let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", ptr, edge).as_bytes());
         let new = AnotherObject {
             ptr: ptr.id,
@@ -57,9 +61,9 @@ impl AnotherObject {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-nav-forward-to-edge"}}}
-    /// Navigate to [`SuperT`] across R2(1-*)
-    pub fn r2_super_t<'a>(&'a self, store: &'a IsaStore) -> Vec<&SuperT> {
-        vec![store.exhume_super_t(&self.edge).unwrap()]
+    /// Navigate to [`SimpleSupertype`] across R2(1-*)
+    pub fn r2_simple_supertype<'a>(&'a self, store: &'a IsaStore) -> Vec<&SimpleSupertype> {
+        vec![store.exhume_simple_supertype(&self.edge).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

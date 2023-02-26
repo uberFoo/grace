@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 use crate::domain::sarzak::types::boolean::BOOLEAN;
 use crate::domain::sarzak::types::external::External;
@@ -13,6 +12,7 @@ use crate::domain::sarzak::types::integer::INTEGER;
 use crate::domain::sarzak::types::object::Object;
 use crate::domain::sarzak::types::string::STRING;
 use crate::domain::sarzak::types::uuid::UUID;
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-enum-documentation"}}}
 /// The type of a value
@@ -37,7 +37,7 @@ pub enum Ty {
 impl Ty {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-new-impl"}}}
     /// Create a new instance of Ty::Boolean
-    pub fn new_boolean(_store: &mut SarzakStore) -> Self {
+    pub fn new_boolean() -> Self {
         // This is already in the store, see associated function `new` above.
         Self::Boolean(BOOLEAN)
     }
@@ -50,13 +50,13 @@ impl Ty {
     }
 
     /// Create a new instance of Ty::Float
-    pub fn new_float(_store: &mut SarzakStore) -> Self {
+    pub fn new_float() -> Self {
         // This is already in the store, see associated function `new` above.
         Self::Float(FLOAT)
     }
 
     /// Create a new instance of Ty::Integer
-    pub fn new_integer(_store: &mut SarzakStore) -> Self {
+    pub fn new_integer() -> Self {
         // This is already in the store, see associated function `new` above.
         Self::Integer(INTEGER)
     }
@@ -69,13 +69,13 @@ impl Ty {
     }
 
     /// Create a new instance of Ty::String
-    pub fn new_string(_store: &mut SarzakStore) -> Self {
+    pub fn new_string() -> Self {
         // This is already in the store, see associated function `new` above.
         Self::String(STRING)
     }
 
     /// Create a new instance of Ty::Uuid
-    pub fn new_uuid(_store: &mut SarzakStore) -> Self {
+    pub fn new_uuid() -> Self {
         // This is already in the store, see associated function `new` above.
         Self::Uuid(UUID)
     }

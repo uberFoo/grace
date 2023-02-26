@@ -8,6 +8,7 @@
 //! # Contents:
 //!
 //! * [`NotImportant`]
+//! * [`Reference`]
 //! * [`SimpleSupertype`]
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
@@ -20,12 +21,14 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa::types::{
-    NotImportant, SimpleSupertype, SubtypeA, SubtypeB, SuperT, SIMPLE_SUBTYPE_A, SIMPLE_SUBTYPE_B,
+    NotImportant, Reference, SimpleSupertype, SubtypeA, SubtypeB, SuperT, SIMPLE_SUBTYPE_A,
+    SIMPLE_SUBTYPE_B,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
     not_important: HashMap<Uuid, NotImportant>,
+    reference: HashMap<Uuid, Reference>,
     simple_supertype: HashMap<Uuid, SimpleSupertype>,
     subtype_a: HashMap<Uuid, SubtypeA>,
     subtype_b: HashMap<Uuid, SubtypeB>,
@@ -36,6 +39,7 @@ impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
             not_important: HashMap::new(),
+            reference: HashMap::new(),
             simple_supertype: HashMap::new(),
             subtype_a: HashMap::new(),
             subtype_b: HashMap::new(),
@@ -70,6 +74,27 @@ impl ObjectStore {
     ///
     pub fn iter_not_important(&self) -> impl Iterator<Item = &NotImportant> {
         self.not_important.values()
+    }
+    /// Inter [`Reference`] into the store.
+    ///
+    pub fn inter_reference(&mut self, reference: Reference) {
+        self.reference.insert(reference.id, reference);
+    }
+
+    /// Exhume [`Reference`] from the store.
+    ///
+    pub fn exhume_reference(&self, id: &Uuid) -> Option<&Reference> {
+        self.reference.get(id)
+    }
+    /// Exhume [`Reference`] from the store — mutably.
+    ///
+    pub fn exhume_reference_mut(&mut self, id: &Uuid) -> Option<&mut Reference> {
+        self.reference.get_mut(id)
+    }
+    /// Get an iterator over the internal `HashMap<&Uuid, Reference>`.
+    ///
+    pub fn iter_reference(&self) -> impl Iterator<Item = &Reference> {
+        self.reference.values()
     }
     /// Inter [`SimpleSupertype`] into the store.
     ///
@@ -138,7 +163,7 @@ impl ObjectStore {
     /// Inter [`SuperT`] into the store.
     ///
     pub fn inter_super_t(&mut self, super_t: SuperT) {
-        self.super_t.insert(super_t.id(), super_t);
+        self.super_t.insert(super_t.id, super_t);
     }
 
     /// Exhume [`SuperT`] from the store.
@@ -177,6 +202,16 @@ impl ObjectStore {
             serde_json::to_writer_pretty(
                 &mut writer,
                 &self.not_important.values().map(|x| x).collect::<Vec<_>>(),
+            )?;
+        }
+        // Persist reference.
+        {
+            let path = path.join("reference.json");
+            let file = fs::File::create(path)?;
+            let mut writer = io::BufWriter::new(file);
+            serde_json::to_writer_pretty(
+                &mut writer,
+                &self.reference.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
         // Persist simple_supertype.
@@ -245,6 +280,14 @@ impl ObjectStore {
             let not_important: Vec<NotImportant> = serde_json::from_reader(reader)?;
             store.not_important = not_important.into_iter().map(|道| (道.id, 道)).collect();
         }
+        // Load reference.
+        {
+            let path = path.join("reference.json");
+            let file = fs::File::open(path)?;
+            let reader = io::BufReader::new(file);
+            let reference: Vec<Reference> = serde_json::from_reader(reader)?;
+            store.reference = reference.into_iter().map(|道| (道.id, 道)).collect();
+        }
         // Load simple_supertype.
         {
             let path = path.join("simple_supertype.json");
@@ -278,7 +321,7 @@ impl ObjectStore {
             let file = fs::File::open(path)?;
             let reader = io::BufReader::new(file);
             let super_t: Vec<SuperT> = serde_json::from_reader(reader)?;
-            store.super_t = super_t.into_iter().map(|道| (道.id(), 道)).collect();
+            store.super_t = super_t.into_iter().map(|道| (道.id, 道)).collect();
         }
 
         Ok(store)

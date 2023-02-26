@@ -20,7 +20,7 @@ use crate::{
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_referrers_sorted, get_subtypes_sorted, object_is_singleton, object_is_supertype,
-        render::{RenderIdent, RenderType},
+        render::{RenderConst, RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
     types::ObjectStoreDefinition,
@@ -324,11 +324,12 @@ impl CodeWriter for DomainFromImpl {
                             let s_obj = subtype.r15_object(domain.sarzak())[0];
                             emit!(
                                 buffer,
-                                "From{}::{}(src) => {}::{}(src.clone()),",
+                                "From{}::{}(src) => {}::{}({}),",
                                 obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                                 s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                                 obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_const()
                             );
                         }
                         emit!(buffer, "}}");

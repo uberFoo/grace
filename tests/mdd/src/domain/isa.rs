@@ -20,19 +20,20 @@ mod tests {
     fn test_r1() {
         let mut store = ObjectStore::new();
 
-        let a = SimpleSupertype::new_simple_subtype_a(&mut store);
-        let b = SimpleSupertype::new_simple_subtype_b(&mut store);
+        let a = SimpleSupertype::new_simple_subtype_a();
+        let b = SimpleSupertype::new_simple_subtype_b();
         assert_eq!(&a, store.exhume_simple_supertype(&a.id()).unwrap());
         assert_eq!(&b, store.exhume_simple_supertype(&b.id()).unwrap());
 
+        let r = Reference::new("this is a reference".to_owned(), &mut store);
         let a = SubtypeA::new("a".to_owned(), &mut store);
-        let sa = SuperT::new_subtype_a(&a, &mut store);
+        let sa = SuperT::new_subtype_a(&r, &a, &mut store);
         let b = SubtypeB::new(8, &mut store);
-        let sb = SuperT::new_subtype_b(&b, &mut store);
+        let sb = SuperT::new_subtype_b(&r, &b, &mut store);
 
         assert_eq!(&a, store.exhume_subtype_a(&a.id).unwrap());
         assert_eq!(&b, store.exhume_subtype_b(&b.id).unwrap());
-        assert_eq!(&sa, store.exhume_super_t(&sa.id()).unwrap());
-        assert_eq!(&sb, store.exhume_super_t(&sb.id()).unwrap());
+        assert_eq!(&sa, store.exhume_super_t(&sa.id).unwrap());
+        assert_eq!(&sb, store.exhume_super_t(&sb.id).unwrap());
     }
 }

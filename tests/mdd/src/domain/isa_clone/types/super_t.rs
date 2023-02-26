@@ -2,50 +2,100 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-use-statements"}}}
 use uuid::Uuid;
 
+use crate::domain::isa_clone::UUID_NS;
+
 use serde::{Deserialize, Serialize};
 
-// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
+// Subtype imports
 use crate::domain::isa_clone::types::subtype_a::SubtypeA;
 use crate::domain::isa_clone::types::subtype_b::SubtypeB;
 
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-documentation"}}}
+// Referrer imports
+use crate::domain::isa_clone::types::reference::Reference;
+
+// Referent imports
+use crate::domain::isa_clone::types::not_important::NotImportant;
+
+use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-documentation"}}}
 /// A [`Supertype`] with normal [`Subtype`]s
 ///
 /// This was called "Super". Rust didn't like it when it became "super". There needs to be
 ///a way of fixing keywords.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-enum-definition"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-enum-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub enum SuperT {
+pub enum SuperTEnum {
     SubtypeA(Uuid),
     SubtypeB(Uuid),
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-struct-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct SuperT {
+    pub subtype: SuperTEnum,
+    pub id: Uuid,
+    /// R88: [`SuperT`] 'refers to' [`Reference`]
+    pub pointer: Uuid,
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-implementation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-new-impl"}}}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 impl SuperT {
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-new-impl"}}}
-    /// Create a new instance of SuperT::SubtypeA
-    pub fn new_subtype_a(subtype_a: &SubtypeA, store: &mut IsaCloneStore) -> Self {
-        let new = Self::SubtypeA(subtype_a.id);
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-new-impl"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
+    /// Inter a new SuperT in the store, and return it's `id`.
+    pub fn new_subtype_a(
+        pointer: &Reference,
+        subtype: &SubtypeA,
+        store: &mut IsaCloneStore,
+    ) -> SuperT {
+        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", pointer, subtype).as_bytes());
+        let new = SuperT {
+            pointer: pointer.id,
+            subtype: SuperTEnum::SubtypeA(subtype.id),
+            id,
+        };
         store.inter_super_t(new.clone());
         new
     }
-
-    /// Create a new instance of SuperT::SubtypeB
-    pub fn new_subtype_b(subtype_b: &SubtypeB, store: &mut IsaCloneStore) -> Self {
-        let new = Self::SubtypeB(subtype_b.id);
-        store.inter_super_t(new.clone());
-        new
-    }
-
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-get-id-impl"}}}
-    pub fn id(&self) -> Uuid {
-        match self {
-            SuperT::SubtypeA(id) => *id,
-            SuperT::SubtypeB(id) => *id,
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
+    /// Inter a new SuperT in the store, and return it's `id`.
+    pub fn new_subtype_b(
+        pointer: &Reference,
+        subtype: &SubtypeB,
+        store: &mut IsaCloneStore,
+    ) -> SuperT {
+        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", pointer, subtype).as_bytes());
+        let new = SuperT {
+            pointer: pointer.id,
+            subtype: SuperTEnum::SubtypeB(subtype.id),
+            id,
+        };
+        store.inter_super_t(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-nav-forward-to-pointer"}}}
+    /// Navigate to [`Reference`] across R88(1-*)
+    pub fn r88_reference<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Reference> {
+        vec![store.exhume_reference(&self.pointer).unwrap()]
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-nav-backward-cond-to-not_important"}}}
+    /// Navigate to [`NotImportant`] across R888(1-1c)
+    pub fn r888c_not_important<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&NotImportant> {
+        let not_important = store
+            .iter_not_important()
+            .find(|not_important| not_important.x_ref == self.id);
+        match not_important {
+            Some(ref not_important) => vec![not_important],
+            None => Vec::new(),
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

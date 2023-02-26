@@ -16,7 +16,8 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, object_is_singleton, object_is_supertype, render::RenderIdent,
+        generator::GeneratorBuilder, object_is_referrer, object_is_singleton, object_is_supertype,
+        render::RenderIdent,
     },
     init_woog::init_woog,
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
@@ -27,8 +28,9 @@ use crate::{
             consts::DomainConst,
             enums::{Enum, EnumGetIdImpl, EnumNewImpl},
             from::{DomainFromBuilder, DomainFromImpl},
+            hybrid::{Hybrid, HybridNewImpl},
             store::{DomainStore, DomainStoreBuilder},
-            structs::{DomainImplBuilder, DomainNewImpl, DomainRelNavImpl, DomainStruct},
+            structs::{DomainImplBuilder, Struct, StructNewImpl, StructRelNavImpl},
         },
         null::NullGenerator,
     },
@@ -211,15 +213,32 @@ impl<'a> DomainTarget<'a> {
 
             // Test if the object is a supertype. Those we generate as enums.
             let generator = if object_is_supertype(obj, &self.domain) {
-                DefaultStructBuilder::new()
-                    .definition(Enum::new())
-                    .implementation(
-                        DomainImplBuilder::new()
-                            .method(EnumNewImpl::new())
-                            .method(EnumGetIdImpl::new())
-                            .build(),
-                    )
-                    .build()?
+                // Unless it's got referential attributes. Then we generate what
+                // I now dub, a _hybrid_. What about regular attributes you ask?
+                // Well, I don't have a use case for that at the moment, so they
+                // will be done in due time.
+                if object_is_referrer(obj, &self.domain) {
+                    DefaultStructBuilder::new()
+                        .definition(Hybrid::new())
+                        .implementation(
+                            DomainImplBuilder::new()
+                                .method(HybridNewImpl::new())
+                                // The struct implementation suffices -- thankfully. Reuse FTW!
+                                .method(StructRelNavImpl::new())
+                                .build(),
+                        )
+                        .build()?
+                } else {
+                    DefaultStructBuilder::new()
+                        .definition(Enum::new())
+                        .implementation(
+                            DomainImplBuilder::new()
+                                .method(EnumNewImpl::new())
+                                .method(EnumGetIdImpl::new())
+                                .build(),
+                        )
+                        .build()?
+                }
             } else if self.config.is_imported(&obj.id) {
                 // If the object is imported, we don't generate anything...here.
 
@@ -234,13 +253,13 @@ impl<'a> DomainTarget<'a> {
             } else {
                 DefaultStructBuilder::new()
                     // Definition type
-                    .definition(DomainStruct::new())
+                    .definition(Struct::new())
                     .implementation(
                         DomainImplBuilder::new()
                             // New implementation
-                            .method(DomainNewImpl::new())
+                            .method(StructNewImpl::new())
                             // Relationship navigation implementations
-                            .method(DomainRelNavImpl::new())
+                            .method(StructRelNavImpl::new())
                             .build(),
                     )
                     // Go!

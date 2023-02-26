@@ -19,7 +19,7 @@ mod tests {
     fn test_persist() {
         let mut store = ObjectStore::new();
 
-        let t = Ty::new_string(&mut store);
+        let t = Ty::new_string();
         let o = Object::new(
             "A Widget".to_owned(),
             "W".to_owned(),
