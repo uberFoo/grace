@@ -342,7 +342,7 @@ impl CodeWriter for DomainStore {
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
             .iter()
-            .filter(|obj| object_is_enum(obj, domain))
+            .filter(|obj| object_is_enum(obj, domain) && !config.is_imported(&obj.id))
             .collect::<Vec<_>>();
         let objects = objects
             .iter()
