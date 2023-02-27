@@ -15,7 +15,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED},
+        types::{Ownership, BORROWED},
     },
 };
 use snafu::prelude::*;
@@ -185,7 +185,7 @@ pub(crate) fn render_method_definition(
     // Write the parameter list.
     // TODO: This is so clumsy! I should clean it up.
     if let Some(mut param) = method.param {
-        let mutability = woog.exhume_mutability(&param.mutability).unwrap();
+        let mutability = woog.exhume_ownership(&param.mutability).unwrap();
         write!(
             buffer,
             "{}: {},",
@@ -195,7 +195,7 @@ pub(crate) fn render_method_definition(
         .context(FormatSnafu)?;
 
         while let Some(next_param) = param.next {
-            let mutability = woog.exhume_mutability(&next_param.mutability).unwrap();
+            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
             write!(
                 buffer,
                 "{}: {},",
@@ -213,7 +213,7 @@ pub(crate) fn render_method_definition(
     writeln!(
         buffer,
         ") -> {} {{",
-        method.ty.as_type(&Mutability::Borrowed(BORROWED), domain)
+        method.ty.as_type(&Ownership::Borrowed(BORROWED), domain)
     )
     .context(FormatSnafu)?;
 
@@ -271,8 +271,8 @@ pub(crate) fn render_new_instance(
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
     domain: &Domain,
-    imports: Option<&HashMap<String, Domain>>,
-    config: &GraceConfig,
+    _imports: Option<&HashMap<String, Domain>>,
+    _config: &GraceConfig,
 ) -> Result<()> {
     if let Some(lval) = lval {
         assert!(lval.ty == GType::Reference(object.id));
@@ -281,7 +281,7 @@ pub(crate) fn render_new_instance(
     emit!(
         buffer,
         "{} {{",
-        object.as_type(&Mutability::Borrowed(BORROWED), domain)
+        object.as_type(&Ownership::Borrowed(BORROWED), domain)
     );
 
     let tuples = zip(fields, rvals);
@@ -311,8 +311,8 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}),",
                                     field.name,
-                                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                    obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                     rval.name
                                 )
                             }
@@ -323,8 +323,8 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id()),",
                                         field.name,
-                                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                         rval.name
                                     )
                                 } else {
@@ -332,8 +332,8 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id),",
                                         field.name,
-                                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                         rval.name
                                     )
                                 }
@@ -343,8 +343,8 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}.id),",
                                     field.name,
-                                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                    obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                     rval.name
                                 )
                             }
@@ -472,54 +472,6 @@ pub(crate) fn render_new_instance(
     Ok(())
 }
 
-// pub(crate) fn introspect_object<G>(&object: &Object) -> G {
-// G::new()
-// }
-
-/// I was at a loss for words.
-///
-/// I'm not even sure what it does right now.
-///
-/// It appears to apply a function and or it's results with the results of
-/// applying that function to objects the imported objects in this domain.
-///
-/// Flubber.
-pub(crate) fn run_func_on_imported_domain(
-    object: &Object,
-    config: &GraceConfig,
-    domain: &Domain,
-    imports: &HashMap<String, Domain>,
-    function: fn(&Object, &Domain) -> bool,
-) -> bool {
-    function(object, domain)
-        || imports
-            .iter()
-            .find(|(name, domain)| {
-                let object = if config.is_imported(&object.id) {
-                    let imported = config.get_imported(&object.id).unwrap();
-                    if let Some(object) = domain.sarzak().exhume_object(&imported.id) {
-                        object
-                    } else {
-                        object
-                    }
-                } else {
-                    object
-                };
-
-                log::debug!(
-                    "checking {}({}) against imported domain: {} ({})",
-                    object.name,
-                    object.id,
-                    domain.name(),
-                    name,
-                );
-                let result = function(object, domain);
-                log::debug!("result: {}", result);
-                result
-            })
-            .is_some()
-}
-
 macro_rules! test_local_and_imports {
     ($name:ident, $func:ident) => {
         pub(crate) fn $name(
@@ -571,7 +523,7 @@ macro_rules! test_local_and_imports {
     };
 }
 
-test_local_and_imports!(object_is_hybrid, inner_object_is_hybrid);
+// test_local_and_imports!(object_is_hybrid, inner_object_is_hybrid);
 pub(crate) fn inner_object_is_hybrid(object: &Object, domain: &Domain) -> bool {
     inner_object_is_supertype(object, domain) && !inner_object_is_singleton(object, domain)
 }
@@ -597,7 +549,7 @@ pub(crate) fn inner_object_is_singleton(object: &Object, domain: &Domain) -> boo
     attrs.len() < 2 && !inner_object_is_referrer(object, domain)
 }
 
-test_local_and_imports!(object_is_referrer, inner_object_is_referrer);
+// test_local_and_imports!(object_is_referrer, inner_object_is_referrer);
 fn inner_object_is_referrer(object: &Object, domain: &Domain) -> bool {
     let referrers = object.r17_referrer(domain.sarzak());
     let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
@@ -668,7 +620,7 @@ pub(crate) fn find_store(name: &str, domain: &Domain) -> External {
         .expect(format!("Can't parse store from {}", name).as_str());
     let name = format!(
         "{}Store",
-        name.as_type(&Mutability::Borrowed(BORROWED), domain)
+        name.as_type(&Ownership::Borrowed(BORROWED), domain)
     );
 
     let mut iter = domain.sarzak().iter_ty();

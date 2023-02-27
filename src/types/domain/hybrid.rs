@@ -12,7 +12,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED, MUTABLE, PUBLIC},
+        types::{Ownership, BORROWED, MUTABLE, PUBLIC},
     },
 };
 use snafu::prelude::*;
@@ -31,7 +31,6 @@ use crate::{
             RenderConst, RenderIdent, RenderType,
         },
         render_make_uuid, render_method_definition, render_new_instance,
-        run_func_on_imported_domain,
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
@@ -143,7 +142,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             module,
                             s_obj.as_ident(),
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     }
                 }
@@ -162,7 +161,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     } else {
                         emit!(
@@ -170,7 +169,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     }
                 }
@@ -186,7 +185,7 @@ impl CodeWriter for Hybrid {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -226,14 +225,14 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub enum {}Enum {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -258,14 +257,14 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 emit!(
                     buffer,
                     "pub {}: {}Enum,",
                     SUBTYPE_ATTR,
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 render_attributes(buffer, obj, domain)?;
@@ -553,7 +552,7 @@ impl CodeWriter for HybridNewImpl {
                     emit!(
                         buffer,
                         "/// Inter a new {} in the store, and return it's `id`.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
 
                     // 🚧 Put this back in once I'm done moving to v2.

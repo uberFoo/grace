@@ -8,7 +8,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED, MUTABLE},
+        types::{Ownership, BORROWED, MUTABLE},
     },
 };
 use snafu::prelude::*;
@@ -112,7 +112,7 @@ impl FileGenerator for DomainStoreGenerator {
                     emit!(
                         buffer,
                         "//! * [`{}`]",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -150,7 +150,7 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Inter [`{}`] into the store.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
@@ -158,7 +158,7 @@ impl DomainStore {
                         "pub fn inter_{}(&mut self, {}: {}) {{",
                         obj.as_ident(),
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
 
                     if inner_object_is_enum(obj, domain) {
@@ -183,42 +183,42 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}(&self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "self.{}.get(id)", obj.as_ident());
                     emit!(buffer, "}}");
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store — mutably.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Mutable(MUTABLE), domain)
+                        obj.as_type(&Ownership::Mutable(MUTABLE), domain)
                     );
                     emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
                     emit!(buffer, "}}");
                     emit!(
                         buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn iter_{}(&self) -> impl Iterator<Item = &{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "self.{}.values()", obj.as_ident());
                     emit!(buffer, "}}");
@@ -297,7 +297,7 @@ impl DomainStore {
                         buffer,
                         "let {}: Vec<{}> = serde_json::from_reader(reader)?;",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     if inner_object_is_enum(obj, domain) {
                         emit!(buffer,
@@ -333,7 +333,7 @@ impl CodeWriter for DomainStore {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
+        _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
@@ -383,7 +383,7 @@ impl CodeWriter for DomainStore {
                     emit!(
                         buffer,
                         "{},",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
                 for obj in &supertypes {
@@ -408,7 +408,7 @@ impl CodeWriter for DomainStore {
                         buffer,
                         "{}: HashMap<Uuid,{}>,",
                         obj.as_ident(),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
                 emit!(buffer, "}}");
@@ -437,8 +437,8 @@ impl CodeWriter for DomainStore {
                                     buffer,
                                     "store.inter_{}({}::{}({}));",
                                     obj.as_ident(),
-                                    obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                    s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                     s_obj.as_const()
                                 );
                             }

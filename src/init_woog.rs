@@ -15,8 +15,8 @@ pub(crate) fn init_woog(
     _options: &GraceCompilerOptions,
     _sarzak: &SarzakStore,
 ) -> WoogStore {
-    let mut woog = WoogStore::new();
-    sarzak::woog::init_instances(&mut woog);
+    let woog = WoogStore::new();
+    // sarzak::woog::init_instances(&mut woog);
 
     // let mut objects: Vec<(&Uuid, &Object)> = sarzak.iter_object().collect();
     // objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
@@ -42,7 +42,7 @@ pub(crate) fn init_woog(
     //             let ty = sarzak_get_one_t_across_r2!(attr, sarzak);
     //             params.push(Parameter::new(
     //                 &mut woog,
-    //                 &Mutability::Borrowed(BORROWED),
+    //                 &Ownership::Borrowed(BORROWED),
     //                 None,
     //                 &ty,
     //                 &Visibility::Public(PUBLIC),
@@ -61,7 +61,7 @@ pub(crate) fn init_woog(
     //         // case a UUID.
     //         params.push(Parameter::new(
     //             &mut woog,
-    //             &Mutability::Borrowed(BORROWED),
+    //             &Ownership::Borrowed(BORROWED),
     //             None,
     //             &Type::Reference(reference.id),
     //             &Visibility::Public(PUBLIC),
@@ -74,7 +74,7 @@ pub(crate) fn init_woog(
     //         let mut iter = sarzak.iter_ty();
     //         let name = format!(
     //             "{}Store",
-    //             module.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+    //             module.as_type(&Ownership::Borrowed(BORROWED), sarzak)
     //         );
     //         let store_type = loop {
     //             let ty = iter.next();
@@ -93,7 +93,7 @@ pub(crate) fn init_woog(
     //         };
     //         params.push(Parameter::new(
     //             &mut woog,
-    //             &Mutability::Mutable(MUTABLE),
+    //             &Ownership::Mutable(MUTABLE),
     //             None,
     //             &store_type,
     //             &Visibility::Public(PUBLIC),

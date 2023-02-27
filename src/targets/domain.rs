@@ -103,7 +103,7 @@ impl<'a> DomainTarget<'a> {
                                 // what it should be. Like here.
                                 format!(
                                     "{}Store",
-                                    // name.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                                    // name.as_type(&Ownership::Borrowed(BORROWED), sarzak)
                                     name.to_upper_camel_case()
                                 ),
                                 format!("crate::{}::store::ObjectStore", store,),

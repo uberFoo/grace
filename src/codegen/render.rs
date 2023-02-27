@@ -12,7 +12,7 @@ use sarzak::{
         Attribute, Conditionality, Event, External as SarzakExternal, Object, State, Ty,
     },
     v2::domain::Domain,
-    woog::types::{Mutability, BORROWED},
+    woog::types::{Ownership, BORROWED},
 };
 use snafu::prelude::*;
 
@@ -52,7 +52,7 @@ macro_rules! render_type {
     ($($t:ident),+) => {
         $(
             impl RenderType for $t {
-                fn as_type(&self, mutability: &Mutability, store: &Domain) -> String {
+                fn as_type(&self, mutability: &Ownership, store: &Domain) -> String {
                     self.name.sanitize().as_type(mutability, store)
                 }
             }
@@ -194,7 +194,7 @@ impl RenderStatement for GType {
                     // problem in the interim.
                     "use mdd::{}::types::{};",
                     module,
-                    object.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    object.as_type(&Ownership::Borrowed(BORROWED), domain)
                 ));
 
                 // Recurse into the method
@@ -220,7 +220,7 @@ impl RenderStatement for GType {
                 uses.insert(format!(
                     "use mdd::{}::types::{};",
                     module,
-                    object.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    object.as_type(&Ownership::Borrowed(BORROWED), domain)
                 ));
 
                 // Recurse into the method
@@ -260,7 +260,7 @@ impl RenderStatement for GType {
                     RValue::new(
                         format!(
                             "{}::{};",
-                            e.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            e.as_type(&Ownership::Borrowed(BORROWED), domain),
                             // 🚧  Oops. I don't have this any longer, and I'm not putting
                             // it back until I'm on v2. So here's the hack.
                             // ext.initialization,
@@ -360,7 +360,7 @@ impl<'a> RenderStatement for ObjectMethod<'a> {
             RValue::new(
                 format!(
                     "{}::{}()",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     self.name.as_ident(),
                 ),
                 ty,
@@ -379,24 +379,24 @@ impl<'a> RenderStatement for ObjectMethod<'a> {
 /// It takes a reference to the store so that Type (see below) works. I've got
 /// [a possible workaround](https://git.uberfoo.com/sarzak/sarzak/-/issues/8).
 pub(crate) trait RenderType {
-    fn as_type(&self, mutability: &Mutability, domain: &Domain) -> String;
+    fn as_type(&self, mutability: &Ownership, domain: &Domain) -> String;
 }
 
 render_type!(Attribute, Event, Object, State, External, SarzakExternal);
 
 impl RenderType for String {
-    fn as_type(&self, mutability: &Mutability, _domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, _domain: &Domain) -> String {
         match mutability {
-            Mutability::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
+            Ownership::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
             _ => self.sanitize().to_upper_camel_case(),
         }
     }
 }
 
 impl RenderType for &str {
-    fn as_type(&self, mutability: &Mutability, _domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, _domain: &Domain) -> String {
         match mutability {
-            Mutability::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
+            Ownership::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
             _ => self.sanitize().to_upper_camel_case(),
         }
     }
@@ -411,7 +411,7 @@ impl RenderType for &str {
 ///
 /// One thing that worries me is what happens when we get to references?
 impl RenderType for Ty {
-    fn as_type(&self, mutability: &Mutability, domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, domain: &Domain) -> String {
         match self {
             Self::Boolean(_) => "bool".to_owned(),
             Self::Object(o) => {
@@ -439,7 +439,7 @@ impl RenderType for Ty {
 ///
 /// One thing that worries me is what happens when we get to references?
 impl RenderType for GType {
-    fn as_type(&self, mutability: &Mutability, domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, domain: &Domain) -> String {
         match self {
             GType::Boolean => "bool".to_owned(),
             GType::Object(o) => {
@@ -539,7 +539,7 @@ pub(crate) fn render_attributes(buffer: &mut Buffer, obj: &Object, domain: &Doma
             buffer,
             "pub {}: {},",
             attr.as_ident(),
-            ty.as_type(&Mutability::Borrowed(BORROWED), domain)
+            ty.as_type(&Ownership::Borrowed(BORROWED), domain)
         );
     }
 
@@ -610,9 +610,9 @@ pub(crate) fn render_referential_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             binary.number,
-            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+            obj.as_type(&Ownership::Borrowed(BORROWED), domain),
             referrer.description,
-            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
         );
         match cond {
             Conditionality::Conditional(_) => emit!(
@@ -652,10 +652,10 @@ pub(crate) fn render_associative_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             assoc.number,
-            one_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+            one_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
             // one_obj.description,
             "🚧 Out of order — see sarzak#14.".to_owned(),
-            one_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+            one_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
         );
         emit!(
             buffer,
@@ -667,10 +667,10 @@ pub(crate) fn render_associative_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             assoc.number,
-            other_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+            other_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
             // other_obj.description,
             "🚧 Out of order — see sarzak#14.".to_owned(),
-            other_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+            other_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
         );
         emit!(
             buffer,

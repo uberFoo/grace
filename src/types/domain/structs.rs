@@ -15,7 +15,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED, MUTABLE, PUBLIC},
+        types::{Ownership, BORROWED, MUTABLE, PUBLIC},
     },
 };
 
@@ -138,7 +138,7 @@ impl CodeWriter for Struct {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     } else {
                         emit!(
@@ -146,7 +146,7 @@ impl CodeWriter for Struct {
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     }
                 }
@@ -162,7 +162,7 @@ impl CodeWriter for Struct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -202,7 +202,7 @@ impl CodeWriter for Struct {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 render_attributes(buffer, obj, domain)?;
@@ -280,7 +280,7 @@ impl CodeWriter for DomainImplementation {
                 emit!(
                     buffer,
                     "impl {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 for method in &self.methods {
@@ -525,7 +525,7 @@ impl CodeWriter for StructNewImpl {
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 // 🚧 Put this back in once I'm done moving to v2.
@@ -618,7 +618,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-*)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     binary.number,
                 );
                 emit!(
@@ -627,7 +627,7 @@ impl StructRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -662,7 +662,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-*c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     binary.number,
                 );
                 emit!(
@@ -671,7 +671,7 @@ impl StructRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -714,7 +714,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -723,7 +723,7 @@ impl StructRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -760,7 +760,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -769,7 +769,7 @@ impl StructRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -820,7 +820,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1c-1c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -829,7 +829,7 @@ impl StructRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -880,7 +880,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-M)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -889,7 +889,7 @@ impl StructRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -928,7 +928,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-Mc)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     binary.number
                 );
                 emit!(
@@ -937,7 +937,7 @@ impl StructRelNavImpl {
                     binary.number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -976,7 +976,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-*)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     number,
                 );
                 emit!(
@@ -985,7 +985,7 @@ impl StructRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -1020,7 +1020,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     number
                 );
                 emit!(
@@ -1029,7 +1029,7 @@ impl StructRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
                 emit!(
@@ -1066,7 +1066,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-1c)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     number
                 );
                 emit!(
@@ -1075,7 +1075,7 @@ impl StructRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
@@ -1126,7 +1126,7 @@ impl StructRelNavImpl {
                 emit!(
                     buffer,
                     "/// Navigate to [`{}`] across R{}(1-M)",
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     number
                 );
                 emit!(
@@ -1135,7 +1135,7 @@ impl StructRelNavImpl {
                     number,
                     r_obj.as_ident(),
                     store.name,
-                    r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(

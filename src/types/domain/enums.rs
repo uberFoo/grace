@@ -1,15 +1,12 @@
 //! Domain Enum Generation
 //!
 //! Here we are.
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Write,
-};
+use std::{collections::HashMap, fmt::Write};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
+    woog::{store::ObjectStore as WoogStore, Ownership, BORROWED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -21,7 +18,6 @@ use crate::{
         emit_object_comments, find_store, get_subtypes_sorted, object_is_enum, object_is_singleton,
         object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
-        run_func_on_imported_domain,
     },
     options::GraceConfig,
     types::{CodeWriter, MethodImplementation, TypeDefinition},
@@ -66,8 +62,6 @@ impl CodeWriter for Enum {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
-                let mut uses = HashSet::new();
-
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
@@ -90,7 +84,6 @@ impl CodeWriter for Enum {
 
                     if config.is_imported(&s_obj.id) {
                         let imported_object = config.get_imported(&s_obj.id).unwrap();
-                        uses.insert(imported_object.domain.as_str());
                         if is_singleton && !is_supertype {
                             emit!(
                                 buffer,
@@ -106,11 +99,10 @@ impl CodeWriter for Enum {
                                 "use crate::{}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                             );
                         }
                     } else {
-                        // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain)
                         if is_singleton && !is_supertype {
                             emit!(
                                 buffer,
@@ -126,7 +118,7 @@ impl CodeWriter for Enum {
                                 "use crate::{}::types::{}::{};",
                                 module,
                                 s_obj.as_ident(),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                             );
                         }
                     }
@@ -134,11 +126,8 @@ impl CodeWriter for Enum {
 
                 if !only_singletons {
                     emit!(buffer, "");
-                    uses.insert(module);
-                    for import in uses {
-                        let store = find_store(import, domain);
-                        emit!(buffer, "use {} as {};", store.path, store.name);
-                    }
+                    let store = find_store(module, domain);
+                    emit!(buffer, "use {} as {};", store.path, store.name);
                 }
 
                 Ok(())
@@ -170,14 +159,14 @@ impl CodeWriter for Enum {
                 emit!(
                     buffer,
                     "pub enum {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -233,8 +222,8 @@ impl CodeWriter for EnumGetIdImpl {
                     emit!(
                         buffer,
                         "{}::{}(id) => *id,",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -293,8 +282,8 @@ impl CodeWriter for EnumNewImpl {
                     emit!(
                         buffer,
                         "/// Create a new instance of {}::{}",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
 
                     // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
@@ -307,7 +296,7 @@ impl CodeWriter for EnumNewImpl {
                         emit!(
                             buffer,
                             "Self::{}({})",
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                             s_obj.as_const()
                         );
                     } else {
@@ -316,7 +305,7 @@ impl CodeWriter for EnumNewImpl {
                             "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
                             s_obj.as_ident(),
                             s_obj.as_ident(),
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                             store.name
                         );
                         // I feel sort of gross doing this, but also sort of not. Part of me feels
@@ -330,14 +319,14 @@ impl CodeWriter for EnumNewImpl {
                             emit!(
                                 buffer,
                                 "let new = Self::{}({}.id());",
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                 s_obj.as_ident()
                             );
                         } else {
                             emit!(
                                 buffer,
                                 "let new = Self::{}({}.id);",
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                 s_obj.as_ident()
                             );
                         }
