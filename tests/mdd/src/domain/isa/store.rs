@@ -265,7 +265,7 @@ impl ObjectStore {
         let path = path.join("Isa Relationship.json");
         fs::create_dir_all(&path)?;
 
-        // Persist henry.
+        // Persist Henry.
         {
             let path = path.join("henry.json");
             let file = fs::File::create(path)?;
@@ -275,7 +275,7 @@ impl ObjectStore {
                 &self.henry.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist not_important.
+        // Persist Not Important.
         {
             let path = path.join("not_important.json");
             let file = fs::File::create(path)?;
@@ -285,7 +285,7 @@ impl ObjectStore {
                 &self.not_important.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist oh_boy.
+        // Persist Oh Boy!.
         {
             let path = path.join("oh_boy.json");
             let file = fs::File::create(path)?;
@@ -295,7 +295,7 @@ impl ObjectStore {
                 &self.oh_boy.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist reference.
+        // Persist Reference.
         {
             let path = path.join("reference.json");
             let file = fs::File::create(path)?;
@@ -305,7 +305,7 @@ impl ObjectStore {
                 &self.reference.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist simple_subtype_a.
+        // Persist Simple Subtype A.
         {
             let path = path.join("simple_subtype_a.json");
             let file = fs::File::create(path)?;
@@ -319,7 +319,7 @@ impl ObjectStore {
                     .collect::<Vec<_>>(),
             )?;
         }
-        // Persist simple_supertype.
+        // Persist Simple Supertype.
         {
             let path = path.join("simple_supertype.json");
             let file = fs::File::create(path)?;
@@ -333,7 +333,7 @@ impl ObjectStore {
                     .collect::<Vec<_>>(),
             )?;
         }
-        // Persist subtype_a.
+        // Persist Subtype A.
         {
             let path = path.join("subtype_a.json");
             let file = fs::File::create(path)?;
@@ -343,7 +343,7 @@ impl ObjectStore {
                 &self.subtype_a.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist subtype_b.
+        // Persist Subtype B.
         {
             let path = path.join("subtype_b.json");
             let file = fs::File::create(path)?;
@@ -353,7 +353,7 @@ impl ObjectStore {
                 &self.subtype_b.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist super_t.
+        // Persist Super T.
         {
             let path = path.join("super_t.json");
             let file = fs::File::create(path)?;
@@ -377,7 +377,7 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
-        // Load henry.
+        // Load Henry.
         {
             let path = path.join("henry.json");
             let file = fs::File::open(path)?;
@@ -385,7 +385,7 @@ impl ObjectStore {
             let henry: Vec<Henry> = serde_json::from_reader(reader)?;
             store.henry = henry.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load not_important.
+        // Load Not Important.
         {
             let path = path.join("not_important.json");
             let file = fs::File::open(path)?;
@@ -393,7 +393,7 @@ impl ObjectStore {
             let not_important: Vec<NotImportant> = serde_json::from_reader(reader)?;
             store.not_important = not_important.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load oh_boy.
+        // Load Oh Boy!.
         {
             let path = path.join("oh_boy.json");
             let file = fs::File::open(path)?;
@@ -401,7 +401,7 @@ impl ObjectStore {
             let oh_boy: Vec<OhBoy> = serde_json::from_reader(reader)?;
             store.oh_boy = oh_boy.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load reference.
+        // Load Reference.
         {
             let path = path.join("reference.json");
             let file = fs::File::open(path)?;
@@ -409,7 +409,7 @@ impl ObjectStore {
             let reference: Vec<Reference> = serde_json::from_reader(reader)?;
             store.reference = reference.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load simple_subtype_a.
+        // Load Simple Subtype A.
         {
             let path = path.join("simple_subtype_a.json");
             let file = fs::File::open(path)?;
@@ -420,7 +420,7 @@ impl ObjectStore {
                 .map(|道| (道.id(), 道))
                 .collect();
         }
-        // Load simple_supertype.
+        // Load Simple Supertype.
         {
             let path = path.join("simple_supertype.json");
             let file = fs::File::open(path)?;
@@ -428,7 +428,7 @@ impl ObjectStore {
             let simple_supertype: Vec<SimpleSupertype> = serde_json::from_reader(reader)?;
             store.simple_supertype = simple_supertype.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load subtype_a.
+        // Load Subtype A.
         {
             let path = path.join("subtype_a.json");
             let file = fs::File::open(path)?;
@@ -436,7 +436,7 @@ impl ObjectStore {
             let subtype_a: Vec<SubtypeA> = serde_json::from_reader(reader)?;
             store.subtype_a = subtype_a.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load subtype_b.
+        // Load Subtype B.
         {
             let path = path.join("subtype_b.json");
             let file = fs::File::open(path)?;
@@ -444,7 +444,7 @@ impl ObjectStore {
             let subtype_b: Vec<SubtypeB> = serde_json::from_reader(reader)?;
             store.subtype_b = subtype_b.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load super_t.
+        // Load Super T.
         {
             let path = path.join("super_t.json");
             let file = fs::File::open(path)?;

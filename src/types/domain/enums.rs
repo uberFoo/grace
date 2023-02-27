@@ -1,7 +1,10 @@
 //! Domain Enum Generation
 //!
 //! Here we are.
-use std::{collections::HashMap, fmt::Write};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Write,
+};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -18,6 +21,7 @@ use crate::{
         emit_object_comments, find_store, get_subtypes_sorted, object_is_enum, object_is_singleton,
         object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
+        run_func_on_imported_domain,
     },
     options::GraceConfig,
     types::{CodeWriter, MethodImplementation, TypeDefinition},
@@ -41,7 +45,7 @@ impl CodeWriter for Enum {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -62,6 +66,8 @@ impl CodeWriter for Enum {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
+                let mut uses = HashSet::new();
+
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
@@ -78,30 +84,61 @@ impl CodeWriter for Enum {
                 emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
-                        emit!(
-                            buffer,
-                            "use crate::{}::types::{}::{};",
-                            module,
-                            s_obj.as_ident(),
-                            s_obj.as_const()
-                        );
+
+                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
+                    if config.is_imported(&s_obj.id) {
+                        let imported_object = config.get_imported(&s_obj.id).unwrap();
+                        uses.insert(imported_object.domain.as_str());
+                        if is_singleton && !is_supertype {
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                imported_object.domain,
+                                s_obj.as_ident(),
+                                s_obj.as_const()
+                            );
+                        } else {
+                            only_singletons = false;
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                imported_object.domain,
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            );
+                        }
                     } else {
-                        only_singletons = false;
-                        emit!(
-                            buffer,
-                            "use crate::{}::types::{}::{};",
-                            module,
-                            s_obj.as_ident(),
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
-                        );
+                        // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain)
+                        if is_singleton && !is_supertype {
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                module,
+                                s_obj.as_ident(),
+                                s_obj.as_const()
+                            );
+                        } else {
+                            only_singletons = false;
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                module,
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            );
+                        }
                     }
                 }
 
                 if !only_singletons {
                     emit!(buffer, "");
-                    let store = find_store(module, domain);
-                    emit!(buffer, "use {} as {};", store.path, store.name);
+                    uses.insert(module);
+                    for import in uses {
+                        let store = find_store(import, domain);
+                        emit!(buffer, "use {} as {};", store.path, store.name);
+                    }
                 }
 
                 Ok(())
@@ -223,10 +260,10 @@ impl MethodImplementation for EnumNewImpl {}
 impl CodeWriter for EnumNewImpl {
     fn write_code(
         &self,
-        _config: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -250,13 +287,18 @@ impl CodeWriter for EnumNewImpl {
             |buffer| {
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
+                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
                     emit!(
                         buffer,
                         "/// Create a new instance of {}::{}",
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain),
                         s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
-                    if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
+
+                    // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
+                    if is_singleton && !is_supertype {
                         emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
                         emit!(
                             buffer,
@@ -284,7 +326,7 @@ impl CodeWriter for EnumNewImpl {
                         // I should be able to build the let statement in terms of woog and then
                         // have it write itself. So for now, here we are. I'm only here because I'm
                         // trying to get woog working, so that's sort of funny.
-                        if object_is_enum(s_obj, domain) {
+                        if object_is_enum(s_obj, config, imports, domain)? {
                             emit!(
                                 buffer,
                                 "let new = Self::{}({}.id());",

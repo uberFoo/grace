@@ -31,6 +31,7 @@ use crate::{
             RenderConst, RenderIdent, RenderType,
         },
         render_make_uuid, render_method_definition, render_new_instance,
+        run_func_on_imported_domain,
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
@@ -57,7 +58,7 @@ impl CodeWriter for Hybrid {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -104,7 +105,7 @@ impl CodeWriter for Hybrid {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
-                let mut imports = HashSet::new();
+                let mut uses = HashSet::new();
 
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
@@ -125,7 +126,10 @@ impl CodeWriter for Hybrid {
                 emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
+                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
+                    if is_singleton && !is_supertype {
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",
@@ -152,7 +156,7 @@ impl CodeWriter for Hybrid {
                 for r_obj in &referrer_objs {
                     if config.is_imported(&r_obj.id) {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
-                        imports.insert(imported_object.domain.as_str());
+                        uses.insert(imported_object.domain.as_str());
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",
@@ -187,9 +191,9 @@ impl CodeWriter for Hybrid {
                 }
 
                 // Add the ObjectStore, plus the store for any imported objects.
-                imports.insert(module);
+                uses.insert(module);
                 emit!(buffer, "");
-                for import in imports {
+                for import in uses {
                     let store = find_store(import, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
@@ -303,7 +307,7 @@ impl MethodImplementation for HybridNewImpl {}
 impl CodeWriter for HybridNewImpl {
     fn write_code(
         &self,
-        options: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
@@ -315,13 +319,13 @@ impl CodeWriter for HybridNewImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DomainNewImpl"
+                description: "obj_id is required by HybridNewImpl"
             }
         );
         ensure!(
             woog.is_some(),
             CompilerSnafu {
-                description: "woog is required by DomainNewImpl"
+                description: "woog is required by HybridNewImpl"
             }
         );
         let woog = match woog {
@@ -487,8 +491,11 @@ impl CodeWriter for HybridNewImpl {
             // Collect rvals for rendering the method.
             let mut rvals: Vec<RValue> = params_.iter().map(|p| p.into()).collect();
 
+            let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+            let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
             // We don't want a parameter for a const, and we'll need to change the rval...
-            if object_is_singleton(&s_obj, domain) && !object_is_supertype(s_obj, domain) {
+            if is_singleton && !is_supertype {
                 params_.pop();
                 rvals.pop();
                 rvals.push(RValue::new(format!("{}", s_obj.as_const()), GType::Uuid));
@@ -594,7 +601,7 @@ impl CodeWriter for HybridNewImpl {
                         &rvals,
                         domain,
                         *imports,
-                        &options,
+                        &config,
                     )?;
 
                     emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());

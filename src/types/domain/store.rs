@@ -19,7 +19,8 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
+        get_subtypes_sorted, inner_object_is_enum, inner_object_is_singleton,
+        inner_object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -91,11 +92,11 @@ impl FileGenerator for DomainStoreGenerator {
         let objects = objects
             .iter()
             .filter(|obj| {
-                // We have this odd construction because a supertype may actually be a singleton.
-                object_is_enum(obj, domain)
-                    || !object_is_singleton(obj, domain)
                 // Don't include imported objects
-                && !config.is_imported(&obj.id)
+                !config.is_imported(&obj.id) &&
+                // We have this odd construction because a supertype may actually be a singleton.
+                (inner_object_is_enum(obj, domain)
+                    || !inner_object_is_singleton(obj, domain))
             })
             .collect::<Vec<_>>();
 
@@ -160,7 +161,7 @@ impl DomainStore {
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
 
-                    if object_is_enum(obj, domain) {
+                    if inner_object_is_enum(obj, domain) {
                         emit!(
                             buffer,
                             "self.{}.insert({}.id(), {});",
@@ -256,7 +257,7 @@ impl DomainStore {
                 emit!(buffer, "fs::create_dir_all(&path)?;");
                 emit!(buffer, "");
                 for obj in objects {
-                    emit!(buffer, "// Persist {}.", obj.as_ident());
+                    emit!(buffer, "// Persist {}.", obj.name);
                     emit!(buffer, "{{");
                     emit!(buffer, "let path = path.join(\"{}.json\");", obj.as_ident());
                     emit!(buffer, "let file = fs::File::create(path)?;");
@@ -287,7 +288,7 @@ impl DomainStore {
                 emit!(buffer, "let mut store = Self::new();");
                 emit!(buffer, "");
                 for obj in objects {
-                    emit!(buffer, "// Load {}.", obj.as_ident());
+                    emit!(buffer, "// Load {}.", obj.name);
                     emit!(buffer, "{{");
                     emit!(buffer, "let path = path.join(\"{}.json\");", obj.as_ident());
                     emit!(buffer, "let file = fs::File::open(path)?;");
@@ -298,7 +299,7 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Mutability::Borrowed(BORROWED), domain)
                     );
-                    if object_is_enum(obj, domain) {
+                    if inner_object_is_enum(obj, domain) {
                         emit!(buffer,
                             "store.{} = {}.into_iter().map(|道| ( 道.id(),  道)).collect();",
                             obj.as_ident(),
@@ -332,7 +333,7 @@ impl CodeWriter for DomainStore {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
@@ -342,7 +343,7 @@ impl CodeWriter for DomainStore {
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
             .iter()
-            .filter(|obj| object_is_enum(obj, domain) && !config.is_imported(&obj.id))
+            .filter(|obj| !config.is_imported(&obj.id) && inner_object_is_enum(obj, domain))
             .collect::<Vec<_>>();
         let objects = objects
             .iter()
@@ -350,10 +351,10 @@ impl CodeWriter for DomainStore {
                 // We have this odd construction because a supertype may actually be a singleton.
                 // They are in fact singletons in the current implementation. What is this doing?
                 // if it's a supertype, or it's not a  singleton, and it's not imported.
-                object_is_enum(obj, domain)
-                    || !object_is_singleton(obj, domain)
                 // Don't include imported objects
-                && !config.is_imported(&obj.id)
+                !config.is_imported(&obj.id)
+                    && (inner_object_is_enum(obj, domain)
+                        || !inner_object_is_singleton(obj, domain))
             })
             .collect::<Vec<_>>();
 
@@ -388,10 +389,13 @@ impl CodeWriter for DomainStore {
                 for obj in &supertypes {
                     for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                         let s_obj = subtype.r15_object(domain.sarzak())[0];
-                        if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain)
-                        {
-                            singleton_subs = true;
-                            emit!(buffer, "{},", s_obj.as_const());
+                        if !config.is_imported(&s_obj.id) {
+                            if inner_object_is_singleton(s_obj, domain)
+                                && !inner_object_is_supertype(s_obj, domain)
+                            {
+                                singleton_subs = true;
+                                emit!(buffer, "{},", s_obj.as_const());
+                            }
                         }
                     }
                 }
@@ -425,16 +429,19 @@ impl CodeWriter for DomainStore {
                 for obj in &supertypes {
                     for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                         let s_obj = subtype.r15_object(domain.sarzak())[0];
-                        if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain)
-                        {
-                            emit!(
-                                buffer,
-                                "store.inter_{}({}::{}({}));",
-                                obj.as_ident(),
-                                obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                s_obj.as_const()
-                            );
+                        if !config.is_imported(&s_obj.id) {
+                            if inner_object_is_singleton(s_obj, domain)
+                                && !inner_object_is_supertype(s_obj, domain)
+                            {
+                                emit!(
+                                    buffer,
+                                    "store.inter_{}({}::{}({}));",
+                                    obj.as_ident(),
+                                    obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                    s_obj.as_const()
+                                );
+                            }
                         }
                     }
                 }

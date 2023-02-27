@@ -19,7 +19,8 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_referrers_sorted, get_subtypes_sorted, object_is_singleton, object_is_supertype,
+        get_referrers_sorted, get_subtypes_sorted, inner_object_is_singleton,
+        inner_object_is_supertype, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
@@ -198,8 +199,8 @@ impl CodeWriter for DomainFromImpl {
                     objects
                         .iter()
                         .filter(|obj| {
-                            object_is_supertype(obj, domain)
-                                || !object_is_singleton(obj, domain) && !config.is_imported(&obj.id)
+                            !config.is_imported(&obj.id) && inner_object_is_supertype(obj, domain)
+                                || !inner_object_is_singleton(obj, domain)
                         })
                         .collect::<Vec<_>>(),
                 )
@@ -305,7 +306,7 @@ impl CodeWriter for DomainFromImpl {
 
                 // Generate the individual From implementations
                 for obj in &objects {
-                    if object_is_supertype(obj, domain) {
+                    if object_is_supertype(obj, config, &Some(imports), domain)? {
                         emit!(buffer, "");
                         emit!(
                             buffer,

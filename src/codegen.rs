@@ -304,7 +304,7 @@ pub(crate) fn render_new_instance(
                 if let Some(sub) = obj.r15c_subtype(domain.sarzak()).pop() {
                     let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
                         .r14_object(domain.sarzak())[0];
-                    if object_is_hybrid(s_obj, domain) {
+                    if inner_object_is_hybrid(s_obj, domain) {
                         match rval.ty {
                             GType::Uuid => {
                                 emit!(
@@ -318,7 +318,7 @@ pub(crate) fn render_new_instance(
                             }
                             GType::Reference(r_obj) => {
                                 let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
-                                if object_is_enum(r_obj, domain) {
+                                if inner_object_is_enum(r_obj, domain) {
                                     emit!(
                                         buffer,
                                         "{}: {}Enum::{}({}.id()),",
@@ -362,13 +362,14 @@ pub(crate) fn render_new_instance(
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
-                    let is_supertype = if let Some(imports) = imports {
-                        flubber_imports(obj, config, domain, imports, object_is_enum)
-                    } else {
-                        object_is_enum(obj, domain)
-                    };
+                    // let is_supertype = if let Some(imports) = imports {
+                    // run_func_on_imported_domain(obj, config, domain, imports, object_is_enum)
+                    // } else {
+                    // object_is_enum(obj, domain)
+                    // };
 
-                    if is_supertype {
+                    // if is_supertype {
+                    if inner_object_is_enum(obj, domain) {
                         emit!(buffer, "{}: {}.id(),", field.name, rval.name)
                     } else {
                         emit!(buffer, "{}: {}.id,", field.name, rval.name)
@@ -390,13 +391,20 @@ pub(crate) fn render_new_instance(
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
-                        let is_supertype = if let Some(imports) = imports {
-                            flubber_imports(obj, config, domain, imports, object_is_enum)
-                        } else {
-                            object_is_enum(obj, domain)
-                        };
+                        // let is_supertype = if let Some(imports) = imports {
+                        //     run_func_on_imported_domain(
+                        //         obj,
+                        //         config,
+                        //         domain,
+                        //         imports,
+                        //         object_is_enum,
+                        //     )
+                        // } else {
+                        //     object_is_enum(obj, domain)
+                        // };
 
-                        if is_supertype {
+                        // if is_supertype {
+                        if inner_object_is_enum(obj, domain) {
                             emit!(
                                 buffer,
                                 "{}: {}.map(|{}| {}.id()),",
@@ -476,7 +484,7 @@ pub(crate) fn render_new_instance(
 /// applying that function to objects the imported objects in this domain.
 ///
 /// Flubber.
-pub(crate) fn flubber_imports(
+pub(crate) fn run_func_on_imported_domain(
     object: &Object,
     config: &GraceConfig,
     domain: &Domain,
@@ -505,36 +513,96 @@ pub(crate) fn flubber_imports(
                     domain.name(),
                     name,
                 );
-                function(object, domain)
+                let result = function(object, domain);
+                log::debug!("result: {}", result);
+                result
             })
             .is_some()
 }
 
-pub(crate) fn object_is_hybrid(object: &Object, domain: &Domain) -> bool {
-    object_is_supertype(object, domain) && !object_is_singleton(object, domain)
+macro_rules! test_local_and_imports {
+    ($name:ident, $func:ident) => {
+        pub(crate) fn $name(
+            object: &Object,
+            config: &GraceConfig,
+            imports: &Option<&HashMap<String, Domain>>,
+            domain: &Domain,
+        ) -> Result<bool> {
+            if config.is_imported(&object.id) {
+                let imported = config.get_imported(&object.id).unwrap();
+                ensure!(
+                    imports.is_some(),
+                    CompilerSnafu {
+                        description: format!(
+                            "object `{}` is imported, but domain not found",
+                            object.name
+                        )
+                    }
+                );
+                let imports = imports.unwrap();
+
+                let domain = imports.get(&imported.domain);
+                ensure!(
+                    domain.is_some(),
+                    CompilerSnafu {
+                        description: format!(
+                            "object `{}` is imported, but domain not found",
+                            object.name
+                        )
+                    }
+                );
+                let domain = domain.unwrap();
+
+                ensure!(
+                    domain.sarzak().exhume_object(&object.id).is_some(),
+                    CompilerSnafu {
+                        description: format!(
+                            "object `{}` is not found in imported domain {}",
+                            object.name, imported.domain
+                        )
+                    }
+                );
+
+                Ok($func(object, domain))
+            } else {
+                Ok($func(object, domain))
+            }
+        }
+    };
 }
 
-pub(crate) fn object_is_enum(object: &Object, domain: &Domain) -> bool {
-    object_is_supertype(object, domain) && object_is_singleton(object, domain)
+test_local_and_imports!(object_is_hybrid, inner_object_is_hybrid);
+pub(crate) fn inner_object_is_hybrid(object: &Object, domain: &Domain) -> bool {
+    inner_object_is_supertype(object, domain) && !inner_object_is_singleton(object, domain)
 }
 
-pub(crate) fn object_is_supertype(object: &Object, domain: &Domain) -> bool {
+test_local_and_imports!(object_is_enum, inner_object_is_enum);
+pub(crate) fn inner_object_is_enum(object: &Object, domain: &Domain) -> bool {
+    inner_object_is_supertype(object, domain) && inner_object_is_singleton(object, domain)
+}
+
+test_local_and_imports!(object_is_supertype, inner_object_is_supertype);
+pub(crate) fn inner_object_is_supertype(object: &Object, domain: &Domain) -> bool {
     let is_super = object.r14_supertype(domain.sarzak());
+    log::debug!("is_super: {:?}", is_super);
 
     is_super.len() > 0
 }
 
-pub(crate) fn object_is_singleton(object: &Object, domain: &Domain) -> bool {
+test_local_and_imports!(object_is_singleton, inner_object_is_singleton);
+pub(crate) fn inner_object_is_singleton(object: &Object, domain: &Domain) -> bool {
     let attrs = object.r1_attribute(domain.sarzak());
-    let referrers = object.r17_referrer(domain.sarzak());
-    let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
+    log::debug!("attrs: {:?}", attrs);
 
-    attrs.len() < 2 && referrers.len() < 1 && assoc_referrers.len() < 1
+    attrs.len() < 2 && !inner_object_is_referrer(object, domain)
 }
 
-pub(crate) fn object_is_referrer(object: &Object, domain: &Domain) -> bool {
+test_local_and_imports!(object_is_referrer, inner_object_is_referrer);
+fn inner_object_is_referrer(object: &Object, domain: &Domain) -> bool {
     let referrers = object.r17_referrer(domain.sarzak());
     let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
+    log::debug!("referrers: {:?}", referrers);
+    log::debug!("assoc_referrers: {:?}", assoc_referrers);
 
     referrers.len() > 0 || assoc_referrers.len() > 0
 }

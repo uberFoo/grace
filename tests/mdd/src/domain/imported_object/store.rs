@@ -69,7 +69,7 @@ impl ObjectStore {
         let path = path.join("imported_object.json");
         fs::create_dir_all(&path)?;
 
-        // Persist another_object.
+        // Persist Another Object.
         {
             let path = path.join("another_object.json");
             let file = fs::File::create(path)?;
@@ -93,7 +93,7 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
-        // Load another_object.
+        // Load Another Object.
         {
             let path = path.join("another_object.json");
             let file = fs::File::open(path)?;

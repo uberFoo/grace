@@ -641,7 +641,7 @@ impl CodeWriter for DefaultModule {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
@@ -666,7 +666,9 @@ impl CodeWriter for DefaultModule {
                 }
                 emit!(buffer, "");
                 for obj in &objects {
-                    if object_is_singleton(obj, domain) && !object_is_supertype(obj, domain) {
+                    if object_is_singleton(obj, config, imports, domain)?
+                        && !object_is_supertype(obj, config, imports, domain)?
+                    {
                         emit!(
                             buffer,
                             "pub use crate::{}::{}::{};",
