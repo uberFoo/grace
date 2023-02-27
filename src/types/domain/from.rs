@@ -8,7 +8,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED},
+        types::{Ownership, BORROWED},
     },
 };
 use snafu::prelude::*;
@@ -19,7 +19,8 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_referrers_sorted, get_subtypes_sorted, object_is_singleton, object_is_supertype,
+        get_referrers_sorted, get_subtypes_sorted, inner_object_is_singleton,
+        inner_object_is_supertype, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
@@ -198,8 +199,8 @@ impl CodeWriter for DomainFromImpl {
                     objects
                         .iter()
                         .filter(|obj| {
-                            object_is_supertype(obj, domain)
-                                || !object_is_singleton(obj, domain) && !config.is_imported(&obj.id)
+                            !config.is_imported(&obj.id) && inner_object_is_supertype(obj, domain)
+                                || !inner_object_is_singleton(obj, domain)
                         })
                         .collect::<Vec<_>>(),
                 )
@@ -235,7 +236,7 @@ impl CodeWriter for DomainFromImpl {
                     emit!(
                         buffer,
                         "{},",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
                 emit!(buffer, "}};");
@@ -245,15 +246,15 @@ impl CodeWriter for DomainFromImpl {
                     buffer,
                     "use crate::{}::ObjectStore as {}Store;",
                     from_module,
-                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    from_name.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "use crate::{}::types::{{", from_module);
                 for obj in &objects {
                     emit!(
                         buffer,
                         "{} as From{},",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
                 emit!(buffer, "}};");
@@ -263,12 +264,12 @@ impl CodeWriter for DomainFromImpl {
                 emit!(
                     buffer,
                     "impl From<&{}Store> for ObjectStore {{",
-                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    from_name.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(
                     buffer,
                     "fn from(from: &{}Store) -> Self {{",
-                    from_name.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    from_name.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 emit!(buffer, "let mut to = ObjectStore::new();");
                 for obj in &objects {
@@ -291,7 +292,7 @@ impl CodeWriter for DomainFromImpl {
                     emit!(
                         buffer,
                         "let instance = {}::from(instance);",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(buffer, "to.inter_{}(instance);", obj.as_ident());
                     emit!(buffer, "}}");
@@ -305,18 +306,18 @@ impl CodeWriter for DomainFromImpl {
 
                 // Generate the individual From implementations
                 for obj in &objects {
-                    if object_is_supertype(obj, domain) {
+                    if object_is_supertype(obj, config, &Some(imports), domain)? {
                         emit!(buffer, "");
                         emit!(
                             buffer,
                             "impl From<&From{}> for {} {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                            obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                         emit!(
                             buffer,
                             "fn from(src: &From{}) -> Self {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                         emit!(buffer, "match src {{");
                         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
@@ -325,10 +326,10 @@ impl CodeWriter for DomainFromImpl {
                             emit!(
                                 buffer,
                                 "From{}::{}(src) => {}::{}({}),",
-                                obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                                s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                                obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                                 s_obj.as_const()
                             );
                         }
@@ -339,13 +340,13 @@ impl CodeWriter for DomainFromImpl {
                         emit!(
                             buffer,
                             "impl From<&From{}> for {} {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                            obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                         emit!(
                             buffer,
                             "fn from(src: &From{}) -> Self {{",
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                         emit!(buffer, "Self {{");
 

@@ -9,7 +9,7 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED, PUBLIC},
+    woog::{store::ObjectStore as WoogStore, Ownership, BORROWED, PUBLIC},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -195,22 +195,22 @@ impl CodeWriter for DefaultStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
 
                     emit!(
                         paste,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         binary.number,
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                         referrer.description,
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                     emit!(
                         paste,
                         "pub {}: &'a {},",
                         referrer.referential_attribute.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -243,13 +243,13 @@ impl CodeWriter for DefaultStruct {
                     emit!(
                         buffer,
                         "pub struct {}<'a> {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 } else {
                     emit!(
                         buffer,
                         "pub struct {} {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -331,13 +331,13 @@ impl CodeWriter for DefaultImplementation {
                     emit!(
                         buffer,
                         "impl<'a> {}<'a> {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 } else {
                     emit!(
                         buffer,
                         "impl {} {{",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
 
@@ -526,7 +526,7 @@ impl CodeWriter for DefaultNewImpl {
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 // Output the top of the function definition
@@ -641,7 +641,7 @@ impl CodeWriter for DefaultModule {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
@@ -666,7 +666,9 @@ impl CodeWriter for DefaultModule {
                 }
                 emit!(buffer, "");
                 for obj in &objects {
-                    if object_is_singleton(obj, domain) && !object_is_supertype(obj, domain) {
+                    if object_is_singleton(obj, config, imports, domain)?
+                        && !object_is_supertype(obj, config, imports, domain)?
+                    {
                         emit!(
                             buffer,
                             "pub use crate::{}::{}::{};",
@@ -680,7 +682,7 @@ impl CodeWriter for DefaultModule {
                             "pub use crate::{}::{}::{};",
                             module,
                             obj.as_ident(),
-                            obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     }
                 }

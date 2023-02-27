@@ -12,7 +12,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Mutability, BORROWED, MUTABLE, PUBLIC},
+        types::{Ownership, BORROWED, MUTABLE, PUBLIC},
     },
 };
 use snafu::prelude::*;
@@ -25,7 +25,7 @@ use crate::{
         emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
         get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
         get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
-        get_subtypes_sorted, object_is_singleton,
+        get_subtypes_sorted, object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
@@ -57,7 +57,7 @@ impl CodeWriter for Hybrid {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -104,7 +104,7 @@ impl CodeWriter for Hybrid {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
-                let mut imports = HashSet::new();
+                let mut uses = HashSet::new();
 
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
@@ -125,7 +125,10 @@ impl CodeWriter for Hybrid {
                 emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    if object_is_singleton(s_obj, domain) {
+                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
+                    if is_singleton && !is_supertype {
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",
@@ -139,7 +142,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             module,
                             s_obj.as_ident(),
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     }
                 }
@@ -152,13 +155,13 @@ impl CodeWriter for Hybrid {
                 for r_obj in &referrer_objs {
                     if config.is_imported(&r_obj.id) {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
-                        imports.insert(imported_object.domain.as_str());
+                        uses.insert(imported_object.domain.as_str());
                         emit!(
                             buffer,
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     } else {
                         emit!(
@@ -166,7 +169,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                         );
                     }
                 }
@@ -182,14 +185,14 @@ impl CodeWriter for Hybrid {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
                 }
 
                 // Add the ObjectStore, plus the store for any imported objects.
-                imports.insert(module);
+                uses.insert(module);
                 emit!(buffer, "");
-                for import in imports {
+                for import in uses {
                     let store = find_store(import, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
@@ -222,14 +225,14 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub enum {}Enum {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -254,14 +257,14 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 emit!(
                     buffer,
                     "pub {}: {}Enum,",
                     SUBTYPE_ATTR,
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
 
                 render_attributes(buffer, obj, domain)?;
@@ -303,7 +306,7 @@ impl MethodImplementation for HybridNewImpl {}
 impl CodeWriter for HybridNewImpl {
     fn write_code(
         &self,
-        options: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
@@ -315,13 +318,13 @@ impl CodeWriter for HybridNewImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DomainNewImpl"
+                description: "obj_id is required by HybridNewImpl"
             }
         );
         ensure!(
             woog.is_some(),
             CompilerSnafu {
-                description: "woog is required by DomainNewImpl"
+                description: "woog is required by HybridNewImpl"
             }
         );
         let woog = match woog {
@@ -451,10 +454,29 @@ impl CodeWriter for HybridNewImpl {
             let mut params_ = params.clone();
 
             // Insert the subtype here.
+            //
+            // There's a certain level of complexity that entertains such antics as
+            // witnessed below. I'm pretty tired, so maybe there's a much better way,
+            // but honestly, shit's getting complicated.
+            // if object_is_singleton(&s_obj, domain) && !object_is_supertype(s_obj, domain) {
+            //     fields_.push(LValue::new(
+            //         SUBTYPE_ATTR.to_owned(),
+            //         GType::Object(s_obj.id),
+            //     ));
+            // } else {
             fields_.push(LValue::new(
                 SUBTYPE_ATTR.to_owned(),
                 GType::Object(s_obj.id),
             ));
+            // if object_is_singleton(&s_obj, domain) && !object_is_supertype(s_obj, domain) {
+            // params_.push(Parameter::new(
+            // BORROWED,
+            // None,
+            // GType::Uuid,
+            // PUBLIC,
+            // SUBTYPE_ATTR.to_owned(),
+            // ));
+            // } else {
             params_.push(Parameter::new(
                 BORROWED,
                 None,
@@ -462,6 +484,21 @@ impl CodeWriter for HybridNewImpl {
                 PUBLIC,
                 SUBTYPE_ATTR.to_owned(),
             ));
+            // }
+            // }
+
+            // Collect rvals for rendering the method.
+            let mut rvals: Vec<RValue> = params_.iter().map(|p| p.into()).collect();
+
+            let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+            let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
+            // We don't want a parameter for a const, and we'll need to change the rval...
+            if is_singleton && !is_supertype {
+                params_.pop();
+                rvals.pop();
+                rvals.push(RValue::new(format!("{}", s_obj.as_const()), GType::Uuid));
+            }
 
             // Add the store to the end of the  input parameters
             let store = find_store(module, domain);
@@ -472,12 +509,6 @@ impl CodeWriter for HybridNewImpl {
                 PUBLIC,
                 "store".to_owned(),
             ));
-
-            // Collect rvals for rendering the method.
-            let rvals = params_.clone();
-            let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
-            // Remove the store.
-            rvals.pop();
 
             // Link the params. The result is the head of the list.
             let param = if params_.len() > 0 {
@@ -521,7 +552,7 @@ impl CodeWriter for HybridNewImpl {
                     emit!(
                         buffer,
                         "/// Inter a new {} in the store, and return it's `id`.",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
 
                     // 🚧 Put this back in once I'm done moving to v2.
@@ -569,7 +600,7 @@ impl CodeWriter for HybridNewImpl {
                         &rvals,
                         domain,
                         *imports,
-                        &options,
+                        &config,
                     )?;
 
                     emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());

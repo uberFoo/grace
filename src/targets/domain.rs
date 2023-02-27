@@ -16,8 +16,8 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, object_is_referrer, object_is_singleton, object_is_supertype,
-        render::RenderIdent,
+        generator::GeneratorBuilder, inner_object_is_hybrid, inner_object_is_singleton,
+        inner_object_is_supertype, render::RenderIdent,
     },
     init_woog::init_woog,
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
@@ -103,7 +103,7 @@ impl<'a> DomainTarget<'a> {
                                 // what it should be. Like here.
                                 format!(
                                     "{}Store",
-                                    // name.as_type(&Mutability::Borrowed(BORROWED), sarzak)
+                                    // name.as_type(&Ownership::Borrowed(BORROWED), sarzak)
                                     name.to_upper_camel_case()
                                 ),
                                 format!("crate::{}::store::ObjectStore", store,),
@@ -212,12 +212,12 @@ impl<'a> DomainTarget<'a> {
             );
 
             // Test if the object is a supertype. Those we generate as enums.
-            let generator = if object_is_supertype(obj, &self.domain) {
+            let generator = if inner_object_is_supertype(obj, &self.domain) {
                 // Unless it's got referential attributes. Then we generate what
                 // I now dub, a _hybrid_. What about regular attributes you ask?
                 // Well, I don't have a use case for that at the moment, so they
                 // will be done in due time.
-                if object_is_referrer(obj, &self.domain) {
+                if inner_object_is_hybrid(obj, &self.domain) {
                     DefaultStructBuilder::new()
                         .definition(Hybrid::new())
                         .implementation(
@@ -243,7 +243,7 @@ impl<'a> DomainTarget<'a> {
                 // If the object is imported, we don't generate anything...here.
 
                 NullGenerator::new()
-            } else if object_is_singleton(obj, &self.domain) {
+            } else if inner_object_is_singleton(obj, &self.domain) {
                 // Look for naked objects, and generate a singleton for them.
 
                 log::debug!("Generating singleton for {}", obj.name);

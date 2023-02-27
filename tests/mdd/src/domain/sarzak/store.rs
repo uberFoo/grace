@@ -524,7 +524,7 @@ impl ObjectStore {
         let path = path.join("sarzak.json");
         fs::create_dir_all(&path)?;
 
-        // Persist acknowledged_event.
+        // Persist Acknowledged Event.
         {
             let path = path.join("acknowledged_event.json");
             let file = fs::File::create(path)?;
@@ -538,7 +538,7 @@ impl ObjectStore {
                     .collect::<Vec<_>>(),
             )?;
         }
-        // Persist associative.
+        // Persist Associative.
         {
             let path = path.join("associative.json");
             let file = fs::File::create(path)?;
@@ -548,7 +548,7 @@ impl ObjectStore {
                 &self.associative.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist associative_referent.
+        // Persist Associative Referent.
         {
             let path = path.join("associative_referent.json");
             let file = fs::File::create(path)?;
@@ -562,7 +562,7 @@ impl ObjectStore {
                     .collect::<Vec<_>>(),
             )?;
         }
-        // Persist associative_referrer.
+        // Persist Associative Referrer.
         {
             let path = path.join("associative_referrer.json");
             let file = fs::File::create(path)?;
@@ -576,7 +576,7 @@ impl ObjectStore {
                     .collect::<Vec<_>>(),
             )?;
         }
-        // Persist attribute.
+        // Persist Attribute.
         {
             let path = path.join("attribute.json");
             let file = fs::File::create(path)?;
@@ -586,7 +586,7 @@ impl ObjectStore {
                 &self.attribute.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist binary.
+        // Persist Binary.
         {
             let path = path.join("binary.json");
             let file = fs::File::create(path)?;
@@ -596,7 +596,7 @@ impl ObjectStore {
                 &self.binary.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist cardinality.
+        // Persist Cardinality.
         {
             let path = path.join("cardinality.json");
             let file = fs::File::create(path)?;
@@ -606,7 +606,7 @@ impl ObjectStore {
                 &self.cardinality.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist conditionality.
+        // Persist Conditionality.
         {
             let path = path.join("conditionality.json");
             let file = fs::File::create(path)?;
@@ -616,7 +616,7 @@ impl ObjectStore {
                 &self.conditionality.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist event.
+        // Persist Event.
         {
             let path = path.join("event.json");
             let file = fs::File::create(path)?;
@@ -626,7 +626,7 @@ impl ObjectStore {
                 &self.event.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist external.
+        // Persist External.
         {
             let path = path.join("external.json");
             let file = fs::File::create(path)?;
@@ -636,7 +636,7 @@ impl ObjectStore {
                 &self.external.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist isa.
+        // Persist Isa.
         {
             let path = path.join("isa.json");
             let file = fs::File::create(path)?;
@@ -646,7 +646,7 @@ impl ObjectStore {
                 &self.isa.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist object.
+        // Persist Object.
         {
             let path = path.join("object.json");
             let file = fs::File::create(path)?;
@@ -656,7 +656,7 @@ impl ObjectStore {
                 &self.object.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist referent.
+        // Persist Referent.
         {
             let path = path.join("referent.json");
             let file = fs::File::create(path)?;
@@ -666,7 +666,7 @@ impl ObjectStore {
                 &self.referent.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist referrer.
+        // Persist Referrer.
         {
             let path = path.join("referrer.json");
             let file = fs::File::create(path)?;
@@ -676,7 +676,7 @@ impl ObjectStore {
                 &self.referrer.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist relationship.
+        // Persist Relationship.
         {
             let path = path.join("relationship.json");
             let file = fs::File::create(path)?;
@@ -686,7 +686,7 @@ impl ObjectStore {
                 &self.relationship.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist state.
+        // Persist State.
         {
             let path = path.join("state.json");
             let file = fs::File::create(path)?;
@@ -696,7 +696,7 @@ impl ObjectStore {
                 &self.state.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist subtype.
+        // Persist Subtype.
         {
             let path = path.join("subtype.json");
             let file = fs::File::create(path)?;
@@ -706,7 +706,7 @@ impl ObjectStore {
                 &self.subtype.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist supertype.
+        // Persist Supertype.
         {
             let path = path.join("supertype.json");
             let file = fs::File::create(path)?;
@@ -716,7 +716,7 @@ impl ObjectStore {
                 &self.supertype.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist ty.
+        // Persist Type.
         {
             let path = path.join("ty.json");
             let file = fs::File::create(path)?;
@@ -740,7 +740,7 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
-        // Load acknowledged_event.
+        // Load Acknowledged Event.
         {
             let path = path.join("acknowledged_event.json");
             let file = fs::File::open(path)?;
@@ -751,7 +751,7 @@ impl ObjectStore {
                 .map(|道| (道.id, 道))
                 .collect();
         }
-        // Load associative.
+        // Load Associative.
         {
             let path = path.join("associative.json");
             let file = fs::File::open(path)?;
@@ -759,7 +759,7 @@ impl ObjectStore {
             let associative: Vec<Associative> = serde_json::from_reader(reader)?;
             store.associative = associative.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load associative_referent.
+        // Load Associative Referent.
         {
             let path = path.join("associative_referent.json");
             let file = fs::File::open(path)?;
@@ -770,7 +770,7 @@ impl ObjectStore {
                 .map(|道| (道.id, 道))
                 .collect();
         }
-        // Load associative_referrer.
+        // Load Associative Referrer.
         {
             let path = path.join("associative_referrer.json");
             let file = fs::File::open(path)?;
@@ -781,7 +781,7 @@ impl ObjectStore {
                 .map(|道| (道.id, 道))
                 .collect();
         }
-        // Load attribute.
+        // Load Attribute.
         {
             let path = path.join("attribute.json");
             let file = fs::File::open(path)?;
@@ -789,7 +789,7 @@ impl ObjectStore {
             let attribute: Vec<Attribute> = serde_json::from_reader(reader)?;
             store.attribute = attribute.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load binary.
+        // Load Binary.
         {
             let path = path.join("binary.json");
             let file = fs::File::open(path)?;
@@ -797,7 +797,7 @@ impl ObjectStore {
             let binary: Vec<Binary> = serde_json::from_reader(reader)?;
             store.binary = binary.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load cardinality.
+        // Load Cardinality.
         {
             let path = path.join("cardinality.json");
             let file = fs::File::open(path)?;
@@ -805,7 +805,7 @@ impl ObjectStore {
             let cardinality: Vec<Cardinality> = serde_json::from_reader(reader)?;
             store.cardinality = cardinality.into_iter().map(|道| (道.id(), 道)).collect();
         }
-        // Load conditionality.
+        // Load Conditionality.
         {
             let path = path.join("conditionality.json");
             let file = fs::File::open(path)?;
@@ -813,7 +813,7 @@ impl ObjectStore {
             let conditionality: Vec<Conditionality> = serde_json::from_reader(reader)?;
             store.conditionality = conditionality.into_iter().map(|道| (道.id(), 道)).collect();
         }
-        // Load event.
+        // Load Event.
         {
             let path = path.join("event.json");
             let file = fs::File::open(path)?;
@@ -821,7 +821,7 @@ impl ObjectStore {
             let event: Vec<Event> = serde_json::from_reader(reader)?;
             store.event = event.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load external.
+        // Load External.
         {
             let path = path.join("external.json");
             let file = fs::File::open(path)?;
@@ -829,7 +829,7 @@ impl ObjectStore {
             let external: Vec<External> = serde_json::from_reader(reader)?;
             store.external = external.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load isa.
+        // Load Isa.
         {
             let path = path.join("isa.json");
             let file = fs::File::open(path)?;
@@ -837,7 +837,7 @@ impl ObjectStore {
             let isa: Vec<Isa> = serde_json::from_reader(reader)?;
             store.isa = isa.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load object.
+        // Load Object.
         {
             let path = path.join("object.json");
             let file = fs::File::open(path)?;
@@ -845,7 +845,7 @@ impl ObjectStore {
             let object: Vec<Object> = serde_json::from_reader(reader)?;
             store.object = object.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load referent.
+        // Load Referent.
         {
             let path = path.join("referent.json");
             let file = fs::File::open(path)?;
@@ -853,7 +853,7 @@ impl ObjectStore {
             let referent: Vec<Referent> = serde_json::from_reader(reader)?;
             store.referent = referent.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load referrer.
+        // Load Referrer.
         {
             let path = path.join("referrer.json");
             let file = fs::File::open(path)?;
@@ -861,7 +861,7 @@ impl ObjectStore {
             let referrer: Vec<Referrer> = serde_json::from_reader(reader)?;
             store.referrer = referrer.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load relationship.
+        // Load Relationship.
         {
             let path = path.join("relationship.json");
             let file = fs::File::open(path)?;
@@ -869,7 +869,7 @@ impl ObjectStore {
             let relationship: Vec<Relationship> = serde_json::from_reader(reader)?;
             store.relationship = relationship.into_iter().map(|道| (道.id(), 道)).collect();
         }
-        // Load state.
+        // Load State.
         {
             let path = path.join("state.json");
             let file = fs::File::open(path)?;
@@ -877,7 +877,7 @@ impl ObjectStore {
             let state: Vec<State> = serde_json::from_reader(reader)?;
             store.state = state.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load subtype.
+        // Load Subtype.
         {
             let path = path.join("subtype.json");
             let file = fs::File::open(path)?;
@@ -885,7 +885,7 @@ impl ObjectStore {
             let subtype: Vec<Subtype> = serde_json::from_reader(reader)?;
             store.subtype = subtype.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load supertype.
+        // Load Supertype.
         {
             let path = path.join("supertype.json");
             let file = fs::File::open(path)?;
@@ -893,7 +893,7 @@ impl ObjectStore {
             let supertype: Vec<Supertype> = serde_json::from_reader(reader)?;
             store.supertype = supertype.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load ty.
+        // Load Type.
         {
             let path = path.join("ty.json");
             let file = fs::File::open(path)?;

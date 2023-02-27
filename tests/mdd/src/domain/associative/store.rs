@@ -192,7 +192,7 @@ impl ObjectStore {
         let path = path.join("associative.json");
         fs::create_dir_all(&path)?;
 
-        // Persist acknowledged_event.
+        // Persist Acknowledged Event.
         {
             let path = path.join("acknowledged_event.json");
             let file = fs::File::create(path)?;
@@ -206,7 +206,7 @@ impl ObjectStore {
                     .collect::<Vec<_>>(),
             )?;
         }
-        // Persist anchor.
+        // Persist Anchor.
         {
             let path = path.join("anchor.json");
             let file = fs::File::create(path)?;
@@ -216,7 +216,7 @@ impl ObjectStore {
                 &self.anchor.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist event.
+        // Persist Event.
         {
             let path = path.join("event.json");
             let file = fs::File::create(path)?;
@@ -226,7 +226,7 @@ impl ObjectStore {
                 &self.event.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist isa_ui.
+        // Persist IsaUI.
         {
             let path = path.join("isa_ui.json");
             let file = fs::File::create(path)?;
@@ -236,7 +236,7 @@ impl ObjectStore {
                 &self.isa_ui.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist state.
+        // Persist State.
         {
             let path = path.join("state.json");
             let file = fs::File::create(path)?;
@@ -246,7 +246,7 @@ impl ObjectStore {
                 &self.state.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist subtype_anchor.
+        // Persist Subtype Anchor.
         {
             let path = path.join("subtype_anchor.json");
             let file = fs::File::create(path)?;
@@ -270,7 +270,7 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
-        // Load acknowledged_event.
+        // Load Acknowledged Event.
         {
             let path = path.join("acknowledged_event.json");
             let file = fs::File::open(path)?;
@@ -281,7 +281,7 @@ impl ObjectStore {
                 .map(|道| (道.id, 道))
                 .collect();
         }
-        // Load anchor.
+        // Load Anchor.
         {
             let path = path.join("anchor.json");
             let file = fs::File::open(path)?;
@@ -289,7 +289,7 @@ impl ObjectStore {
             let anchor: Vec<Anchor> = serde_json::from_reader(reader)?;
             store.anchor = anchor.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load event.
+        // Load Event.
         {
             let path = path.join("event.json");
             let file = fs::File::open(path)?;
@@ -297,7 +297,7 @@ impl ObjectStore {
             let event: Vec<Event> = serde_json::from_reader(reader)?;
             store.event = event.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load isa_ui.
+        // Load IsaUI.
         {
             let path = path.join("isa_ui.json");
             let file = fs::File::open(path)?;
@@ -305,7 +305,7 @@ impl ObjectStore {
             let isa_ui: Vec<IsaUi> = serde_json::from_reader(reader)?;
             store.isa_ui = isa_ui.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load state.
+        // Load State.
         {
             let path = path.join("state.json");
             let file = fs::File::open(path)?;
@@ -313,7 +313,7 @@ impl ObjectStore {
             let state: Vec<State> = serde_json::from_reader(reader)?;
             store.state = state.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load subtype_anchor.
+        // Load Subtype Anchor.
         {
             let path = path.join("subtype_anchor.json");
             let file = fs::File::open(path)?;

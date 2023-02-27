@@ -92,7 +92,7 @@ impl ObjectStore {
         let path = path.join("everything.json");
         fs::create_dir_all(&path)?;
 
-        // Persist everything.
+        // Persist Everything.
         {
             let path = path.join("everything.json");
             let file = fs::File::create(path)?;
@@ -102,7 +102,7 @@ impl ObjectStore {
                 &self.everything.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist rando_object.
+        // Persist Rando Object.
         {
             let path = path.join("rando_object.json");
             let file = fs::File::create(path)?;
@@ -126,7 +126,7 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
-        // Load everything.
+        // Load Everything.
         {
             let path = path.join("everything.json");
             let file = fs::File::open(path)?;
@@ -134,7 +134,7 @@ impl ObjectStore {
             let everything: Vec<Everything> = serde_json::from_reader(reader)?;
             store.everything = everything.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load rando_object.
+        // Load Rando Object.
         {
             let path = path.join("rando_object.json");
             let file = fs::File::open(path)?;

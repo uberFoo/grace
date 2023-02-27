@@ -164,7 +164,7 @@ impl ObjectStore {
         let path = path.join("one_to_one.json");
         fs::create_dir_all(&path)?;
 
-        // Persist a.
+        // Persist A.
         {
             let path = path.join("a.json");
             let file = fs::File::create(path)?;
@@ -174,7 +174,7 @@ impl ObjectStore {
                 &self.a.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist b.
+        // Persist B.
         {
             let path = path.join("b.json");
             let file = fs::File::create(path)?;
@@ -184,7 +184,7 @@ impl ObjectStore {
                 &self.b.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist c.
+        // Persist C.
         {
             let path = path.join("c.json");
             let file = fs::File::create(path)?;
@@ -194,7 +194,7 @@ impl ObjectStore {
                 &self.c.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist parameter.
+        // Persist Parameter.
         {
             let path = path.join("parameter.json");
             let file = fs::File::create(path)?;
@@ -204,7 +204,7 @@ impl ObjectStore {
                 &self.parameter.values().map(|x| x).collect::<Vec<_>>(),
             )?;
         }
-        // Persist referent.
+        // Persist Referent.
         {
             let path = path.join("referent.json");
             let file = fs::File::create(path)?;
@@ -228,7 +228,7 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
-        // Load a.
+        // Load A.
         {
             let path = path.join("a.json");
             let file = fs::File::open(path)?;
@@ -236,7 +236,7 @@ impl ObjectStore {
             let a: Vec<A> = serde_json::from_reader(reader)?;
             store.a = a.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load b.
+        // Load B.
         {
             let path = path.join("b.json");
             let file = fs::File::open(path)?;
@@ -244,7 +244,7 @@ impl ObjectStore {
             let b: Vec<B> = serde_json::from_reader(reader)?;
             store.b = b.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load c.
+        // Load C.
         {
             let path = path.join("c.json");
             let file = fs::File::open(path)?;
@@ -252,7 +252,7 @@ impl ObjectStore {
             let c: Vec<C> = serde_json::from_reader(reader)?;
             store.c = c.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load parameter.
+        // Load Parameter.
         {
             let path = path.join("parameter.json");
             let file = fs::File::open(path)?;
@@ -260,7 +260,7 @@ impl ObjectStore {
             let parameter: Vec<Parameter> = serde_json::from_reader(reader)?;
             store.parameter = parameter.into_iter().map(|道| (道.id, 道)).collect();
         }
-        // Load referent.
+        // Load Referent.
         {
             let path = path.join("referent.json");
             let file = fs::File::open(path)?;

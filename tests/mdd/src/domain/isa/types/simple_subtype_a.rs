@@ -1,9 +1,17 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"simple_subtype_a-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-use-statements"}}}
-use uuid::{uuid, Uuid};
+use uuid::Uuid;
+
+use serde::{Deserialize, Serialize};
+
+// Subtype imports
+use crate::domain::isa::types::oh_boy::OhBoy;
+
+use crate::domain::isa::store::ObjectStore as IsaStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-const-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-enum-documentation"}}}
 /// Simple [`Subtype`] A
 ///
 /// This is represented as a singleton.
@@ -12,6 +20,30 @@ use uuid::{uuid, Uuid};
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-const-definition"}}}
-pub const SIMPLE_SUBTYPE_A: Uuid = uuid!["e484270c-ec90-5c3c-9371-f7b716be6ffc"];
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-enum-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub enum SimpleSubtypeA {
+    OhBoy(Uuid),
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-implementation"}}}
+impl SimpleSubtypeA {
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-new-impl"}}}
+    /// Create a new instance of SimpleSubtypeA::OhBoy
+    pub fn new_oh_boy(oh_boy: &OhBoy, store: &mut IsaStore) -> Self {
+        let new = Self::OhBoy(oh_boy.id);
+        store.inter_simple_subtype_a(new.clone());
+        new
+    }
+
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-get-id-impl"}}}
+    pub fn id(&self) -> Uuid {
+        match self {
+            SimpleSubtypeA::OhBoy(id) => *id,
+        }
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

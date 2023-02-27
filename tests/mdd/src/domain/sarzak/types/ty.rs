@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
-use crate::domain::sarzak::store::ObjectStore as SarzakStore;
+// Subtype imports
 use crate::domain::sarzak::types::boolean::BOOLEAN;
 use crate::domain::sarzak::types::external::External;
 use crate::domain::sarzak::types::float::FLOAT;
@@ -12,6 +12,8 @@ use crate::domain::sarzak::types::integer::INTEGER;
 use crate::domain::sarzak::types::object::Object;
 use crate::domain::sarzak::types::string::STRING;
 use crate::domain::sarzak::types::uuid::UUID;
+
+use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-enum-documentation"}}}

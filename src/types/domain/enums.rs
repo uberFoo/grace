@@ -6,7 +6,7 @@ use std::{collections::HashMap, fmt::Write};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Mutability, BORROWED},
+    woog::{store::ObjectStore as WoogStore, Ownership, BORROWED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -15,7 +15,8 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments, find_store, get_subtypes_sorted, object_is_singleton,
+        emit_object_comments, find_store, get_subtypes_sorted, object_is_enum, object_is_singleton,
+        object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -40,7 +41,7 @@ impl CodeWriter for Enum {
         config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -74,29 +75,57 @@ impl CodeWriter for Enum {
                 }
 
                 let mut only_singletons = true;
+                emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    if object_is_singleton(s_obj, domain) {
-                        emit!(
-                            buffer,
-                            "use crate::{}::types::{}::{};",
-                            module,
-                            s_obj.as_ident(),
-                            s_obj.as_const()
-                        );
+
+                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
+                    if config.is_imported(&s_obj.id) {
+                        let imported_object = config.get_imported(&s_obj.id).unwrap();
+                        if is_singleton && !is_supertype {
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                imported_object.domain,
+                                s_obj.as_ident(),
+                                s_obj.as_const()
+                            );
+                        } else {
+                            only_singletons = false;
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                imported_object.domain,
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            );
+                        }
                     } else {
-                        only_singletons = false;
-                        emit!(
-                            buffer,
-                            "use crate::{}::types::{}::{};",
-                            module,
-                            s_obj.as_ident(),
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
-                        );
+                        if is_singleton && !is_supertype {
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                module,
+                                s_obj.as_ident(),
+                                s_obj.as_const()
+                            );
+                        } else {
+                            only_singletons = false;
+                            emit!(
+                                buffer,
+                                "use crate::{}::types::{}::{};",
+                                module,
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            );
+                        }
                     }
                 }
 
                 if !only_singletons {
+                    emit!(buffer, "");
                     let store = find_store(module, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
@@ -130,14 +159,14 @@ impl CodeWriter for Enum {
                 emit!(
                     buffer,
                     "pub enum {} {{",
-                    obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -193,8 +222,8 @@ impl CodeWriter for EnumGetIdImpl {
                     emit!(
                         buffer,
                         "{}::{}(id) => *id,",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -220,10 +249,10 @@ impl MethodImplementation for EnumNewImpl {}
 impl CodeWriter for EnumNewImpl {
     fn write_code(
         &self,
-        _config: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         _woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -247,13 +276,18 @@ impl CodeWriter for EnumNewImpl {
             |buffer| {
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
+                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
                     emit!(
                         buffer,
                         "/// Create a new instance of {}::{}",
-                        obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                        s_obj.as_type(&Mutability::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
                     );
-                    if object_is_singleton(s_obj, domain) {
+
+                    // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
+                    if is_singleton && !is_supertype {
                         emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
                         emit!(
                             buffer,
@@ -262,7 +296,7 @@ impl CodeWriter for EnumNewImpl {
                         emit!(
                             buffer,
                             "Self::{}({})",
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                             s_obj.as_const()
                         );
                     } else {
@@ -271,15 +305,31 @@ impl CodeWriter for EnumNewImpl {
                             "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
                             s_obj.as_ident(),
                             s_obj.as_ident(),
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
+                            s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
                             store.name
                         );
-                        emit!(
-                            buffer,
-                            "let new = Self::{}({}.id);",
-                            s_obj.as_type(&Mutability::Borrowed(BORROWED), domain),
-                            s_obj.as_ident()
-                        );
+                        // I feel sort of gross doing this, but also sort of not. Part of me feels
+                        // like I should move this, and the same idea in codegen::render_new_instance,
+                        // into a function. Refactor the bits. But then the other part of me wants to
+                        // see how this plays out once woog comes into play. I have a feeling that
+                        // I should be able to build the let statement in terms of woog and then
+                        // have it write itself. So for now, here we are. I'm only here because I'm
+                        // trying to get woog working, so that's sort of funny.
+                        if object_is_enum(s_obj, config, imports, domain)? {
+                            emit!(
+                                buffer,
+                                "let new = Self::{}({}.id());",
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                s_obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "let new = Self::{}({}.id);",
+                                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                s_obj.as_ident()
+                            );
+                        }
                         emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                         emit!(buffer, "new");
                     }
