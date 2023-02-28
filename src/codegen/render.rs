@@ -12,7 +12,7 @@ use sarzak::{
         Attribute, Conditionality, Event, External as SarzakExternal, Object, State, Ty,
     },
     v2::domain::Domain,
-    woog::types::{Ownership, BORROWED},
+    woog::types::{Ownership, Parameter, BORROWED},
 };
 use snafu::prelude::*;
 
@@ -21,7 +21,7 @@ use crate::{
         buffer::{emit, Buffer},
         get_referrers_sorted,
     },
-    todo::{External, GType, ObjectMethod, Parameter},
+    todo::{External, GType, ObjectMethod, Parameter as todoP},
 };
 
 macro_rules! render_ident {
@@ -77,7 +77,13 @@ impl<'a> RenderIdent for ObjectMethod<'a> {
     }
 }
 
-impl<'a> RenderIdent for Parameter<'a> {
+impl RenderIdent for Parameter {
+    fn as_ident(&self) -> String {
+        self.name.sanitize().to_snake_case()
+    }
+}
+
+impl<'a> RenderIdent for todoP<'a> {
     fn as_ident(&self) -> String {
         self.name.sanitize().to_snake_case()
     }

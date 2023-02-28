@@ -11,7 +11,7 @@ use std::{collections::HashMap, fmt::Write, iter::zip};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::{Object, Ty},
+    sarzak::types::{External, Object, Ty},
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
@@ -27,7 +27,7 @@ use crate::{
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
-    todo::{External, GType, LValue, ObjectMethod, RValue},
+    todo::{GType, LValue, ObjectMethod, RValue},
 };
 
 macro_rules! get_subtypes_sorted {
@@ -613,11 +613,16 @@ pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buf
     Ok(())
 }
 
-pub(crate) fn find_store(name: &str, domain: &Domain) -> External {
-    let name = name
-        .split("::")
-        .last()
-        .expect(format!("Can't parse store from {}", name).as_str());
+pub(crate) fn find_store<'a>(name: &str, domain: &'a Domain) -> &'a External {
+    let name = if name.contains("::") {
+        name.split("::")
+            .last()
+            .expect(format!("Can't parse store from {}", name).as_str())
+    } else {
+        name.split("/")
+            .last()
+            .expect(format!("Can't parse store from {}", name).as_str())
+    };
     let name = format!(
         "{}Store",
         name.as_type(&Ownership::Borrowed(BORROWED), domain)
@@ -631,7 +636,7 @@ pub(crate) fn find_store(name: &str, domain: &Domain) -> External {
                 Ty::External(e) => {
                     let ext = domain.sarzak().exhume_external(&e).unwrap();
                     if ext.name == name {
-                        break External::new(ext.name.clone(), ext.path.clone(), None);
+                        break ext;
                     }
                 }
                 _ => continue,

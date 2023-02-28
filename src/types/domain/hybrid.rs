@@ -505,7 +505,7 @@ impl CodeWriter for HybridNewImpl {
             params_.push(Parameter::new(
                 MUTABLE,
                 None,
-                GType::External(store),
+                GType::External(store.into()),
                 PUBLIC,
                 "store".to_owned(),
             ));

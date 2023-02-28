@@ -36,6 +36,16 @@ impl External {
     }
 }
 
+impl From<&SarzakExternal> for External {
+    fn from(value: &SarzakExternal) -> Self {
+        Self {
+            name: value.name.clone(),
+            path: value.path.clone(),
+            lvalue: None,
+        }
+    }
+}
+
 impl From<External> for SarzakExternal {
     fn from(value: External) -> Self {
         Self {

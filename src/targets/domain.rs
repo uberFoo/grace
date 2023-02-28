@@ -163,7 +163,7 @@ impl<'a> DomainTarget<'a> {
         }
 
         // Create our local compiler domain.
-        let woog = init_woog(module, &options, &domain.sarzak());
+        let woog = init_woog(module, &options, &domain);
 
         Box::new(Self {
             config,

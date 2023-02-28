@@ -9,9 +9,7 @@ use std::{
 use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::{
-        Binary, Cardinality, Conditionality, External as SarzakExternal, Object, Referrer,
-    },
+    sarzak::types::{Binary, Cardinality, Conditionality, External, Object, Referrer},
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
@@ -472,7 +470,7 @@ impl CodeWriter for StructNewImpl {
         params.push(Parameter::new(
             MUTABLE,
             None,
-            GType::External(store),
+            GType::External(store.into()),
             PUBLIC,
             "store".to_owned(),
         ));
@@ -603,7 +601,7 @@ impl StructRelNavImpl {
         obj: &Object,
         referrer: &Referrer,
         binary: &Binary,
-        store: &SarzakExternal,
+        store: &External,
         r_obj: &Object,
         domain: &Domain,
     ) -> Result<()> {
@@ -647,7 +645,7 @@ impl StructRelNavImpl {
         obj: &Object,
         referrer: &Referrer,
         binary: &Binary,
-        store: &SarzakExternal,
+        store: &External,
         r_obj: &Object,
         domain: &Domain,
     ) -> Result<()> {
@@ -699,7 +697,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         binary: &Binary,
-        store: &SarzakExternal,
+        store: &External,
         referrer: &Referrer,
         domain: &Domain,
     ) -> Result<()> {
@@ -745,7 +743,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         binary: &Binary,
-        store: &SarzakExternal,
+        store: &External,
         referrer: &Referrer,
         domain: &Domain,
     ) -> Result<()> {
@@ -805,7 +803,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         binary: &Binary,
-        store: &SarzakExternal,
+        store: &External,
         referrer: &Referrer,
         domain: &Domain,
     ) -> Result<()> {
@@ -865,7 +863,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         binary: &Binary,
-        store: &SarzakExternal,
+        store: &External,
         referrer: &Referrer,
         domain: &Domain,
     ) -> Result<()> {
@@ -913,7 +911,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         binary: &Binary,
-        store: &SarzakExternal,
+        store: &External,
         referrer: &Referrer,
         domain: &Domain,
     ) -> Result<()> {
@@ -961,7 +959,7 @@ impl StructRelNavImpl {
         obj: &Object,
         referential_attribute: &String,
         number: i64,
-        store: &SarzakExternal,
+        store: &External,
         r_obj: &Object,
         domain: &Domain,
     ) -> Result<()> {
@@ -1005,7 +1003,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         number: i64,
-        store: &SarzakExternal,
+        store: &External,
         referential_attribute: &String,
         domain: &Domain,
     ) -> Result<()> {
@@ -1051,7 +1049,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         number: i64,
-        store: &SarzakExternal,
+        store: &External,
         referential_attribute: &String,
         domain: &Domain,
     ) -> Result<()> {
@@ -1111,7 +1109,7 @@ impl StructRelNavImpl {
         obj: &Object,
         r_obj: &Object,
         number: i64,
-        store: &SarzakExternal,
+        store: &External,
         referential_attribute: &String,
         domain: &Domain,
     ) -> Result<()> {
@@ -1204,22 +1202,10 @@ impl CodeWriter for StructRelNavImpl {
             // and more importantly the method.
             match cond {
                 Conditionality::Unconditional(_) => StructRelNavImpl::forward(
-                    buffer,
-                    obj,
-                    referrer,
-                    binary,
-                    &store.into(),
-                    r_obj,
-                    &domain,
+                    buffer, obj, referrer, binary, &store, r_obj, &domain,
                 )?,
                 Conditionality::Conditional(_) => StructRelNavImpl::forward_conditional(
-                    buffer,
-                    obj,
-                    referrer,
-                    binary,
-                    &store.into(),
-                    r_obj,
-                    &domain,
+                    buffer, obj, referrer, binary, &store, r_obj, &domain,
                 )?,
             }
         }
@@ -1248,35 +1234,17 @@ impl CodeWriter for StructRelNavImpl {
             match card {
                 Cardinality::One(_) => match my_cond {
                     Conditionality::Unconditional(_) => StructRelNavImpl::backward_one(
-                        buffer,
-                        obj,
-                        r_obj,
-                        binary,
-                        &store.into(),
-                        referrer,
-                        &domain,
+                        buffer, obj, r_obj, binary, &store, referrer, &domain,
                     )?,
                     Conditionality::Conditional(_) => match other_cond {
                         Conditionality::Unconditional(_) => {
                             StructRelNavImpl::backward_one_conditional(
-                                buffer,
-                                obj,
-                                r_obj,
-                                binary,
-                                &store.into(),
-                                referrer,
-                                &domain,
+                                buffer, obj, r_obj, binary, &store, referrer, &domain,
                             )?
                         }
                         Conditionality::Conditional(_) => {
                             StructRelNavImpl::backward_one_biconditional(
-                                buffer,
-                                obj,
-                                r_obj,
-                                binary,
-                                &store.into(),
-                                referrer,
-                                &domain,
+                                buffer, obj, r_obj, binary, &store, referrer, &domain,
                             )?
                         }
                     },
@@ -1285,22 +1253,10 @@ impl CodeWriter for StructRelNavImpl {
                 // that neither of them depend on the conditionality of the this side.
                 Cardinality::Many(_) => match other_cond {
                     Conditionality::Unconditional(_) => StructRelNavImpl::backward_1_m(
-                        buffer,
-                        obj,
-                        r_obj,
-                        binary,
-                        &store.into(),
-                        referrer,
-                        &domain,
+                        buffer, obj, r_obj, binary, &store, referrer, &domain,
                     )?,
                     Conditionality::Conditional(_) => StructRelNavImpl::backward_1_mc(
-                        buffer,
-                        obj,
-                        r_obj,
-                        binary,
-                        &store.into(),
-                        referrer,
-                        &domain,
+                        buffer, obj, r_obj, binary, &store, referrer, &domain,
                     )?,
                 },
             }
@@ -1330,7 +1286,7 @@ impl CodeWriter for StructRelNavImpl {
                 obj,
                 &assoc_referrer.one_referential_attribute,
                 assoc.number,
-                &store.into(),
+                &store,
                 one_obj,
                 &domain,
             )?;
@@ -1349,7 +1305,7 @@ impl CodeWriter for StructRelNavImpl {
                 obj,
                 &assoc_referrer.other_referential_attribute,
                 assoc.number,
-                &store.into(),
+                &store,
                 other_obj,
                 &domain,
             )?;
@@ -1388,7 +1344,7 @@ impl CodeWriter for StructRelNavImpl {
                             obj,
                             r_obj,
                             assoc.number,
-                            &store.into(),
+                            &store,
                             referential_attribute,
                             &domain,
                         )?
@@ -1398,7 +1354,7 @@ impl CodeWriter for StructRelNavImpl {
                         obj,
                         r_obj,
                         assoc.number,
-                        &store.into(),
+                        &store,
                         referential_attribute,
                         &domain,
                     )?,
@@ -1408,7 +1364,7 @@ impl CodeWriter for StructRelNavImpl {
                     obj,
                     r_obj,
                     assoc.number,
-                    &store.into(),
+                    &store,
                     referential_attribute,
                     &domain,
                 )?,

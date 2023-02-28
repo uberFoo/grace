@@ -45,7 +45,7 @@ impl<'a> ApplicationTarget<'a> {
         let config: GraceConfig = (options, &domain).into();
 
         // Create our local compiler domain.
-        let woog = init_woog(module, &options, &domain.sarzak());
+        let woog = init_woog(module, &options, &domain);
 
         Box::new(Self {
             config,
