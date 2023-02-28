@@ -25,7 +25,7 @@ use crate::{
         emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
         get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
         get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
-        get_subtypes_sorted, object_is_singleton, object_is_supertype,
+        get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
@@ -586,9 +586,20 @@ impl CodeWriter for HybridNewImpl {
                     // Output the top of the function definition
                     render_method_definition(buffer, &method, woog, domain)?;
 
-                    // Output the code to create the `id`.
-                    let id = LValue::new("id", GType::Uuid);
-                    render_make_uuid(buffer, &id, &rvals, domain)?;
+                    // Take the ID from the subtype
+                    // We shouldn't be doing this sort of thing here -- getting the testing
+                    // stuff working will allow this to be done in a uniform manner.
+                    if object_is_enum(s_obj, config, imports, domain)? {
+                        emit!(buffer, "let id = subtype.id();");
+                    } else if object_is_singleton(s_obj, config, imports, domain)? {
+                        if !object_is_supertype(s_obj, config, imports, domain)? {
+                            emit!(buffer, "let id = {};", rvals.last().unwrap().name);
+                        } else {
+                            emit!(buffer, "let id = subtype;");
+                        }
+                    } else {
+                        emit!(buffer, "let id = subtype.id;");
+                    }
 
                     // Output code to create the instance
                     let new = LValue::new("new", GType::Reference(obj.id));

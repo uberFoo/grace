@@ -50,7 +50,7 @@ impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_a(pointer: &Reference, subtype: &SubtypeA, store: &mut IsaStore) -> SuperT {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", pointer, subtype).as_bytes());
+        let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeA(subtype.id),
@@ -63,7 +63,7 @@ impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_b(pointer: &Reference, subtype: &SubtypeB, store: &mut IsaStore) -> SuperT {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", pointer, subtype).as_bytes());
+        let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeB(subtype.id),

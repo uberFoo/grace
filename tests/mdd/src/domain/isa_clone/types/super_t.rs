@@ -54,7 +54,7 @@ impl SuperT {
         subtype: &SubtypeA,
         store: &mut IsaCloneStore,
     ) -> SuperT {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", pointer, subtype).as_bytes());
+        let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeA(subtype.id),
@@ -71,7 +71,7 @@ impl SuperT {
         subtype: &SubtypeB,
         store: &mut IsaCloneStore,
     ) -> SuperT {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", pointer, subtype).as_bytes());
+        let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeB(subtype.id),

@@ -61,6 +61,10 @@ pub(crate) fn init_woog(
                 let param = Parameter::new(attr.as_ident(), &method, None, &mut woog);
                 let var = Variable::new_parameter(&param, &mut woog);
                 let value = Value::new_variable(&access, &ty.into(), &var, &mut woog);
+                let foo = woog.exhume_variable(&param.id).unwrap();
+                assert_eq!(foo.id(), param.id);
+                let bar = woog.exhume_value(&param.id).unwrap();
+                assert_eq!(bar.id, param.id);
 
                 params.push(param);
             }

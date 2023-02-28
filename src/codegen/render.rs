@@ -509,6 +509,8 @@ impl Sanitize for &str {
             "Macro" => "x_macro".to_owned(),
             "let" => "x_let".to_owned(),
             "Let" => "x_let".to_owned(),
+            "option" => "woog_option".to_owned(),
+            "Option" => "woog_option".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -526,6 +528,8 @@ impl Sanitize for String {
             "Macro" => "x_macro".to_owned(),
             "let" => "x_let".to_owned(),
             "Let" => "x_let".to_owned(),
+            "option" => "woog_option".to_owned(),
+            "Option" => "woog_option".to_owned(),
             _ => self.to_owned(),
         }
     }
