@@ -32,10 +32,10 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_make_uuid, render_method_definition, render_new_instance,
+        render_make_uuid, render_method_definition_new, render_new_instance,
     },
     options::GraceConfig,
-    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
+    todo::{GType, LValue, Parameter, RValue},
     types::{
         domain::rels::{
             generate_assoc_referent_rels, generate_assoc_referrer_rels,
@@ -503,39 +503,10 @@ impl CodeWriter for StructNewImpl {
         // Remove the store.
         rvals.pop();
 
-        // Link the params. The result is the head of the list.
-        let param = if params.len() > 0 {
-            let mut iter = params.iter_mut().rev();
-            let mut last = iter.next().unwrap();
-            loop {
-                match iter.next() {
-                    Some(param) => {
-                        param.next = Some(last);
-                        last = param;
-                    }
-                    None => break,
-                }
-            }
-            log::trace!("param: {:?}", last);
-            Some(last.clone())
-        } else {
-            None
-        };
-
-        // Create an ObjectMethod
-        // The uniqueness of this instance depends on the inputs to it's
-        // new method. Param can be None, and two methods on the same
-        // object will have the same obj. So it comes down to a unique
-        // name for each object. So just "new" should suffice for name,
-        // because it's scoped by obj already.
-        let method = ObjectMethod::new(
-            param.as_ref(),
-            obj.id,
-            GType::Object(obj.id),
-            PUBLIC,
-            "new".to_owned(),
-            "Create a new instance".to_owned(),
-        );
+        let method = woog
+            .iter_object_method()
+            .find(|m| m.object == obj.id)
+            .unwrap();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -577,7 +548,7 @@ impl CodeWriter for StructNewImpl {
                 // }
 
                 // Output the top of the function definition
-                render_method_definition(buffer, &method, woog, domain)?;
+                render_method_definition_new(buffer, &method, woog, domain)?;
 
                 // Output the code to create the `id`.
                 let id = LValue::new("id", GType::Uuid);

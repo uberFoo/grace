@@ -15,7 +15,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Ownership, BORROWED},
+        types::{ObjectMethod as WoogObjectMethod, Ownership, BORROWED},
     },
 };
 use snafu::prelude::*;
@@ -181,6 +181,68 @@ pub(crate) fn render_method_definition(
 ) -> Result<()> {
     // Write the beginning of the definition
     write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
+
+    // Write the parameter list.
+    // TODO: This is so clumsy! I should clean it up.
+    if let Some(mut param) = method.param {
+        let mutability = woog.exhume_ownership(&param.mutability).unwrap();
+        write!(
+            buffer,
+            "{}: {},",
+            param.as_ident(),
+            param.ty.as_type(&mutability, domain),
+        )
+        .context(FormatSnafu)?;
+
+        while let Some(next_param) = param.next {
+            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
+            write!(
+                buffer,
+                "{}: {},",
+                // Why do I need to drill down to name?
+                next_param.name.as_ident(),
+                next_param.ty.as_type(&mutability, domain),
+            )
+            .context(FormatSnafu)?;
+
+            param = &next_param;
+        }
+    }
+
+    // Finish the first line of the definition
+    writeln!(
+        buffer,
+        ") -> {} {{",
+        method.ty.as_type(&Ownership::Borrowed(BORROWED), domain)
+    )
+    .context(FormatSnafu)?;
+
+    Ok(())
+}
+
+pub(crate) fn render_method_definition_new(
+    buffer: &mut Buffer,
+    method: &WoogObjectMethod,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
+    // Write the beginning of the definition
+    write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
+
+    // By my calculations this should grab the first parameter in the list.
+    // Not a very slick way of doing it.
+    // 🚧 I suppose I could add a pointer to the first parameter as a relationship
+    // on the method.
+    let mut param = woog
+        .iter_parameter()
+        .find(|p| p.method == method.id && p.r1c_parameter(woog).len() == 0)
+        .unwrap();
+
+    loop {
+        let value = woog.exhume_value(&param.id).unwrap();
+        let access = value.r16_access(woog)[0];
+        let mutability = r15_ownership(woog);
+    }
 
     // Write the parameter list.
     // TODO: This is so clumsy! I should clean it up.

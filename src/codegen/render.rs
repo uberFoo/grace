@@ -12,7 +12,7 @@ use sarzak::{
         Attribute, Conditionality, Event, External as SarzakExternal, Object, State, Ty,
     },
     v2::domain::Domain,
-    woog::types::{Ownership, Parameter, BORROWED},
+    woog::types::{ObjectMethod as WoogObjectMethod, Ownership, Parameter, BORROWED},
 };
 use snafu::prelude::*;
 
@@ -69,7 +69,7 @@ pub(crate) trait RenderIdent {
     fn as_ident(&self) -> String;
 }
 
-render_ident!(Attribute, Event, Object, State);
+render_ident!(Attribute, Event, Object, State, WoogObjectMethod);
 
 impl<'a> RenderIdent for ObjectMethod<'a> {
     fn as_ident(&self) -> String {
