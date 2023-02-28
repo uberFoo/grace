@@ -208,40 +208,7 @@ impl CodeWriter for Hybrid {
             |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
-        log::debug!("writing Enum Definition for {}", obj.name);
-
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-hybrid-enum-definition", obj.as_ident()),
-            |buffer| {
-                if let Some(derives) = config.get_derives(&obj.id) {
-                    write!(buffer, "#[derive(").context(FormatSnafu)?;
-                    for d in derives {
-                        write!(buffer, "{},", d).context(FormatSnafu)?;
-                    }
-                    emit!(buffer, ")]");
-                }
-
-                emit!(
-                    buffer,
-                    "pub enum {}Enum {{",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
-                );
-                for subtype in &subtypes {
-                    let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    emit!(
-                        buffer,
-                        "{}(Uuid),",
-                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
-                    );
-                }
-                emit!(buffer, "}}");
-                Ok(())
-            },
-        )?;
-
         log::debug!("writing Struct Definition for {}", obj.name);
-
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-hybrid-struct-definition", obj.as_ident()),
@@ -273,6 +240,37 @@ impl CodeWriter for Hybrid {
 
                 render_associative_attributes(buffer, obj, domain)?;
 
+                emit!(buffer, "}}");
+                Ok(())
+            },
+        )?;
+
+        log::debug!("writing Enum Definition for {}", obj.name);
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-hybrid-enum-definition", obj.as_ident()),
+            |buffer| {
+                if let Some(derives) = config.get_derives(&obj.id) {
+                    write!(buffer, "#[derive(").context(FormatSnafu)?;
+                    for d in derives {
+                        write!(buffer, "{},", d).context(FormatSnafu)?;
+                    }
+                    emit!(buffer, ")]");
+                }
+
+                emit!(
+                    buffer,
+                    "pub enum {}Enum {{",
+                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                );
+                for subtype in &subtypes {
+                    let s_obj = subtype.r15_object(domain.sarzak())[0];
+                    emit!(
+                        buffer,
+                        "{}(Uuid),",
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                    );
+                }
                 emit!(buffer, "}}");
                 Ok(())
             },
