@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::UUID_NS;
 
+use crate::domain::sarzak::types::ty::Ty;
+
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -51,6 +53,12 @@ impl External {
         };
         store.inter_external(new.clone());
         new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-impl-nav-subtype-to-supertype-ty"}}}
+    // Navigate to [`Ty`] across R3(isa)
+    pub fn r3_ty<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Ty> {
+        vec![store.exhume_ty(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

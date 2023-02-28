@@ -110,7 +110,7 @@ impl CodeWriter for Hybrid {
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
 
-                emit!(buffer, "use crate::{}::UUID_NS;", module);
+                // emit!(buffer, "use crate::{}::UUID_NS;", module);
 
                 emit!(buffer, "");
 

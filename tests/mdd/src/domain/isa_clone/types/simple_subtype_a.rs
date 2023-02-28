@@ -4,6 +4,7 @@ use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
 
+use crate::domain::isa_clone::types::simple_supertype::SimpleSupertype;
 // Subtype imports
 use crate::domain::isa_clone::types::oh_boy::OhBoy;
 
@@ -42,6 +43,12 @@ impl SimpleSubtypeA {
         match self {
             SimpleSubtypeA::OhBoy(id) => *id,
         }
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-impl-nav-subtype-to-supertype-simple_supertype"}}}
+    // Navigate to [`SimpleSupertype`] across R1(isa)
+    pub fn r1_simple_supertype<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SimpleSupertype> {
+        vec![store.exhume_simple_supertype(&self.id()).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

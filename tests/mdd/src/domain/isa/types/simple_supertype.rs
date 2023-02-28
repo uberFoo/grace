@@ -2,8 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-use-statements"}}}
 use uuid::Uuid;
 
-use crate::domain::isa::UUID_NS;
-
 use serde::{Deserialize, Serialize};
 
 // Subtype imports
@@ -32,11 +30,6 @@ use crate::domain::isa::store::ObjectStore as IsaStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-enum-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub enum SimpleSupertypeEnum {
-    SimpleSubtypeA(Uuid),
-    SimpleSubtypeB(Uuid),
-}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -44,6 +37,13 @@ pub struct SimpleSupertype {
     pub subtype: SimpleSupertypeEnum,
     pub id: Uuid,
     pub state: bool,
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-enum-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub enum SimpleSupertypeEnum {
+    SimpleSubtypeA(Uuid),
+    SimpleSubtypeB(Uuid),
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-implementation"}}}

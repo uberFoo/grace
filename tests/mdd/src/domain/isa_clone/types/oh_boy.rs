@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::UUID_NS;
 
+use crate::domain::isa_clone::types::simple_subtype_a::SimpleSubtypeA;
+
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -44,6 +46,12 @@ impl OhBoy {
         };
         store.inter_oh_boy(new.clone());
         new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-impl-nav-subtype-to-supertype-simple_subtype_a"}}}
+    // Navigate to [`SimpleSubtypeA`] across R8(isa)
+    pub fn r8_simple_subtype_a<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SimpleSubtypeA> {
+        vec![store.exhume_simple_subtype_a(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

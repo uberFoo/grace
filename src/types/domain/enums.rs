@@ -20,7 +20,9 @@ use crate::{
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
-    types::{CodeWriter, MethodImplementation, TypeDefinition},
+    types::{
+        domain::rels::generate_subtype_rels, CodeWriter, MethodImplementation, TypeDefinition,
+    },
 };
 
 /// Domain Enum Generator / CodeWriter
@@ -58,6 +60,7 @@ impl CodeWriter for Enum {
 
         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
 
+        // Output the use statements.
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
@@ -72,6 +75,22 @@ impl CodeWriter for Enum {
                         emit!(buffer, "use {};", path);
                     }
                     emit!(buffer, "");
+                }
+
+                // Ad use statements for supertypes.
+                for subtype in obj.r15c_subtype(domain.sarzak()) {
+                    let isa = subtype.r27_isa(domain.sarzak())[0];
+                    let supertype = isa.r13_supertype(domain.sarzak())[0];
+                    let s_obj = supertype.r14_object(domain.sarzak())[0];
+
+                    emit!(buffer, "");
+                    emit!(
+                        buffer,
+                        "use crate::{}::types::{}::{};",
+                        module,
+                        s_obj.as_ident(),
+                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    );
                 }
 
                 let mut only_singletons = true;
@@ -138,12 +157,14 @@ impl CodeWriter for Enum {
 
         log::debug!("writing Enum Definition for {}", obj.name);
 
+        // Documentation
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-enum-documentation", obj.as_ident()),
             |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
         )?;
 
+        // Enum Definition
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-enum-definition", obj.as_ident()),
@@ -231,6 +252,43 @@ impl CodeWriter for EnumGetIdImpl {
                 Ok(())
             },
         )?;
+
+        Ok(())
+    }
+}
+
+pub(crate) struct EnumRelNavImpl;
+
+impl EnumRelNavImpl {
+    pub(crate) fn new() -> Box<dyn MethodImplementation> {
+        Box::new(Self)
+    }
+}
+
+impl MethodImplementation for EnumRelNavImpl {}
+
+impl CodeWriter for EnumRelNavImpl {
+    fn write_code(
+        &self,
+        config: &GraceConfig,
+        domain: &Domain,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
+        module: &str,
+        obj_id: Option<&Uuid>,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
+        ensure!(
+            obj_id.is_some(),
+            CompilerSnafu {
+                description: "obj_id is required by EnumRelNavImpl"
+            }
+        );
+        let obj_id = obj_id.unwrap();
+        let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+
+        generate_subtype_rels(buffer, config, module, obj, domain)?;
 
         Ok(())
     }

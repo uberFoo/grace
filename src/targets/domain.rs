@@ -26,7 +26,7 @@ use crate::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
             consts::DomainConst,
-            enums::{Enum, EnumGetIdImpl, EnumNewImpl},
+            enums::{Enum, EnumGetIdImpl, EnumNewImpl, EnumRelNavImpl},
             from::{DomainFromBuilder, DomainFromImpl},
             hybrid::{Hybrid, HybridNewImpl},
             store::{DomainStore, DomainStoreBuilder},
@@ -235,6 +235,7 @@ impl<'a> DomainTarget<'a> {
                             DomainImplBuilder::new()
                                 .method(EnumNewImpl::new())
                                 .method(EnumGetIdImpl::new())
+                                .method(EnumRelNavImpl::new())
                                 .build(),
                         )
                         .build()?

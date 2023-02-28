@@ -6,5 +6,6 @@ pub mod consts;
 pub mod enums;
 pub mod from;
 pub mod hybrid;
+pub mod rels;
 pub mod store;
 pub mod structs;

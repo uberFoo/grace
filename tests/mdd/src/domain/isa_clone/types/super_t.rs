@@ -2,8 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-use-statements"}}}
 use uuid::Uuid;
 
-use crate::domain::isa_clone::UUID_NS;
-
 use serde::{Deserialize, Serialize};
 
 // Subtype imports
@@ -27,11 +25,6 @@ use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub enum SuperTEnum {
-    SubtypeA(Uuid),
-    SubtypeB(Uuid),
-}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -44,7 +37,14 @@ pub struct SuperT {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-implementation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-new-impl"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-enum-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub enum SuperTEnum {
+    SubtypeA(Uuid),
+    SubtypeB(Uuid),
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-implementation"}}}
 impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-new-impl"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}

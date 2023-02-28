@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::isa::UUID_NS;
 
+use crate::domain::isa::types::super_t::SuperT;
+
 use crate::domain::isa::store::ObjectStore as IsaStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -31,6 +33,12 @@ impl SubtypeB {
         let new = SubtypeB { number: number, id };
         store.inter_subtype_b(new.clone());
         new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-impl-nav-subtype-to-supertype-super_t"}}}
+    // Navigate to [`SuperT`] across R2(isa)
+    pub fn r2_super_t<'a>(&'a self, store: &'a IsaStore) -> Vec<&SuperT> {
+        vec![store.exhume_super_t(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

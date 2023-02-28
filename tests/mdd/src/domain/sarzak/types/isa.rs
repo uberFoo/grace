@@ -12,6 +12,8 @@ use crate::domain::sarzak::types::supertype::Supertype;
 // Referent imports
 use crate::domain::sarzak::types::subtype::Subtype;
 
+use crate::domain::sarzak::types::relationship::Relationship;
+
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -58,6 +60,12 @@ impl Isa {
                 }
             })
             .collect()
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-impl-nav-subtype-to-supertype-relationship"}}}
+    // Navigate to [`Relationship`] across R4(isa)
+    pub fn r4_relationship<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Relationship> {
+        vec![store.exhume_relationship(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

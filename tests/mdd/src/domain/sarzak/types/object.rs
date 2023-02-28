@@ -17,6 +17,8 @@ use crate::domain::sarzak::types::state::State;
 use crate::domain::sarzak::types::subtype::Subtype;
 use crate::domain::sarzak::types::supertype::Supertype;
 
+use crate::domain::sarzak::types::ty::Ty;
+
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -204,6 +206,12 @@ impl Object {
                 }
             })
             .collect()
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-impl-nav-subtype-to-supertype-ty"}}}
+    // Navigate to [`Ty`] across R3(isa)
+    pub fn r3_ty<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Ty> {
+        vec![store.exhume_ty(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
