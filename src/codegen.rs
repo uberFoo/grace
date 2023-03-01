@@ -15,7 +15,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{ObjectMethod as WoogObjectMethod, Ownership, BORROWED, OWNED},
+        types::{ObjectMethod as WoogObjectMethod, Ownership, OWNED},
     },
 };
 use snafu::prelude::*;

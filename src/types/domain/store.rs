@@ -8,7 +8,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Ownership, BORROWED, MUTABLE},
+        types::{Ownership, MUTABLE},
     },
 };
 use snafu::prelude::*;

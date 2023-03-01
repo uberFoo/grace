@@ -14,7 +14,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{GraceType, ObjectMethod as WoogObjectMethod, Ownership, Parameter, BORROWED},
+        types::{GraceType, ObjectMethod as WoogObjectMethod, Ownership, Parameter},
     },
 };
 use snafu::prelude::*;

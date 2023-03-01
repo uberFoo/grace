@@ -26,16 +26,6 @@ pub(crate) struct External {
     pub lvalue: Option<Box<LValue>>,
 }
 
-impl External {
-    pub(crate) fn new<S: AsRef<str>>(name: S, path: S, lvalue: Option<Box<LValue>>) -> Self {
-        Self {
-            name: name.as_ref().to_string(),
-            path: path.as_ref().to_string(),
-            lvalue,
-        }
-    }
-}
-
 impl From<&SarzakExternal> for External {
     fn from(value: &SarzakExternal) -> Self {
         Self {

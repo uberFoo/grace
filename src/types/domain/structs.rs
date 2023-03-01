@@ -360,10 +360,10 @@ impl MethodImplementation for StructNewImpl {}
 impl CodeWriter for StructNewImpl {
     fn write_code(
         &self,
-        options: &GraceConfig,
+        _options: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
+        _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,

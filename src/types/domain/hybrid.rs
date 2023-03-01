@@ -30,7 +30,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
         },
-        render_make_uuid, render_method_definition, render_new_instance,
+        render_method_definition, render_new_instance,
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},

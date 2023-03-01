@@ -400,7 +400,7 @@ impl MethodImplementation for DefaultNewImpl {}
 impl CodeWriter for DefaultNewImpl {
     fn write_code(
         &self,
-        config: &GraceConfig,
+        _config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,

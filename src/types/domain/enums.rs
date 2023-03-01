@@ -6,7 +6,7 @@ use std::{collections::HashMap, fmt::Write};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership, BORROWED},
+    woog::{store::ObjectStore as WoogStore, Ownership},
 };
 use snafu::prelude::*;
 use uuid::Uuid;

@@ -6,10 +6,7 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
     v2::domain::Domain,
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Ownership, BORROWED},
-    },
+    woog::{store::ObjectStore as WoogStore, types::Ownership},
 };
 use snafu::prelude::*;
 use uuid::Uuid;

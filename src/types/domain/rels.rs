@@ -6,10 +6,7 @@ use sarzak::{
     mc::{FormatSnafu, Result},
     sarzak::types::{Binary, Cardinality, Conditionality, External, Object, Referrer},
     v2::domain::Domain,
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Ownership, BORROWED},
-    },
+    woog::{store::ObjectStore as WoogStore, types::Ownership},
 };
 use snafu::prelude::*;
 
