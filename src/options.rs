@@ -143,7 +143,7 @@ pub struct GraceCompilerOptions {
     /// Generate Document Tests
     ///
     /// Document tests are generated for all generated functions.
-    #[arg(long, short)]
+    #[arg(long, short = 't')]
     pub doc_test: Option<bool>,
 }
 
