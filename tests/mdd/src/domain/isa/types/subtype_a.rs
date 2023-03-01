@@ -28,7 +28,7 @@ pub struct SubtypeA {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-implementation"}}}
 impl SubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new"}}}
-    /// Inter a new SubtypeA in the store, and return it's `id`.
+    /// Inter a new 'Subtype A' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut IsaStore) -> SubtypeA {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
         let new = SubtypeA { name: name, id };

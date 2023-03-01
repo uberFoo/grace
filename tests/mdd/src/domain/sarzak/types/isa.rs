@@ -29,7 +29,7 @@ pub struct Isa {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-implementation"}}}
 impl Isa {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new"}}}
-    /// Inter a new Isa in the store, and return it's `id`.
+    /// Inter a new 'Isa' in the store, and return it's `id`.
     pub fn new(number: i64, supertype: &Supertype, store: &mut SarzakStore) -> Isa {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, supertype).as_bytes());
         let new = Isa {

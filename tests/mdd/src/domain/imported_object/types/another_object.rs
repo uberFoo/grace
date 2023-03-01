@@ -36,7 +36,7 @@ pub struct AnotherObject {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-implementation"}}}
 impl AnotherObject {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new"}}}
-    /// Inter a new AnotherObject in the store, and return it's `id`.
+    /// Inter a new 'Another Object' in the store, and return it's `id`.
     pub fn new(
         ptr: &Object,
         edge: &SimpleSupertype,

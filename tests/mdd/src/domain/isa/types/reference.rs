@@ -28,7 +28,7 @@ pub struct Reference {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-implementation"}}}
 impl Reference {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new"}}}
-    /// Inter a new Reference in the store, and return it's `id`.
+    /// Inter a new 'Reference' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut IsaStore) -> Reference {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
         let new = Reference { name: name, id };

@@ -27,7 +27,7 @@ pub struct IsaUi {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-implementation"}}}
 impl IsaUi {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-new"}}}
-    /// Inter a new IsaUi in the store, and return it's `id`.
+    /// Inter a new 'IsaUI' in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut AssociativeStore) -> IsaUi {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", number).as_bytes());
         let new = IsaUi { number: number, id };

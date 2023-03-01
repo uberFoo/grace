@@ -56,7 +56,7 @@ impl CodeWriter for Hybrid {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
+        woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -71,6 +71,13 @@ impl CodeWriter for Hybrid {
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainStore"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
 
         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
 
@@ -142,7 +149,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             module,
                             s_obj.as_ident(),
-                            s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     }
                 }
@@ -161,7 +168,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     } else {
                         emit!(
@@ -169,7 +176,7 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     }
                 }
@@ -185,7 +192,7 @@ impl CodeWriter for Hybrid {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
 
@@ -193,7 +200,7 @@ impl CodeWriter for Hybrid {
                 uses.insert(module);
                 emit!(buffer, "");
                 for import in uses {
-                    let store = find_store(import, domain);
+                    let store = find_store(import, woog, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
 
@@ -224,21 +231,21 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
                 emit!(
                     buffer,
                     "pub {}: {}Enum,",
                     SUBTYPE_ATTR,
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
-                render_attributes(buffer, obj, domain)?;
+                render_attributes(buffer, obj, woog, domain)?;
 
-                render_referential_attributes(buffer, obj, domain)?;
+                render_referential_attributes(buffer, obj, woog, domain)?;
 
-                render_associative_attributes(buffer, obj, domain)?;
+                render_associative_attributes(buffer, obj, woog, domain)?;
 
                 emit!(buffer, "}}");
                 Ok(())
@@ -261,14 +268,14 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub enum {}Enum {{",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                     );
                 }
                 emit!(buffer, "}}");
@@ -499,7 +506,7 @@ impl CodeWriter for HybridNewImpl {
             }
 
             // Add the store to the end of the  input parameters
-            let store = find_store(module, domain);
+            let store = find_store(module, woog, domain);
             params_.push(Parameter::new(
                 MUTABLE,
                 None,
@@ -550,7 +557,7 @@ impl CodeWriter for HybridNewImpl {
                     emit!(
                         buffer,
                         "/// Inter a new {} in the store, and return it's `id`.",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
 
                     // 🚧 Put this back in once I'm done moving to v2.
@@ -601,16 +608,7 @@ impl CodeWriter for HybridNewImpl {
 
                     // Output code to create the instance
                     let new = LValue::new("new", GType::Reference(obj.id));
-                    render_new_instance(
-                        buffer,
-                        obj,
-                        Some(&new),
-                        &fields_,
-                        &rvals,
-                        domain,
-                        *imports,
-                        &config,
-                    )?;
+                    render_new_instance(buffer, obj, Some(&new), &fields_, &rvals, woog, domain)?;
 
                     emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                     emit!(buffer, "new");

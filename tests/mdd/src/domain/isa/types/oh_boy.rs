@@ -37,7 +37,7 @@ pub struct OhBoy {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-implementation"}}}
 impl OhBoy {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}
-    /// Inter a new OhBoy in the store, and return it's `id`.
+    /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
     pub fn new(attribution: String, store: &mut IsaStore) -> OhBoy {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", attribution).as_bytes());
         let new = OhBoy {

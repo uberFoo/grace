@@ -28,7 +28,7 @@ pub struct D {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-implementation"}}}
 impl D {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new"}}}
-    /// Inter a new D in the store, and return it's `id`.
+    /// Inter a new 'D' in the store, and return it's `id`.
     pub fn new(appellation: String, ptr: Option<&Referent>, store: &mut OneToManyStore) -> D {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", appellation, ptr).as_bytes());
         let new = D {

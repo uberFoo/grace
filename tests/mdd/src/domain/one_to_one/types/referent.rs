@@ -31,7 +31,7 @@ pub struct Referent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
-    /// Inter a new Referent in the store, and return it's `id`.
+    /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToOneStore) -> Referent {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
         let new = Referent { name: name, id };

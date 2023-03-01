@@ -33,7 +33,7 @@ pub struct A {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-implementation"}}}
 impl A {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
-    /// Inter a new A in the store, and return it's `id`.
+    /// Inter a new 'A' in the store, and return it's `id`.
     pub fn new(number: i64, ptr: &Referent, store: &mut OneToOneStore) -> A {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, ptr).as_bytes());
         let new = A {

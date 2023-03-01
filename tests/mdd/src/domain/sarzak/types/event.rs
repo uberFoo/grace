@@ -30,7 +30,7 @@ pub struct Event {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-implementation"}}}
 impl Event {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
-    /// Inter a new Event in the store, and return it's `id`.
+    /// Inter a new 'Event' in the store, and return it's `id`.
     pub fn new(name: String, obj_id: &Object, store: &mut SarzakStore) -> Event {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, obj_id).as_bytes());
         let new = Event {

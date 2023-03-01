@@ -9,6 +9,8 @@ use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::types::Object,
+    // This needs to be v1 because when we populate the store, it's a v1 store
+    // that we are working with.
     v1::sarzak::types::{External as v1_External, Type},
     woog::store::ObjectStore as WoogStore,
 };
@@ -73,6 +75,7 @@ impl<'a> DomainTarget<'a> {
             domain
                 .post_load(move |sarzak, _| {
                     let mut external = HashSet::new();
+                    // This is the object store for _this_ domain.
                     external.insert(module.clone());
 
                     if let Some(domains) = options.imported_domains.as_ref() {
@@ -103,7 +106,7 @@ impl<'a> DomainTarget<'a> {
                                 // what it should be. Like here.
                                 format!(
                                     "{}Store",
-                                    // name.as_type(&Ownership::Borrowed(BORROWED), sarzak)
+                                    // name.as_type(&Ownership::new_borrowed(), sarzak)
                                     name.to_upper_camel_case()
                                 ),
                                 format!("crate::{}::store::ObjectStore", store,),
@@ -302,6 +305,7 @@ impl<'a> DomainTarget<'a> {
             .path(&store)?
             .domain(&self.domain)
             .module(self.module)
+            .compiler_domain(&mut self.woog)
             .generator(
                 DomainStoreBuilder::new()
                     .definition(DomainStore::new())
@@ -325,6 +329,7 @@ impl<'a> DomainTarget<'a> {
             .path(&types)?
             .domain(&self.domain)
             .module(self.module)
+            .compiler_domain(&mut self.woog)
             .generator(
                 DefaultModuleBuilder::new()
                     .definition(DefaultModule::new())
@@ -335,7 +340,7 @@ impl<'a> DomainTarget<'a> {
         Ok(())
     }
 
-    fn generate_from_module(&self, domain: &FromDomain) -> Result<(), ModelCompilerError> {
+    fn generate_from_module(&mut self, domain: &FromDomain) -> Result<(), ModelCompilerError> {
         let mut from = PathBuf::from(self.src_path);
         from.push(self.module);
         from.push("discard");
@@ -349,6 +354,7 @@ impl<'a> DomainTarget<'a> {
             .domain(&self.domain)
             .module(self.module)
             .imports(&self.imports)
+            .compiler_domain(&mut self.woog)
             .generator(
                 DomainFromBuilder::new()
                     .domain(domain.clone())

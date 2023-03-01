@@ -39,7 +39,7 @@ pub struct Referrer {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-implementation"}}}
 impl Referrer {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-struct-impl-new"}}}
-    /// Inter a new Referrer in the store, and return it's `id`.
+    /// Inter a new 'Referrer' in the store, and return it's `id`.
     pub fn new(
         description: String,
         referential_attribute: String,

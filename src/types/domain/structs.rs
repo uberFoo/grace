@@ -64,7 +64,7 @@ impl CodeWriter for Struct {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
+        woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -79,6 +79,13 @@ impl CodeWriter for Struct {
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainStruct"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
@@ -142,7 +149,7 @@ impl CodeWriter for Struct {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     } else {
                         emit!(
@@ -150,7 +157,7 @@ impl CodeWriter for Struct {
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     }
                 }
@@ -166,7 +173,7 @@ impl CodeWriter for Struct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
 
@@ -182,7 +189,7 @@ impl CodeWriter for Struct {
                         "use crate::{}::types::{}::{};",
                         module,
                         s_obj.as_ident(),
-                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
 
@@ -190,7 +197,7 @@ impl CodeWriter for Struct {
                 imports.insert(module);
                 emit!(buffer, "");
                 for import in imports {
-                    let store = find_store(import, domain);
+                    let store = find_store(import, woog, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
 
@@ -222,14 +229,14 @@ impl CodeWriter for Struct {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
-                render_attributes(buffer, obj, domain)?;
+                render_attributes(buffer, obj, woog, domain)?;
 
-                render_referential_attributes(buffer, obj, domain)?;
+                render_referential_attributes(buffer, obj, woog, domain)?;
 
-                render_associative_attributes(buffer, obj, domain)?;
+                render_associative_attributes(buffer, obj, woog, domain)?;
 
                 emit!(buffer, "}}");
                 Ok(())
@@ -290,6 +297,12 @@ impl CodeWriter for DomainImplementation {
         );
         let obj_id = obj_id.unwrap();
         let object = domain.sarzak().exhume_object(&obj_id).unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainImplementation"
+            }
+        );
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -300,7 +313,7 @@ impl CodeWriter for DomainImplementation {
                 emit!(
                     buffer,
                     "impl {} {{",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
                 );
 
                 for method in &self.methods {
@@ -488,7 +501,7 @@ impl CodeWriter for StructNewImpl {
         }
 
         // Add the store to the end of the  input parameters
-        let store = find_store(module, domain);
+        let store = find_store(module, woog, domain);
         params.push(Parameter::new(
             MUTABLE,
             None,
@@ -513,11 +526,7 @@ impl CodeWriter for StructNewImpl {
             format!("{}-struct-impl-new", obj.as_ident()),
             |buffer| {
                 // Output a docstring
-                emit!(
-                    buffer,
-                    "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
-                );
+                emit!(buffer, "/// {}", method.description);
 
                 // 🚧 Put this back in once I'm done moving to v2.
                 // if options.get_doc_test() {
@@ -556,16 +565,7 @@ impl CodeWriter for StructNewImpl {
 
                 // Output code to create the instance
                 let new = LValue::new("new", GType::Reference(obj.id));
-                render_new_instance(
-                    buffer,
-                    obj,
-                    Some(&new),
-                    &fields,
-                    &rvals,
-                    domain,
-                    *imports,
-                    &options,
-                )?;
+                render_new_instance(buffer, obj, Some(&new), &fields, &rvals, woog, domain)?;
 
                 emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                 emit!(buffer, "new");
@@ -597,7 +597,7 @@ impl CodeWriter for StructRelNavImpl {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
+        woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -607,17 +607,24 @@ impl CodeWriter for StructRelNavImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DomainRelNavImpl"
+                description: "obj_id is required by StructRelNavImpl"
             }
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by StructRelNavImpl"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
 
-        generate_binary_referrer_rels(buffer, config, module, obj, domain)?;
-        generate_binary_referent_rels(buffer, config, module, obj, domain)?;
-        generate_assoc_referrer_rels(buffer, config, module, obj, domain)?;
-        generate_assoc_referent_rels(buffer, config, module, obj, domain)?;
-        generate_subtype_rels(buffer, config, module, obj, domain)?;
+        generate_binary_referrer_rels(buffer, config, module, obj, woog, domain)?;
+        generate_binary_referent_rels(buffer, config, module, obj, woog, domain)?;
+        generate_assoc_referrer_rels(buffer, config, module, obj, woog, domain)?;
+        generate_assoc_referent_rels(buffer, config, module, obj, woog, domain)?;
+        generate_subtype_rels(buffer, config, module, obj, woog, domain)?;
 
         Ok(())
     }

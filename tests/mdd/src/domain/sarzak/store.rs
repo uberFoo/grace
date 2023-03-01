@@ -114,16 +114,19 @@ impl ObjectStore {
     pub fn exhume_acknowledged_event(&self, id: &Uuid) -> Option<&AcknowledgedEvent> {
         self.acknowledged_event.get(id)
     }
+
     /// Exhume [`AcknowledgedEvent`] from the store — mutably.
     ///
     pub fn exhume_acknowledged_event_mut(&mut self, id: &Uuid) -> Option<&mut AcknowledgedEvent> {
         self.acknowledged_event.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, AcknowledgedEvent>`.
     ///
     pub fn iter_acknowledged_event(&self) -> impl Iterator<Item = &AcknowledgedEvent> {
         self.acknowledged_event.values()
     }
+
     /// Inter [`Associative`] into the store.
     ///
     pub fn inter_associative(&mut self, associative: Associative) {
@@ -135,16 +138,19 @@ impl ObjectStore {
     pub fn exhume_associative(&self, id: &Uuid) -> Option<&Associative> {
         self.associative.get(id)
     }
+
     /// Exhume [`Associative`] from the store — mutably.
     ///
     pub fn exhume_associative_mut(&mut self, id: &Uuid) -> Option<&mut Associative> {
         self.associative.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Associative>`.
     ///
     pub fn iter_associative(&self) -> impl Iterator<Item = &Associative> {
         self.associative.values()
     }
+
     /// Inter [`AssociativeReferent`] into the store.
     ///
     pub fn inter_associative_referent(&mut self, associative_referent: AssociativeReferent) {
@@ -157,6 +163,7 @@ impl ObjectStore {
     pub fn exhume_associative_referent(&self, id: &Uuid) -> Option<&AssociativeReferent> {
         self.associative_referent.get(id)
     }
+
     /// Exhume [`AssociativeReferent`] from the store — mutably.
     ///
     pub fn exhume_associative_referent_mut(
@@ -165,11 +172,13 @@ impl ObjectStore {
     ) -> Option<&mut AssociativeReferent> {
         self.associative_referent.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, AssociativeReferent>`.
     ///
     pub fn iter_associative_referent(&self) -> impl Iterator<Item = &AssociativeReferent> {
         self.associative_referent.values()
     }
+
     /// Inter [`AssociativeReferrer`] into the store.
     ///
     pub fn inter_associative_referrer(&mut self, associative_referrer: AssociativeReferrer) {
@@ -182,6 +191,7 @@ impl ObjectStore {
     pub fn exhume_associative_referrer(&self, id: &Uuid) -> Option<&AssociativeReferrer> {
         self.associative_referrer.get(id)
     }
+
     /// Exhume [`AssociativeReferrer`] from the store — mutably.
     ///
     pub fn exhume_associative_referrer_mut(
@@ -190,11 +200,13 @@ impl ObjectStore {
     ) -> Option<&mut AssociativeReferrer> {
         self.associative_referrer.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, AssociativeReferrer>`.
     ///
     pub fn iter_associative_referrer(&self) -> impl Iterator<Item = &AssociativeReferrer> {
         self.associative_referrer.values()
     }
+
     /// Inter [`Attribute`] into the store.
     ///
     pub fn inter_attribute(&mut self, attribute: Attribute) {
@@ -206,16 +218,19 @@ impl ObjectStore {
     pub fn exhume_attribute(&self, id: &Uuid) -> Option<&Attribute> {
         self.attribute.get(id)
     }
+
     /// Exhume [`Attribute`] from the store — mutably.
     ///
     pub fn exhume_attribute_mut(&mut self, id: &Uuid) -> Option<&mut Attribute> {
         self.attribute.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Attribute>`.
     ///
     pub fn iter_attribute(&self) -> impl Iterator<Item = &Attribute> {
         self.attribute.values()
     }
+
     /// Inter [`Binary`] into the store.
     ///
     pub fn inter_binary(&mut self, binary: Binary) {
@@ -227,16 +242,19 @@ impl ObjectStore {
     pub fn exhume_binary(&self, id: &Uuid) -> Option<&Binary> {
         self.binary.get(id)
     }
+
     /// Exhume [`Binary`] from the store — mutably.
     ///
     pub fn exhume_binary_mut(&mut self, id: &Uuid) -> Option<&mut Binary> {
         self.binary.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Binary>`.
     ///
     pub fn iter_binary(&self) -> impl Iterator<Item = &Binary> {
         self.binary.values()
     }
+
     /// Inter [`Cardinality`] into the store.
     ///
     pub fn inter_cardinality(&mut self, cardinality: Cardinality) {
@@ -248,16 +266,19 @@ impl ObjectStore {
     pub fn exhume_cardinality(&self, id: &Uuid) -> Option<&Cardinality> {
         self.cardinality.get(id)
     }
+
     /// Exhume [`Cardinality`] from the store — mutably.
     ///
     pub fn exhume_cardinality_mut(&mut self, id: &Uuid) -> Option<&mut Cardinality> {
         self.cardinality.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Cardinality>`.
     ///
     pub fn iter_cardinality(&self) -> impl Iterator<Item = &Cardinality> {
         self.cardinality.values()
     }
+
     /// Inter [`Conditionality`] into the store.
     ///
     pub fn inter_conditionality(&mut self, conditionality: Conditionality) {
@@ -270,16 +291,19 @@ impl ObjectStore {
     pub fn exhume_conditionality(&self, id: &Uuid) -> Option<&Conditionality> {
         self.conditionality.get(id)
     }
+
     /// Exhume [`Conditionality`] from the store — mutably.
     ///
     pub fn exhume_conditionality_mut(&mut self, id: &Uuid) -> Option<&mut Conditionality> {
         self.conditionality.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Conditionality>`.
     ///
     pub fn iter_conditionality(&self) -> impl Iterator<Item = &Conditionality> {
         self.conditionality.values()
     }
+
     /// Inter [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
@@ -291,16 +315,19 @@ impl ObjectStore {
     pub fn exhume_event(&self, id: &Uuid) -> Option<&Event> {
         self.event.get(id)
     }
+
     /// Exhume [`Event`] from the store — mutably.
     ///
     pub fn exhume_event_mut(&mut self, id: &Uuid) -> Option<&mut Event> {
         self.event.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
     ///
     pub fn iter_event(&self) -> impl Iterator<Item = &Event> {
         self.event.values()
     }
+
     /// Inter [`External`] into the store.
     ///
     pub fn inter_external(&mut self, external: External) {
@@ -312,16 +339,19 @@ impl ObjectStore {
     pub fn exhume_external(&self, id: &Uuid) -> Option<&External> {
         self.external.get(id)
     }
+
     /// Exhume [`External`] from the store — mutably.
     ///
     pub fn exhume_external_mut(&mut self, id: &Uuid) -> Option<&mut External> {
         self.external.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, External>`.
     ///
     pub fn iter_external(&self) -> impl Iterator<Item = &External> {
         self.external.values()
     }
+
     /// Inter [`Isa`] into the store.
     ///
     pub fn inter_isa(&mut self, isa: Isa) {
@@ -333,16 +363,19 @@ impl ObjectStore {
     pub fn exhume_isa(&self, id: &Uuid) -> Option<&Isa> {
         self.isa.get(id)
     }
+
     /// Exhume [`Isa`] from the store — mutably.
     ///
     pub fn exhume_isa_mut(&mut self, id: &Uuid) -> Option<&mut Isa> {
         self.isa.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Isa>`.
     ///
     pub fn iter_isa(&self) -> impl Iterator<Item = &Isa> {
         self.isa.values()
     }
+
     /// Inter [`Object`] into the store.
     ///
     pub fn inter_object(&mut self, object: Object) {
@@ -354,16 +387,19 @@ impl ObjectStore {
     pub fn exhume_object(&self, id: &Uuid) -> Option<&Object> {
         self.object.get(id)
     }
+
     /// Exhume [`Object`] from the store — mutably.
     ///
     pub fn exhume_object_mut(&mut self, id: &Uuid) -> Option<&mut Object> {
         self.object.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Object>`.
     ///
     pub fn iter_object(&self) -> impl Iterator<Item = &Object> {
         self.object.values()
     }
+
     /// Inter [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
@@ -375,16 +411,19 @@ impl ObjectStore {
     pub fn exhume_referent(&self, id: &Uuid) -> Option<&Referent> {
         self.referent.get(id)
     }
+
     /// Exhume [`Referent`] from the store — mutably.
     ///
     pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
         self.referent.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
     ///
     pub fn iter_referent(&self) -> impl Iterator<Item = &Referent> {
         self.referent.values()
     }
+
     /// Inter [`Referrer`] into the store.
     ///
     pub fn inter_referrer(&mut self, referrer: Referrer) {
@@ -396,16 +435,19 @@ impl ObjectStore {
     pub fn exhume_referrer(&self, id: &Uuid) -> Option<&Referrer> {
         self.referrer.get(id)
     }
+
     /// Exhume [`Referrer`] from the store — mutably.
     ///
     pub fn exhume_referrer_mut(&mut self, id: &Uuid) -> Option<&mut Referrer> {
         self.referrer.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Referrer>`.
     ///
     pub fn iter_referrer(&self) -> impl Iterator<Item = &Referrer> {
         self.referrer.values()
     }
+
     /// Inter [`Relationship`] into the store.
     ///
     pub fn inter_relationship(&mut self, relationship: Relationship) {
@@ -417,16 +459,19 @@ impl ObjectStore {
     pub fn exhume_relationship(&self, id: &Uuid) -> Option<&Relationship> {
         self.relationship.get(id)
     }
+
     /// Exhume [`Relationship`] from the store — mutably.
     ///
     pub fn exhume_relationship_mut(&mut self, id: &Uuid) -> Option<&mut Relationship> {
         self.relationship.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Relationship>`.
     ///
     pub fn iter_relationship(&self) -> impl Iterator<Item = &Relationship> {
         self.relationship.values()
     }
+
     /// Inter [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
@@ -438,16 +483,19 @@ impl ObjectStore {
     pub fn exhume_state(&self, id: &Uuid) -> Option<&State> {
         self.state.get(id)
     }
+
     /// Exhume [`State`] from the store — mutably.
     ///
     pub fn exhume_state_mut(&mut self, id: &Uuid) -> Option<&mut State> {
         self.state.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.
     ///
     pub fn iter_state(&self) -> impl Iterator<Item = &State> {
         self.state.values()
     }
+
     /// Inter [`Subtype`] into the store.
     ///
     pub fn inter_subtype(&mut self, subtype: Subtype) {
@@ -459,16 +507,19 @@ impl ObjectStore {
     pub fn exhume_subtype(&self, id: &Uuid) -> Option<&Subtype> {
         self.subtype.get(id)
     }
+
     /// Exhume [`Subtype`] from the store — mutably.
     ///
     pub fn exhume_subtype_mut(&mut self, id: &Uuid) -> Option<&mut Subtype> {
         self.subtype.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Subtype>`.
     ///
     pub fn iter_subtype(&self) -> impl Iterator<Item = &Subtype> {
         self.subtype.values()
     }
+
     /// Inter [`Supertype`] into the store.
     ///
     pub fn inter_supertype(&mut self, supertype: Supertype) {
@@ -480,16 +531,19 @@ impl ObjectStore {
     pub fn exhume_supertype(&self, id: &Uuid) -> Option<&Supertype> {
         self.supertype.get(id)
     }
+
     /// Exhume [`Supertype`] from the store — mutably.
     ///
     pub fn exhume_supertype_mut(&mut self, id: &Uuid) -> Option<&mut Supertype> {
         self.supertype.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Supertype>`.
     ///
     pub fn iter_supertype(&self) -> impl Iterator<Item = &Supertype> {
         self.supertype.values()
     }
+
     /// Inter [`Ty`] into the store.
     ///
     pub fn inter_ty(&mut self, ty: Ty) {
@@ -501,16 +555,19 @@ impl ObjectStore {
     pub fn exhume_ty(&self, id: &Uuid) -> Option<&Ty> {
         self.ty.get(id)
     }
+
     /// Exhume [`Ty`] from the store — mutably.
     ///
     pub fn exhume_ty_mut(&mut self, id: &Uuid) -> Option<&mut Ty> {
         self.ty.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Ty>`.
     ///
     pub fn iter_ty(&self) -> impl Iterator<Item = &Ty> {
         self.ty.values()
     }
+
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-persistence"}}}

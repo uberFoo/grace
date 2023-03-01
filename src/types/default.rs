@@ -155,7 +155,7 @@ impl CodeWriter for DefaultStruct {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
+        woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -169,6 +169,13 @@ impl CodeWriter for DefaultStruct {
             }
         );
         let obj_id = obj_id.unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DefaultStruct"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
 
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
@@ -195,22 +202,22 @@ impl CodeWriter for DefaultStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
 
                     emit!(
                         paste,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         binary.number,
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
                         referrer.description,
-                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(
                         paste,
                         "pub {}: &'a {},",
                         referrer.referential_attribute.as_ident(),
-                        r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
 
@@ -243,17 +250,17 @@ impl CodeWriter for DefaultStruct {
                     emit!(
                         buffer,
                         "pub struct {}<'a> {{",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 } else {
                     emit!(
                         buffer,
                         "pub struct {} {{",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
 
-                render_attributes(buffer, obj, domain)?;
+                render_attributes(buffer, obj, woog, domain)?;
 
                 // Paste in the referential attributes, computed above.
                 *buffer += paste;
@@ -317,6 +324,13 @@ impl CodeWriter for DefaultImplementation {
         );
         let obj_id = obj_id.unwrap();
         let object = domain.sarzak().exhume_object(&obj_id).unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DefaultImplementation"
+            }
+        );
+        let local_woog = woog.as_ref().unwrap();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -331,13 +345,13 @@ impl CodeWriter for DefaultImplementation {
                     emit!(
                         buffer,
                         "impl<'a> {}<'a> {{",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
                     );
                 } else {
                     emit!(
                         buffer,
                         "impl {} {{",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
                     );
                 }
 
@@ -526,7 +540,7 @@ impl CodeWriter for DefaultNewImpl {
                 emit!(
                     buffer,
                     "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
                 // Output the top of the function definition
@@ -537,7 +551,7 @@ impl CodeWriter for DefaultNewImpl {
                 render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance
-                render_new_instance(buffer, obj, None, &fields, &rvals, domain, None, &config)?;
+                render_new_instance(buffer, obj, None, &fields, &rvals, woog, domain)?;
 
                 emit!(buffer, "}}");
 
@@ -640,13 +654,21 @@ impl CodeWriter for DefaultModule {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
+        woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DefaultModule"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
+
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-module-definition", module),
@@ -682,7 +704,7 @@ impl CodeWriter for DefaultModule {
                             "pub use crate::{}::{}::{};",
                             module,
                             obj.as_ident(),
-                            obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     }
                 }

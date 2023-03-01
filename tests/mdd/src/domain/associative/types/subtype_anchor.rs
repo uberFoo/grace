@@ -33,7 +33,7 @@ pub struct SubtypeAnchor {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-implementation"}}}
 impl SubtypeAnchor {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-new"}}}
-    /// Inter a new SubtypeAnchor in the store, and return it's `id`.
+    /// Inter a new 'Subtype Anchor' in the store, and return it's `id`.
     pub fn new(
         isaui_id: &IsaUi,
         anchor_id: &Anchor,

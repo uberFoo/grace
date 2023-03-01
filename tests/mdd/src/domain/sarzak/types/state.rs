@@ -29,7 +29,7 @@ pub struct State {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-implementation"}}}
 impl State {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new"}}}
-    /// Inter a new State in the store, and return it's `id`.
+    /// Inter a new 'State' in the store, and return it's `id`.
     pub fn new(name: String, obj_id: &Object, store: &mut SarzakStore) -> State {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, obj_id).as_bytes());
         let new = State {

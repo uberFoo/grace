@@ -31,7 +31,6 @@ pub struct Everything {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-implementation"}}}
 impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
-    /// Inter a new Everything in the store, and return it's `id`.
     // {"magic":"❌","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-test-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-test-new"}}}
     /// # Example
@@ -50,6 +49,7 @@ impl Everything {
     /// alive_mark = Everything::new()
     ///```
     // {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
+    /// Inter a new 'Everything' in the store, and return it's `id`.
     pub fn new(
         bool: bool,
         float: f64,

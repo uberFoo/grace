@@ -6,7 +6,10 @@ use sarzak::{
     mc::{FormatSnafu, Result},
     sarzak::types::{Binary, Cardinality, Conditionality, External, Object, Referrer},
     v2::domain::Domain,
-    woog::types::{Ownership, BORROWED},
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{Ownership, BORROWED},
+    },
 };
 use snafu::prelude::*;
 
@@ -25,6 +28,7 @@ pub(crate) fn generate_binary_referrer_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     // Generate binary relationship navigation for the referrer side.
@@ -42,17 +46,17 @@ pub(crate) fn generate_binary_referrer_rels(
 
         // Grab a reference to the store so that we can use it to exhume
         // things.
-        let store = find_store(module, domain);
+        let store = find_store(module, woog, domain);
 
         // Cardinality does not matter from the referrer, because it's always
         // one. This is because of the normalized, table-nature of the store,
         // and more importantly the method.
         match cond {
             Conditionality::Unconditional(_) => {
-                forward(buffer, obj, referrer, binary, &store, r_obj, &domain)?
+                forward(buffer, obj, referrer, binary, store, r_obj, woog, domain)?
             }
             Conditionality::Conditional(_) => {
-                forward_conditional(buffer, obj, referrer, binary, &store, r_obj, &domain)?
+                forward_conditional(buffer, obj, referrer, binary, store, r_obj, woog, domain)?
             }
         }
     }
@@ -65,6 +69,7 @@ pub(crate) fn generate_binary_referent_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     // Generate binary relationship navigation for the referent side.
@@ -87,19 +92,19 @@ pub(crate) fn generate_binary_referent_rels(
 
         // Grab a reference to the store so that we can use it to exhume
         // things.
-        let store = find_store(module, domain);
+        let store = find_store(module, woog, domain);
 
         match card {
             Cardinality::One(_) => match my_cond {
                 Conditionality::Unconditional(_) => {
-                    backward_one(buffer, obj, r_obj, binary, &store, referrer, &domain)?
+                    backward_one(buffer, obj, r_obj, binary, &store, referrer, &woog, &domain)?
                 }
                 Conditionality::Conditional(_) => match other_cond {
                     Conditionality::Unconditional(_) => backward_one_conditional(
-                        buffer, obj, r_obj, binary, &store, referrer, &domain,
+                        buffer, obj, r_obj, binary, &store, referrer, &woog, &domain,
                     )?,
                     Conditionality::Conditional(_) => backward_one_biconditional(
-                        buffer, obj, r_obj, binary, &store, referrer, &domain,
+                        buffer, obj, r_obj, binary, &store, referrer, &woog, &domain,
                     )?,
                 },
             },
@@ -107,10 +112,10 @@ pub(crate) fn generate_binary_referent_rels(
             // that neither of them depend on the conditionality of the this side.
             Cardinality::Many(_) => match other_cond {
                 Conditionality::Unconditional(_) => {
-                    backward_1_m(buffer, obj, r_obj, binary, &store, referrer, &domain)?
+                    backward_1_m(buffer, obj, r_obj, binary, store, referrer, woog, domain)?
                 }
                 Conditionality::Conditional(_) => {
-                    backward_1_mc(buffer, obj, r_obj, binary, &store, referrer, &domain)?
+                    backward_1_mc(buffer, obj, r_obj, binary, store, referrer, woog, domain)?
                 }
             },
         }
@@ -124,6 +129,7 @@ pub(crate) fn generate_assoc_referrer_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     // Generate associative relationship navigation for the referrer side.
@@ -144,16 +150,17 @@ pub(crate) fn generate_assoc_referrer_rels(
 
         // Grab a reference to the store so that we can use it to exhume
         // things.
-        let store = find_store(module, domain);
+        let store = find_store(module, woog, domain);
 
         forward_assoc(
             buffer,
             obj,
             &assoc_referrer.one_referential_attribute,
             assoc.number,
-            &store,
+            store,
             one_obj,
-            &domain,
+            woog,
+            domain,
         )?;
 
         let module = if config.is_imported(&other_obj.id) {
@@ -164,15 +171,16 @@ pub(crate) fn generate_assoc_referrer_rels(
 
         // Grab a reference to the store so that we can use it to exhume
         // things.
-        let store = find_store(module, domain);
+        let store = find_store(module, woog, domain);
         forward_assoc(
             buffer,
             obj,
             &assoc_referrer.other_referential_attribute,
             assoc.number,
-            &store,
+            store,
             other_obj,
-            &domain,
+            woog,
+            domain,
         )?;
     }
 
@@ -184,6 +192,7 @@ pub(crate) fn generate_assoc_referent_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     // Generate associative relationship navigation for the referent side.
@@ -210,7 +219,7 @@ pub(crate) fn generate_assoc_referent_rels(
 
         // Grab a reference to the store so that we can use it to exhume
         // things.
-        let store = find_store(module, domain);
+        let store = find_store(module, woog, domain);
 
         match card {
             Cardinality::One(_) => match cond {
@@ -219,18 +228,20 @@ pub(crate) fn generate_assoc_referent_rels(
                     obj,
                     r_obj,
                     assoc.number,
-                    &store,
+                    store,
                     referential_attribute,
-                    &domain,
+                    woog,
+                    domain,
                 )?,
                 Conditionality::Unconditional(_) => backward_assoc_one(
                     buffer,
                     obj,
                     r_obj,
                     assoc.number,
-                    &store,
+                    store,
                     referential_attribute,
-                    &domain,
+                    woog,
+                    domain,
                 )?,
             },
             Cardinality::Many(_) => backward_assoc_many(
@@ -238,9 +249,10 @@ pub(crate) fn generate_assoc_referent_rels(
                 obj,
                 r_obj,
                 assoc.number,
-                &store,
+                store,
                 referential_attribute,
-                &domain,
+                woog,
+                domain,
             )?,
         }
     }
@@ -253,6 +265,7 @@ pub(crate) fn generate_subtype_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     // Generate navigation methods for subtype to supertype navigation.
@@ -271,9 +284,9 @@ pub(crate) fn generate_subtype_rels(
 
         // Grab a reference to the store so that we can use it to exhume
         // things.
-        let store = find_store(module, domain);
+        let store = find_store(module, woog, domain);
 
-        subtype_to_supertype(buffer, obj, s_obj, isa.number, store, domain)?;
+        subtype_to_supertype(buffer, obj, s_obj, isa.number, store, woog, domain)?;
     }
 
     Ok(())
@@ -286,6 +299,7 @@ fn forward(
     binary: &Binary,
     store: &External,
     r_obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -299,7 +313,7 @@ fn forward(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number,
             );
             emit!(
@@ -308,7 +322,7 @@ fn forward(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(
                 buffer,
@@ -330,6 +344,7 @@ fn forward_conditional(
     binary: &Binary,
     store: &External,
     r_obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -343,7 +358,7 @@ fn forward_conditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*c)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number,
             );
             emit!(
@@ -352,7 +367,7 @@ fn forward_conditional(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(
                 buffer,
@@ -382,6 +397,7 @@ fn backward_one(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -395,7 +411,7 @@ fn backward_one(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
             emit!(
@@ -404,7 +420,7 @@ fn backward_one(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -428,6 +444,7 @@ fn backward_one_conditional(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -441,7 +458,7 @@ fn backward_one_conditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
             emit!(
@@ -450,7 +467,7 @@ fn backward_one_conditional(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(
                 buffer,
@@ -488,6 +505,7 @@ fn backward_one_biconditional(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -501,7 +519,7 @@ fn backward_one_biconditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1c-1c)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
             emit!(
@@ -510,7 +528,7 @@ fn backward_one_biconditional(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(
                 buffer,
@@ -548,6 +566,7 @@ fn backward_1_m(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -561,7 +580,7 @@ fn backward_1_m(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
             emit!(
@@ -570,7 +589,7 @@ fn backward_1_m(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -596,6 +615,7 @@ fn backward_1_mc(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -609,7 +629,7 @@ fn backward_1_mc(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-Mc)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
             emit!(
@@ -618,7 +638,7 @@ fn backward_1_mc(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -644,6 +664,7 @@ fn forward_assoc(
     number: i64,
     store: &External,
     r_obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -657,7 +678,7 @@ fn forward_assoc(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number,
             );
             emit!(
@@ -666,7 +687,7 @@ fn forward_assoc(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(
                 buffer,
@@ -688,6 +709,7 @@ fn backward_assoc_one(
     number: i64,
     store: &External,
     referential_attribute: &String,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -701,7 +723,7 @@ fn backward_assoc_one(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
             emit!(
@@ -710,7 +732,7 @@ fn backward_assoc_one(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -734,6 +756,7 @@ fn backward_assoc_one_conditional(
     number: i64,
     store: &External,
     referential_attribute: &String,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -747,7 +770,7 @@ fn backward_assoc_one_conditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
             emit!(
@@ -756,7 +779,7 @@ fn backward_assoc_one_conditional(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(
                 buffer,
@@ -794,6 +817,7 @@ fn backward_assoc_many(
     number: i64,
     store: &External,
     referential_attribute: &String,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -807,7 +831,7 @@ fn backward_assoc_many(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
             emit!(
@@ -816,7 +840,7 @@ fn backward_assoc_many(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -841,6 +865,7 @@ fn subtype_to_supertype(
     s_obj: &Object,
     number: i64,
     store: &External,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     buffer.block(
@@ -854,7 +879,7 @@ fn subtype_to_supertype(
             emit!(
                 buffer,
                 "// Navigate to [`{}`] across R{}(isa)",
-                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
             emit!(
@@ -863,7 +888,7 @@ fn subtype_to_supertype(
                 number,
                 s_obj.as_ident(),
                 store.name,
-                s_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             if inner_object_is_enum(obj, domain) {
                 emit!(

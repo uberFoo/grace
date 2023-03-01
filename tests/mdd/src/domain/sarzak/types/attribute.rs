@@ -33,7 +33,7 @@ pub struct Attribute {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-implementation"}}}
 impl Attribute {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new"}}}
-    /// Inter a new Attribute in the store, and return it's `id`.
+    /// Inter a new 'Attribute' in the store, and return it's `id`.
     pub fn new(
         name: String,
         obj_id: Option<&Object>,

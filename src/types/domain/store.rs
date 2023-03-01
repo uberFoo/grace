@@ -72,6 +72,13 @@ impl FileGenerator for DomainStoreGenerator {
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<GenerationAction> {
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainStoreGenerator"
+            }
+        );
+
         // Output the domain/module documentation/description
         emit!(buffer, "//! {} Object Store", module);
         emit!(buffer, "//!");
@@ -112,7 +119,7 @@ impl FileGenerator for DomainStoreGenerator {
                     emit!(
                         buffer,
                         "//! * [`{}`]",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
                     );
                 }
 
@@ -140,6 +147,7 @@ impl DomainStore {
         buffer: &mut Buffer,
         objects: &Vec<&&Object>,
         module: &str,
+        woog: &WoogStore,
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
@@ -150,7 +158,7 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Inter [`{}`] into the store.",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
                     emit!(
@@ -158,7 +166,7 @@ impl DomainStore {
                         "pub fn inter_{}(&mut self, {}: {}) {{",
                         obj.as_ident(),
                         obj.as_ident(),
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
 
                     if inner_object_is_enum(obj, domain) {
@@ -183,45 +191,48 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store.",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}(&self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "self.{}.get(id)", obj.as_ident());
                     emit!(buffer, "}}");
+                    emit!(buffer, "");
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store — mutably.",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::Mutable(MUTABLE), domain)
+                        obj.as_type(&Ownership::Mutable(MUTABLE), woog, domain)
                     );
                     emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
                     emit!(buffer, "}}");
+                    emit!(buffer, "");
                     emit!(
                         buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn iter_{}(&self) -> impl Iterator<Item = &{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "self.{}.values()", obj.as_ident());
                     emit!(buffer, "}}");
+                    emit!(buffer, "");
                 }
 
                 Ok(())
@@ -236,6 +247,7 @@ impl DomainStore {
         buffer: &mut Buffer,
         objects: &Vec<&&Object>,
         module: &str,
+        woog: &WoogStore,
         domain: &Domain,
     ) -> Result<()> {
         buffer.block(
@@ -297,7 +309,7 @@ impl DomainStore {
                         buffer,
                         "let {}: Vec<{}> = serde_json::from_reader(reader)?;",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     if inner_object_is_enum(obj, domain) {
                         emit!(buffer,
@@ -332,13 +344,21 @@ impl CodeWriter for DomainStore {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
+        woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainStore"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
+
         let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
@@ -383,7 +403,7 @@ impl CodeWriter for DomainStore {
                     emit!(
                         buffer,
                         "{},",
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
                 for obj in &supertypes {
@@ -408,7 +428,7 @@ impl CodeWriter for DomainStore {
                         buffer,
                         "{}: HashMap<Uuid,{}>,",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
                 emit!(buffer, "}}");
@@ -437,8 +457,8 @@ impl CodeWriter for DomainStore {
                                     buffer,
                                     "store.inter_{}({}::{}({}));",
                                     obj.as_ident(),
-                                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
-                                    s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     s_obj.as_const()
                                 );
                             }
@@ -450,12 +470,12 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "}}");
                 emit!(buffer, "");
 
-                self.generate_store(buffer, &objects, module, domain)?;
+                self.generate_store(buffer, &objects, module, woog, domain)?;
 
                 emit!(buffer, "");
 
                 if persist {
-                    self.generate_store_persistence(buffer, &objects, module, domain)?;
+                    self.generate_store_persistence(buffer, &objects, module, woog, domain)?;
                 }
 
                 emit!(buffer, "}}");

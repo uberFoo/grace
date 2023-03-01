@@ -28,7 +28,7 @@ pub struct RandoObject {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-implementation"}}}
 impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-new"}}}
-    /// Inter a new RandoObject in the store, and return it's `id`.
+    /// Inter a new 'Rando Object' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut EverythingStore) -> RandoObject {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
         let new = RandoObject { name: name, id };

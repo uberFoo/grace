@@ -36,7 +36,7 @@ pub struct Anchor {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-implementation"}}}
 impl Anchor {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new"}}}
-    /// Inter a new Anchor in the store, and return it's `id`.
+    /// Inter a new 'Anchor' in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut AssociativeStore) -> Anchor {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", number).as_bytes());
         let new = Anchor { number: number, id };

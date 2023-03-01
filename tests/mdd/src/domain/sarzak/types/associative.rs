@@ -31,7 +31,7 @@ pub struct Associative {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-implementation"}}}
 impl Associative {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
-    /// Inter a new Associative in the store, and return it's `id`.
+    /// Inter a new 'Associative' in the store, and return it's `id`.
     pub fn new(
         number: i64,
         one: &AssociativeReferent,

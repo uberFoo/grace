@@ -9,8 +9,8 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            Access, GraceType, ObjectMethod, Ownership, Parameter, Value, Variable, Visibility,
-            BORROWED, PUBLIC,
+            Access, GraceType, ObjectMethod, Ownership, Parameter, Reference, Value, Variable,
+            Visibility, WoogOption, PUBLIC,
         },
     },
 };
@@ -23,6 +23,9 @@ use crate::{
 /// Woog post-load domain processing
 ///
 /// Below we add an ObjectMethod instance for each object in the domain.
+///
+/// We also inter types in woog that exist in sarzak, so that we can access them
+/// during code generation.
 pub(crate) fn init_woog(
     module: &str,
     options: &GraceCompilerOptions,
@@ -30,17 +33,23 @@ pub(crate) fn init_woog(
 ) -> WoogStore {
     let mut woog = WoogStore::new();
 
-    let borrowed = Ownership::Borrowed(BORROWED);
+    let borrowed = Ownership::new_borrowed();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, &mut woog);
+
+    let mutable = Ownership::new_mutable();
+    let mut_access = Access::new(&mutable, &public, &mut woog);
 
     let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
     objects.sort_by(|a, b| a.name.cmp(&b.name));
 
-    // Iterate over the objects, generating an implementation for file each.
+    // Iterate over the objects and create a "new" ObjectMethod for each.
     for obj in objects {
         let method = ObjectMethod::new(
-            "Create a new instance".to_owned(),
+            format!(
+                "Inter a new '{}' in the store, and return it's `id`.",
+                obj.name
+            ),
             "new".to_owned(),
             obj,
             &mut woog,
@@ -58,13 +67,10 @@ pub(crate) fn init_woog(
             // list of parameters.
             if attr.name != "id" {
                 let ty = attr.r2_ty(domain.sarzak())[0];
+                let ty = GraceType::new_ty(&ty, &mut woog);
                 let param = Parameter::new(attr.as_ident(), &method, None, &mut woog);
                 let var = Variable::new_parameter(&param, &mut woog);
-                let value = Value::new_variable(&access, &ty.into(), &var, &mut woog);
-                let foo = woog.exhume_variable(&param.id).unwrap();
-                assert_eq!(foo.id(), param.id);
-                let bar = woog.exhume_value(&param.id).unwrap();
-                assert_eq!(bar.id, param.id);
+                let _ = Value::new_variable(&access, &ty.into(), &var, &mut woog);
 
                 params.push(param);
             }
@@ -90,12 +96,11 @@ pub(crate) fn init_woog(
                         &mut woog,
                     );
                     let var = Variable::new_parameter(&param, &mut woog);
-                    let value = Value::new_variable(
-                        &access,
-                        &GraceType::WoogOption(GraceType::Reference(r_obj.id).id()),
-                        &var,
-                        &mut woog,
-                    );
+                    let reference = Reference::new(&r_obj, &mut woog);
+                    let reference = GraceType::new_reference(&reference, &mut woog);
+                    let option = WoogOption::new(&reference, &mut woog);
+                    let option = GraceType::new_woog_option(&option, &mut woog);
+                    let _ = Value::new_variable(&access, &option, &var, &mut woog);
 
                     params.push(param);
                 }
@@ -108,38 +113,85 @@ pub(crate) fn init_woog(
                         &mut woog,
                     );
                     let var = Variable::new_parameter(&param, &mut woog);
-                    let value = Value::new_variable(
-                        &access,
-                        &GraceType::Reference(r_obj.id),
-                        &var,
-                        &mut woog,
-                    );
+                    let reference = Reference::new(&r_obj, &mut woog);
+                    let reference = GraceType::new_reference(&reference, &mut woog);
+                    let _ = Value::new_variable(&access, &reference, &var, &mut woog);
 
                     params.push(param);
                 }
             }
         }
 
-        if let Target::Domain(_) = options.target {
-            // Add the store to the end of the  input parameters
-            // let mut iter = sarzak.iter_ty();
+        // And the associative attributes
+        for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
 
-            let store = find_store(module, domain);
-            let param = Parameter::new("store".to_owned(), &method, None, &mut woog);
-            let var = Variable::new_parameter(&param, &mut woog);
-            let value = Value::new_variable(
-                &access,
-                &GraceType::Ty(Ty::External(store.id).id()),
-                &var,
+            let one = assoc.r23_associative_referent(domain.sarzak())[0];
+            let one_obj = one.r25_object(domain.sarzak())[0];
+
+            let other = assoc.r22_associative_referent(domain.sarzak())[0];
+            let other_obj = other.r25_object(domain.sarzak())[0];
+
+            // One side
+            let param = Parameter::new(
+                assoc_referrer.one_referential_attribute.as_ident(),
+                &method,
+                None,
                 &mut woog,
             );
+
+            let var = Variable::new_parameter(&param, &mut woog);
+            let reference = Reference::new(&one_obj, &mut woog);
+            let reference = GraceType::new_reference(&reference, &mut woog);
+            let _ = Value::new_variable(&access, &reference, &var, &mut woog);
+
+            dbg!("one", &param);
+            params.push(param);
+
+            // Other side
+            let param = Parameter::new(
+                assoc_referrer.other_referential_attribute.as_ident(),
+                &method,
+                None,
+                &mut woog,
+            );
+
+            let var = Variable::new_parameter(&param, &mut woog);
+            let reference = Reference::new(&other_obj, &mut woog);
+            let reference = GraceType::new_reference(&reference, &mut woog);
+            let _ = Value::new_variable(&access, &reference, &var, &mut woog);
+
+            dbg!("other", &param);
+            params.push(param);
+        }
+
+        if let Target::Domain(_) = options.target {
+            // Add the store to the end of the  input parameters
+            let store = find_store(module, &woog, domain);
+            let param = Parameter::new("store".to_owned(), &method, None, &mut woog);
+            let var = Variable::new_parameter(&param, &mut woog);
+            let ty = Ty::External(store.id);
+            let ty = GraceType::new_ty(&ty, &mut woog);
+            let _ = Value::new_variable(&mut_access, &ty, &var, &mut woog);
+
+            params.push(param);
         }
 
         // Link the params
+        // I need to maintain the order I've adopted because I'don't need things
+        // changing. That said, I need to iterate over the local parameters,
+        // and not what's interred in teh store. So, I do the weird thing, and
+        // iterate over the locals, and push the change to the store.
         params.iter_mut().rev().fold(None, |next, param| {
             param.next = next;
+            woog.inter_parameter(param.clone());
             Some(param.id)
         });
+    }
+
+    // Inter types
+    for ty in domain.sarzak().iter_ty() {
+        let _ = GraceType::new_ty(&ty, &mut woog);
     }
 
     woog

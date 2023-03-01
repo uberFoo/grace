@@ -65,7 +65,7 @@ pub struct NotImportant {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-implementation"}}}
 impl NotImportant {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new"}}}
-    /// Inter a new NotImportant in the store, and return it's `id`.
+    /// Inter a new 'Not Important' in the store, and return it's `id`.
     pub fn new(name: Uuid, x_ref: &SuperT, store: &mut IsaCloneStore) -> NotImportant {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, x_ref).as_bytes());
         let new = NotImportant {

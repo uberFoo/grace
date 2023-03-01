@@ -48,7 +48,7 @@ pub struct Object {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-implementation"}}}
 impl Object {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-new"}}}
-    /// Inter a new Object in the store, and return it's `id`.
+    /// Inter a new 'Object' in the store, and return it's `id`.
     pub fn new(
         description: String,
         key_letters: String,

@@ -15,7 +15,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{ObjectMethod as WoogObjectMethod, Ownership, BORROWED},
+        types::{ObjectMethod as WoogObjectMethod, Ownership, BORROWED, OWNED},
     },
 };
 use snafu::prelude::*;
@@ -190,7 +190,7 @@ pub(crate) fn render_method_definition(
             buffer,
             "{}: {},",
             param.as_ident(),
-            param.ty.as_type(&mutability, domain),
+            param.ty.as_type(&mutability, woog, domain),
         )
         .context(FormatSnafu)?;
 
@@ -201,7 +201,7 @@ pub(crate) fn render_method_definition(
                 "{}: {},",
                 // Why do I need to drill down to name?
                 next_param.name.as_ident(),
-                next_param.ty.as_type(&mutability, domain),
+                next_param.ty.as_type(&mutability, woog, domain),
             )
             .context(FormatSnafu)?;
 
@@ -213,7 +213,7 @@ pub(crate) fn render_method_definition(
     writeln!(
         buffer,
         ") -> {} {{",
-        method.ty.as_type(&Ownership::Borrowed(BORROWED), domain)
+        method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
     )
     .context(FormatSnafu)?;
 
@@ -226,6 +226,8 @@ pub(crate) fn render_method_definition_new(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let object = domain.sarzak().exhume_object(&method.object).unwrap();
+
     // Write the beginning of the definition
     write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
 
@@ -233,49 +235,57 @@ pub(crate) fn render_method_definition_new(
     // Not a very slick way of doing it.
     // 🚧 I suppose I could add a pointer to the first parameter as a relationship
     // on the method.
-    let mut param = woog
+    let param = woog
         .iter_parameter()
-        .find(|p| p.method == method.id && p.r1c_parameter(woog).len() == 0)
-        .unwrap();
+        .find(|p| p.method == method.id && p.r1c_parameter(woog).len() == 0);
+
+    ensure!(
+        param.is_some(),
+        CompilerSnafu {
+            description: format!(
+                "No parameter found for {}::{}",
+                object.as_type(&Ownership::Owned(OWNED), woog, domain),
+                method.as_ident()
+            )
+        }
+    );
+    let mut param = param.unwrap();
 
     loop {
-        let value = woog.exhume_value(&param.id).unwrap();
+        let value = param
+            .r8_variable(woog)
+            .pop()
+            .unwrap()
+            .r7_value(woog)
+            .pop()
+            .unwrap();
+        let ty = value.r3_grace_type(woog)[0];
         let access = value.r16_access(woog)[0];
-        let mutability = r15_ownership(woog);
-    }
+        let mutability = access.r15_ownership(woog)[0];
 
-    // Write the parameter list.
-    // TODO: This is so clumsy! I should clean it up.
-    if let Some(mut param) = method.param {
-        let mutability = woog.exhume_ownership(&param.mutability).unwrap();
         write!(
             buffer,
             "{}: {},",
             param.as_ident(),
-            param.ty.as_type(&mutability, domain),
+            ty.as_type(&mutability, woog, domain)
         )
         .context(FormatSnafu)?;
 
-        while let Some(next_param) = param.next {
-            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
-            write!(
-                buffer,
-                "{}: {},",
-                // Why do I need to drill down to name?
-                next_param.name.as_ident(),
-                next_param.ty.as_type(&mutability, domain),
-            )
-            .context(FormatSnafu)?;
-
-            param = &next_param;
+        if let Some(next_param) = param.r1_parameter(woog).pop() {
+            param = next_param;
+        } else {
+            break;
         }
     }
 
+    // 🚧 This is incorrect, and I'm not yet sure what correct looks like.
+    // I think it may be that we need to trace method -> call, and use the
+    // type of call as the return type.
     // Finish the first line of the definition
     writeln!(
         buffer,
         ") -> {} {{",
-        method.ty.as_type(&Ownership::Borrowed(BORROWED), domain)
+        object.as_type(&Ownership::new_borrowed(), woog, domain)
     )
     .context(FormatSnafu)?;
 
@@ -332,9 +342,8 @@ pub(crate) fn render_new_instance(
     lval: Option<&LValue>,
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
+    woog: &WoogStore,
     domain: &Domain,
-    _imports: Option<&HashMap<String, Domain>>,
-    _config: &GraceConfig,
 ) -> Result<()> {
     if let Some(lval) = lval {
         assert!(lval.ty == GType::Reference(object.id));
@@ -343,7 +352,7 @@ pub(crate) fn render_new_instance(
     emit!(
         buffer,
         "{} {{",
-        object.as_type(&Ownership::Borrowed(BORROWED), domain)
+        object.as_type(&Ownership::new_borrowed(), woog, domain)
     );
 
     let tuples = zip(fields, rvals);
@@ -373,8 +382,8 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}),",
                                     field.name,
-                                    s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
-                                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     rval.name
                                 )
                             }
@@ -385,8 +394,8 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id()),",
                                         field.name,
-                                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
-                                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         rval.name
                                     )
                                 } else {
@@ -394,8 +403,8 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id),",
                                         field.name,
-                                        s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
-                                        obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         rval.name
                                     )
                                 }
@@ -405,8 +414,8 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}.id),",
                                     field.name,
-                                    s_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
-                                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     rval.name
                                 )
                             }
@@ -424,13 +433,7 @@ pub(crate) fn render_new_instance(
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
-                    // let is_supertype = if let Some(imports) = imports {
-                    // run_func_on_imported_domain(obj, config, domain, imports, object_is_enum)
-                    // } else {
-                    // object_is_enum(obj, domain)
-                    // };
 
-                    // if is_supertype {
                     if inner_object_is_enum(obj, domain) {
                         emit!(buffer, "{}: {}.id(),", field.name, rval.name)
                     } else {
@@ -453,19 +456,7 @@ pub(crate) fn render_new_instance(
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
-                        // let is_supertype = if let Some(imports) = imports {
-                        //     run_func_on_imported_domain(
-                        //         obj,
-                        //         config,
-                        //         domain,
-                        //         imports,
-                        //         object_is_enum,
-                        //     )
-                        // } else {
-                        //     object_is_enum(obj, domain)
-                        // };
 
-                        // if is_supertype {
                         if inner_object_is_enum(obj, domain) {
                             emit!(
                                 buffer,
@@ -675,7 +666,7 @@ pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buf
     Ok(())
 }
 
-pub(crate) fn find_store<'a>(name: &str, domain: &'a Domain) -> &'a External {
+pub(crate) fn find_store<'a>(name: &str, woog: &WoogStore, domain: &'a Domain) -> &'a External {
     let name = if name.contains("::") {
         name.split("::")
             .last()
@@ -687,7 +678,7 @@ pub(crate) fn find_store<'a>(name: &str, domain: &'a Domain) -> &'a External {
     };
     let name = format!(
         "{}Store",
-        name.as_type(&Ownership::Borrowed(BORROWED), domain)
+        name.as_type(&Ownership::new_borrowed(), woog, domain)
     );
 
     let mut iter = domain.sarzak().iter_ty();

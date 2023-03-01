@@ -71,16 +71,19 @@ impl ObjectStore {
     pub fn exhume_henry(&self, id: &Uuid) -> Option<&Henry> {
         self.henry.get(id)
     }
+
     /// Exhume [`Henry`] from the store — mutably.
     ///
     pub fn exhume_henry_mut(&mut self, id: &Uuid) -> Option<&mut Henry> {
         self.henry.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Henry>`.
     ///
     pub fn iter_henry(&self) -> impl Iterator<Item = &Henry> {
         self.henry.values()
     }
+
     /// Inter [`NotImportant`] into the store.
     ///
     pub fn inter_not_important(&mut self, not_important: NotImportant) {
@@ -92,16 +95,19 @@ impl ObjectStore {
     pub fn exhume_not_important(&self, id: &Uuid) -> Option<&NotImportant> {
         self.not_important.get(id)
     }
+
     /// Exhume [`NotImportant`] from the store — mutably.
     ///
     pub fn exhume_not_important_mut(&mut self, id: &Uuid) -> Option<&mut NotImportant> {
         self.not_important.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, NotImportant>`.
     ///
     pub fn iter_not_important(&self) -> impl Iterator<Item = &NotImportant> {
         self.not_important.values()
     }
+
     /// Inter [`OhBoy`] into the store.
     ///
     pub fn inter_oh_boy(&mut self, oh_boy: OhBoy) {
@@ -113,16 +119,19 @@ impl ObjectStore {
     pub fn exhume_oh_boy(&self, id: &Uuid) -> Option<&OhBoy> {
         self.oh_boy.get(id)
     }
+
     /// Exhume [`OhBoy`] from the store — mutably.
     ///
     pub fn exhume_oh_boy_mut(&mut self, id: &Uuid) -> Option<&mut OhBoy> {
         self.oh_boy.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, OhBoy>`.
     ///
     pub fn iter_oh_boy(&self) -> impl Iterator<Item = &OhBoy> {
         self.oh_boy.values()
     }
+
     /// Inter [`Reference`] into the store.
     ///
     pub fn inter_reference(&mut self, reference: Reference) {
@@ -134,16 +143,19 @@ impl ObjectStore {
     pub fn exhume_reference(&self, id: &Uuid) -> Option<&Reference> {
         self.reference.get(id)
     }
+
     /// Exhume [`Reference`] from the store — mutably.
     ///
     pub fn exhume_reference_mut(&mut self, id: &Uuid) -> Option<&mut Reference> {
         self.reference.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Reference>`.
     ///
     pub fn iter_reference(&self) -> impl Iterator<Item = &Reference> {
         self.reference.values()
     }
+
     /// Inter [`SimpleSubtypeA`] into the store.
     ///
     pub fn inter_simple_subtype_a(&mut self, simple_subtype_a: SimpleSubtypeA) {
@@ -156,16 +168,19 @@ impl ObjectStore {
     pub fn exhume_simple_subtype_a(&self, id: &Uuid) -> Option<&SimpleSubtypeA> {
         self.simple_subtype_a.get(id)
     }
+
     /// Exhume [`SimpleSubtypeA`] from the store — mutably.
     ///
     pub fn exhume_simple_subtype_a_mut(&mut self, id: &Uuid) -> Option<&mut SimpleSubtypeA> {
         self.simple_subtype_a.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSubtypeA>`.
     ///
     pub fn iter_simple_subtype_a(&self) -> impl Iterator<Item = &SimpleSubtypeA> {
         self.simple_subtype_a.values()
     }
+
     /// Inter [`SimpleSupertype`] into the store.
     ///
     pub fn inter_simple_supertype(&mut self, simple_supertype: SimpleSupertype) {
@@ -178,16 +193,19 @@ impl ObjectStore {
     pub fn exhume_simple_supertype(&self, id: &Uuid) -> Option<&SimpleSupertype> {
         self.simple_supertype.get(id)
     }
+
     /// Exhume [`SimpleSupertype`] from the store — mutably.
     ///
     pub fn exhume_simple_supertype_mut(&mut self, id: &Uuid) -> Option<&mut SimpleSupertype> {
         self.simple_supertype.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSupertype>`.
     ///
     pub fn iter_simple_supertype(&self) -> impl Iterator<Item = &SimpleSupertype> {
         self.simple_supertype.values()
     }
+
     /// Inter [`SubtypeA`] into the store.
     ///
     pub fn inter_subtype_a(&mut self, subtype_a: SubtypeA) {
@@ -199,16 +217,19 @@ impl ObjectStore {
     pub fn exhume_subtype_a(&self, id: &Uuid) -> Option<&SubtypeA> {
         self.subtype_a.get(id)
     }
+
     /// Exhume [`SubtypeA`] from the store — mutably.
     ///
     pub fn exhume_subtype_a_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeA> {
         self.subtype_a.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeA>`.
     ///
     pub fn iter_subtype_a(&self) -> impl Iterator<Item = &SubtypeA> {
         self.subtype_a.values()
     }
+
     /// Inter [`SubtypeB`] into the store.
     ///
     pub fn inter_subtype_b(&mut self, subtype_b: SubtypeB) {
@@ -220,16 +241,19 @@ impl ObjectStore {
     pub fn exhume_subtype_b(&self, id: &Uuid) -> Option<&SubtypeB> {
         self.subtype_b.get(id)
     }
+
     /// Exhume [`SubtypeB`] from the store — mutably.
     ///
     pub fn exhume_subtype_b_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeB> {
         self.subtype_b.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeB>`.
     ///
     pub fn iter_subtype_b(&self) -> impl Iterator<Item = &SubtypeB> {
         self.subtype_b.values()
     }
+
     /// Inter [`SuperT`] into the store.
     ///
     pub fn inter_super_t(&mut self, super_t: SuperT) {
@@ -241,16 +265,19 @@ impl ObjectStore {
     pub fn exhume_super_t(&self, id: &Uuid) -> Option<&SuperT> {
         self.super_t.get(id)
     }
+
     /// Exhume [`SuperT`] from the store — mutably.
     ///
     pub fn exhume_super_t_mut(&mut self, id: &Uuid) -> Option<&mut SuperT> {
         self.super_t.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, SuperT>`.
     ///
     pub fn iter_super_t(&self) -> impl Iterator<Item = &SuperT> {
         self.super_t.values()
     }
+
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

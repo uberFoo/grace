@@ -48,16 +48,19 @@ impl ObjectStore {
     pub fn exhume_everything(&self, id: &Uuid) -> Option<&Everything> {
         self.everything.get(id)
     }
+
     /// Exhume [`Everything`] from the store — mutably.
     ///
     pub fn exhume_everything_mut(&mut self, id: &Uuid) -> Option<&mut Everything> {
         self.everything.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Everything>`.
     ///
     pub fn iter_everything(&self) -> impl Iterator<Item = &Everything> {
         self.everything.values()
     }
+
     /// Inter [`RandoObject`] into the store.
     ///
     pub fn inter_rando_object(&mut self, rando_object: RandoObject) {
@@ -69,16 +72,19 @@ impl ObjectStore {
     pub fn exhume_rando_object(&self, id: &Uuid) -> Option<&RandoObject> {
         self.rando_object.get(id)
     }
+
     /// Exhume [`RandoObject`] from the store — mutably.
     ///
     pub fn exhume_rando_object_mut(&mut self, id: &Uuid) -> Option<&mut RandoObject> {
         self.rando_object.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
     ///
     pub fn iter_rando_object(&self) -> impl Iterator<Item = &RandoObject> {
         self.rando_object.values()
     }
+
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything-object-store-persistence"}}}

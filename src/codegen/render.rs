@@ -12,7 +12,10 @@ use sarzak::{
         Attribute, Conditionality, Event, External as SarzakExternal, Object, State, Ty,
     },
     v2::domain::Domain,
-    woog::types::{ObjectMethod as WoogObjectMethod, Ownership, Parameter, BORROWED},
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{GraceType, ObjectMethod as WoogObjectMethod, Ownership, Parameter, BORROWED},
+    },
 };
 use snafu::prelude::*;
 
@@ -52,8 +55,8 @@ macro_rules! render_type {
     ($($t:ident),+) => {
         $(
             impl RenderType for $t {
-                fn as_type(&self, mutability: &Ownership, store: &Domain) -> String {
-                    self.name.sanitize().as_type(mutability, store)
+                fn as_type(&self, mutability: &Ownership, woog: &WoogStore, store: &Domain) -> String {
+                    self.name.sanitize().as_type(mutability, woog, store)
                 }
             }
         )+
@@ -194,13 +197,13 @@ impl RenderStatement for GType {
                 //     }
                 // };
 
-                let store = find_store(module, domain);
+                let store = find_store(module, woog, domain);
                 uses.insert(format!(
                     // 🚧  Oh, man, I was getting desperate here. I've solved this
                     // problem in the interim.
                     "use mdd::{}::types::{};",
                     module,
-                    object.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    object.as_type(&Ownership::new_borrowed(), woog, domain)
                 ));
 
                 // Recurse into the method
@@ -226,7 +229,7 @@ impl RenderStatement for GType {
                 uses.insert(format!(
                     "use mdd::{}::types::{};",
                     module,
-                    object.as_type(&Ownership::Borrowed(BORROWED), domain)
+                    object.as_type(&Ownership::new_borrowed(), woog, domain)
                 ));
 
                 // Recurse into the method
@@ -258,7 +261,7 @@ impl RenderStatement for GType {
             }
             Self::External(e) => {
                 let var = Generator::default().next().unwrap().to_snake_case();
-                let store = find_store(module, domain);
+                let store = find_store(module, woog, domain);
                 uses.insert(format!("use {} as {};", store.path, store.name));
 
                 let stmt = Statement::new(
@@ -266,7 +269,7 @@ impl RenderStatement for GType {
                     RValue::new(
                         format!(
                             "{}::{};",
-                            e.as_type(&Ownership::Borrowed(BORROWED), domain),
+                            e.as_type(&Ownership::new_borrowed(), woog, domain),
                             // 🚧  Oops. I don't have this any longer, and I'm not putting
                             // it back until I'm on v2. So here's the hack.
                             // ext.initialization,
@@ -366,7 +369,7 @@ impl<'a> RenderStatement for ObjectMethod<'a> {
             RValue::new(
                 format!(
                     "{}::{}()",
-                    obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
                     self.name.as_ident(),
                 ),
                 ty,
@@ -385,13 +388,13 @@ impl<'a> RenderStatement for ObjectMethod<'a> {
 /// It takes a reference to the store so that Type (see below) works. I've got
 /// [a possible workaround](https://git.uberfoo.com/sarzak/sarzak/-/issues/8).
 pub(crate) trait RenderType {
-    fn as_type(&self, mutability: &Ownership, domain: &Domain) -> String;
+    fn as_type(&self, mutability: &Ownership, woog: &WoogStore, domain: &Domain) -> String;
 }
 
 render_type!(Attribute, Event, Object, State, External, SarzakExternal);
 
 impl RenderType for String {
-    fn as_type(&self, mutability: &Ownership, _domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, _woog: &WoogStore, _domain: &Domain) -> String {
         match mutability {
             Ownership::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
             _ => self.sanitize().to_upper_camel_case(),
@@ -400,7 +403,7 @@ impl RenderType for String {
 }
 
 impl RenderType for &str {
-    fn as_type(&self, mutability: &Ownership, _domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, _woog: &WoogStore, _domain: &Domain) -> String {
         match mutability {
             Ownership::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
             _ => self.sanitize().to_upper_camel_case(),
@@ -417,18 +420,18 @@ impl RenderType for &str {
 ///
 /// One thing that worries me is what happens when we get to references?
 impl RenderType for Ty {
-    fn as_type(&self, mutability: &Ownership, domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, woog: &WoogStore, domain: &Domain) -> String {
         match self {
             Self::Boolean(_) => "bool".to_owned(),
             Self::Object(o) => {
                 let object = domain.sarzak().exhume_object(&o).unwrap();
-                format!("{}", object.as_type(mutability, domain))
+                format!("{}", object.as_type(mutability, woog, domain))
             }
             Self::String(_) => "String".to_owned(),
             Self::Uuid(_) => "Uuid".to_owned(),
             Self::External(e) => {
                 let ext = domain.sarzak().exhume_external(&e).unwrap();
-                format!("&{}", ext.as_type(mutability, domain))
+                format!("&{}", ext.as_type(mutability, woog, domain))
             }
             Self::Float(_) => "f64".to_owned(),
             Self::Integer(_) => "i64".to_owned(),
@@ -445,27 +448,48 @@ impl RenderType for Ty {
 ///
 /// One thing that worries me is what happens when we get to references?
 impl RenderType for GType {
-    fn as_type(&self, mutability: &Ownership, domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, woog: &WoogStore, domain: &Domain) -> String {
         match self {
             GType::Boolean => "bool".to_owned(),
             GType::Object(o) => {
                 let object = domain.sarzak().exhume_object(&o).unwrap();
-                format!("{}", object.as_type(&mutability, &domain))
+                format!("{}", object.as_type(mutability, woog, domain))
             }
             GType::Reference(r) => {
                 let object = domain.sarzak().exhume_object(&r).unwrap();
-                format!("&{}", object.as_type(&mutability, &domain))
+                format!("&{}", object.as_type(mutability, woog, domain))
             }
             GType::Option(o) => {
-                format!("Option<{}>", o.as_type(&mutability, &domain))
+                format!("Option<{}>", o.as_type(mutability, woog, domain))
             }
             GType::External(e) => {
-                format!("&{}", e.as_type(&mutability, &domain))
+                format!("&{}", e.as_type(mutability, woog, domain))
             }
             GType::String => "String".to_owned(),
             GType::Uuid => "Uuid".to_owned(),
             GType::Float => "f64".to_owned(),
             GType::Integer => "i64".to_owned(),
+        }
+    }
+}
+
+impl RenderType for GraceType {
+    fn as_type(&self, mutability: &Ownership, woog: &WoogStore, domain: &Domain) -> String {
+        match self {
+            Self::Ty(t) => {
+                let ty = domain.sarzak().exhume_ty(&t).unwrap();
+                ty.as_type(mutability, woog, domain)
+            }
+            Self::WoogOption(o) => {
+                let o = woog.exhume_woog_option(&o).unwrap();
+                let inner = o.r20_grace_type(woog)[0];
+                format!("Option<{}>", inner.as_type(mutability, woog, domain))
+            }
+            Self::Reference(r) => {
+                let reference = woog.exhume_reference(&r).unwrap();
+                let object = reference.r13_object(domain.sarzak())[0];
+                format!("&{}", object.as_type(mutability, woog, domain))
+            }
         }
     }
 }
@@ -535,7 +559,12 @@ impl Sanitize for String {
     }
 }
 
-pub(crate) fn render_attributes(buffer: &mut Buffer, obj: &Object, domain: &Domain) -> Result<()> {
+pub(crate) fn render_attributes(
+    buffer: &mut Buffer,
+    obj: &Object,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
     let mut attrs = obj.r1_attribute(domain.sarzak());
     attrs.sort_by(|a, b| a.name.cmp(&b.name));
     for attr in attrs {
@@ -549,7 +578,7 @@ pub(crate) fn render_attributes(buffer: &mut Buffer, obj: &Object, domain: &Doma
             buffer,
             "pub {}: {},",
             attr.as_ident(),
-            ty.as_type(&Ownership::Borrowed(BORROWED), domain)
+            ty.as_type(&Ownership::new_borrowed(), woog, domain)
         );
     }
 
@@ -559,6 +588,7 @@ pub(crate) fn render_attributes(buffer: &mut Buffer, obj: &Object, domain: &Doma
 pub(crate) fn render_referential_attributes(
     buffer: &mut Buffer,
     obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
@@ -620,9 +650,9 @@ pub(crate) fn render_referential_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             binary.number,
-            obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+            obj.as_type(&Ownership::new_borrowed(), woog, domain),
             referrer.description,
-            r_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
         );
         match cond {
             Conditionality::Conditional(_) => emit!(
@@ -644,6 +674,7 @@ pub(crate) fn render_referential_attributes(
 pub(crate) fn render_associative_attributes(
     buffer: &mut Buffer,
     obj: &Object,
+    woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
@@ -662,10 +693,10 @@ pub(crate) fn render_associative_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             assoc.number,
-            one_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+            one_obj.as_type(&Ownership::new_borrowed(), woog, domain),
             // one_obj.description,
             "🚧 Out of order — see sarzak#14.".to_owned(),
-            one_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+            one_obj.as_type(&Ownership::new_borrowed(), woog, domain)
         );
         emit!(
             buffer,
@@ -677,10 +708,10 @@ pub(crate) fn render_associative_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             assoc.number,
-            other_obj.as_type(&Ownership::Borrowed(BORROWED), domain),
+            other_obj.as_type(&Ownership::new_borrowed(), woog, domain),
             // other_obj.description,
             "🚧 Out of order — see sarzak#14.".to_owned(),
-            other_obj.as_type(&Ownership::Borrowed(BORROWED), domain)
+            other_obj.as_type(&Ownership::new_borrowed(), woog, domain)
         );
         emit!(
             buffer,

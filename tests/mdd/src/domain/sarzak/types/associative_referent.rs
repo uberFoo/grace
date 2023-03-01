@@ -40,7 +40,7 @@ pub struct AssociativeReferent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-implementation"}}}
 impl AssociativeReferent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new"}}}
-    /// Inter a new AssociativeReferent in the store, and return it's `id`.
+    /// Inter a new 'Associative Referent' in the store, and return it's `id`.
     pub fn new(
         description: String,
         cardinality: &Cardinality,

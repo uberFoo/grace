@@ -57,16 +57,19 @@ impl ObjectStore {
     pub fn exhume_a(&self, id: &Uuid) -> Option<&A> {
         self.a.get(id)
     }
+
     /// Exhume [`A`] from the store — mutably.
     ///
     pub fn exhume_a_mut(&mut self, id: &Uuid) -> Option<&mut A> {
         self.a.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, A>`.
     ///
     pub fn iter_a(&self) -> impl Iterator<Item = &A> {
         self.a.values()
     }
+
     /// Inter [`B`] into the store.
     ///
     pub fn inter_b(&mut self, b: B) {
@@ -78,16 +81,19 @@ impl ObjectStore {
     pub fn exhume_b(&self, id: &Uuid) -> Option<&B> {
         self.b.get(id)
     }
+
     /// Exhume [`B`] from the store — mutably.
     ///
     pub fn exhume_b_mut(&mut self, id: &Uuid) -> Option<&mut B> {
         self.b.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, B>`.
     ///
     pub fn iter_b(&self) -> impl Iterator<Item = &B> {
         self.b.values()
     }
+
     /// Inter [`C`] into the store.
     ///
     pub fn inter_c(&mut self, c: C) {
@@ -99,16 +105,19 @@ impl ObjectStore {
     pub fn exhume_c(&self, id: &Uuid) -> Option<&C> {
         self.c.get(id)
     }
+
     /// Exhume [`C`] from the store — mutably.
     ///
     pub fn exhume_c_mut(&mut self, id: &Uuid) -> Option<&mut C> {
         self.c.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, C>`.
     ///
     pub fn iter_c(&self) -> impl Iterator<Item = &C> {
         self.c.values()
     }
+
     /// Inter [`Parameter`] into the store.
     ///
     pub fn inter_parameter(&mut self, parameter: Parameter) {
@@ -120,16 +129,19 @@ impl ObjectStore {
     pub fn exhume_parameter(&self, id: &Uuid) -> Option<&Parameter> {
         self.parameter.get(id)
     }
+
     /// Exhume [`Parameter`] from the store — mutably.
     ///
     pub fn exhume_parameter_mut(&mut self, id: &Uuid) -> Option<&mut Parameter> {
         self.parameter.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Parameter>`.
     ///
     pub fn iter_parameter(&self) -> impl Iterator<Item = &Parameter> {
         self.parameter.values()
     }
+
     /// Inter [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
@@ -141,16 +153,19 @@ impl ObjectStore {
     pub fn exhume_referent(&self, id: &Uuid) -> Option<&Referent> {
         self.referent.get(id)
     }
+
     /// Exhume [`Referent`] from the store — mutably.
     ///
     pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
         self.referent.get_mut(id)
     }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
     ///
     pub fn iter_referent(&self) -> impl Iterator<Item = &Referent> {
         self.referent.values()
     }
+
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_one-object-store-persistence"}}}

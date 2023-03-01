@@ -37,7 +37,7 @@ pub struct Referent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
-    /// Inter a new Referent in the store, and return it's `id`.
+    /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(
         description: String,
         cardinality: &Cardinality,

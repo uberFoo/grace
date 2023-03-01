@@ -38,7 +38,7 @@ pub struct AssociativeReferrer {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-implementation"}}}
 impl AssociativeReferrer {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
-    /// Inter a new AssociativeReferrer in the store, and return it's `id`.
+    /// Inter a new 'Associative Referrer' in the store, and return it's `id`.
     pub fn new(
         one_referential_attribute: String,
         other_referential_attribute: String,

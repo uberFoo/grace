@@ -30,7 +30,7 @@ pub struct B {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-implementation"}}}
 impl B {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
-    /// Inter a new B in the store, and return it's `id`.
+    /// Inter a new 'B' in the store, and return it's `id`.
     pub fn new(bit: bool, ptr: &Referent, store: &mut OneToOneStore) -> B {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", bit, ptr).as_bytes());
         let new = B {
