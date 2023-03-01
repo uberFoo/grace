@@ -301,7 +301,15 @@ pub(crate) fn render_make_uuid(
     rvals: &Vec<RValue>,
     _domain: &Domain,
 ) -> Result<()> {
-    assert!(lval.ty == GType::Uuid);
+    ensure!(
+        lval.ty == GType::Uuid,
+        CompilerSnafu {
+            description: format!(
+                "type mismatch, found `{:?}`, expected `GType::Uuid`",
+                lval.ty
+            )
+        }
+    );
 
     let mut format_string = String::new();
     let mut params = String::new();
