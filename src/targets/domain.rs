@@ -8,10 +8,7 @@ use heck::ToUpperCamelCase;
 use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
-    sarzak::types::Object,
-    // This needs to be v1 because when we populate the store, it's a v1 store
-    // that we are working with.
-    v1::sarzak::types::{External as v1_External, Type},
+    sarzak::types::{External, Object, Ty},
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
@@ -58,70 +55,58 @@ impl<'a> DomainTarget<'a> {
         package: &'a str,
         module: &'a str,
         src_path: &'a Path,
-        domain: sarzak::domain::DomainBuilder,
+        mut domain: sarzak::v2::domain::Domain,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
-        // This post_load script creates an external entity of the ObjectStore so that
+        // This creates an external entity of the ObjectStore so that
         // we can use it from within the domain. Remember that the ObjectStore is a
         // generated construct, and appears as if it was an external library to the
         // domain. Now, if it were modeled, we'd probably include some aspect of it's
         // model as an imported object, and we wouldn't need this. We'd probably need
         // something else...
-        let domain = {
-            let module = module.replace("/", "::");
-            let options = options.clone();
-            // NB — This closure is run on a v1 domain, so we need to create v1
-            // types inside of it.
-            domain
-                .post_load(move |sarzak, _| {
-                    let mut external = HashSet::new();
-                    // This is the object store for _this_ domain.
-                    external.insert(module.clone());
+        let mut external = HashSet::new();
 
-                    if let Some(domains) = options.imported_domains.as_ref() {
-                        for domain in domains {
-                            external.insert(domain.replace("/", "::"));
-                        }
-                    }
+        // This is the object store for _this_ domain.
+        external.insert(module.replace("/", "::"));
 
-                    for store in external {
-                        // Store is a rust path at this point. That's fine for the path,
-                        // but not so good for the name.
-                        let name = store
-                            .split("::")
-                            .last()
-                            // 🚧 Sigh, another expect.
-                            .expect("Failed to get last part of path")
-                            .to_string();
+        if let Some(domains) = options.imported_domains.as_ref() {
+            for domain in domains {
+                external.insert(domain.replace("/", "::"));
+            }
+        }
 
-                        log::debug!("Adding ObjectStore for {}", name);
-                        let store_type = Type::External(
-                            v1_External::new(
-                                sarzak,
-                                // 🚧 Hmmm. Well, I don't have a domain here, and I think that
-                                // as_type should take one. So I'm going to do the gross thing,
-                                // and hardcode what I need. It's really not that gross, since
-                                // all the as_type stuff is overly complicated, in order to be
-                                // used to generate code in places that maybe I don't know
-                                // what it should be. Like here.
-                                format!(
-                                    "{}Store",
-                                    // name.as_type(&Ownership::new_borrowed(), sarzak)
-                                    name.to_upper_camel_case()
-                                ),
-                                format!("crate::{}::store::ObjectStore", store,),
-                            )
-                            .id,
-                        );
+        for store in external {
+            // Store is a rust path at this point. That's fine for the path,
+            // but not so good for the name.
+            let name = store
+                .split("::")
+                .last()
+                // 🚧 Sigh, another expect.
+                .expect("Failed to get last part of path")
+                .to_string();
 
-                        sarzak.inter_ty(store_type);
-                    }
-                })
-                .build_v2()
-                // 🚧 Blow up here -- we don't return a result. We could fix this,
-                // but I'm not sure it's worth it.
-                .expect("Failed to build domain")
-        };
+            log::debug!("Adding ObjectStore for {}", name);
+            let external = External::new(
+                // 🚧 Hmmm. Well, I don't have a domain here, and I think that
+                // as_type should take one. So I'm going to do the gross thing,
+                // and hardcode what I need. It's really not that gross, since
+                // all the as_type stuff is overly complicated, in order to be
+                // used to generate code in places that maybe I don't know
+                // what it should be. Like here.
+                format!(
+                    "{}Store",
+                    // name.as_type(&Ownership::new_borrowed(), &woog, &domain)
+                    name.to_upper_camel_case()
+                ),
+                format!("crate::{}::store::ObjectStore", store,),
+                domain.sarzak_mut(),
+            );
+
+            Ty::new_external(&external, domain.sarzak_mut());
+        }
+
+        // Create our local compiler domain.
+        let woog = init_woog(module, &options, &domain);
 
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
@@ -146,6 +131,7 @@ impl<'a> DomainTarget<'a> {
             imported_domains.insert(domain_name, domain);
         }
 
+        // These are imports in the object descriptions.
         for obj in domain.sarzak().iter_object() {
             if config.is_imported(&obj.id) {
                 let io = config.get_imported(&obj.id).unwrap();
@@ -164,9 +150,6 @@ impl<'a> DomainTarget<'a> {
                 }
             }
         }
-
-        // Create our local compiler domain.
-        let woog = init_woog(module, &options, &domain);
 
         Box::new(Self {
             config,

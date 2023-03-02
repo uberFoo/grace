@@ -119,62 +119,51 @@ impl CodeWriter for Struct {
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
                 let mut imports = HashSet::new();
+                let mut uses = HashSet::new();
 
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
+
+                // We need this to create id's.
+                emit!(buffer, "use crate::{}::UUID_NS;", module);
                 emit!(buffer, "");
 
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
-                        emit!(buffer, "use {};", path);
+                        uses.insert(format!("use {};", path));
                     }
-                    emit!(buffer, "");
                 }
-
-                // We need this to create id's.
-                emit!(buffer, "use crate::{}::UUID_NS;", module);
 
                 // Add use statements for all the referrers.
-                if referrer_objs.len() > 0 {
-                    emit!(buffer, "");
-                    emit!(buffer, "// Referrer imports");
-                }
                 for r_obj in &referrer_objs {
                     if config.is_imported(&r_obj.id) {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
                         imports.insert(imported_object.domain.as_str());
-                        emit!(
-                            buffer,
+                        uses.insert(format!(
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
+                        ));
                     } else {
-                        emit!(
-                            buffer,
+                        uses.insert(format!(
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
+                        ));
                     }
                 }
 
                 // Add use statements for all the referents.
-                if referent_objs.len() > 0 {
-                    emit!(buffer, "");
-                    emit!(buffer, "// Referent imports");
-                }
                 for r_obj in &referent_objs {
-                    emit!(
-                        buffer,
+                    uses.insert(format!(
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
                         r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
+                    ));
                 }
 
                 // Ad use statements for supertypes.
@@ -183,14 +172,17 @@ impl CodeWriter for Struct {
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
 
-                    emit!(buffer, "");
-                    emit!(
-                        buffer,
+                    uses.insert(format!(
                         "use crate::{}::types::{}::{};",
                         module,
                         s_obj.as_ident(),
                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
+                    ));
+                }
+
+                // Add the use statements, plus the use for any imported objects.
+                for use_path in uses {
+                    emit!(buffer, "{}", use_path);
                 }
 
                 // Add the ObjectStore, plus the store for any imported objects.

@@ -1,7 +1,10 @@
 //! Domain Enum Generation
 //!
 //! Here we are.
-use std::{collections::HashMap, fmt::Write};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::Write,
+};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -72,16 +75,15 @@ impl CodeWriter for Enum {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
+                let mut uses = HashSet::new();
                 // Everything has an `id`, everything needs this.
-                emit!(buffer, "use uuid::Uuid;");
-                emit!(buffer, "");
+                uses.insert("use uuid::Uuid;".to_owned());
 
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
-                        emit!(buffer, "use {};", path);
+                        uses.insert(format!("use {};", path));
                     }
-                    emit!(buffer, "");
                 }
 
                 // Ad use statements for supertypes.
@@ -90,18 +92,15 @@ impl CodeWriter for Enum {
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
 
-                    emit!(buffer, "");
-                    emit!(
-                        buffer,
+                    uses.insert(format!(
                         "use crate::{}::types::{}::{};",
                         module,
                         s_obj.as_ident(),
                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
+                    ));
                 }
 
                 let mut only_singletons = true;
-                emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
 
@@ -111,43 +110,43 @@ impl CodeWriter for Enum {
                     if config.is_imported(&s_obj.id) {
                         let imported_object = config.get_imported(&s_obj.id).unwrap();
                         if is_singleton && !is_supertype {
-                            emit!(
-                                buffer,
+                            uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
                                 s_obj.as_const()
-                            );
+                            ));
                         } else {
                             only_singletons = false;
-                            emit!(
-                                buffer,
+                            uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            );
+                            ));
                         }
                     } else {
                         if is_singleton && !is_supertype {
-                            emit!(
-                                buffer,
+                            uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
                                 module,
                                 s_obj.as_ident(),
                                 s_obj.as_const()
-                            );
+                            ));
                         } else {
                             only_singletons = false;
-                            emit!(
-                                buffer,
+                            uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
                                 module,
                                 s_obj.as_ident(),
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            );
+                            ));
                         }
                     }
+                }
+
+                for use_statement in uses {
+                    emit!(buffer, "{}", use_statement);
                 }
 
                 if !only_singletons {

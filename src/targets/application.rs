@@ -38,10 +38,9 @@ impl<'a> ApplicationTarget<'a> {
         package: &'a str,
         module: &'a str,
         src_path: &'a Path,
-        domain: sarzak::domain::DomainBuilder,
+        domain: sarzak::v2::domain::Domain,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
-        let domain = domain.build_v2().expect("Failed to build domain");
         let config: GraceConfig = (options, &domain).into();
 
         // Create our local compiler domain.

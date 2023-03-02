@@ -32,6 +32,8 @@ macro_rules! test_target_domain {
             log::debug!("Testing domain: {},  target: Domain.", $domain);
             let domain = DomainBuilder::new()
                 .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
                 .unwrap();
 
             grace
@@ -90,6 +92,8 @@ macro_rules! test_target_domain {
             log::debug!("Testing domain: {},  target: Domain.", $domain);
             let domain = DomainBuilder::new()
                 .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
                 .unwrap();
 
             grace
@@ -131,7 +135,11 @@ macro_rules! test_target_application {
 
             // Build the domains
             log::debug!("Testing domain: {},  target: Domain.", $domain);
-            let domain = DomainBuilder::new().cuckoo_model($path).unwrap();
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
 
             grace
                 .compile(
@@ -225,6 +233,8 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
     log::debug!("Testing domain from extrusion,  target: Domain.");
     let domain = DomainBuilder::new()
         .cuckoo_model("tests/mdd/models/isa.json")
+        .unwrap()
+        .build_v2()
         .unwrap();
 
     grace

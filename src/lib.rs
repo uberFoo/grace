@@ -23,7 +23,7 @@ pub struct ModelCompiler {}
 impl SarzakModelCompiler for ModelCompiler {
     fn compile<P: AsRef<Path>>(
         &self,
-        domain: sarzak::domain::DomainBuilder,
+        domain: sarzak::v2::domain::Domain,
         package: &str,
         module: &str,
         src_path: P,

@@ -145,7 +145,6 @@ pub(crate) fn init_woog(
             let reference = GraceType::new_reference(&reference, &mut woog);
             let _ = Value::new_variable(&access, &reference, &var, &mut woog);
 
-            dbg!("one", &param);
             params.push(param);
 
             // Other side
@@ -161,7 +160,6 @@ pub(crate) fn init_woog(
             let reference = GraceType::new_reference(&reference, &mut woog);
             let _ = Value::new_variable(&access, &reference, &var, &mut woog);
 
-            dbg!("other", &param);
             params.push(param);
         }
 

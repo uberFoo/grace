@@ -576,7 +576,7 @@ impl ObjectStore {
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
     /// In fact, I intend to add automaagic git integration as an option.
-    pub fn persist<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
         let path = path.join("sarzak.json");
         fs::create_dir_all(&path)?;
