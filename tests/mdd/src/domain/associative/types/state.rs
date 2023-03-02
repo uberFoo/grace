@@ -1,13 +1,10 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"state-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-use-statements"}}}
+use crate::domain::associative::UUID_NS;
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-use crate::domain::associative::UUID_NS;
-
-// Referrer imports
 use crate::domain::associative::types::acknowledged_event::AcknowledgedEvent;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::associative::store::ObjectStore as AssociativeStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

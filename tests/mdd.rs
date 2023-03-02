@@ -170,7 +170,7 @@ macro_rules! test_target_application {
 }
 
 // This is an imported domain that we need to build, so get it done early.
-test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak_✨.json");
+test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak.json");
 
 // Domain Target Tests
 test_target_domain!(

@@ -1,13 +1,10 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"not_important-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-use-statements"}}}
+use crate::domain::isa_clone::UUID_NS;
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-use crate::domain::isa_clone::UUID_NS;
-
-// Referrer imports
 use crate::domain::isa_clone::types::super_t::SuperT;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

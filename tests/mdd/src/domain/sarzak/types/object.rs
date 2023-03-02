@@ -1,12 +1,8 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"object-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-use-statements"}}}
+use crate::domain::sarzak::UUID_NS;
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-use crate::domain::sarzak::UUID_NS;
-
-// Referent imports
 use crate::domain::sarzak::types::associative_referent::AssociativeReferent;
 use crate::domain::sarzak::types::associative_referrer::AssociativeReferrer;
 use crate::domain::sarzak::types::attribute::Attribute;
@@ -16,8 +12,8 @@ use crate::domain::sarzak::types::referrer::Referrer;
 use crate::domain::sarzak::types::state::State;
 use crate::domain::sarzak::types::subtype::Subtype;
 use crate::domain::sarzak::types::supertype::Supertype;
-
 use crate::domain::sarzak::types::ty::Ty;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

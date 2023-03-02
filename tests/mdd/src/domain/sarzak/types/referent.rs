@@ -1,18 +1,13 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"referent-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-use-statements"}}}
+use crate::domain::sarzak::UUID_NS;
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-use crate::domain::sarzak::UUID_NS;
-
-// Referrer imports
+use crate::domain::sarzak::types::binary::Binary;
 use crate::domain::sarzak::types::cardinality::Cardinality;
 use crate::domain::sarzak::types::conditionality::Conditionality;
 use crate::domain::sarzak::types::object::Object;
-
-// Referent imports
-use crate::domain::sarzak::types::binary::Binary;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

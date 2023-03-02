@@ -504,7 +504,7 @@ mod tests {
                     config_value.imported_object,
                     Some(ImportedObject {
                         domain: "domain::sarzak".to_string(),
-                        model_file: PathBuf::from("../sarzak/models/sarzak_✨.json"),
+                        model_file: PathBuf::from("../sarzak/models/sarzak.json"),
                         id: Uuid::parse_str("7178e7a4-5131-504b-a7b3-c2c0cfedf343").unwrap(),
                     })
                 );

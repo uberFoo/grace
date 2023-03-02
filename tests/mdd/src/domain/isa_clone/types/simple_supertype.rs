@@ -2,11 +2,9 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-use-statements"}}}
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-// Subtype imports
 use crate::domain::isa_clone::types::simple_subtype_a::SimpleSubtypeA;
 use crate::domain::isa_clone::types::simple_subtype_b::SIMPLE_SUBTYPE_B;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

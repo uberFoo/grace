@@ -1,13 +1,10 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"c-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-use-statements"}}}
+use crate::domain::one_to_many::UUID_NS;
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-use crate::domain::one_to_many::UUID_NS;
-
-// Referrer imports
 use crate::domain::one_to_many::types::referent::Referent;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_many::store::ObjectStore as OneToManyStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

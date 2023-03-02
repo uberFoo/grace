@@ -2,17 +2,11 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-use-statements"}}}
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-// Subtype imports
+use crate::domain::isa_clone::types::not_important::NotImportant;
+use crate::domain::isa_clone::types::reference::Reference;
 use crate::domain::isa_clone::types::subtype_a::SubtypeA;
 use crate::domain::isa_clone::types::subtype_b::SubtypeB;
-
-// Referrer imports
-use crate::domain::isa_clone::types::reference::Reference;
-
-// Referent imports
-use crate::domain::isa_clone::types::not_important::NotImportant;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

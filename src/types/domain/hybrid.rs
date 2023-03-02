@@ -111,6 +111,7 @@ impl CodeWriter for Hybrid {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
+                let mut imported_domains = HashSet::new();
                 let mut uses = HashSet::new();
 
                 // Everything has an `id`, everything needs this.
@@ -119,87 +120,108 @@ impl CodeWriter for Hybrid {
 
                 // emit!(buffer, "use crate::{}::UUID_NS;", module);
 
-                emit!(buffer, "");
-
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
-                        emit!(buffer, "use {};", path);
+                        uses.insert(format!("use {};", path));
                     }
                 }
-                emit!(buffer, "");
 
-                emit!(buffer, "// Subtype imports");
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
+
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
                     let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
 
-                    if is_singleton && !is_supertype {
-                        emit!(
-                            buffer,
-                            "use crate::{}::types::{}::{};",
-                            module,
-                            s_obj.as_ident(),
-                            s_obj.as_const()
-                        );
+                    if config.is_imported(&s_obj.id) {
+                        let imported_object = config.get_imported(&s_obj.id).unwrap();
+                        if is_singleton && !is_supertype {
+                            uses.insert(format!(
+                                "use crate::{}::types::{}::{};",
+                                imported_object.domain,
+                                s_obj.as_ident(),
+                                s_obj.as_const()
+                            ));
+                        } else {
+                            uses.insert(format!(
+                                "use crate::{}::types::{}::{};",
+                                imported_object.domain,
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ));
+                        }
                     } else {
-                        emit!(
-                            buffer,
-                            "use crate::{}::types::{}::{};",
-                            module,
-                            s_obj.as_ident(),
-                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
+                        if is_singleton && !is_supertype {
+                            uses.insert(format!(
+                                "use crate::{}::types::{}::{};",
+                                module,
+                                s_obj.as_ident(),
+                                s_obj.as_const()
+                            ));
+                        } else {
+                            uses.insert(format!(
+                                "use crate::{}::types::{}::{};",
+                                module,
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ));
+                        }
                     }
                 }
 
                 // Add use statements for all the referrers.
-                if referrer_objs.len() > 0 {
-                    emit!(buffer, "");
-                    emit!(buffer, "// Referrer imports");
-                }
                 for r_obj in &referrer_objs {
                     if config.is_imported(&r_obj.id) {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
-                        uses.insert(imported_object.domain.as_str());
-                        emit!(
-                            buffer,
+                        imported_domains.insert(imported_object.domain.as_str());
+                        uses.insert(format!(
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
+                        ));
                     } else {
-                        emit!(
-                            buffer,
+                        uses.insert(format!(
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
+                        ));
                     }
                 }
 
                 // Add use statements for all the referents.
-                if referent_objs.len() > 0 {
-                    emit!(buffer, "");
-                    emit!(buffer, "// Referent imports");
-                }
                 for r_obj in &referent_objs {
-                    emit!(
-                        buffer,
+                    uses.insert(format!(
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
                         r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
+                    ));
+                }
+
+                // Ad use statements for supertypes.
+                for subtype in obj.r15c_subtype(domain.sarzak()) {
+                    let isa = subtype.r27_isa(domain.sarzak())[0];
+                    let supertype = isa.r13_supertype(domain.sarzak())[0];
+                    let s_obj = supertype.r14_object(domain.sarzak())[0];
+
+                    uses.insert(format!(
+                        "use crate::{}::types::{}::{};",
+                        module,
+                        s_obj.as_ident(),
+                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    ));
                 }
 
                 // Add the ObjectStore, plus the store for any imported objects.
-                uses.insert(module);
+                for use_path in uses {
+                    emit!(buffer, "{}", use_path);
+                }
+
+                imported_domains.insert(module);
                 emit!(buffer, "");
-                for import in uses {
+                for import in imported_domains {
                     let store = find_store(import, woog, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }

@@ -1,14 +1,11 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"event-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-use-statements"}}}
+use crate::domain::sarzak::UUID_NS;
 use uuid::Uuid;
 
-use serde::{Deserialize, Serialize};
-
-use crate::domain::sarzak::UUID_NS;
-
-// Referrer imports
 use crate::domain::sarzak::types::acknowledged_event::AcknowledgedEvent;
 use crate::domain::sarzak::types::object::Object;
+use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

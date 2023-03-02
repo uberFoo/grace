@@ -1,12 +1,9 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"simple_subtype_a-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-use-statements"}}}
-use uuid::Uuid;
-
-use serde::{Deserialize, Serialize};
-
-use crate::domain::isa_clone::types::simple_supertype::SimpleSupertype;
-// Subtype imports
 use crate::domain::isa_clone::types::oh_boy::OhBoy;
+use crate::domain::isa_clone::types::simple_supertype::SimpleSupertype;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
