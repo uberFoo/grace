@@ -18,6 +18,7 @@ macro_rules! test_target_domain {
                 from_module: None,
                 from_path: None,
                 persist: true,
+                persist_timestamps: false,
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
@@ -73,6 +74,7 @@ macro_rules! test_target_domain {
                 from_module: None,
                 from_path: None,
                 persist: true,
+                persist_timestamps: false,
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
@@ -219,6 +221,7 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
         from_module: Some("domain::isa".to_string()),
         from_path: Some("tests/mdd/models/isa.json".into()),
         persist: false,
+        persist_timestamps: false,
     });
     if let Some(ref mut derive) = options.derive {
         derive.push("Clone".to_string());

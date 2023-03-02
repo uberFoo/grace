@@ -76,11 +76,20 @@ pub struct DomainConfig {
     /// user domains.
     #[arg(long, short, action=ArgAction::SetTrue)]
     pub persist: bool,
+    /// Persist with timestamps
+    ///
+    /// Store time stamps along side the type in the ObjectStore. The time stamp
+    /// is the time that the object was interred into the store. This is useful
+    /// to the compiler so that it can only generate code for types that have
+    /// changed.
+    #[arg(long, short, action=ArgAction::SetTrue)]
+    pub persist_timestamps: bool,
 }
 
 const DOMAIN_FROM_MODULE: Option<String> = None;
 const DOMAIN_FROM_PATH: Option<PathBuf> = None;
 const DOMAIN_PERSIST: bool = false;
+const DOMAIN_PERSIST_TIMESTAMPS: bool = false;
 
 impl Default for DomainConfig {
     fn default() -> Self {
@@ -88,6 +97,7 @@ impl Default for DomainConfig {
             from_module: DOMAIN_FROM_MODULE,
             from_path: DOMAIN_FROM_PATH,
             persist: DOMAIN_PERSIST,
+            persist_timestamps: DOMAIN_PERSIST_TIMESTAMPS,
         }
     }
 }
@@ -237,6 +247,15 @@ impl GraceConfig {
     pub(crate) fn get_persist(&self) -> Option<bool> {
         match self.get_target() {
             Target::Domain(config) => Some(config.persist),
+            _ => None,
+        }
+    }
+
+    /// Get the `persist_timestamps` value for the target.
+    ///
+    pub(crate) fn get_persist_timestamps(&self) -> Option<bool> {
+        match self.get_target() {
+            Target::Domain(config) => Some(config.persist_timestamps),
             _ => None,
         }
     }

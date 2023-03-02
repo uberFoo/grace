@@ -146,6 +146,7 @@ impl DomainStore {
         &self,
         buffer: &mut Buffer,
         objects: &Vec<&&Object>,
+        timestamp: bool,
         module: &str,
         woog: &WoogStore,
         domain: &Domain,
@@ -168,23 +169,42 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
-
                     if inner_object_is_enum(obj, domain) {
-                        emit!(
-                            buffer,
-                            "self.{}.insert({}.id(), {});",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}.insert({}.id(), ({}, SystemTime::now()));",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "self.{}.insert({}.id(), {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        }
                     } else {
-                        emit!(
-                            buffer,
-                            "self.{}.insert({}.id, {});",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}.insert({}.id, ({}, SystemTime::now()));",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "self.{}.insert({}.id, {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        }
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
@@ -200,7 +220,17 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
-                    emit!(buffer, "self.{}.get(id)", obj.as_ident());
+                    if timestamp {
+                        emit!(
+                            buffer,
+                            "self.{}.get(id).map(|{}| &{}.0)",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(buffer, "self.{}.get(id)", obj.as_ident());
+                    }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
                     emit!(
@@ -215,7 +245,17 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Ownership::Mutable(MUTABLE), woog, domain)
                     );
-                    emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
+                    if timestamp {
+                        emit!(
+                            buffer,
+                            "self.{}.get_mut(id).map(|{}| &mut {}.0)",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
+                    }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
                     emit!(
@@ -230,9 +270,55 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
-                    emit!(buffer, "self.{}.values()", obj.as_ident());
+                    if timestamp {
+                        emit!(
+                            buffer,
+                            "self.{}.values().map(|{}| &{}.0)",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(buffer, "self.{}.values()", obj.as_ident());
+                    }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
+                    if timestamp {
+                        emit!(
+                            buffer,
+                            "/// Get the timestamp for {}.",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                        emit!(buffer, "///");
+                        emit!(
+                            buffer,
+                            "pub fn {}_timestamp(&mut self, {}: {}) -> SystemTime {{",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                        if inner_object_is_enum(obj, domain) {
+                            emit!(
+                                buffer,
+                                "self.{}.get(&{}.id()).map(|{}| {}.1).unwrap_or(SystemTime::now())",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "self.{}.get(&{}.id).map(|{}| {}.1).unwrap_or(SystemTime::now())",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        }
+                        emit!(buffer, "}}");
+                        emit!(buffer, "");
+                    }
                 }
 
                 Ok(())
@@ -246,6 +332,7 @@ impl DomainStore {
         &self,
         buffer: &mut Buffer,
         objects: &Vec<&&Object>,
+        timestamp: bool,
         module: &str,
         woog: &WoogStore,
         domain: &Domain,
@@ -282,34 +369,84 @@ impl DomainStore {
                     emit!(buffer, "{{");
                     emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
                     emit!(buffer, "fs::create_dir_all(&path)?;");
-                    emit!(
-                        buffer,
-                        "for {} in self.{}.values() {{",
-                        obj.as_ident(),
-                        obj.as_ident()
-                    );
-                    if inner_object_is_enum(obj, domain) {
+                    if timestamp {
                         emit!(
                             buffer,
-                            "let path = path.join(format!(\"{{}}.json\", {}.id()));",
+                            "for {}_tuple in self.{}.values() {{",
+                            obj.as_ident(),
                             obj.as_ident()
                         );
+                        if inner_object_is_enum(obj, domain) {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id()));",
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id));",
+                                obj.as_ident()
+                            );
+                        }
+                        emit!(buffer, "if path.exists() {{");
+                        emit!(buffer, "let file = fs::File::open(&path)?;");
+                        emit!(buffer, "let reader = io::BufReader::new(file);");
+                        emit!(
+                            buffer,
+                            "let on_disk: ({}, SystemTime) = serde_json::from_reader(reader)?;",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                        emit!(buffer, "if on_disk.0 != {}_tuple.0 {{", obj.as_ident());
+                        emit!(buffer, "let file = fs::File::create(path)?;");
+                        emit!(buffer, "let mut writer = io::BufWriter::new(file);");
+                        emit!(
+                            buffer,
+                            "serde_json::to_writer_pretty(&mut writer, &{}_tuple)?;",
+                            obj.as_ident()
+                        );
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}} else {{");
+                        emit!(buffer, "let file = fs::File::create(&path)?;");
+                        emit!(buffer, "let mut writer = io::BufWriter::new(file);");
+                        emit!(
+                            buffer,
+                            "serde_json::to_writer_pretty(&mut writer, &{}_tuple)?;",
+                            obj.as_ident()
+                        );
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}}");
                     } else {
                         emit!(
                             buffer,
-                            "let path = path.join(format!(\"{{}}.json\", {}.id));",
+                            "for {} in self.{}.values() {{",
+                            obj.as_ident(),
                             obj.as_ident()
                         );
+                        if inner_object_is_enum(obj, domain) {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}.id()));",
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}.id));",
+                                obj.as_ident()
+                            );
+                        }
+                        emit!(buffer, "let file = fs::File::create(path)?;");
+                        emit!(buffer, "let mut writer = io::BufWriter::new(file);");
+                        emit!(
+                            buffer,
+                            "serde_json::to_writer_pretty(&mut writer, &{})?;",
+                            obj.as_ident()
+                        );
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}}");
                     }
-                    emit!(buffer, "let file = fs::File::create(path)?;");
-                    emit!(buffer, "let mut writer = io::BufWriter::new(file);");
-                    emit!(
-                        buffer,
-                        "serde_json::to_writer_pretty(&mut writer, &{})?;",
-                        obj.as_ident()
-                    );
-                    emit!(buffer, "}}");
-                    emit!(buffer, "}}");
                     emit!(buffer, "");
                 }
                 emit!(buffer, "Ok(())");
@@ -349,28 +486,54 @@ impl DomainStore {
                     emit!(buffer, "let path = entry.path();");
                     emit!(buffer, "let file = fs::File::open(path)?;");
                     emit!(buffer, "let reader = io::BufReader::new(file);");
-                    emit!(
-                        buffer,
-                        "let {}: {} = serde_json::from_reader(reader)?;",
-                        obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
-                    if inner_object_is_enum(obj, domain) {
+                    if timestamp {
                         emit!(
                             buffer,
-                            "store.{}.insert({}.id(), {});",
+                            "let {}: ({}, SystemTime) = serde_json::from_reader(reader)?;",
                             obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
+                        if inner_object_is_enum(obj, domain) {
+                            emit!(
+                                buffer,
+                                "store.{}.insert({}.0.id(), {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "store.{}.insert({}.0.id, {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        }
                     } else {
                         emit!(
                             buffer,
-                            "store.{}.insert({}.id, {});",
+                            "let {}: {} = serde_json::from_reader(reader)?;",
                             obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
+                        if inner_object_is_enum(obj, domain) {
+                            emit!(
+                                buffer,
+                                "store.{}.insert({}.id(), {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "store.{}.insert({}.id, {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        }
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "}}");
@@ -429,6 +592,8 @@ impl CodeWriter for DomainStore {
             })
             .collect::<Vec<_>>();
 
+        let timestamp = config.get_persist_timestamps().unwrap_or(false);
+
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-object-store-definition", module),
@@ -441,7 +606,11 @@ impl CodeWriter for DomainStore {
                 let mut singleton_subs = false;
 
                 if persist {
-                    emit!(buffer, "use std::{{io, fs, path::Path, time::SystemTime}};");
+                    if timestamp {
+                        emit!(buffer, "use std::{{io, fs, path::Path, time::SystemTime}};");
+                    } else {
+                        emit!(buffer, "use std::{{io, fs, path::Path}};");
+                    }
                 }
                 emit!(buffer, "use std::collections::HashMap;");
                 emit!(buffer, "");
@@ -475,12 +644,21 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");
                 emit!(buffer, "pub struct ObjectStore {{");
                 for obj in &objects {
-                    emit!(
-                        buffer,
-                        "{}: HashMap<Uuid,{}>,",
-                        obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
+                    if timestamp {
+                        emit!(
+                            buffer,
+                            "{}: HashMap<Uuid, ({}, SystemTime)>,",
+                            obj.as_ident(),
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "{}: HashMap<Uuid, {}>,",
+                            obj.as_ident(),
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                    }
                 }
                 emit!(buffer, "}}");
                 emit!(buffer, "");
@@ -521,12 +699,14 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "}}");
                 emit!(buffer, "");
 
-                self.generate_store(buffer, &objects, module, woog, domain)?;
+                self.generate_store(buffer, &objects, timestamp, module, woog, domain)?;
 
                 emit!(buffer, "");
 
                 if persist {
-                    self.generate_store_persistence(buffer, &objects, module, woog, domain)?;
+                    self.generate_store_persistence(
+                        buffer, &objects, timestamp, module, woog, domain,
+                    )?;
                 }
 
                 emit!(buffer, "}}");
