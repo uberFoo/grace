@@ -82,7 +82,7 @@ pub struct DomainConfig {
     /// is the time that the object was interred into the store. This is useful
     /// to the compiler so that it can only generate code for types that have
     /// changed.
-    #[arg(long, short, action=ArgAction::SetTrue)]
+    #[arg(long, short = 't', action=ArgAction::SetTrue, requires = "persist")]
     pub persist_timestamps: bool,
 }
 
