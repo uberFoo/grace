@@ -256,9 +256,18 @@ impl DomainStore {
             |buffer| {
                 emit!(buffer, "/// Persist the store.");
                 emit!(buffer, "///");
-                emit!(buffer, "/// The store is persisted as a directory of JSON files. The intention");
-                emit!(buffer, "/// is that this directory can be checked into version control.");
-                emit!(buffer, "/// In fact, I intend to add automaagic git integration as an option.");
+                emit!(
+                    buffer,
+                    "/// The store is persisted as a directory of JSON files. The intention"
+                );
+                emit!(
+                    buffer,
+                    "/// is that this directory can be checked into version control."
+                );
+                emit!(
+                    buffer,
+                    "/// In fact, I intend to add automaagic git integration as an option."
+                );
                 emit!(
                     buffer,
                     "pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
@@ -271,15 +280,37 @@ impl DomainStore {
                 for obj in objects {
                     emit!(buffer, "// Persist {}.", obj.name);
                     emit!(buffer, "{{");
-                    emit!(buffer, "let path = path.join(\"{}.json\");", obj.as_ident());
+                    emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
+                    emit!(buffer, "fs::create_dir_all(&path)?;");
+                    emit!(
+                        buffer,
+                        "for {} in self.{}.values() {{",
+                        obj.as_ident(),
+                        obj.as_ident()
+                    );
+                    if inner_object_is_enum(obj, domain) {
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {}.id()));",
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {}.id));",
+                            obj.as_ident()
+                        );
+                    }
                     emit!(buffer, "let file = fs::File::create(path)?;");
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
                     emit!(
                         buffer,
-                        "serde_json::to_writer_pretty(&mut writer, &self.{}.values().map(|x| x).collect::<Vec<_>>())?;",
+                        "serde_json::to_writer_pretty(&mut writer, &{})?;",
                         obj.as_ident()
                     );
                     emit!(buffer, "}}");
+                    emit!(buffer, "}}");
+                    emit!(buffer, "");
                 }
                 emit!(buffer, "Ok(())");
                 emit!(buffer, "}}");
@@ -287,9 +318,18 @@ impl DomainStore {
 
                 emit!(buffer, "/// Load the store.");
                 emit!(buffer, "///");
-                emit!(buffer, "/// The store is persisted as a directory of JSON files. The intention");
-                emit!(buffer, "/// is that this directory can be checked into version control.");
-                emit!(buffer, "/// In fact, I intend to add automaagic git integration as an option.");
+                emit!(
+                    buffer,
+                    "/// The store is persisted as a directory of JSON files. The intention"
+                );
+                emit!(
+                    buffer,
+                    "/// is that this directory can be checked into version control."
+                );
+                emit!(
+                    buffer,
+                    "/// In fact, I intend to add automaagic git integration as an option."
+                );
                 emit!(
                     buffer,
                     "pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {{"
@@ -302,32 +342,43 @@ impl DomainStore {
                 for obj in objects {
                     emit!(buffer, "// Load {}.", obj.name);
                     emit!(buffer, "{{");
-                    emit!(buffer, "let path = path.join(\"{}.json\");", obj.as_ident());
+                    emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
+                    emit!(buffer, "let mut entries = fs::read_dir(path)?;");
+                    emit!(buffer, "while let Some(entry) = entries.next() {{");
+                    emit!(buffer, "let entry = entry?;");
+                    emit!(buffer, "let path = entry.path();");
                     emit!(buffer, "let file = fs::File::open(path)?;");
                     emit!(buffer, "let reader = io::BufReader::new(file);");
                     emit!(
                         buffer,
-                        "let {}: Vec<{}> = serde_json::from_reader(reader)?;",
+                        "let {}: {} = serde_json::from_reader(reader)?;",
                         obj.as_ident(),
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     if inner_object_is_enum(obj, domain) {
-                        emit!(buffer,
-                            "store.{} = {}.into_iter().map(|道| ( 道.id(),  道)).collect();",
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.id(), {});",
                             obj.as_ident(),
-                            obj.as_ident());
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
                     } else {
-                        emit!(buffer,
-                            "store.{} = {}.into_iter().map(|道| ( 道.id,  道)).collect();",
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.id, {});",
                             obj.as_ident(),
-                            obj.as_ident());
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
                     }
                     emit!(buffer, "}}");
+                    emit!(buffer, "}}");
+                    emit!(buffer, "");
                 }
                 emit!(buffer, "");
                 emit!(buffer, "Ok(store)");
                 emit!(buffer, "}}");
-
 
                 Ok(())
             },
@@ -390,7 +441,7 @@ impl CodeWriter for DomainStore {
                 let mut singleton_subs = false;
 
                 if persist {
-                    emit!(buffer, "use std::{{io, fs, path::Path}};");
+                    emit!(buffer, "use std::{{io, fs, path::Path, time::SystemTime}};");
                 }
                 emit!(buffer, "use std::collections::HashMap;");
                 emit!(buffer, "");

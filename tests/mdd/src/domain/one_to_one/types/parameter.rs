@@ -1,8 +1,8 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"parameter-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-use-statements"}}}
-use crate::domain::one_to_one::UUID_NS;
 use uuid::Uuid;
 
+use crate::domain::one_to_one::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;

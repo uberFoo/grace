@@ -1,9 +1,9 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"everything-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-use-statements"}}}
-use crate::domain::everything::UUID_NS;
 use uuid::Uuid;
 
 use crate::domain::everything::types::rando_object::RandoObject;
+use crate::domain::everything::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::everything::store::ObjectStore as EverythingStore;

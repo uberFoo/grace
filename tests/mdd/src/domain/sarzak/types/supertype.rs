@@ -1,10 +1,10 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"supertype-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"supertype-use-statements"}}}
-use crate::domain::sarzak::UUID_NS;
 use uuid::Uuid;
 
 use crate::domain::sarzak::types::isa::Isa;
 use crate::domain::sarzak::types::object::Object;
+use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;

@@ -1,12 +1,12 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"referrer-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-use-statements"}}}
-use crate::domain::sarzak::UUID_NS;
 use uuid::Uuid;
 
 use crate::domain::sarzak::types::binary::Binary;
 use crate::domain::sarzak::types::cardinality::Cardinality;
 use crate::domain::sarzak::types::conditionality::Conditionality;
 use crate::domain::sarzak::types::object::Object;
+use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;

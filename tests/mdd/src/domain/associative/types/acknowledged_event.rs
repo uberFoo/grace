@@ -1,10 +1,10 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"acknowledged_event-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-use-statements"}}}
-use crate::domain::associative::UUID_NS;
 use uuid::Uuid;
 
 use crate::domain::associative::types::event::Event;
 use crate::domain::associative::types::state::State;
+use crate::domain::associative::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::associative::store::ObjectStore as AssociativeStore;

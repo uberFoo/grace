@@ -100,24 +100,28 @@ impl ObjectStore {
 
         // Persist Everything.
         {
-            let path = path.join("everything.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.everything.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("everything");
+            fs::create_dir_all(&path)?;
+            for everything in self.everything.values() {
+                let path = path.join(format!("{}.json", everything.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &everything)?;
+            }
         }
+
         // Persist Rando Object.
         {
-            let path = path.join("rando_object.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.rando_object.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("rando_object");
+            fs::create_dir_all(&path)?;
+            for rando_object in self.rando_object.values() {
+                let path = path.join(format!("{}.json", rando_object.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &rando_object)?;
+            }
         }
+
         Ok(())
     }
 
@@ -134,19 +138,30 @@ impl ObjectStore {
 
         // Load Everything.
         {
-            let path = path.join("everything.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let everything: Vec<Everything> = serde_json::from_reader(reader)?;
-            store.everything = everything.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("everything");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let everything: Everything = serde_json::from_reader(reader)?;
+                store.everything.insert(everything.id, everything);
+            }
         }
+
         // Load Rando Object.
         {
-            let path = path.join("rando_object.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let rando_object: Vec<RandoObject> = serde_json::from_reader(reader)?;
-            store.rando_object = rando_object.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("rando_object");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let rando_object: RandoObject = serde_json::from_reader(reader)?;
+                store.rando_object.insert(rando_object.id, rando_object);
+            }
         }
 
         Ok(store)

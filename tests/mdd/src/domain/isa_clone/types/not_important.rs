@@ -1,9 +1,9 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"not_important-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-use-statements"}}}
-use crate::domain::isa_clone::UUID_NS;
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::super_t::SuperT;
+use crate::domain::isa_clone::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;

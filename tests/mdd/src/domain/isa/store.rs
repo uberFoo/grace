@@ -294,102 +294,112 @@ impl ObjectStore {
 
         // Persist Henry.
         {
-            let path = path.join("henry.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.henry.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("henry");
+            fs::create_dir_all(&path)?;
+            for henry in self.henry.values() {
+                let path = path.join(format!("{}.json", henry.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &henry)?;
+            }
         }
+
         // Persist Not Important.
         {
-            let path = path.join("not_important.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.not_important.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("not_important");
+            fs::create_dir_all(&path)?;
+            for not_important in self.not_important.values() {
+                let path = path.join(format!("{}.json", not_important.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &not_important)?;
+            }
         }
+
         // Persist Oh Boy!.
         {
-            let path = path.join("oh_boy.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.oh_boy.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("oh_boy");
+            fs::create_dir_all(&path)?;
+            for oh_boy in self.oh_boy.values() {
+                let path = path.join(format!("{}.json", oh_boy.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &oh_boy)?;
+            }
         }
+
         // Persist Reference.
         {
-            let path = path.join("reference.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.reference.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("reference");
+            fs::create_dir_all(&path)?;
+            for reference in self.reference.values() {
+                let path = path.join(format!("{}.json", reference.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &reference)?;
+            }
         }
+
         // Persist Simple Subtype A.
         {
-            let path = path.join("simple_subtype_a.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self
-                    .simple_subtype_a
-                    .values()
-                    .map(|x| x)
-                    .collect::<Vec<_>>(),
-            )?;
+            let path = path.join("simple_subtype_a");
+            fs::create_dir_all(&path)?;
+            for simple_subtype_a in self.simple_subtype_a.values() {
+                let path = path.join(format!("{}.json", simple_subtype_a.id()));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &simple_subtype_a)?;
+            }
         }
+
         // Persist Simple Supertype.
         {
-            let path = path.join("simple_supertype.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self
-                    .simple_supertype
-                    .values()
-                    .map(|x| x)
-                    .collect::<Vec<_>>(),
-            )?;
+            let path = path.join("simple_supertype");
+            fs::create_dir_all(&path)?;
+            for simple_supertype in self.simple_supertype.values() {
+                let path = path.join(format!("{}.json", simple_supertype.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &simple_supertype)?;
+            }
         }
+
         // Persist Subtype A.
         {
-            let path = path.join("subtype_a.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.subtype_a.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("subtype_a");
+            fs::create_dir_all(&path)?;
+            for subtype_a in self.subtype_a.values() {
+                let path = path.join(format!("{}.json", subtype_a.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &subtype_a)?;
+            }
         }
+
         // Persist Subtype B.
         {
-            let path = path.join("subtype_b.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.subtype_b.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("subtype_b");
+            fs::create_dir_all(&path)?;
+            for subtype_b in self.subtype_b.values() {
+                let path = path.join(format!("{}.json", subtype_b.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &subtype_b)?;
+            }
         }
+
         // Persist Super T.
         {
-            let path = path.join("super_t.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.super_t.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("super_t");
+            fs::create_dir_all(&path)?;
+            for super_t in self.super_t.values() {
+                let path = path.join(format!("{}.json", super_t.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &super_t)?;
+            }
         }
+
         Ok(())
     }
 
@@ -406,78 +416,132 @@ impl ObjectStore {
 
         // Load Henry.
         {
-            let path = path.join("henry.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let henry: Vec<Henry> = serde_json::from_reader(reader)?;
-            store.henry = henry.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("henry");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let henry: Henry = serde_json::from_reader(reader)?;
+                store.henry.insert(henry.id, henry);
+            }
         }
+
         // Load Not Important.
         {
-            let path = path.join("not_important.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let not_important: Vec<NotImportant> = serde_json::from_reader(reader)?;
-            store.not_important = not_important.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("not_important");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let not_important: NotImportant = serde_json::from_reader(reader)?;
+                store.not_important.insert(not_important.id, not_important);
+            }
         }
+
         // Load Oh Boy!.
         {
-            let path = path.join("oh_boy.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let oh_boy: Vec<OhBoy> = serde_json::from_reader(reader)?;
-            store.oh_boy = oh_boy.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("oh_boy");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let oh_boy: OhBoy = serde_json::from_reader(reader)?;
+                store.oh_boy.insert(oh_boy.id, oh_boy);
+            }
         }
+
         // Load Reference.
         {
-            let path = path.join("reference.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let reference: Vec<Reference> = serde_json::from_reader(reader)?;
-            store.reference = reference.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("reference");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let reference: Reference = serde_json::from_reader(reader)?;
+                store.reference.insert(reference.id, reference);
+            }
         }
+
         // Load Simple Subtype A.
         {
-            let path = path.join("simple_subtype_a.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let simple_subtype_a: Vec<SimpleSubtypeA> = serde_json::from_reader(reader)?;
-            store.simple_subtype_a = simple_subtype_a
-                .into_iter()
-                .map(|道| (道.id(), 道))
-                .collect();
+            let path = path.join("simple_subtype_a");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let simple_subtype_a: SimpleSubtypeA = serde_json::from_reader(reader)?;
+                store
+                    .simple_subtype_a
+                    .insert(simple_subtype_a.id(), simple_subtype_a);
+            }
         }
+
         // Load Simple Supertype.
         {
-            let path = path.join("simple_supertype.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let simple_supertype: Vec<SimpleSupertype> = serde_json::from_reader(reader)?;
-            store.simple_supertype = simple_supertype.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("simple_supertype");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let simple_supertype: SimpleSupertype = serde_json::from_reader(reader)?;
+                store
+                    .simple_supertype
+                    .insert(simple_supertype.id, simple_supertype);
+            }
         }
+
         // Load Subtype A.
         {
-            let path = path.join("subtype_a.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let subtype_a: Vec<SubtypeA> = serde_json::from_reader(reader)?;
-            store.subtype_a = subtype_a.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("subtype_a");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let subtype_a: SubtypeA = serde_json::from_reader(reader)?;
+                store.subtype_a.insert(subtype_a.id, subtype_a);
+            }
         }
+
         // Load Subtype B.
         {
-            let path = path.join("subtype_b.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let subtype_b: Vec<SubtypeB> = serde_json::from_reader(reader)?;
-            store.subtype_b = subtype_b.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("subtype_b");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let subtype_b: SubtypeB = serde_json::from_reader(reader)?;
+                store.subtype_b.insert(subtype_b.id, subtype_b);
+            }
         }
+
         // Load Super T.
         {
-            let path = path.join("super_t.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let super_t: Vec<SuperT> = serde_json::from_reader(reader)?;
-            store.super_t = super_t.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("super_t");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let super_t: SuperT = serde_json::from_reader(reader)?;
+                store.super_t.insert(super_t.id, super_t);
+            }
         }
 
         Ok(store)

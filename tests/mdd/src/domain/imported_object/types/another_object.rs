@@ -1,8 +1,8 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"another_object-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-use-statements"}}}
-use crate::domain::imported_object::UUID_NS;
 use uuid::Uuid;
 
+use crate::domain::imported_object::UUID_NS;
 use crate::domain::isa::types::simple_supertype::SimpleSupertype;
 use crate::domain::sarzak::types::object::Object;
 use serde::{Deserialize, Serialize};

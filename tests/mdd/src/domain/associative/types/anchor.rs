@@ -1,9 +1,9 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"anchor-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-use-statements"}}}
-use crate::domain::associative::UUID_NS;
 use uuid::Uuid;
 
 use crate::domain::associative::types::subtype_anchor::SubtypeAnchor;
+use crate::domain::associative::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::associative::store::ObjectStore as AssociativeStore;

@@ -74,14 +74,16 @@ impl ObjectStore {
 
         // Persist Another Object.
         {
-            let path = path.join("another_object.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.another_object.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("another_object");
+            fs::create_dir_all(&path)?;
+            for another_object in self.another_object.values() {
+                let path = path.join(format!("{}.json", another_object.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &another_object)?;
+            }
         }
+
         Ok(())
     }
 
@@ -98,11 +100,18 @@ impl ObjectStore {
 
         // Load Another Object.
         {
-            let path = path.join("another_object.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let another_object: Vec<AnotherObject> = serde_json::from_reader(reader)?;
-            store.another_object = another_object.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("another_object");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let another_object: AnotherObject = serde_json::from_reader(reader)?;
+                store
+                    .another_object
+                    .insert(another_object.id, another_object);
+            }
         }
 
         Ok(store)

@@ -212,68 +212,76 @@ impl ObjectStore {
 
         // Persist Acknowledged Event.
         {
-            let path = path.join("acknowledged_event.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self
-                    .acknowledged_event
-                    .values()
-                    .map(|x| x)
-                    .collect::<Vec<_>>(),
-            )?;
+            let path = path.join("acknowledged_event");
+            fs::create_dir_all(&path)?;
+            for acknowledged_event in self.acknowledged_event.values() {
+                let path = path.join(format!("{}.json", acknowledged_event.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &acknowledged_event)?;
+            }
         }
+
         // Persist Anchor.
         {
-            let path = path.join("anchor.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.anchor.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("anchor");
+            fs::create_dir_all(&path)?;
+            for anchor in self.anchor.values() {
+                let path = path.join(format!("{}.json", anchor.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &anchor)?;
+            }
         }
+
         // Persist Event.
         {
-            let path = path.join("event.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.event.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("event");
+            fs::create_dir_all(&path)?;
+            for event in self.event.values() {
+                let path = path.join(format!("{}.json", event.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &event)?;
+            }
         }
+
         // Persist IsaUI.
         {
-            let path = path.join("isa_ui.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.isa_ui.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("isa_ui");
+            fs::create_dir_all(&path)?;
+            for isa_ui in self.isa_ui.values() {
+                let path = path.join(format!("{}.json", isa_ui.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &isa_ui)?;
+            }
         }
+
         // Persist State.
         {
-            let path = path.join("state.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.state.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("state");
+            fs::create_dir_all(&path)?;
+            for state in self.state.values() {
+                let path = path.join(format!("{}.json", state.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &state)?;
+            }
         }
+
         // Persist Subtype Anchor.
         {
-            let path = path.join("subtype_anchor.json");
-            let file = fs::File::create(path)?;
-            let mut writer = io::BufWriter::new(file);
-            serde_json::to_writer_pretty(
-                &mut writer,
-                &self.subtype_anchor.values().map(|x| x).collect::<Vec<_>>(),
-            )?;
+            let path = path.join("subtype_anchor");
+            fs::create_dir_all(&path)?;
+            for subtype_anchor in self.subtype_anchor.values() {
+                let path = path.join(format!("{}.json", subtype_anchor.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &subtype_anchor)?;
+            }
         }
+
         Ok(())
     }
 
@@ -290,54 +298,90 @@ impl ObjectStore {
 
         // Load Acknowledged Event.
         {
-            let path = path.join("acknowledged_event.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let acknowledged_event: Vec<AcknowledgedEvent> = serde_json::from_reader(reader)?;
-            store.acknowledged_event = acknowledged_event
-                .into_iter()
-                .map(|道| (道.id, 道))
-                .collect();
+            let path = path.join("acknowledged_event");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let acknowledged_event: AcknowledgedEvent = serde_json::from_reader(reader)?;
+                store
+                    .acknowledged_event
+                    .insert(acknowledged_event.id, acknowledged_event);
+            }
         }
+
         // Load Anchor.
         {
-            let path = path.join("anchor.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let anchor: Vec<Anchor> = serde_json::from_reader(reader)?;
-            store.anchor = anchor.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("anchor");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let anchor: Anchor = serde_json::from_reader(reader)?;
+                store.anchor.insert(anchor.id, anchor);
+            }
         }
+
         // Load Event.
         {
-            let path = path.join("event.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let event: Vec<Event> = serde_json::from_reader(reader)?;
-            store.event = event.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("event");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let event: Event = serde_json::from_reader(reader)?;
+                store.event.insert(event.id, event);
+            }
         }
+
         // Load IsaUI.
         {
-            let path = path.join("isa_ui.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let isa_ui: Vec<IsaUi> = serde_json::from_reader(reader)?;
-            store.isa_ui = isa_ui.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("isa_ui");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let isa_ui: IsaUi = serde_json::from_reader(reader)?;
+                store.isa_ui.insert(isa_ui.id, isa_ui);
+            }
         }
+
         // Load State.
         {
-            let path = path.join("state.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let state: Vec<State> = serde_json::from_reader(reader)?;
-            store.state = state.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("state");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let state: State = serde_json::from_reader(reader)?;
+                store.state.insert(state.id, state);
+            }
         }
+
         // Load Subtype Anchor.
         {
-            let path = path.join("subtype_anchor.json");
-            let file = fs::File::open(path)?;
-            let reader = io::BufReader::new(file);
-            let subtype_anchor: Vec<SubtypeAnchor> = serde_json::from_reader(reader)?;
-            store.subtype_anchor = subtype_anchor.into_iter().map(|道| (道.id, 道)).collect();
+            let path = path.join("subtype_anchor");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let subtype_anchor: SubtypeAnchor = serde_json::from_reader(reader)?;
+                store
+                    .subtype_anchor
+                    .insert(subtype_anchor.id, subtype_anchor);
+            }
         }
 
         Ok(store)
