@@ -261,7 +261,7 @@ impl DomainStore {
                 emit!(buffer, "/// In fact, I intend to add automaagic git integration as an option.");
                 emit!(
                     buffer,
-                    "pub fn persist<P: AsRef<Path>>(&self, path: P) -> Result<(), Box<dyn std::error::Error>> {{"
+                    "pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
                 );
                 emit!(buffer, "let path = path.as_ref();");
                 // This is such a great joke! 🤣
