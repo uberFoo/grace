@@ -220,8 +220,9 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
     options.target = Target::Domain(DomainConfig {
         from_module: Some("domain::isa".to_string()),
         from_path: Some("tests/mdd/models/isa.json".into()),
-        persist: false,
-        persist_timestamps: false,
+        persist: true,
+        // Get some cheap code coverage this way, I think.
+        persist_timestamps: true,
     });
     if let Some(ref mut derive) = options.derive {
         derive.push("Clone".to_string());
