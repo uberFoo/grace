@@ -1,13 +1,12 @@
 //! Things necessary for code generation
 //!
-
 pub(crate) mod buffer;
 pub(crate) mod diff_engine;
 pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{collections::HashMap, fmt::Write, iter::zip};
+use std::{collections::HashMap, fmt::Write, iter::zip, time::SystemTime};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -705,4 +704,83 @@ pub(crate) fn find_store<'a>(name: &str, woog: &WoogStore, domain: &'a Domain) -
             None => panic!("Could not find store type for {}", name),
         }
     }
+}
+
+pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain) -> bool {
+    let time = if let Some(gu) = woog
+        .iter_generation_unit()
+        .find(|gu| gu.object == object.id)
+    {
+        woog.generation_unit_timestamp(gu)
+    } else {
+        SystemTime::now()
+    };
+
+    if domain.sarzak().object_timestamp(object) > time {
+        return true;
+    }
+
+    for attr in object.r1_attribute(domain.sarzak()) {
+        if domain.sarzak().attribute_timestamp(&attr) > time {
+            return true;
+        }
+    }
+
+    for supertype in object.r14_supertype(domain.sarzak()) {
+        if domain.sarzak().supertype_timestamp(supertype) > time {
+            return true;
+        }
+    }
+
+    for subtype in object.r15c_subtype(domain.sarzak()) {
+        if domain.sarzak().subtype_timestamp(subtype) > time {
+            return true;
+        }
+    }
+
+    for referent in object.r16_referent(domain.sarzak()) {
+        if domain.sarzak().referent_timestamp(referent) > time {
+            return true;
+        }
+    }
+
+    for referrer in object.r17_referrer(domain.sarzak()) {
+        if domain.sarzak().referrer_timestamp(referrer) > time {
+            return true;
+        }
+    }
+
+    for assoc_referent in object.r25_associative_referent(domain.sarzak()) {
+        if domain
+            .sarzak()
+            .associative_referent_timestamp(assoc_referent)
+            > time
+        {
+            return true;
+        }
+    }
+
+    for assoc_referrer in object.r26_associative_referrer(domain.sarzak()) {
+        if domain
+            .sarzak()
+            .associative_referrer_timestamp(assoc_referrer)
+            > time
+        {
+            return true;
+        }
+    }
+
+    for state in object.r18_state(domain.sarzak()) {
+        if domain.sarzak().state_timestamp(state) > time {
+            return true;
+        }
+    }
+
+    for event in object.r19_event(domain.sarzak()) {
+        if domain.sarzak().event_timestamp(event) > time {
+            return true;
+        }
+    }
+
+    return false;
 }

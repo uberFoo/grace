@@ -2,23 +2,38 @@
 //!
 //! This involves creating instances in Woog that the compiler stages depend
 //! upon.
+use std::path::{Path, PathBuf};
 
 use sarzak::{
+    mc::{FileSnafu, Result},
     sarzak::types::{Conditionality, Object, Ty},
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            Access, GraceType, ObjectMethod, Ownership, Parameter, Reference, Value, Variable,
-            Visibility, WoogOption, PUBLIC,
+            Access, Block, GraceType, ObjectMethod, Ownership, Parameter, Reference, SymbolTable,
+            Value, Variable, Visibility, WoogOption, PUBLIC,
         },
     },
 };
+use snafu::prelude::*;
+use uuid::Uuid;
 
 use crate::{
-    codegen::{find_store, get_referrers_sorted, render::RenderIdent},
+    codegen::{find_store, get_referrers_sorted, is_object_stale, render::RenderIdent},
     options::{GraceCompilerOptions, Target},
+    BUILD_DIR, TARGET_DIR,
 };
+
+pub(crate) fn persist_woog(woog: &WoogStore, src_path: &Path, domain: &Domain) -> Result<()> {
+    let mut path = PathBuf::from(src_path);
+    path.pop();
+    path.push(TARGET_DIR);
+    path.push(BUILD_DIR);
+    path.push(domain.name());
+
+    woog.persist(&path).context(FileSnafu { path })
+}
 
 /// Woog post-load domain processing
 ///
@@ -27,11 +42,27 @@ use crate::{
 /// We also inter types in woog that exist in sarzak, so that we can access them
 /// during code generation.
 pub(crate) fn init_woog(
+    src_path: &Path,
     module: &str,
     options: &GraceCompilerOptions,
     domain: &Domain,
 ) -> WoogStore {
-    let mut woog = WoogStore::new();
+    // Look for a persisted store.
+    let mut path = PathBuf::from(src_path);
+    path.pop();
+    path.push(TARGET_DIR);
+    path.push(BUILD_DIR);
+    path.push(domain.name());
+
+    let mut woog = if path.exists() {
+        log::debug!("Loading Woog store from: {}", path.display());
+        WoogStore::load(&path).unwrap_or_else(|e| {
+            log::warn!("Failed to load Woog store: {}", e);
+            WoogStore::new()
+        })
+    } else {
+        WoogStore::new()
+    };
 
     let borrowed = Ownership::new_borrowed();
     let public = Visibility::Public(PUBLIC);
@@ -45,6 +76,10 @@ pub(crate) fn init_woog(
 
     // Iterate over the objects and create a "new" ObjectMethod for each.
     for obj in objects {
+        if !is_object_stale(obj, &woog, domain) {
+            continue;
+        }
+
         let method = ObjectMethod::new(
             format!(
                 "Inter a new '{}' in the store, and return it's `id`.",
@@ -54,6 +89,9 @@ pub(crate) fn init_woog(
             obj,
             &mut woog,
         );
+
+        let block = Block::new(Uuid::new_v4(), &mut woog);
+        let table = SymbolTable::new(&block, &mut woog);
 
         // These are more attributes on our object, and they should be sorted.
         let referrers = get_referrers_sorted!(&obj, domain.sarzak());
@@ -69,7 +107,7 @@ pub(crate) fn init_woog(
                 let ty = attr.r2_ty(domain.sarzak())[0];
                 let ty = GraceType::new_ty(&ty, &mut woog);
                 let param = Parameter::new(attr.as_ident(), &method, None, &mut woog);
-                let var = Variable::new_parameter(&param, &mut woog);
+                let var = Variable::new_parameter(&table, &param, &mut woog);
                 let _ = Value::new_variable(&access, &ty.into(), &var, &mut woog);
 
                 params.push(param);
@@ -95,7 +133,7 @@ pub(crate) fn init_woog(
                         None,
                         &mut woog,
                     );
-                    let var = Variable::new_parameter(&param, &mut woog);
+                    let var = Variable::new_parameter(&table, &param, &mut woog);
                     let reference = Reference::new(&r_obj, &mut woog);
                     let reference = GraceType::new_reference(&reference, &mut woog);
                     let option = WoogOption::new(&reference, &mut woog);
@@ -112,7 +150,7 @@ pub(crate) fn init_woog(
                         None,
                         &mut woog,
                     );
-                    let var = Variable::new_parameter(&param, &mut woog);
+                    let var = Variable::new_parameter(&table, &param, &mut woog);
                     let reference = Reference::new(&r_obj, &mut woog);
                     let reference = GraceType::new_reference(&reference, &mut woog);
                     let _ = Value::new_variable(&access, &reference, &var, &mut woog);
@@ -140,7 +178,7 @@ pub(crate) fn init_woog(
                 &mut woog,
             );
 
-            let var = Variable::new_parameter(&param, &mut woog);
+            let var = Variable::new_parameter(&table, &param, &mut woog);
             let reference = Reference::new(&one_obj, &mut woog);
             let reference = GraceType::new_reference(&reference, &mut woog);
             let _ = Value::new_variable(&access, &reference, &var, &mut woog);
@@ -155,7 +193,7 @@ pub(crate) fn init_woog(
                 &mut woog,
             );
 
-            let var = Variable::new_parameter(&param, &mut woog);
+            let var = Variable::new_parameter(&table, &param, &mut woog);
             let reference = Reference::new(&other_obj, &mut woog);
             let reference = GraceType::new_reference(&reference, &mut woog);
             let _ = Value::new_variable(&access, &reference, &var, &mut woog);
@@ -167,7 +205,7 @@ pub(crate) fn init_woog(
             // Add the store to the end of the  input parameters
             let store = find_store(module, &woog, domain);
             let param = Parameter::new("store".to_owned(), &method, None, &mut woog);
-            let var = Variable::new_parameter(&param, &mut woog);
+            let var = Variable::new_parameter(&table, &param, &mut woog);
             let ty = Ty::External(store.id);
             let ty = GraceType::new_ty(&ty, &mut woog);
             let _ = Value::new_variable(&mut_access, &ty, &var, &mut woog);

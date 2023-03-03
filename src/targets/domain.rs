@@ -2,6 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
+    time::SystemTime,
 };
 
 use heck::ToUpperCamelCase;
@@ -9,16 +10,19 @@ use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::types::{External, Object, Ty},
-    woog::store::ObjectStore as WoogStore,
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{GenerationUnit, TimeStamp},
+    },
 };
 use snafu::prelude::*;
 
 use crate::{
     codegen::{
         generator::GeneratorBuilder, inner_object_is_hybrid, inner_object_is_singleton,
-        inner_object_is_supertype, render::RenderIdent,
+        inner_object_is_supertype, is_object_stale, render::RenderIdent,
     },
-    init_woog::init_woog,
+    init_woog::{init_woog, persist_woog},
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
@@ -106,7 +110,7 @@ impl<'a> DomainTarget<'a> {
         }
 
         // Create our local compiler domain.
-        let woog = init_woog(module, &options, &domain);
+        let woog = init_woog(src_path.as_ref(), module, &options, &domain);
 
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
@@ -175,19 +179,22 @@ impl<'a> DomainTarget<'a> {
         let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
 
-        // Iterate over the objects, generating an implementation for file each.
+        // Iterate over the objects, generating an implementation file for each.
         // Now things get tricky. We need to generate an enum if the objects is
         // a supertype.
         //
-        // For now, we just ignore any attributes on a supertype,
-        // since enums don't have fields like structs. In the future I can see
-        // creating a type with an enum field that is used to track it's subtype
-        // status.
+        // If we only want to compile things that have changed, then we need to
+        // store a timestamp in woog, and then on subsequent runs, compare it
+        // to the timestamp from the store.
         //
-        // Talk about tricky? Now things are going to get tricky. If the object
-        // is imported, we are going to suck it in and generate a module for
-        // it! Whoohoo! Note also, that we have a NullGenerator that does nothing.
+        // We can also look for things in woog that don't show up here -- those
+        // we need to delete.
         for obj in objects {
+            if !is_object_stale(obj, &self.woog, &self.domain) {
+                log::debug!("Skipping object {}", obj.name);
+                continue;
+            }
+
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
@@ -197,7 +204,7 @@ impl<'a> DomainTarget<'a> {
                 types.display(),
             );
 
-            // Test if the object is a supertype. Those we generate as enums.
+            // Test if the object is a supertype. For those we generate as enums.
             let generator = if inner_object_is_supertype(obj, &self.domain) {
                 // Unless it's got referential attributes. Then we generate what
                 // I now dub, a _hybrid_. What about regular attributes you ask?
@@ -272,6 +279,11 @@ impl<'a> DomainTarget<'a> {
                 .generator(generator)
                 // Go!
                 .generate()?;
+
+            // Update the timestamp in woog.
+            let now = SystemTime::now();
+            // let ts = Timestamp::new(now.)
+            // let gu = GenerationUnit::new(&obj, &SystemTime::now(), &mut self.woog);
         }
 
         Ok(())
@@ -367,6 +379,8 @@ impl<'a> Target for DomainTarget<'a> {
         if let Some(domain) = self.config.get_from_domain() {
             self.generate_from_module(&domain)?;
         }
+
+        persist_woog(&self.woog, self.src_path, &self.domain)?;
 
         Ok(())
     }

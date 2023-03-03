@@ -16,6 +16,8 @@ use targets::{application::ApplicationTarget, domain::DomainTarget};
 
 pub(crate) const RS_EXT: &str = "rs";
 pub(crate) const TYPES: &str = "types";
+pub(crate) const TARGET_DIR: &str = "target";
+pub(crate) const BUILD_DIR: &str = "sarzak";
 
 #[derive(Default)]
 pub struct ModelCompiler {}
@@ -46,8 +48,9 @@ impl SarzakModelCompiler for ModelCompiler {
         };
 
         log::debug!(
-            "compile invoked with model: {}, module: {}, src_path: {}, options: {:?}, test: {}",
+            "compile invoked with model: {}, package: {}, module: {}, src_path: {}, options: {:?}, test: {}",
             target.domain(),
+            package,
             module,
             src_path.as_ref().display(),
             options,
