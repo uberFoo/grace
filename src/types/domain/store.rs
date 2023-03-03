@@ -292,7 +292,7 @@ impl DomainStore {
                         emit!(buffer, "///");
                         emit!(
                             buffer,
-                            "pub fn {}_timestamp(&mut self, {}: {}) -> SystemTime {{",
+                            "pub fn {}_timestamp(&self, {}: &{}) -> SystemTime {{",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
