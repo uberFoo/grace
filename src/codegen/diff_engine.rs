@@ -178,7 +178,17 @@ fn process_diff_not_recursive_after_all<'a>(
                         }
                         Directive::End { directive: d } => {
                             if d != directive {
-                                log::error!("unbalanced directives: {:?} != {:?}", d, directive);
+                                // I'm sick of seeing these errors pop up, so now it's a warning. 😜
+                                // I really need to find a solution to this problem.
+                                // I think at one point I was imagining a regular expression could
+                                // do it. Use a regex to suck out the bits between the tags and
+                                // compare in-memory, to on-disk. The issue then becomes what do
+                                // we do with blocks in one and not the other? I guess just output them
+                                // based on the mode we are in.
+                                // I should jump on this. It's frustrating to have the otherwise
+                                // pristine files get corrupted by this. And I think it would work
+                                // without too much effort.
+                                log::warn!("unbalanced directives: {:?} != {:?}", d, directive);
                             }
                             // The directive will be written below.
                             directive = stack.pop().expect("unbalanced directives")
