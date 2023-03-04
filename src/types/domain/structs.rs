@@ -352,7 +352,7 @@ impl MethodImplementation for StructNewImpl {}
 impl CodeWriter for StructNewImpl {
     fn write_code(
         &self,
-        _options: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
@@ -557,7 +557,16 @@ impl CodeWriter for StructNewImpl {
 
                 // Output code to create the instance
                 let new = LValue::new("new", GType::Reference(obj.id));
-                render_new_instance(buffer, obj, Some(&new), &fields, &rvals, woog, domain)?;
+                render_new_instance(
+                    buffer,
+                    obj,
+                    Some(&new),
+                    &fields,
+                    &rvals,
+                    config,
+                    woog,
+                    domain,
+                )?;
 
                 emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                 emit!(buffer, "new");

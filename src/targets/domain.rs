@@ -35,6 +35,7 @@ use crate::{
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, Struct, StructNewImpl, StructRelNavImpl},
         },
+        external::ExternalGenerator,
         null::NullGenerator,
     },
     RS_EXT, TYPES,
@@ -97,6 +98,7 @@ impl<'a> DomainTarget<'a> {
                 // all the as_type stuff is overly complicated, in order to be
                 // used to generate code in places that maybe I don't know
                 // what it should be. Like here.
+                "new".to_owned(),
                 format!(
                     "{}Store",
                     // name.as_type(&Ownership::new_borrowed(), &woog, &domain)
@@ -109,11 +111,27 @@ impl<'a> DomainTarget<'a> {
             Ty::new_external(&external, domain.sarzak_mut());
         }
 
-        // Create our local compiler domain.
-        let woog = init_woog(src_path.as_ref(), module, &options, &domain);
-
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
+
+        // Create an external entity for any objects with the annotation.
+        let borrow_checker_pleasure_yourself =
+            domain.sarzak().iter_object().cloned().collect::<Vec<_>>();
+        for obj in borrow_checker_pleasure_yourself {
+            if config.is_external(&obj.id) {
+                let external = config.get_external(&obj.id).unwrap();
+                let external = External::new(
+                    external.ctor.clone(),
+                    external.name.clone(),
+                    external.path.clone(),
+                    domain.sarzak_mut(),
+                );
+                Ty::new_external(&external, domain.sarzak_mut());
+            }
+        }
+
+        // Create our local compiler domain.
+        let woog = init_woog(src_path.as_ref(), module, &config, &domain);
 
         // Suck in the imported domains for later use.
         let mut imported_domains = HashMap::new();
@@ -205,12 +223,12 @@ impl<'a> DomainTarget<'a> {
             );
 
             // Test if the object is a supertype. For those we generate as enums.
-            let generator = if inner_object_is_supertype(obj, &self.domain) {
+            let generator = if inner_object_is_supertype(obj, &self.config, &self.domain) {
                 // Unless it's got referential attributes. Then we generate what
                 // I now dub, a _hybrid_. What about regular attributes you ask?
                 // Well, I don't have a use case for that at the moment, so they
                 // will be done in due time.
-                if inner_object_is_hybrid(obj, &self.domain) {
+                if inner_object_is_hybrid(obj, &self.config, &self.domain) {
                     DefaultStructBuilder::new()
                         .definition(Hybrid::new())
                         .implementation(
@@ -237,7 +255,11 @@ impl<'a> DomainTarget<'a> {
                 // If the object is imported, we don't generate anything...here.
 
                 NullGenerator::new()
-            } else if inner_object_is_singleton(obj, &self.domain) {
+            } else if self.config.is_external(&obj.id) {
+                // If the object is external, we create a newtype to wrap it.
+
+                ExternalGenerator::new()
+            } else if inner_object_is_singleton(obj, &self.config, &self.domain) {
                 // Look for naked objects, and generate a singleton for them.
 
                 log::debug!("Generating singleton for {}", obj.name);
@@ -302,6 +324,7 @@ impl<'a> DomainTarget<'a> {
             .module(self.module)
             .compiler_domain(&mut self.woog)
             .generator(
+                // 🚧 I should have a store that's persistent, and one that isn't.
                 DomainStoreBuilder::new()
                     .definition(DomainStore::new())
                     .build()?,

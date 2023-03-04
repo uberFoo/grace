@@ -283,7 +283,7 @@ pub(crate) fn generate_subtype_rels(
         // things.
         let store = find_store(module, woog, domain);
 
-        subtype_to_supertype(buffer, obj, s_obj, isa.number, store, woog, domain)?;
+        subtype_to_supertype(buffer, obj, s_obj, isa.number, store, config, woog, domain)?;
     }
 
     Ok(())
@@ -862,6 +862,7 @@ fn subtype_to_supertype(
     s_obj: &Object,
     number: i64,
     store: &External,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -887,7 +888,7 @@ fn subtype_to_supertype(
                 store.name,
                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
-            if inner_object_is_enum(obj, domain) {
+            if inner_object_is_enum(obj, config, domain) {
                 emit!(
                     buffer,
                     "vec![store.exhume_{}(&self.id()).unwrap()]",

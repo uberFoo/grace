@@ -323,6 +323,22 @@ impl GraceConfig {
     pub(crate) fn is_imported(&self, key: &Uuid) -> bool {
         self.get_imported(key).is_some()
     }
+
+    pub(crate) fn get_external(&self, key: &Uuid) -> Option<&ExternalEntity> {
+        if let Some(config_value) = self.get(*key) {
+            if let Some(ref external_entity) = config_value.external_entity {
+                Some(&external_entity)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn is_external(&self, key: &Uuid) -> bool {
+        self.get_external(key).is_some()
+    }
 }
 
 /// Create a GraceConfig from GraceCompilerOptions and a Domain
@@ -332,6 +348,8 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
     fn from((options, domain): (&GraceCompilerOptions, &Domain)) -> Self {
         let mut config = Self::new();
 
+        // 🚧 I'm not sure that _TARGET_ is the best name for this now that we
+        // are also storing non-target options here.
         config.insert(_TARGET_, ConfigValue::from(options));
 
         for object in domain.sarzak().iter_object() {
@@ -395,6 +413,10 @@ impl ConfigValue {
     }
 }
 
+/// Turn an Option to a Config
+///
+/// Here is where we merge the compiler options into the compiler configuration.
+/// Note that we are storing the target, as well as the global options.
 impl From<&GraceCompilerOptions> for ConfigValue {
     fn from(options: &GraceCompilerOptions) -> Self {
         Self {
@@ -424,6 +446,7 @@ pub(crate) struct ImportedObject {
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct ExternalEntity {
     pub name: String,
+    pub ctor: String,
     pub path: String,
 }
 
@@ -432,13 +455,14 @@ pub(crate) fn parse_config_value(input: &str) -> ConfigValue {
         let mut iter = input.split("🐶");
         iter.next();
         if let Some(input) = iter.next() {
-            if let Ok(config_value) = serde_json::from_str(input) {
-                config_value
-            } else {
-                panic!("error parsing config value {}", input);
-            }
+            serde_json::from_str(input)
+                .map_err(|e| panic!("error {}\nparsing config value {}", e, input))
+                .unwrap()
         } else {
-            ConfigValue::new()
+            panic!(
+                "error parsing config value {}, no value after marker: 🐶",
+                input
+            );
         }
     } else {
         ConfigValue::new()
@@ -485,8 +509,9 @@ mod tests {
 
     #[test]
     fn test_external_entity() {
-        let input = "🐶 {\"external_entity\": {\"name\": \"SystemTime\", \"path\": \"std::time\"}}";
+        let input = "🐶 {\"external_entity\": {\"ctor\": \"now\", \"name\": \"SystemTime\", \"path\": \"std::time\"}}";
         let expected = ExternalEntity {
+            ctor: "now".to_owned(),
             name: "SystemTime".to_owned(),
             path: "std::time".to_owned(),
         };

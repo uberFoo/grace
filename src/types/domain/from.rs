@@ -203,8 +203,9 @@ impl CodeWriter for DomainFromImpl {
                     objects
                         .iter()
                         .filter(|obj| {
-                            !config.is_imported(&obj.id) && inner_object_is_supertype(obj, domain)
-                                || !inner_object_is_singleton(obj, domain)
+                            !config.is_imported(&obj.id)
+                                && inner_object_is_supertype(obj, config, domain)
+                                || !inner_object_is_singleton(obj, config, domain)
                         })
                         .collect::<Vec<_>>(),
                 )

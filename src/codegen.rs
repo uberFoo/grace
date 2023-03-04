@@ -6,7 +6,7 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{collections::HashMap, fmt::Write, iter::zip, time::SystemTime};
+use std::{collections::HashMap, fmt::Write, iter::zip};
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -349,6 +349,7 @@ pub(crate) fn render_new_instance(
     lval: Option<&LValue>,
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -382,7 +383,7 @@ pub(crate) fn render_new_instance(
                 if let Some(sub) = obj.r15c_subtype(domain.sarzak()).pop() {
                     let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
                         .r14_object(domain.sarzak())[0];
-                    if inner_object_is_hybrid(s_obj, domain) {
+                    if inner_object_is_hybrid(s_obj, config, domain) {
                         match rval.ty {
                             GType::Uuid => {
                                 emit!(
@@ -396,7 +397,7 @@ pub(crate) fn render_new_instance(
                             }
                             GType::Reference(r_obj) => {
                                 let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
-                                if inner_object_is_enum(r_obj, domain) {
+                                if inner_object_is_enum(r_obj, config, domain) {
                                     emit!(
                                         buffer,
                                         "{}: {}Enum::{}({}.id()),",
@@ -441,7 +442,7 @@ pub(crate) fn render_new_instance(
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                    if inner_object_is_enum(obj, domain) {
+                    if inner_object_is_enum(obj, config, domain) {
                         emit!(buffer, "{}: {}.id(),", field.name, rval.name)
                     } else {
                         emit!(buffer, "{}: {}.id,", field.name, rval.name)
@@ -464,7 +465,7 @@ pub(crate) fn render_new_instance(
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                        if inner_object_is_enum(obj, domain) {
+                        if inner_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
                                 "{}: {}.map(|{}| {}.id()),",
@@ -575,26 +576,45 @@ macro_rules! test_local_and_imports {
                     }
                 );
 
-                Ok($func(object, domain))
+                Ok($func(object, config, domain))
             } else {
-                Ok($func(object, domain))
+                Ok($func(object, config, domain))
             }
         }
     };
 }
 
+pub(crate) fn inner_object_is_struct(
+    object: &Object,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> bool {
+    !inner_object_is_supertype(object, config, domain)
+        && !inner_object_is_singleton(object, config, domain)
+}
+
 // test_local_and_imports!(object_is_hybrid, inner_object_is_hybrid);
-pub(crate) fn inner_object_is_hybrid(object: &Object, domain: &Domain) -> bool {
-    inner_object_is_supertype(object, domain) && !inner_object_is_singleton(object, domain)
+pub(crate) fn inner_object_is_hybrid(
+    object: &Object,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> bool {
+    inner_object_is_supertype(object, config, domain)
+        && !inner_object_is_singleton(object, config, domain)
 }
 
 test_local_and_imports!(object_is_enum, inner_object_is_enum);
-pub(crate) fn inner_object_is_enum(object: &Object, domain: &Domain) -> bool {
-    inner_object_is_supertype(object, domain) && inner_object_is_singleton(object, domain)
+pub(crate) fn inner_object_is_enum(object: &Object, config: &GraceConfig, domain: &Domain) -> bool {
+    inner_object_is_supertype(object, config, domain)
+        && inner_object_is_singleton(object, config, domain)
 }
 
 test_local_and_imports!(object_is_supertype, inner_object_is_supertype);
-pub(crate) fn inner_object_is_supertype(object: &Object, domain: &Domain) -> bool {
+pub(crate) fn inner_object_is_supertype(
+    object: &Object,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> bool {
     let is_super = object.r14_supertype(domain.sarzak());
     log::debug!("is_super: {:?}", is_super);
 
@@ -602,15 +622,23 @@ pub(crate) fn inner_object_is_supertype(object: &Object, domain: &Domain) -> boo
 }
 
 test_local_and_imports!(object_is_singleton, inner_object_is_singleton);
-pub(crate) fn inner_object_is_singleton(object: &Object, domain: &Domain) -> bool {
+pub(crate) fn inner_object_is_singleton(
+    object: &Object,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> bool {
+    if config.is_external(&object.id) {
+        return false;
+    }
+
     let attrs = object.r1_attribute(domain.sarzak());
     log::debug!("attrs: {:?}", attrs);
 
-    attrs.len() < 2 && !inner_object_is_referrer(object, domain)
+    attrs.len() < 2 && !inner_object_is_referrer(object, config, domain)
 }
 
 // test_local_and_imports!(object_is_referrer, inner_object_is_referrer);
-fn inner_object_is_referrer(object: &Object, domain: &Domain) -> bool {
+fn inner_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Domain) -> bool {
     let referrers = object.r17_referrer(domain.sarzak());
     let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
     log::debug!("referrers: {:?}", referrers);
@@ -711,9 +739,11 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
         .iter_generation_unit()
         .find(|gu| gu.object == object.id)
     {
+        log::debug!("Found generation unit for object {}", object.name);
         woog.generation_unit_timestamp(gu)
     } else {
-        SystemTime::now()
+        log::debug!("No generation unit for object {}", object.name);
+        return true;
     };
 
     if domain.sarzak().object_timestamp(object) > time {

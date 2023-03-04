@@ -102,8 +102,8 @@ impl FileGenerator for DomainStoreGenerator {
                 // Don't include imported objects
                 !config.is_imported(&obj.id) &&
                 // We have this odd construction because a supertype may actually be a singleton.
-                (inner_object_is_enum(obj, domain)
-                    || !inner_object_is_singleton(obj, domain))
+                (inner_object_is_enum(obj, config, domain)
+                    || !inner_object_is_singleton(obj, config, domain))
             })
             .collect::<Vec<_>>();
 
@@ -148,6 +148,7 @@ impl DomainStore {
         objects: &Vec<&&Object>,
         timestamp: bool,
         module: &str,
+        config: &GraceConfig,
         woog: &WoogStore,
         domain: &Domain,
     ) -> Result<()> {
@@ -169,7 +170,7 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
-                    if inner_object_is_enum(obj, domain) {
+                    if inner_object_is_enum(obj, config, domain) {
                         if timestamp {
                             emit!(
                                 buffer,
@@ -297,7 +298,7 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
-                        if inner_object_is_enum(obj, domain) {
+                        if inner_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
                                 "self.{}.get(&{}.id()).map(|{}| {}.1).unwrap_or(SystemTime::now())",
@@ -334,6 +335,7 @@ impl DomainStore {
         objects: &Vec<&&Object>,
         timestamp: bool,
         module: &str,
+        config: &GraceConfig,
         woog: &WoogStore,
         domain: &Domain,
     ) -> Result<()> {
@@ -376,7 +378,7 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_ident()
                         );
-                        if inner_object_is_enum(obj, domain) {
+                        if inner_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
                                 "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id()));",
@@ -424,7 +426,7 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_ident()
                         );
-                        if inner_object_is_enum(obj, domain) {
+                        if inner_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
                                 "let path = path.join(format!(\"{{}}.json\", {}.id()));",
@@ -493,7 +495,7 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
-                        if inner_object_is_enum(obj, domain) {
+                        if inner_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
                                 "store.{}.insert({}.0.id(), {});",
@@ -517,7 +519,7 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
-                        if inner_object_is_enum(obj, domain) {
+                        if inner_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
                                 "store.{}.insert({}.id(), {});",
@@ -577,7 +579,7 @@ impl CodeWriter for DomainStore {
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
             .iter()
-            .filter(|obj| !config.is_imported(&obj.id) && inner_object_is_enum(obj, domain))
+            .filter(|obj| !config.is_imported(&obj.id) && inner_object_is_enum(obj, config, domain))
             .collect::<Vec<_>>();
         let objects = objects
             .iter()
@@ -587,8 +589,8 @@ impl CodeWriter for DomainStore {
                 // if it's a supertype, or it's not a  singleton, and it's not imported.
                 // Don't include imported objects
                 !config.is_imported(&obj.id)
-                    && (inner_object_is_enum(obj, domain)
-                        || !inner_object_is_singleton(obj, domain))
+                    && (inner_object_is_enum(obj, config, domain)
+                        || !inner_object_is_singleton(obj, config, domain))
             })
             .collect::<Vec<_>>();
 
@@ -630,8 +632,8 @@ impl CodeWriter for DomainStore {
                     for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                         let s_obj = subtype.r15_object(domain.sarzak())[0];
                         if !config.is_imported(&s_obj.id) {
-                            if inner_object_is_singleton(s_obj, domain)
-                                && !inner_object_is_supertype(s_obj, domain)
+                            if inner_object_is_singleton(s_obj, config, domain)
+                                && !inner_object_is_supertype(s_obj, config, domain)
                             {
                                 singleton_subs = true;
                                 emit!(buffer, "{},", s_obj.as_const());
@@ -679,8 +681,8 @@ impl CodeWriter for DomainStore {
                     for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                         let s_obj = subtype.r15_object(domain.sarzak())[0];
                         if !config.is_imported(&s_obj.id) {
-                            if inner_object_is_singleton(s_obj, domain)
-                                && !inner_object_is_supertype(s_obj, domain)
+                            if inner_object_is_singleton(s_obj, config, domain)
+                                && !inner_object_is_supertype(s_obj, config, domain)
                             {
                                 emit!(
                                     buffer,
@@ -699,13 +701,13 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "}}");
                 emit!(buffer, "");
 
-                self.generate_store(buffer, &objects, timestamp, module, woog, domain)?;
+                self.generate_store(buffer, &objects, timestamp, module, config, woog, domain)?;
 
                 emit!(buffer, "");
 
                 if persist {
                     self.generate_store_persistence(
-                        buffer, &objects, timestamp, module, woog, domain,
+                        buffer, &objects, timestamp, module, config, woog, domain,
                     )?;
                 }
 
