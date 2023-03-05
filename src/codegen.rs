@@ -14,7 +14,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{ObjectMethod as WoogObjectMethod, Ownership, OWNED},
+        types::{GraceType, Local, ObjectMethod as WoogObjectMethod, Ownership, OWNED},
     },
 };
 use snafu::prelude::*;
@@ -312,6 +312,7 @@ pub(crate) fn render_method_definition_new(
 /// Now, the first thing that annoys me is the arguments to the function. They
 /// are locals, and should be in scope. And, now I notice that I don't have
 /// that in this model. So, I will merge that other branch as I was considering.
+
 pub(crate) fn render_make_uuid(
     buffer: &mut Buffer,
     lval: &LValue,
@@ -354,6 +355,123 @@ pub(crate) fn render_make_uuid(
         buffer,
         "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
         lval.name,
+        format_string,
+        args
+    );
+
+    Ok(())
+}
+
+pub(crate) fn render_make_uuid_new(
+    buffer: &mut Buffer,
+    var: &Local,
+    method: &WoogObjectMethod,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
+    let ty = var
+        .r8_variable(woog)
+        .pop()
+        .unwrap()
+        .r7_value(woog)
+        .pop()
+        .unwrap()
+        .r3_grace_type(woog)[0];
+
+    ensure!(
+        match ty {
+            GraceType::Ty(id) => {
+                let sty = domain.sarzak().exhume_ty(id).unwrap();
+                match sty {
+                    Ty::Uuid(_) => true,
+                    _ => false,
+                }
+            }
+            _ => false,
+        },
+        CompilerSnafu {
+            description: format!("type mismatch: found `{:?}`, expected `Type::Uuid`", ty)
+        }
+    );
+
+    let object = domain.sarzak().exhume_object(&method.object).unwrap();
+
+    // We want to render a UUID made up of all of the parameters to the function.
+    // So we do the cheap thing and just use the parameter list.
+    let param = woog
+        .iter_parameter()
+        .find(|p| p.method == method.id && p.r1c_parameter(woog).len() == 0);
+
+    ensure!(
+        param.is_some(),
+        CompilerSnafu {
+            description: format!(
+                "No parameter found for {}::{}",
+                object.as_type(&Ownership::Owned(OWNED), woog, domain),
+                method.as_ident()
+            )
+        }
+    );
+
+    let mut param = param.unwrap();
+
+    let mut format_string = String::new();
+    let mut args = String::new();
+
+    loop {
+        let value = param
+            .r8_variable(woog)
+            .pop()
+            .unwrap()
+            .r7_value(woog)
+            .pop()
+            .unwrap();
+        let ty = value.r3_grace_type(woog)[0];
+
+        match &ty {
+            GraceType::Reference(_) => {
+                format_string.extend(["{:?}:"]);
+                args.extend([param.name.to_owned(), ",".to_owned()]);
+            }
+            GraceType::WoogOption(_) => {
+                format_string.extend(["{:?}:"]);
+                args.extend([param.name.to_owned(), ",".to_owned()]);
+            }
+            GraceType::Ty(id) => {
+                let ty = domain.sarzak().exhume_ty(id).unwrap();
+                match &ty {
+                    // This is really about the store, and we don't want to include that.
+                    // However, I don't think we'd want to try printing anything external,
+                    // so this here is generally a Good Thing.
+                    Ty::External(_) => {}
+                    _ => {
+                        format_string.extend(["{}:"]);
+                        args.extend([param.name.to_owned(), ",".to_owned()]);
+                    }
+                }
+            }
+            _ => {
+                format_string.extend(["{}:"]);
+                args.extend([param.name.to_owned(), ",".to_owned()]);
+            }
+        }
+
+        if let Some(next_param) = param.r1_parameter(woog).pop() {
+            param = next_param;
+        } else {
+            break;
+        }
+    }
+
+    // Remove the trailing ":"
+    format_string.pop();
+    // And the trailining ","
+    args.pop();
+
+    emit!(
+        buffer,
+        "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
+        var.name,
         format_string,
         args
     );

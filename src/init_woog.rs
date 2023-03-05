@@ -117,17 +117,19 @@ fn inter_method_new(
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> () {
+    let block = Block::new(Uuid::new_v4(), woog);
+
     let method = ObjectMethod::new(
         format!(
             "Inter a new '{}' in the store, and return it's `id`.",
             obj.name
         ),
         "new".to_owned(),
+        &block,
         obj,
         woog,
     );
 
-    let block = Block::new(Uuid::new_v4(), woog);
     let table = SymbolTable::new(&block, woog);
 
     // These are more attributes on our object, and they should be sorted.
@@ -276,17 +278,18 @@ fn inter_external(
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> () {
+    let block = Block::new(Uuid::new_v4(), woog);
     let method = ObjectMethod::new(
         format!(
             "Create a new instance of the external entity,  '{}', wrapped in an {}.",
             external.name, obj.name
         ),
         external.ctor.clone(),
+        &block,
         obj,
         woog,
     );
 
-    let block = Block::new(Uuid::new_v4(), woog);
     let table = SymbolTable::new(&block, woog);
 
     // These are more attributes on our object, and they should be sorted.
