@@ -294,7 +294,25 @@ pub(crate) fn render_method_definition_new(
 
 /// Generate code to create a new UUID
 ///
-/// TODO: We should be taking a list of rvals to use, and not [`Parameter`]s.
+/// Hmmm. This is a function call. I happen to be modeling one of these. Let's
+/// see if we can't get it to work with our brand new method definition and
+/// friends.
+///
+/// We've got E_CALL, and expression. It's related to METH via R19. So I need
+/// a METH for this. I'm already using METH to generate the new method declaration.
+/// So, do I need a METH for this? Well, I don't generate a definition for the
+/// uuid methods. A METH would give me information about how to call it though.
+///
+/// Put a pin in that for a second, and discuss parameter. What's here is gonig
+/// away. I have both lvals (variables) and rvals (expressions).
+///
+/// This function is generating a statement. The lval is just used as a name for
+/// the LHS. The rvals are use as the arguments to the function call. So, we'll
+/// want to use/replace everything with entities from woog.
+///
+/// Now, the first thing that annoys me is the arguments to the function. They
+/// are locals, and should be in scope. And, now I notice that I don't have
+/// that in this model. So, I will merge that other branch as I was considering.
 pub(crate) fn render_make_uuid(
     buffer: &mut Buffer,
     lval: &LValue,
@@ -312,7 +330,7 @@ pub(crate) fn render_make_uuid(
     );
 
     let mut format_string = String::new();
-    let mut params = String::new();
+    let mut args = String::new();
     for val in rvals {
         match &val.ty {
             GType::Reference(_) => {
@@ -326,19 +344,19 @@ pub(crate) fn render_make_uuid(
             }
         }
 
-        params.extend([val.name.to_owned(), ",".to_owned()]);
+        args.extend([val.name.to_owned(), ",".to_owned()]);
     }
     // Remove the trailing ":"
     format_string.pop();
     // And the trailining ","
-    params.pop();
+    args.pop();
 
     emit!(
         buffer,
         "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
         lval.name,
         format_string,
-        params
+        args
     );
 
     Ok(())
