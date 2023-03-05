@@ -28,24 +28,6 @@ pub struct Everything {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-implementation"}}}
 impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
-    // {"magic":"❌","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-test-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-gen","tag":"everything-struct-test-new"}}}
-    /// # Example
-    ///
-    ///```ignore
-    /// use mdd::everything_domain::store::ObjectStore as EverythingDomainStore;
-    /// use mdd::everything_domain::types::RandoObject;
-    ///
-    /// useful_suggestion = true
-    /// grumpy_cork = 42.0
-    /// sturdy_laugh = 42
-    /// dazzling_nail = colossal-comparison
-    /// lowly_push = EverythingDomainStore::new();
-    /// curvy_can = RandoObject::new()
-    /// cool_cork = EverythingDomainStore::new();
-    /// alive_mark = Everything::new()
-    ///```
-    // {"magic":"","directive":{"End":{"directive":"ignore-gen"}}}
     /// Inter a new 'Everything' in the store, and return it's `id`.
     pub fn new(
         bool: bool,

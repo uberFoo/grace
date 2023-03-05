@@ -204,6 +204,7 @@ test_target_domain!(
     "domain/sarzak",
     "domain/isa"
 );
+test_target_domain!(external, "external", "tests/mdd/models/external.json");
 
 // Application Target Tests
 test_target_application!(

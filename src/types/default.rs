@@ -400,7 +400,7 @@ impl MethodImplementation for DefaultNewImpl {}
 impl CodeWriter for DefaultNewImpl {
     fn write_code(
         &self,
-        _config: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
@@ -551,7 +551,7 @@ impl CodeWriter for DefaultNewImpl {
                 render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance
-                render_new_instance(buffer, obj, None, &fields, &rvals, woog, domain)?;
+                render_new_instance(buffer, obj, None, &fields, &rvals, config, woog, domain)?;
 
                 emit!(buffer, "}}");
 

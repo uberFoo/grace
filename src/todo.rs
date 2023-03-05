@@ -36,15 +36,15 @@ impl From<&SarzakExternal> for External {
     }
 }
 
-impl From<External> for SarzakExternal {
-    fn from(value: External) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            name: value.name,
-            path: value.path,
-        }
-    }
-}
+// impl From<External> for SarzakExternal {
+//     fn from(value: External) -> Self {
+//         Self {
+//             id: Uuid::new_v4(),
+//             name: value.name,
+//             path: value.path,
+//         }
+//     }
+// }
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct LValue {

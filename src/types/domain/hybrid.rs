@@ -630,7 +630,16 @@ impl CodeWriter for HybridNewImpl {
 
                     // Output code to create the instance
                     let new = LValue::new("new", GType::Reference(obj.id));
-                    render_new_instance(buffer, obj, Some(&new), &fields_, &rvals, woog, domain)?;
+                    render_new_instance(
+                        buffer,
+                        obj,
+                        Some(&new),
+                        &fields_,
+                        &rvals,
+                        config,
+                        woog,
+                        domain,
+                    )?;
 
                     emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                     emit!(buffer, "new");

@@ -29,6 +29,9 @@ const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
 const DEFAULT_DOC_TEST: bool = true;
 
+/// Compiler Target
+///
+/// Currently grace supports two targets: Domain and Application.
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize, Subcommand)]
 #[serde(tag = "target")]
 #[serde(rename_all = "lowercase")]
@@ -43,9 +46,12 @@ pub enum Target {
     Application,
 }
 
+/// Domain Target Configuration
+///
+/// The domain target has the following, target-specific, configuration options.
 #[derive(Args, Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DomainConfig {
-    /// Generate From Trait implementations
+    /// Generate `From` trait implementations
     ///
     /// From implementations are generated for each object in the domain,
     /// if there is a corresponding object in the source domain.
@@ -91,6 +97,11 @@ const DOMAIN_FROM_PATH: Option<PathBuf> = None;
 const DOMAIN_PERSIST: bool = false;
 const DOMAIN_PERSIST_TIMESTAMPS: bool = false;
 
+/// Default implementation for DomainConfig
+///
+/// We select defaults that are appropriate for applications that aren't using
+/// the domain as the backend for a model compiler. Put another way, the defaults
+/// are most appropriate for domains that aren't meta-models.
 impl Default for DomainConfig {
     fn default() -> Self {
         DomainConfig {
@@ -175,7 +186,7 @@ impl Default for GraceCompilerOptions {
     }
 }
 
-/// Grace Compiler Configuration
+/// Grace Compiler Configuration (internal)
 ///
 /// This is the main configuration for the compiler. It is assembled from the
 /// [`GraceCompilerOptions`] and the [`ConfigValue`]s that are generated from
@@ -312,6 +323,22 @@ impl GraceConfig {
     pub(crate) fn is_imported(&self, key: &Uuid) -> bool {
         self.get_imported(key).is_some()
     }
+
+    pub(crate) fn get_external(&self, key: &Uuid) -> Option<&ExternalEntity> {
+        if let Some(config_value) = self.get(*key) {
+            if let Some(ref external_entity) = config_value.external_entity {
+                Some(&external_entity)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub(crate) fn is_external(&self, key: &Uuid) -> bool {
+        self.get_external(key).is_some()
+    }
 }
 
 /// Create a GraceConfig from GraceCompilerOptions and a Domain
@@ -321,6 +348,8 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
     fn from((options, domain): (&GraceCompilerOptions, &Domain)) -> Self {
         let mut config = Self::new();
 
+        // 🚧 I'm not sure that _TARGET_ is the best name for this now that we
+        // are also storing non-target options here.
         config.insert(_TARGET_, ConfigValue::from(options));
 
         for object in domain.sarzak().iter_object() {
@@ -365,6 +394,7 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
 pub(crate) struct ConfigValue {
     pub(crate) target: Option<Target>,
     pub(crate) imported_object: Option<ImportedObject>,
+    pub(crate) external_entity: Option<ExternalEntity>,
     pub(crate) derive: Option<Vec<String>>,
     pub(crate) use_paths: Option<Vec<String>>,
     pub(crate) doc_test: Option<bool>,
@@ -375,6 +405,7 @@ impl ConfigValue {
         Self {
             target: None,
             imported_object: None,
+            external_entity: None,
             derive: None,
             use_paths: None,
             doc_test: None,
@@ -382,11 +413,16 @@ impl ConfigValue {
     }
 }
 
+/// Turn an Option to a Config
+///
+/// Here is where we merge the compiler options into the compiler configuration.
+/// Note that we are storing the target, as well as the global options.
 impl From<&GraceCompilerOptions> for ConfigValue {
     fn from(options: &GraceCompilerOptions) -> Self {
         Self {
             target: Some(options.target.clone()),
             imported_object: None,
+            external_entity: None,
             derive: options.derive.clone(),
             use_paths: options.use_paths.clone(),
             doc_test: options.doc_test.clone(),
@@ -407,18 +443,26 @@ pub(crate) struct ImportedObject {
     pub id: Uuid,
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+pub(crate) struct ExternalEntity {
+    pub name: String,
+    pub ctor: String,
+    pub path: String,
+}
+
 pub(crate) fn parse_config_value(input: &str) -> ConfigValue {
     if input.contains("🐶") {
         let mut iter = input.split("🐶");
         iter.next();
         if let Some(input) = iter.next() {
-            if let Ok(config_value) = serde_json::from_str(input) {
-                config_value
-            } else {
-                panic!("error parsing config value {}", input);
-            }
+            serde_json::from_str(input)
+                .map_err(|e| panic!("error {}\nparsing config value {}", e, input))
+                .unwrap()
         } else {
-            ConfigValue::new()
+            panic!(
+                "error parsing config value {}, no value after marker: 🐶",
+                input
+            );
         }
     } else {
         ConfigValue::new()
@@ -461,6 +505,19 @@ mod tests {
 
         let actual: ConfigValue = parse_config_value(input);
         assert_eq!(actual.use_paths, Some(expected));
+    }
+
+    #[test]
+    fn test_external_entity() {
+        let input = "🐶 {\"external_entity\": {\"ctor\": \"now\", \"name\": \"SystemTime\", \"path\": \"std::time\"}}";
+        let expected = ExternalEntity {
+            ctor: "now".to_owned(),
+            name: "SystemTime".to_owned(),
+            path: "std::time".to_owned(),
+        };
+
+        let actual: ConfigValue = parse_config_value(input);
+        assert_eq!(actual.external_entity, Some(expected));
     }
 
     #[test]

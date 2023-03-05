@@ -6,6 +6,7 @@ use crate::codegen::generator::CodeWriter;
 
 pub(crate) mod default;
 pub(crate) mod domain;
+pub(crate) mod external;
 pub(crate) mod null;
 
 /// Type Definition Trait

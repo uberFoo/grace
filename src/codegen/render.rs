@@ -490,6 +490,7 @@ impl RenderType for GraceType {
                 let object = reference.r13_object(domain.sarzak())[0];
                 format!("&{}", object.as_type(mutability, woog, domain))
             }
+            Self::TimeStamp(_) => "SystemTime".to_owned(),
         }
     }
 }
