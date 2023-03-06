@@ -16,7 +16,7 @@ use crate::{
         emit_object_comments,
         generator::{FileGenerator, GenerationAction},
         render::{RenderIdent, RenderType},
-        render_method_definition_new,
+        render_make_uuid_new, render_method_definition_new,
     },
     options::GraceConfig,
 };
@@ -112,6 +112,8 @@ impl FileGenerator for ExternalGenerator {
                 );
 
                 render_method_definition_new(buffer, &method, woog, domain)?;
+                let id = woog.iter_local().find(|l| l.name == "id").unwrap();
+                render_make_uuid_new(buffer, &id, &method, woog, domain)?;
                 // emit!(buffer, "    pub fn new() -> Self {{");
                 // emit!(
                 //     buffer,

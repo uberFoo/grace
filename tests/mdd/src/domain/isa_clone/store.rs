@@ -417,6 +417,17 @@ impl ObjectStore {
                     serde_json::to_writer_pretty(&mut writer, &henry_tuple)?;
                 }
             }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.henry.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
         }
 
         // Persist Not Important.
@@ -438,6 +449,17 @@ impl ObjectStore {
                     let file = fs::File::create(&path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &not_important_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.not_important.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
                 }
             }
         }
@@ -463,6 +485,17 @@ impl ObjectStore {
                     serde_json::to_writer_pretty(&mut writer, &oh_boy_tuple)?;
                 }
             }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.oh_boy.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
         }
 
         // Persist Reference.
@@ -484,6 +517,17 @@ impl ObjectStore {
                     let file = fs::File::create(&path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &reference_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.reference.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
                 }
             }
         }
@@ -509,6 +553,17 @@ impl ObjectStore {
                     serde_json::to_writer_pretty(&mut writer, &simple_subtype_a_tuple)?;
                 }
             }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.simple_subtype_a.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
         }
 
         // Persist Simple Supertype.
@@ -530,6 +585,17 @@ impl ObjectStore {
                     let file = fs::File::create(&path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &simple_supertype_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.simple_supertype.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
                 }
             }
         }
@@ -555,6 +621,17 @@ impl ObjectStore {
                     serde_json::to_writer_pretty(&mut writer, &subtype_a_tuple)?;
                 }
             }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.subtype_a.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
         }
 
         // Persist Subtype B.
@@ -578,6 +655,17 @@ impl ObjectStore {
                     serde_json::to_writer_pretty(&mut writer, &subtype_b_tuple)?;
                 }
             }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.subtype_b.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
         }
 
         // Persist Super T.
@@ -599,6 +687,17 @@ impl ObjectStore {
                     let file = fs::File::create(&path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &super_t_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.super_t.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
                 }
             }
         }

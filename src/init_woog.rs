@@ -57,15 +57,17 @@ pub(crate) fn init_woog(
     path.push(BUILD_DIR);
     path.push(domain.name());
 
-    let mut woog = if path.exists() {
-        log::debug!("Loading Woog store from: {}", path.display());
-        WoogStore::load(&path).unwrap_or_else(|e| {
-            log::warn!("Failed to load Woog store: {}", e);
-            WoogStore::new()
-        })
-    } else {
-        WoogStore::new()
-    };
+    // 🚧 put this back once timestamps are working, which I think depends on EEs working.
+    // let mut woog = if path.exists() {
+    //     log::debug!("Loading Woog store from: {}", path.display());
+    //     WoogStore::load(&path).unwrap_or_else(|e| {
+    //         log::warn!("Failed to load Woog store: {}", e);
+    //         WoogStore::new()
+    //     })
+    // } else {
+    //     WoogStore::new()
+    // };
+    let mut woog = WoogStore::new();
 
     let borrowed = Ownership::new_borrowed();
     let public = Visibility::Public(PUBLIC);

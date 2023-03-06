@@ -227,6 +227,8 @@ pub(crate) fn render_method_definition_new(
 ) -> Result<()> {
     let object = domain.sarzak().exhume_object(&method.object).unwrap();
 
+    log::debug!("Rendering new method definition for {}", object.as_ident());
+
     // Write the beginning of the definition
     write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
 

@@ -418,6 +418,22 @@ impl DomainStore {
                         );
                         emit!(buffer, "}}");
                         emit!(buffer, "}}");
+                        // Now we need to delete any files that correspond to something
+                        // in the store that went away.
+                        emit!(buffer, "for file in fs::read_dir(&path)? {{");
+                        emit!(buffer, "let file = file?;");
+                        emit!(buffer, "let path = file.path();");
+                        emit!(
+                            buffer,
+                            "let file_name = path.file_name().unwrap().to_str().unwrap();"
+                        );
+                        emit!(buffer, "let id = file_name.split(\".\").next().unwrap();");
+                        emit!(buffer, "if let Ok(id) = Uuid::parse_str(id) {{");
+                        emit!(buffer, "if !self.{}.contains_key(&id) {{", obj.as_ident());
+                        emit!(buffer, "fs::remove_file(path)?;");
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}}");
                         emit!(buffer, "}}");
                     } else {
                         emit!(
