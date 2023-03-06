@@ -373,221 +373,215 @@ impl CodeWriter for StructNewImpl {
                 description: "woog is required by DomainNewImpl"
             }
         );
-        // let mut woog = woog.as_mut().unwrap();
-        // let woog = woog.as_ref().unwrap();
-        // let mut woog = woog.unwrap();
-        // let mut woog =
-        //
-        match &woog.as_mut() {
-            Some(woog) => {
-                let obj_id = obj_id.unwrap();
-                let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-                // These are more attributes on our object, and they should be sorted.
-                let referrers = get_referrers_sorted!(obj, domain.sarzak());
-
-                // Collect the attributes
-                let mut params: Vec<Parameter> = Vec::new();
-                // This is used in the new_instance call. These fields are meant to be
-                // matched up with the input arguments, and type checked. Since I'm
-                // generating both, I'm beginning to wonder what the point is.
-                //
-                // So just now the type system reminded me that I need to turn a reference
-                // into a UUID. So maybe it's worth keeping.
-                let mut fields: Vec<LValue> = Vec::new();
-                // Collect the attributes
-                let mut attrs = obj.r1_attribute(domain.sarzak());
-                attrs.sort_by(|a, b| a.name.cmp(&b.name));
-                for attr in attrs {
-                    // We are going to generate the id, so don't include it in the
-                    // list of parameters.
-                    if attr.name != "id" {
-                        let ty = attr.r2_ty(domain.sarzak())[0];
-                        fields.push(LValue::new(attr.name.as_ident(), ty.into()));
-                        params.push(Parameter::new(
-                            BORROWED,
-                            None,
-                            ty.into(),
-                            PUBLIC,
-                            attr.as_ident(),
-                        ));
-                        // rvals.push(RValue::new(attr.as_ident(), &ty));
-                    }
-                }
-
-                // And the referential attributes
-                for referrer in &referrers {
-                    let binary = referrer.r6_binary(domain.sarzak())[0];
-                    let referent = binary.r5_referent(domain.sarzak())[0];
-                    let r_obj = referent.r16_object(domain.sarzak())[0];
-                    let cond = referrer.r11_conditionality(domain.sarzak())[0];
-
-                    // If the relationship is conditional, then we need to make the
-                    // parameter an Option, and make the field match.
-                    match cond {
-                        Conditionality::Conditional(_) => {
-                            fields.push(LValue::new(
-                                referrer.referential_attribute.as_ident(),
-                                GType::Option(Box::new(GType::Uuid)),
-                            ));
-                            params.push(Parameter::new(
-                                BORROWED,
-                                None,
-                                GType::Option(Box::new(GType::Reference(r_obj.id))),
-                                PUBLIC,
-                                referrer.referential_attribute.as_ident(),
-                            ));
-                        }
-                        Conditionality::Unconditional(_) => {
-                            fields.push(LValue::new(
-                                referrer.referential_attribute.as_ident(),
-                                GType::Uuid,
-                            ));
-                            params.push(Parameter::new(
-                                BORROWED,
-                                None,
-                                GType::Reference(r_obj.id),
-                                PUBLIC,
-                                referrer.referential_attribute.as_ident(),
-                            ));
-                        }
-                    }
-
-                    //     rvals.push(RValue::new(
-                    //         referrer.referential_attribute.as_ident(),
-                    //         &Type::Reference(reference.id),
-                    //     ));
-                }
-
-                for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-                    let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
-
-                    let one = assoc.r23_associative_referent(domain.sarzak())[0];
-                    let one_obj = one.r25_object(domain.sarzak())[0];
-
-                    let other = assoc.r22_associative_referent(domain.sarzak())[0];
-                    let other_obj = other.r25_object(domain.sarzak())[0];
-
-                    // This determines how a reference is stored in the struct. In this
-                    // case a UUID.
-                    fields.push(LValue::new(
-                        assoc_referrer.one_referential_attribute.as_ident(),
-                        GType::Uuid,
-                    ));
-                    params.push(Parameter::new(
-                        BORROWED,
-                        None,
-                        GType::Reference(one_obj.id),
-                        PUBLIC,
-                        assoc_referrer.one_referential_attribute.as_ident(),
-                    ));
-
-                    fields.push(LValue::new(
-                        assoc_referrer.other_referential_attribute.as_ident(),
-                        GType::Uuid,
-                    ));
-                    params.push(Parameter::new(
-                        BORROWED,
-                        None,
-                        GType::Reference(other_obj.id),
-                        PUBLIC,
-                        assoc_referrer.other_referential_attribute.as_ident(),
-                    ));
-                }
-
-                // Add the store to the end of the  input parameters
-                let store = find_store(module, woog, domain);
-                params.push(Parameter::new(
-                    MUTABLE,
-                    None,
-                    GType::External(store.into()),
-                    PUBLIC,
-                    "store".to_owned(),
-                ));
-
-                // Collect rvals for rendering the method.
-                let rvals = params.clone();
-                let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
-                // Remove the store.
-                rvals.pop();
-
-                let method = woog
-                    .iter_object_method()
-                    .find(|m| m.object == obj.id)
-                    .unwrap()
-                    .clone();
-
-                // let block = method.r23_block(woog)[0];
-                // let table = block.r24_symbol_table(woog)[0];
-                // let vars = table.r20_variable(woog);
-                // dbg!(vars);
-
-                buffer.block(
-                    DirectiveKind::IgnoreOrig,
-                    format!("{}-struct-impl-new", obj.as_ident()),
-                    |buffer| {
-                        // Output a docstring
-                        emit!(buffer, "/// {}", method.description);
-
-                        // 🚧 Put this back in once I'm done moving to v2.
-                        // if options.get_doc_test() {
-                        //     buffer.block(
-                        //         DirectiveKind::IgnoreGenerated,
-                        //         format!("{}-struct-test-new", obj.as_ident()),
-                        //         |buffer| {
-                        //             let mut uses = HashSet::new();
-                        //             let stmts =
-                        //                 method.as_statement(package, module, woog, domain, &mut uses);
-                        //             emit!(buffer, "/// # Example");
-                        //             emit!(buffer, "///");
-                        //             emit!(buffer, "///```ignore");
-                        //             // for s in use_stmts.split_terminator('\n') {
-                        //             for s in uses.iter() {
-                        //                 emit!(buffer, "/// {}", s);
-                        //             }
-                        //             emit!(buffer, "///");
-                        //             // for s in stmts.split_terminator('\n') {
-                        //             for s in stmts.iter() {
-                        //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
-                        //             }
-                        //             emit!(buffer, "///```");
-
-                        //             Ok(())
-                        //         },
-                        //     )?;
-                        // }
-
-                        // Output the top of the function definition
-                        render_method_definition_new(buffer, &method, woog, domain)?;
-
-                        // Output the code to create the `id`.
-                        // let id = LValue::new("id", GType::Uuid);
-                        let id = Local::new("id".to_owned(), *woog);
-                        render_make_uuid_new(buffer, &id, &method, woog, domain)?;
-
-                        // Output code to create the instance
-                        let new = LValue::new("new", GType::Reference(obj.id));
-                        render_new_instance(
-                            buffer,
-                            obj,
-                            Some(&new),
-                            &fields,
-                            &rvals,
-                            config,
-                            woog,
-                            domain,
-                        )?;
-
-                        emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
-                        emit!(buffer, "new");
-                        emit!(buffer, "}}");
-
-                        Ok(())
-                    },
-                )
-            }
+        let woog = match woog {
+            Some(woog) => woog,
             None => unreachable!(),
+        };
+
+        let obj_id = obj_id.unwrap();
+        let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+
+        // These are more attributes on our object, and they should be sorted.
+        let referrers = get_referrers_sorted!(obj, domain.sarzak());
+
+        // Collect the attributes
+        let mut params: Vec<Parameter> = Vec::new();
+        // This is used in the new_instance call. These fields are meant to be
+        // matched up with the input arguments, and type checked. Since I'm
+        // generating both, I'm beginning to wonder what the point is.
+        //
+        // So just now the type system reminded me that I need to turn a reference
+        // into a UUID. So maybe it's worth keeping.
+        let mut fields: Vec<LValue> = Vec::new();
+        // Collect the attributes
+        let mut attrs = obj.r1_attribute(domain.sarzak());
+        attrs.sort_by(|a, b| a.name.cmp(&b.name));
+        for attr in attrs {
+            // We are going to generate the id, so don't include it in the
+            // list of parameters.
+            if attr.name != "id" {
+                let ty = attr.r2_ty(domain.sarzak())[0];
+                fields.push(LValue::new(attr.name.as_ident(), ty.into()));
+                params.push(Parameter::new(
+                    BORROWED,
+                    None,
+                    ty.into(),
+                    PUBLIC,
+                    attr.as_ident(),
+                ));
+                // rvals.push(RValue::new(attr.as_ident(), &ty));
+            }
         }
+
+        // And the referential attributes
+        for referrer in &referrers {
+            let binary = referrer.r6_binary(domain.sarzak())[0];
+            let referent = binary.r5_referent(domain.sarzak())[0];
+            let r_obj = referent.r16_object(domain.sarzak())[0];
+            let cond = referrer.r11_conditionality(domain.sarzak())[0];
+
+            // If the relationship is conditional, then we need to make the
+            // parameter an Option, and make the field match.
+            match cond {
+                Conditionality::Conditional(_) => {
+                    fields.push(LValue::new(
+                        referrer.referential_attribute.as_ident(),
+                        GType::Option(Box::new(GType::Uuid)),
+                    ));
+                    params.push(Parameter::new(
+                        BORROWED,
+                        None,
+                        GType::Option(Box::new(GType::Reference(r_obj.id))),
+                        PUBLIC,
+                        referrer.referential_attribute.as_ident(),
+                    ));
+                }
+                Conditionality::Unconditional(_) => {
+                    fields.push(LValue::new(
+                        referrer.referential_attribute.as_ident(),
+                        GType::Uuid,
+                    ));
+                    params.push(Parameter::new(
+                        BORROWED,
+                        None,
+                        GType::Reference(r_obj.id),
+                        PUBLIC,
+                        referrer.referential_attribute.as_ident(),
+                    ));
+                }
+            }
+
+            //     rvals.push(RValue::new(
+            //         referrer.referential_attribute.as_ident(),
+            //         &Type::Reference(reference.id),
+            //     ));
+        }
+
+        for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+
+            let one = assoc.r23_associative_referent(domain.sarzak())[0];
+            let one_obj = one.r25_object(domain.sarzak())[0];
+
+            let other = assoc.r22_associative_referent(domain.sarzak())[0];
+            let other_obj = other.r25_object(domain.sarzak())[0];
+
+            // This determines how a reference is stored in the struct. In this
+            // case a UUID.
+            fields.push(LValue::new(
+                assoc_referrer.one_referential_attribute.as_ident(),
+                GType::Uuid,
+            ));
+            params.push(Parameter::new(
+                BORROWED,
+                None,
+                GType::Reference(one_obj.id),
+                PUBLIC,
+                assoc_referrer.one_referential_attribute.as_ident(),
+            ));
+
+            fields.push(LValue::new(
+                assoc_referrer.other_referential_attribute.as_ident(),
+                GType::Uuid,
+            ));
+            params.push(Parameter::new(
+                BORROWED,
+                None,
+                GType::Reference(other_obj.id),
+                PUBLIC,
+                assoc_referrer.other_referential_attribute.as_ident(),
+            ));
+        }
+
+        // Add the store to the end of the  input parameters
+        let store = find_store(module, woog, domain);
+        params.push(Parameter::new(
+            MUTABLE,
+            None,
+            GType::External(store.into()),
+            PUBLIC,
+            "store".to_owned(),
+        ));
+
+        // Collect rvals for rendering the method.
+        let rvals = params.clone();
+        let mut rvals: Vec<RValue> = rvals.iter().map(|p| p.into()).collect();
+        // Remove the store.
+        rvals.pop();
+
+        let method = woog
+            .iter_object_method()
+            .find(|m| m.object == obj.id)
+            .unwrap()
+            .clone();
+
+        // let block = method.r23_block(woog)[0];
+        // let table = block.r24_symbol_table(woog)[0];
+        // let vars = table.r20_variable(woog);
+        // dbg!(vars);
+
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-struct-impl-new", obj.as_ident()),
+            |buffer| {
+                // Output a docstring
+                emit!(buffer, "/// {}", method.description);
+
+                // 🚧 Put this back in once I'm done moving to v2.
+                // if options.get_doc_test() {
+                //     buffer.block(
+                //         DirectiveKind::IgnoreGenerated,
+                //         format!("{}-struct-test-new", obj.as_ident()),
+                //         |buffer| {
+                //             let mut uses = HashSet::new();
+                //             let stmts =
+                //                 method.as_statement(package, module, woog, domain, &mut uses);
+                //             emit!(buffer, "/// # Example");
+                //             emit!(buffer, "///");
+                //             emit!(buffer, "///```ignore");
+                //             // for s in use_stmts.split_terminator('\n') {
+                //             for s in uses.iter() {
+                //                 emit!(buffer, "/// {}", s);
+                //             }
+                //             emit!(buffer, "///");
+                //             // for s in stmts.split_terminator('\n') {
+                //             for s in stmts.iter() {
+                //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
+                //             }
+                //             emit!(buffer, "///```");
+
+                //             Ok(())
+                //         },
+                //     )?;
+                // }
+
+                // Output the top of the function definition
+                render_method_definition_new(buffer, &method, woog, domain)?;
+
+                let id = woog.iter_local().find(|l| l.name == "id").unwrap();
+                render_make_uuid_new(buffer, &id, &method, woog, domain)?;
+
+                // Output code to create the instance
+                let new = LValue::new("new", GType::Reference(obj.id));
+                render_new_instance(
+                    buffer,
+                    obj,
+                    Some(&new),
+                    &fields,
+                    &rvals,
+                    config,
+                    woog,
+                    domain,
+                )?;
+
+                emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                emit!(buffer, "new");
+                emit!(buffer, "}}");
+
+                Ok(())
+            },
+        )
     }
 }
 

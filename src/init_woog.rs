@@ -11,8 +11,8 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            Access, Block, GraceType, ObjectMethod, Ownership, Parameter, Reference, SymbolTable,
-            Value, Variable, Visibility, WoogOption, PUBLIC,
+            Access, Block, GraceType, Local, ObjectMethod, Ownership, Parameter, Reference,
+            SymbolTable, Value, Variable, Visibility, WoogOption, PUBLIC,
         },
     },
 };
@@ -262,6 +262,16 @@ fn inter_method_new(
         woog.inter_parameter(param.clone());
         Some(param.id)
     });
+
+    // Locals we'll need
+    let id = Local::new("id".to_owned(), woog);
+    let var = Variable::new_local(&table, &id, woog);
+    let _value = Value::new_variable(
+        &access,
+        &GraceType::new_ty(&Ty::new_uuid(), woog),
+        &var,
+        woog,
+    );
 }
 
 /// Create a method to create a new instance of the external entity.
