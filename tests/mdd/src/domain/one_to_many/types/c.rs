@@ -29,9 +29,9 @@ impl C {
     pub fn new(jackpot: f64, ptr: &Referent, store: &mut OneToManyStore) -> C {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", jackpot, ptr).as_bytes());
         let new = C {
-            jackpot: jackpot,
-            ptr: ptr.id,
             id: id,
+            ptr: ptr.id,
+            jackpot: jackpot,
         };
         store.inter_c(new.clone());
         new

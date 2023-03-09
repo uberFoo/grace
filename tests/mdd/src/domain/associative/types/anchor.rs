@@ -37,8 +37,8 @@ impl Anchor {
     pub fn new(number: i64, store: &mut AssociativeStore) -> Anchor {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", number).as_bytes());
         let new = Anchor {
-            id: id,
             number: number,
+            id: id,
         };
         store.inter_anchor(new.clone());
         new

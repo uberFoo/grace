@@ -40,11 +40,11 @@ impl Associative {
             format!("{}:{:?}:{:?}:{:?}", number, other, one, from).as_bytes(),
         );
         let new = Associative {
+            number: number,
             one: one.id,
-            from: from.id,
             other: other.id,
             id: id,
-            number: number,
+            from: from.id,
         };
         store.inter_associative(new.clone());
         new

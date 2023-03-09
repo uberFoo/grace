@@ -30,9 +30,9 @@ impl State {
     pub fn new(name: String, obj_id: &Object, store: &mut SarzakStore) -> State {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, obj_id).as_bytes());
         let new = State {
-            obj_id: obj_id.id,
             name: name,
             id: id,
+            obj_id: obj_id.id,
         };
         store.inter_state(new.clone());
         new

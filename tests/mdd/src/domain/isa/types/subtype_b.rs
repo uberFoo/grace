@@ -29,8 +29,8 @@ impl SubtypeB {
     pub fn new(number: i64, store: &mut IsaStore) -> SubtypeB {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", number).as_bytes());
         let new = SubtypeB {
-            id: id,
             number: number,
+            id: id,
         };
         store.inter_subtype_b(new.clone());
         new

@@ -45,7 +45,7 @@ impl SuperT {
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_a(pointer: &Reference, subtype: &SubtypeA, store: &mut IsaStore) -> SuperT {
         // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This shoud be fixed in the near future.
+        // about this local. This should be fixed in the near future.
         let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,
@@ -60,7 +60,7 @@ impl SuperT {
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_b(pointer: &Reference, subtype: &SubtypeB, store: &mut IsaStore) -> SuperT {
         // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This shoud be fixed in the near future.
+        // about this local. This should be fixed in the near future.
         let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,

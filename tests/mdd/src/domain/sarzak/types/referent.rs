@@ -49,11 +49,11 @@ impl Referent {
             .as_bytes(),
         );
         let new = Referent {
-            cardinality: cardinality.id(),
-            obj_id: obj_id.id,
             id: id,
             description: description,
+            cardinality: cardinality.id(),
             conditionality: conditionality.id(),
+            obj_id: obj_id.id,
         };
         store.inter_referent(new.clone());
         new

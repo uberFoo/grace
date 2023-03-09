@@ -28,7 +28,7 @@ impl RandoObject {
     /// Inter a new 'Rando Object' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut EverythingStore) -> RandoObject {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
-        let new = RandoObject { id: id, name: name };
+        let new = RandoObject { name: name, id: id };
         store.inter_rando_object(new.clone());
         new
     }

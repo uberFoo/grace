@@ -29,9 +29,9 @@ impl A {
     pub fn new(name: String, ptr: &Referent, store: &mut OneToManyStore) -> A {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, ptr).as_bytes());
         let new = A {
-            ptr: ptr.id,
             name: name,
             id: id,
+            ptr: ptr.id,
         };
         store.inter_a(new.clone());
         new

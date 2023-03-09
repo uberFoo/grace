@@ -15,8 +15,8 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            GraceType, Local, ObjectMethod as WoogObjectMethod, Ownership, Structure, SymbolTable,
-            Variable, OWNED,
+            GraceType, Item, Local, ObjectMethod as WoogObjectMethod, Ownership, StatementEnum,
+            Structure, SymbolTable, Variable, VariableEnum, OWNED,
         },
     },
 };
@@ -26,6 +26,7 @@ use unicode_segmentation::UnicodeSegmentation;
 use crate::{
     codegen::{
         buffer::{emit, Buffer},
+        diff_engine::DirectiveKind,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -708,6 +709,11 @@ pub(crate) fn render_new_instance_new(
         .unwrap()
         .r3_grace_type(woog)[0];
 
+    // Check that the type of the variable is a reference to the object that we
+    // are instantiating.
+    // This doesn't belong here. It should be part of a let statement renderer.
+    // 🚧 These errors are terrible. You get a uuid that may not even be possible
+    // to look up. It should print the generated type. That would be fucking slick.
     ensure!(
         match ty {
             GraceType::Reference(id) => {
@@ -733,11 +739,21 @@ pub(crate) fn render_new_instance_new(
         }
     );
 
-    let fields = structure.r27_structure_field(woog);
-    let first = fields
+    let first = structure
+        .r27_structure_field(woog)
         .iter()
         .find(|&&field| field.r30c_structure_field(woog).len() == 0)
+        .unwrap()
         .clone();
+
+    let mut fields = vec![first];
+    loop {
+        if let Some(next) = first.r30_structure_field(woog).pop() {
+            fields.push(next);
+        } else {
+            break;
+        }
+    }
 
     write!(buffer, "let {} = ", var.r8_variable(woog)[0].name).context(FormatSnafu)?;
 
@@ -910,6 +926,121 @@ fn typecheck_and_coerce(
             rhs.as_ident()
         }
     })
+}
+
+pub(crate) fn render_method_new(
+    buffer: &mut Buffer,
+    obj: &Object,
+    config: &GraceConfig,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
+    let method = woog
+        .iter_object_method()
+        .find(|m| m.object == obj.id)
+        .unwrap()
+        .clone();
+
+    buffer.block(
+        DirectiveKind::IgnoreOrig,
+        format!("{}-struct-impl-new", obj.as_ident()),
+        |buffer| {
+            // Output a docstring
+            emit!(
+                buffer,
+                "/// {}",
+                method.r25_function(woog).pop().unwrap().description
+            );
+
+            // This renders the method signature.
+            // It's probably ok as it is.
+            render_method_definition_new(buffer, &method, woog, domain)?;
+
+            // Find the properly scoped variable named `id`.
+            let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
+            let var = &table
+                .r20_variable(woog)
+                .iter()
+                .find(|&&v| v.name == "id")
+                .unwrap()
+                .subtype;
+            let id = match var {
+                // This works because the id of the variable is the same as the id of the
+                // subtype enum.
+                VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                _ => panic!("This should never happen"),
+            };
+
+            // This renders a let statement, assigning a new uuid to the id variable.
+            // This is where the work lies. I think that what I really want to do is
+            // create (let) statements in the block whilst populating woog. Then
+            // someplace else, maybe here, we iterate over the statements and generate
+            // code. Maybe an as_statement trait, or something?
+            render_make_uuid_new(buffer, &id, &method, woog, domain)?;
+
+            // Look up the properly scoped variable named `new`.
+            let var = &table
+                .r20_variable(woog)
+                .iter()
+                .find(|&&v| v.name == "new")
+                .unwrap()
+                .subtype;
+            let new = match var {
+                VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                _ => panic!("This should never happen"),
+            };
+
+            // Now this is interesting. This is good. It's getting close to what I
+            // was talking about above. In the woog population code, the function
+            // for populating a new method I created a statement: a struct item.
+            // It's the struct for Self. I pull that out here, and then use when
+            // I call the renderer.
+            let stmt = match &method
+                .r23_block(woog)
+                .pop()
+                .unwrap()
+                .r12_statement(woog)
+                .pop()
+                .unwrap()
+                .subtype
+            {
+                StatementEnum::Item(id) => {
+                    let item = woog.exhume_item(id).unwrap();
+                    match item {
+                        Item::Structure(id) => woog.exhume_structure(id).unwrap(),
+                        _ => unimplemented!(),
+                    }
+                }
+                _ => unimplemented!(),
+            };
+
+            // I wrote this this morning, and already I'can't say how it works
+            // exactly. It takes a structure, and not a statement, so it's
+            // pretty low level. It's also assigning the let. Refactor time.
+            render_new_instance_new(
+                buffer,
+                obj,
+                &new,
+                &stmt,
+                &method
+                    .r23_block(woog)
+                    .pop()
+                    .unwrap()
+                    .r24_symbol_table(woog)
+                    .pop()
+                    .unwrap(),
+                config,
+                woog,
+                domain,
+            )?;
+
+            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+            emit!(buffer, "new");
+            emit!(buffer, "}}");
+
+            Ok(())
+        },
+    )
 }
 
 macro_rules! test_local_and_imports {

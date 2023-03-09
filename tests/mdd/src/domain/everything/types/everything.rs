@@ -46,8 +46,8 @@ impl Everything {
             int: int,
             string: string,
             bool: bool,
-            rando: rando.id,
             float: float,
+            rando: rando.id,
         };
         store.inter_everything(new.clone());
         new

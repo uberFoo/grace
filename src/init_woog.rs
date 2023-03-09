@@ -124,7 +124,7 @@ fn inter_method_new(
 
     let structure = Structure::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
     let item = Item::new_structure(&structure, woog);
-    let statement = Statement::new_item(&block, &item, woog);
+    let _ = Statement::new_item(&block, &item, woog);
 
     let method = ObjectMethod::new(&block, obj, woog);
     let function = Function::new_object_method(

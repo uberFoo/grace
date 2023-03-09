@@ -49,7 +49,7 @@ impl SuperT {
         store: &mut IsaCloneStore,
     ) -> SuperT {
         // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This shoud be fixed in the near future.
+        // about this local. This should be fixed in the near future.
         let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,
@@ -68,7 +68,7 @@ impl SuperT {
         store: &mut IsaCloneStore,
     ) -> SuperT {
         // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This shoud be fixed in the near future.
+        // about this local. This should be fixed in the near future.
         let id = subtype.id;
         let new = SuperT {
             pointer: pointer.id,

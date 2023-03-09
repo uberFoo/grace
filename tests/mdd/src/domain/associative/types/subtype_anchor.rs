@@ -41,8 +41,8 @@ impl SubtypeAnchor {
             format!("{:?}:{:?}", isaui_id, anchor_id).as_bytes(),
         );
         let new = SubtypeAnchor {
-            isaui_id: isaui_id.id,
             id: id,
+            isaui_id: isaui_id.id,
             anchor_id: anchor_id.id,
         };
         store.inter_subtype_anchor(new.clone());

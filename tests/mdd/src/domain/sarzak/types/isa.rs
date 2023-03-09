@@ -27,9 +27,9 @@ impl Isa {
     pub fn new(number: i64, supertype: &Supertype, store: &mut SarzakStore) -> Isa {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, supertype).as_bytes());
         let new = Isa {
+            number: number,
             supertype: supertype.id,
             id: id,
-            number: number,
         };
         store.inter_isa(new.clone());
         new

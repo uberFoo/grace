@@ -5,7 +5,7 @@ use std::{collections::HashMap, fmt::Write};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::Ownership, Item, StatementEnum, VariableEnum},
+    woog::{store::ObjectStore as WoogStore, types::Ownership},
 };
 use uuid::Uuid;
 
@@ -16,7 +16,7 @@ use crate::{
         emit_object_comments,
         generator::{FileGenerator, GenerationAction},
         render::{RenderIdent, RenderType},
-        render_make_uuid_new, render_method_definition_new, render_new_instance_new,
+        render_method_new,
     },
     options::GraceConfig,
 };
@@ -101,84 +101,14 @@ impl FileGenerator for ExternalGenerator {
             DirectiveKind::IgnoreOrig,
             format!("{}-ee-impl", object.as_ident()),
             |buffer| {
-                let method = woog
-                    .iter_object_method()
-                    .find(|m| m.object == object.id)
-                    .unwrap();
                 emit!(
                     buffer,
                     "impl {} {{",
                     object.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
-                render_method_definition_new(buffer, &method, woog, domain)?;
-
-                let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
-                let var = &table
-                    .r20_variable(woog)
-                    .iter()
-                    .find(|&&v| v.name == "id")
-                    .unwrap()
-                    .subtype;
-                let id = match var {
-                    // This works because the id of the variable is the same as the id of the
-                    // subtype enum.
-                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
-                    _ => panic!("This should never happen"),
-                };
-                render_make_uuid_new(buffer, &id, &method, woog, domain)?;
-
-                // Output code to create the instance
-                let var = &table
-                    .r20_variable(woog)
-                    .iter()
-                    .find(|&&v| v.name == "new")
-                    .unwrap()
-                    .subtype;
-                let new = match var {
-                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
-                    _ => panic!("This should never happen"),
-                };
-                let stmt = match &method
-                    .r23_block(woog)
-                    .pop()
-                    .unwrap()
-                    .r12_statement(woog)
-                    .pop()
-                    .unwrap()
-                    .subtype
-                {
-                    StatementEnum::Item(id) => {
-                        let item = woog.exhume_item(id).unwrap();
-                        match item {
-                            Item::Structure(id) => woog.exhume_structure(id).unwrap(),
-                            _ => unimplemented!(),
-                        }
-                    }
-                    _ => unimplemented!(),
-                };
-
-                render_new_instance_new(
-                    buffer,
-                    object,
-                    &new,
-                    &stmt,
-                    &method
-                        .r23_block(woog)
-                        .pop()
-                        .unwrap()
-                        .r24_symbol_table(woog)
-                        .pop()
-                        .unwrap(),
-                    config,
-                    woog,
-                    domain,
-                )?;
-
-                emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
-                emit!(buffer, "new");
-                emit!(buffer, "}}");
-                emit!(buffer, "}}");
+                // Darn. So I need to insert a local here. And hybrid has similar needs.
+                render_method_new(buffer, object, config, woog, domain)?;
 
                 Ok(())
             },

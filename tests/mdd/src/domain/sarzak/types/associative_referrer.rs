@@ -50,10 +50,10 @@ impl AssociativeReferrer {
             .as_bytes(),
         );
         let new = AssociativeReferrer {
-            id: id,
             one_referential_attribute: one_referential_attribute,
-            cardinality: cardinality.id(),
             obj_id: obj_id.id,
+            cardinality: cardinality.id(),
+            id: id,
             other_referential_attribute: other_referential_attribute,
         };
         store.inter_associative_referrer(new.clone());
