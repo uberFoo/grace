@@ -31,7 +31,7 @@ impl Supertype {
         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", obj_id).as_bytes());
         let new = Supertype {
             obj_id: obj_id.id,
-            id,
+            id: id,
         };
         store.inter_supertype(new.clone());
         new

@@ -31,7 +31,7 @@ impl C {
         let new = C {
             jackpot: jackpot,
             ptr: ptr.id,
-            id,
+            id: id,
         };
         store.inter_c(new.clone());
         new

@@ -56,10 +56,10 @@ impl Object {
             format!("{}:{}:{}", description, key_letters, name).as_bytes(),
         );
         let new = Object {
-            description: description,
             key_letters: key_letters,
+            id: id,
+            description: description,
             name: name,
-            id,
         };
         store.inter_object(new.clone());
         new

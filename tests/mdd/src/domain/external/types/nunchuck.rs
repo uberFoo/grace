@@ -27,7 +27,10 @@ impl Nunchuck {
     /// Inter a new 'Nunchuck' in the store, and return it's `id`.
     pub fn new(time: &Timestamp, store: &mut ExternalStore) -> Nunchuck {
         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", time).as_bytes());
-        let new = Nunchuck { time: time.id, id };
+        let new = Nunchuck {
+            id: id,
+            time: time.id,
+        };
         store.inter_nunchuck(new.clone());
         new
     }

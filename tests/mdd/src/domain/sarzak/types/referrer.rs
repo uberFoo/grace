@@ -52,12 +52,12 @@ impl Referrer {
             .as_bytes(),
         );
         let new = Referrer {
-            description: description,
+            id: id,
             referential_attribute: referential_attribute,
             cardinality: cardinality.id(),
-            conditionality: conditionality.id(),
             obj_id: obj_id.id,
-            id,
+            description: description,
+            conditionality: conditionality.id(),
         };
         store.inter_referrer(new.clone());
         new

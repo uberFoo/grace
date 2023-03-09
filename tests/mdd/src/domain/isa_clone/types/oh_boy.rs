@@ -39,8 +39,8 @@ impl OhBoy {
     pub fn new(attribution: String, store: &mut IsaCloneStore) -> OhBoy {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", attribution).as_bytes());
         let new = OhBoy {
+            id: id,
             attribution: attribution,
-            id,
         };
         store.inter_oh_boy(new.clone());
         new

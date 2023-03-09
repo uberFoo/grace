@@ -34,9 +34,9 @@ impl A {
     pub fn new(number: i64, ptr: &Referent, store: &mut OneToOneStore) -> A {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, ptr).as_bytes());
         let new = A {
-            number: number,
             ptr: ptr.id,
-            id,
+            id: id,
+            number: number,
         };
         store.inter_a(new.clone());
         new

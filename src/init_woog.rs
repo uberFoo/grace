@@ -11,8 +11,9 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            Access, Block, GraceType, Local, ObjectMethod, Ownership, Parameter, Reference,
-            SymbolTable, Value, Variable, Visibility, WoogOption, PUBLIC,
+            Access, Block, Field, Function, GraceType, Item, Local, ObjectMethod, Ownership,
+            Parameter, Reference, Statement, Structure, StructureField, SymbolTable, Value,
+            Variable, Visibility, WoogOption, PUBLIC,
         },
     },
 };
@@ -22,7 +23,7 @@ use uuid::Uuid;
 use crate::{
     codegen::{
         find_store, get_referrers_sorted, inner_object_is_struct, is_object_stale,
-        render::RenderIdent,
+        render::{RenderIdent, RenderType},
     },
     options::{ExternalEntity, GraceConfig, Target},
     BUILD_DIR, TARGET_DIR,
@@ -121,14 +122,18 @@ fn inter_method_new(
 ) -> () {
     let block = Block::new(Uuid::new_v4(), woog);
 
-    let method = ObjectMethod::new(
+    let structure = Structure::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
+    let item = Item::new_structure(&structure, woog);
+    let statement = Statement::new_item(&block, &item, woog);
+
+    let method = ObjectMethod::new(&block, obj, woog);
+    let function = Function::new_object_method(
         format!(
             "Inter a new '{}' in the store, and return it's `id`.",
             obj.name
         ),
         "new".to_owned(),
-        &block,
-        obj,
+        &method,
         woog,
     );
 
@@ -137,20 +142,25 @@ fn inter_method_new(
     // These are more attributes on our object, and they should be sorted.
     let referrers = get_referrers_sorted!(&obj, domain.sarzak());
 
+    let mut params = Vec::new();
+    let mut fields = Vec::new();
     // Collect the attributes
-    let mut params: Vec<Parameter> = Vec::new();
     let mut attrs = obj.r1_attribute(domain.sarzak());
     attrs.sort_by(|a, b| a.name.cmp(&b.name));
     for attr in attrs {
+        let ty = attr.r2_ty(domain.sarzak())[0];
+        let ty = GraceType::new_ty(&ty, woog);
+
+        let field = Field::new(attr.as_ident(), &ty, woog);
+        let field = StructureField::new(None, &field, &structure, woog);
+        fields.push(field);
+
         // We are going to generate the id, so don't include it in the
         // list of parameters.
         if attr.name != "id" {
-            let ty = attr.r2_ty(domain.sarzak())[0];
-            let ty = GraceType::new_ty(&ty, woog);
-            let param = Parameter::new(attr.as_ident(), &method, None, woog);
-            let var = Variable::new_parameter(&table, &param, woog);
+            let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+            let var = Variable::new_parameter(attr.as_ident(), &table, &param, woog);
             let _ = Value::new_variable(&access, &ty.into(), &var, woog);
-
             params.push(param);
         }
     }
@@ -168,35 +178,48 @@ fn inter_method_new(
             // If it's conditional build a parameter that's an optional reference
             // to the referent.
             Conditionality::Conditional(_) => {
-                let param = Parameter::new(
+                let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+                let var = Variable::new_parameter(
                     referrer.referential_attribute.as_ident(),
-                    &method,
-                    None,
+                    &table,
+                    &param,
                     woog,
                 );
-                let var = Variable::new_parameter(&table, &param, woog);
                 let reference = Reference::new(&r_obj, woog);
                 let reference = GraceType::new_reference(&reference, woog);
                 let option = WoogOption::new(&reference, woog);
-                let option = GraceType::new_woog_option(&option, woog);
-                let _ = Value::new_variable(&access, &option, &var, woog);
-
+                let ty = GraceType::new_woog_option(&option, woog);
+                let _ = Value::new_variable(&access, &ty, &var, woog);
                 params.push(param);
+
+                let uuid = GraceType::new_ty(&Ty::new_uuid(), woog);
+                let option = WoogOption::new(&uuid, woog);
+                let ty = GraceType::new_woog_option(&option, woog);
+                let field = Field::new(referrer.referential_attribute.as_ident(), &ty, woog);
+                let field = StructureField::new(None, &field, &structure, woog);
+                fields.push(field);
             }
             // An unconditional reference translates into a reference to the referent.
             Conditionality::Unconditional(_) => {
-                let param = Parameter::new(
+                let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+                let var = Variable::new_parameter(
                     referrer.referential_attribute.as_ident(),
-                    &method,
-                    None,
+                    &table,
+                    &param,
                     woog,
                 );
-                let var = Variable::new_parameter(&table, &param, woog);
                 let reference = Reference::new(&r_obj, woog);
-                let reference = GraceType::new_reference(&reference, woog);
-                let _ = Value::new_variable(&access, &reference, &var, woog);
-
+                let ty = GraceType::new_reference(&reference, woog);
+                let _ = Value::new_variable(&access, &ty, &var, woog);
                 params.push(param);
+
+                let field = Field::new(
+                    referrer.referential_attribute.as_ident(),
+                    &GraceType::new_ty(&Ty::new_uuid(), woog),
+                    woog,
+                );
+                let field = StructureField::new(None, &field, &structure, woog);
+                fields.push(field);
             }
         }
     }
@@ -212,65 +235,91 @@ fn inter_method_new(
         let other_obj = other.r25_object(domain.sarzak())[0];
 
         // One side
-        let param = Parameter::new(
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+        let var = Variable::new_parameter(
             assoc_referrer.one_referential_attribute.as_ident(),
-            &method,
-            None,
+            &table,
+            &param,
             woog,
         );
-
-        let var = Variable::new_parameter(&table, &param, woog);
         let reference = Reference::new(&one_obj, woog);
-        let reference = GraceType::new_reference(&reference, woog);
-        let _ = Value::new_variable(&access, &reference, &var, woog);
-
+        let ty = GraceType::new_reference(&reference, woog);
+        let _ = Value::new_variable(&access, &ty, &var, woog);
         params.push(param);
+
+        let field = Field::new(
+            assoc_referrer.one_referential_attribute.as_ident(),
+            &GraceType::new_ty(&Ty::new_uuid(), woog),
+            woog,
+        );
+        let field = StructureField::new(None, &field, &structure, woog);
+        fields.push(field);
 
         // Other side
-        let param = Parameter::new(
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+        let var = Variable::new_parameter(
             assoc_referrer.other_referential_attribute.as_ident(),
-            &method,
-            None,
+            &table,
+            &param,
             woog,
         );
-
-        let var = Variable::new_parameter(&table, &param, woog);
         let reference = Reference::new(&other_obj, woog);
-        let reference = GraceType::new_reference(&reference, woog);
-        let _ = Value::new_variable(&access, &reference, &var, woog);
-
+        let ty = GraceType::new_reference(&reference, woog);
+        let _ = Value::new_variable(&access, &ty, &var, woog);
         params.push(param);
+
+        let field = Field::new(
+            assoc_referrer.other_referential_attribute.as_ident(),
+            &GraceType::new_ty(&Ty::new_uuid(), woog),
+            woog,
+        );
+        let field = StructureField::new(None, &field, &structure, woog);
+        fields.push(field);
     }
 
     if let Target::Domain(_) = config.get_target() {
         // Add the store to the end of the  input parameters
         let store = find_store(module, &woog, domain);
-        let param = Parameter::new("store".to_owned(), &method, None, woog);
-        let var = Variable::new_parameter(&table, &param, woog);
-        let ty = Ty::External(store.id);
-        let ty = GraceType::new_ty(&ty, woog);
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+        let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
+        let external = Ty::External(store.id);
+        let ty = GraceType::new_ty(&external, woog);
         let _ = Value::new_variable(&mut_access, &ty, &var, woog);
-
         params.push(param);
     }
 
     // Link the params
     // I need to maintain the order I've adopted because I'don't need things
     // changing. That said, I need to iterate over the local parameters,
-    // and not what's interred in teh store. So, I do the weird thing, and
+    // and not what's interred in the store. So, I do the weird thing, and
     // iterate over the locals, and push the change to the store.
     params.iter_mut().rev().fold(None, |next, param| {
         param.next = next;
         woog.inter_parameter(param.clone());
         Some(param.id)
     });
+    // Same-same for the fields
+    fields.iter_mut().rev().fold(None, |next, field| {
+        field.next = next;
+        woog.inter_structure_field(field.clone());
+        Some(field.id)
+    });
 
     // Locals we'll need
-    let id = Local::new("id".to_owned(), woog);
-    let var = Variable::new_local(&table, &id, woog);
+    let id = Local::new(Uuid::new_v4(), woog);
+    let var = Variable::new_local("id".to_owned(), &table, &id, woog);
     let _value = Value::new_variable(
         &access,
         &GraceType::new_ty(&Ty::new_uuid(), woog),
+        &var,
+        woog,
+    );
+
+    let new = Local::new(Uuid::new_v4(), woog);
+    let var = Variable::new_local("new".to_owned(), &table, &new, woog);
+    let _value = Value::new_variable(
+        &access,
+        &GraceType::new_reference(&Reference::new(&obj, woog), woog),
         &var,
         woog,
     );
@@ -291,14 +340,14 @@ fn inter_external(
     woog: &mut WoogStore,
 ) -> () {
     let block = Block::new(Uuid::new_v4(), woog);
-    let method = ObjectMethod::new(
+    let method = ObjectMethod::new(&block, obj, woog);
+    let function = Function::new_object_method(
         format!(
             "Create a new instance of the external entity,  '{}', wrapped in an {}.",
             external.name, obj.name
         ),
         external.ctor.clone(),
-        &block,
-        obj,
+        &method,
         woog,
     );
 
@@ -320,8 +369,8 @@ fn inter_external(
         .unwrap();
     let ty = ee.r3_ty(domain.sarzak())[0];
     let ty = GraceType::new_ty(&ty, woog);
-    let param = Parameter::new("道".to_owned(), &method, None, woog);
-    let var = Variable::new_parameter(&table, &param, woog);
+    let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+    let var = Variable::new_parameter("道".to_owned(), &table, &param, woog);
     let _ = Value::new_variable(&access, &ty.into(), &var, woog);
     params.push(param);
 
@@ -333,8 +382,8 @@ fn inter_external(
         if attr.name != "id" {
             let ty = attr.r2_ty(domain.sarzak())[0];
             let ty = GraceType::new_ty(&ty, woog);
-            let param = Parameter::new(attr.as_ident(), &method, None, woog);
-            let var = Variable::new_parameter(&table, &param, woog);
+            let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+            let var = Variable::new_parameter(attr.as_ident(), &table, &param, woog);
             let _ = Value::new_variable(&access, &ty.into(), &var, woog);
 
             params.push(param);
@@ -354,13 +403,13 @@ fn inter_external(
             // If it's conditional build a parameter that's an optional reference
             // to the referent.
             Conditionality::Conditional(_) => {
-                let param = Parameter::new(
+                let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+                let var = Variable::new_parameter(
                     referrer.referential_attribute.as_ident(),
-                    &method,
-                    None,
+                    &table,
+                    &param,
                     woog,
                 );
-                let var = Variable::new_parameter(&table, &param, woog);
                 let reference = Reference::new(&r_obj, woog);
                 let reference = GraceType::new_reference(&reference, woog);
                 let option = WoogOption::new(&reference, woog);
@@ -371,13 +420,13 @@ fn inter_external(
             }
             // An unconditional reference translates into a reference to the referent.
             Conditionality::Unconditional(_) => {
-                let param = Parameter::new(
+                let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+                let var = Variable::new_parameter(
                     referrer.referential_attribute.as_ident(),
-                    &method,
-                    None,
+                    &table,
+                    &param,
                     woog,
                 );
-                let var = Variable::new_parameter(&table, &param, woog);
                 let reference = Reference::new(&r_obj, woog);
                 let reference = GraceType::new_reference(&reference, woog);
                 let _ = Value::new_variable(&access, &reference, &var, woog);
@@ -398,14 +447,13 @@ fn inter_external(
         let other_obj = other.r25_object(domain.sarzak())[0];
 
         // One side
-        let param = Parameter::new(
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+        let var = Variable::new_parameter(
             assoc_referrer.one_referential_attribute.as_ident(),
-            &method,
-            None,
+            &table,
+            &param,
             woog,
         );
-
-        let var = Variable::new_parameter(&table, &param, woog);
         let reference = Reference::new(&one_obj, woog);
         let reference = GraceType::new_reference(&reference, woog);
         let _ = Value::new_variable(&access, &reference, &var, woog);
@@ -413,14 +461,13 @@ fn inter_external(
         params.push(param);
 
         // Other side
-        let param = Parameter::new(
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+        let var = Variable::new_parameter(
             assoc_referrer.other_referential_attribute.as_ident(),
-            &method,
-            None,
+            &table,
+            &param,
             woog,
         );
-
-        let var = Variable::new_parameter(&table, &param, woog);
         let reference = Reference::new(&other_obj, woog);
         let reference = GraceType::new_reference(&reference, woog);
         let _ = Value::new_variable(&access, &reference, &var, woog);
@@ -431,8 +478,8 @@ fn inter_external(
     if let Target::Domain(_) = config.get_target() {
         // Add the store to the end of the  input parameters
         let store = find_store(module, &woog, domain);
-        let param = Parameter::new("store".to_owned(), &method, None, woog);
-        let var = Variable::new_parameter(&table, &param, woog);
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+        let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
         let ty = Ty::External(store.id);
         let ty = GraceType::new_ty(&ty, woog);
         let _ = Value::new_variable(&mut_access, &ty, &var, woog);

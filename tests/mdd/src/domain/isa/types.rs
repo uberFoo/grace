@@ -19,8 +19,10 @@ pub use crate::domain::isa::reference::Reference;
 pub use crate::domain::isa::simple_subtype_a::SimpleSubtypeA;
 pub use crate::domain::isa::simple_subtype_b::SIMPLE_SUBTYPE_B;
 pub use crate::domain::isa::simple_supertype::SimpleSupertype;
+pub use crate::domain::isa::simple_supertype::SimpleSupertypeEnum;
 pub use crate::domain::isa::subtype_a::SubtypeA;
 pub use crate::domain::isa::subtype_b::SubtypeB;
 pub use crate::domain::isa::super_t::SuperT;
+pub use crate::domain::isa::super_t::SuperTEnum;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

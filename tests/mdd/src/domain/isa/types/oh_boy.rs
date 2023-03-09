@@ -40,7 +40,7 @@ impl OhBoy {
         let id = Uuid::new_v5(&UUID_NS, format!("{}", attribution).as_bytes());
         let new = OhBoy {
             attribution: attribution,
-            id,
+            id: id,
         };
         store.inter_oh_boy(new.clone());
         new

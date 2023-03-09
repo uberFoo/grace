@@ -31,9 +31,9 @@ impl C {
     pub fn new(like_water: f64, ptr: Option<&Referent>, store: &mut OneToOneStore) -> C {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", like_water, ptr).as_bytes());
         let new = C {
+            id: id,
             like_water: like_water,
             ptr: ptr.map(|referent| referent.id),
-            id,
         };
         store.inter_c(new.clone());
         new

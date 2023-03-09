@@ -616,6 +616,8 @@ impl CodeWriter for HybridNewImpl {
                     // Take the ID from the subtype
                     // We shouldn't be doing this sort of thing here -- getting the testing
                     // stuff working will allow this to be done in a uniform manner.
+                    emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
+                    emit!(buffer,"// about this local. This should be fixed in the near future.");
                     if object_is_enum(s_obj, config, imports, domain)? {
                         emit!(buffer, "let id = subtype.id();");
                     } else if object_is_singleton(s_obj, config, imports, domain)? {

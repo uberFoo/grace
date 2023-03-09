@@ -45,10 +45,10 @@ impl Binary {
             format!("{}:{:?}:{:?}", number, to, from).as_bytes(),
         );
         let new = Binary {
-            number: number,
+            id: id,
             to: to.id,
             from: from.id,
-            id,
+            number: number,
         };
         store.inter_binary(new.clone());
         new

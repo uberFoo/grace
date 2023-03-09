@@ -26,8 +26,8 @@ impl Henry {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", last_name, bar).as_bytes());
         let new = Henry {
             last_name: last_name,
+            id: id,
             bar: bar.id(),
-            id,
         };
         store.inter_henry(new.clone());
         new

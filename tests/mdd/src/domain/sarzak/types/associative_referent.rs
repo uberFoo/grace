@@ -52,11 +52,11 @@ impl AssociativeReferent {
             .as_bytes(),
         );
         let new = AssociativeReferent {
+            id: id,
             description: description,
             cardinality: cardinality.id(),
-            conditionality: conditionality.id(),
             obj_id: obj_id.id,
-            id,
+            conditionality: conditionality.id(),
         };
         store.inter_associative_referent(new.clone());
         new

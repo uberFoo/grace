@@ -14,7 +14,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{GraceType, ObjectMethod as WoogObjectMethod, Ownership, Parameter},
+        types::{Field, Function, GraceType, Ownership, Variable},
     },
 };
 use snafu::prelude::*;
@@ -72,15 +72,9 @@ pub(crate) trait RenderIdent {
     fn as_ident(&self) -> String;
 }
 
-render_ident!(Attribute, Event, Object, State, WoogObjectMethod);
+render_ident!(Attribute, Event, Object, State, Function, Field, Variable);
 
 impl<'a> RenderIdent for ObjectMethod<'a> {
-    fn as_ident(&self) -> String {
-        self.name.sanitize().to_snake_case()
-    }
-}
-
-impl RenderIdent for Parameter {
     fn as_ident(&self) -> String {
         self.name.sanitize().to_snake_case()
     }
@@ -536,6 +530,12 @@ impl Sanitize for &str {
             "Let" => "x_let".to_owned(),
             "option" => "woog_option".to_owned(),
             "Option" => "woog_option".to_owned(),
+            "enum" => "woog_enum".to_owned(),
+            "Enum" => "woog_enum".to_owned(),
+            "struct" => "woog_struct".to_owned(),
+            "Struct" => "woog_struct".to_owned(),
+            "const" => "woog_const".to_owned(),
+            "Const" => "woog_const".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -555,6 +555,12 @@ impl Sanitize for String {
             "Let" => "x_let".to_owned(),
             "option" => "woog_option".to_owned(),
             "Option" => "woog_option".to_owned(),
+            "enum" => "woog_enum".to_owned(),
+            "Enum" => "woog_enum".to_owned(),
+            "struct" => "woog_struct".to_owned(),
+            "Struct" => "woog_struct".to_owned(),
+            "const" => "woog_const".to_owned(),
+            "Const" => "woog_const".to_owned(),
             _ => self.to_owned(),
         }
     }

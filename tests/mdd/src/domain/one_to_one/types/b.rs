@@ -32,8 +32,8 @@ impl B {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", bit, ptr).as_bytes());
         let new = B {
             bit: bit,
+            id: id,
             ptr: ptr.id,
-            id,
         };
         store.inter_b(new.clone());
         new

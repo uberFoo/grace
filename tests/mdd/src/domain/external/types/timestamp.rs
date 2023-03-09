@@ -16,12 +16,11 @@ pub struct Timestamp {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-ee-impl"}}}
 impl Timestamp {
-    pub fn new() -> Self {
-        let value = SystemTime::now();
-        Self {
-            id: Uuid::new_v5(format!("{}", value)),
-            value,
-        }
+    pub fn new(store: &mut ExternalStore) -> Timestamp {
+        let id = Uuid::new_v5(&UUID_NS, format!("",).as_bytes());
+        let new = Timestamp { id: id };
+        store.inter_timestamp(new.clone());
+        new
     }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -13,7 +13,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Local, Ownership, BORROWED, MUTABLE, PUBLIC},
+        types::{Item, Ownership, StatementEnum, VariableEnum, BORROWED, MUTABLE, PUBLIC},
     },
 };
 use snafu::prelude::*;
@@ -32,7 +32,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_make_uuid_new, render_method_definition_new, render_new_instance,
+        render_make_uuid_new, render_method_definition_new, render_new_instance_new,
     },
     options::GraceConfig,
     todo::{GType, LValue, Parameter, RValue},
@@ -526,7 +526,11 @@ impl CodeWriter for StructNewImpl {
             format!("{}-struct-impl-new", obj.as_ident()),
             |buffer| {
                 // Output a docstring
-                emit!(buffer, "/// {}", method.description);
+                emit!(
+                    buffer,
+                    "/// {}",
+                    method.r25_function(woog).pop().unwrap().description
+                );
 
                 // 🚧 Put this back in once I'm done moving to v2.
                 // if options.get_doc_test() {
@@ -559,17 +563,63 @@ impl CodeWriter for StructNewImpl {
                 // Output the top of the function definition
                 render_method_definition_new(buffer, &method, woog, domain)?;
 
-                let id = woog.iter_local().find(|l| l.name == "id").unwrap();
+                let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
+                let var = &table
+                    .r20_variable(woog)
+                    .iter()
+                    .find(|&&v| v.name == "id")
+                    .unwrap()
+                    .subtype;
+                let id = match var {
+                    // This works because the id of the variable is the same as the id of the
+                    // subtype enum.
+                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                    _ => panic!("This should never happen"),
+                };
                 render_make_uuid_new(buffer, &id, &method, woog, domain)?;
 
                 // Output code to create the instance
-                let new = LValue::new("new", GType::Reference(obj.id));
-                render_new_instance(
+                let var = &table
+                    .r20_variable(woog)
+                    .iter()
+                    .find(|&&v| v.name == "new")
+                    .unwrap()
+                    .subtype;
+                let new = match var {
+                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                    _ => panic!("This should never happen"),
+                };
+                let stmt = match &method
+                    .r23_block(woog)
+                    .pop()
+                    .unwrap()
+                    .r12_statement(woog)
+                    .pop()
+                    .unwrap()
+                    .subtype
+                {
+                    StatementEnum::Item(id) => {
+                        let item = woog.exhume_item(id).unwrap();
+                        match item {
+                            Item::Structure(id) => woog.exhume_structure(id).unwrap(),
+                            _ => unimplemented!(),
+                        }
+                    }
+                    _ => unimplemented!(),
+                };
+
+                render_new_instance_new(
                     buffer,
                     obj,
-                    Some(&new),
-                    &fields,
-                    &rvals,
+                    &new,
+                    &stmt,
+                    &method
+                        .r23_block(woog)
+                        .pop()
+                        .unwrap()
+                        .r24_symbol_table(woog)
+                        .pop()
+                        .unwrap(),
                     config,
                     woog,
                     domain,

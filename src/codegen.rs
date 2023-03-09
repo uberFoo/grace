@@ -14,7 +14,10 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{GraceType, Local, ObjectMethod as WoogObjectMethod, Ownership, OWNED},
+        types::{
+            GraceType, Local, ObjectMethod as WoogObjectMethod, Ownership, Structure, SymbolTable,
+            Variable, OWNED,
+        },
     },
 };
 use snafu::prelude::*;
@@ -230,15 +233,25 @@ pub(crate) fn render_method_definition_new(
     log::debug!("Rendering new method definition for {}", object.as_ident());
 
     // Write the beginning of the definition
-    write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
+    write!(
+        buffer,
+        "pub fn {}(",
+        method.r25_function(woog).pop().unwrap().as_ident()
+    )
+    .context(FormatSnafu)?;
 
     // By my calculations this should grab the first parameter in the list.
     // Not a very slick way of doing it.
     // 🚧 I suppose I could add a pointer to the first parameter as a relationship
     // on the method.
-    let param = woog
-        .iter_parameter()
-        .find(|p| p.method == method.id && p.r1c_parameter(woog).len() == 0);
+    let param = woog.iter_parameter().find(|p| {
+        if let Some(func_id) = p.function {
+            func_id == method.r25_function(woog).pop().unwrap().id
+                && p.r1c_parameter(woog).len() == 0
+        } else {
+            false
+        }
+    });
 
     ensure!(
         param.is_some(),
@@ -246,7 +259,7 @@ pub(crate) fn render_method_definition_new(
             description: format!(
                 "No parameter found for {}::{}",
                 object.as_type(&Ownership::Owned(OWNED), woog, domain),
-                method.as_ident()
+                method.r25_function(woog).pop().unwrap().as_ident()
             )
         }
     );
@@ -267,7 +280,7 @@ pub(crate) fn render_method_definition_new(
         write!(
             buffer,
             "{}: {},",
-            param.as_ident(),
+            param.r8_variable(woog)[0].name.as_ident(),
             ty.as_type(&mutability, woog, domain)
         )
         .context(FormatSnafu)?;
@@ -400,9 +413,14 @@ pub(crate) fn render_make_uuid_new(
 
     // We want to render a UUID made up of all of the parameters to the function.
     // So we do the cheap thing and just use the parameter list.
-    let param = woog
-        .iter_parameter()
-        .find(|p| p.method == method.id && p.r1c_parameter(woog).len() == 0);
+    let param = woog.iter_parameter().find(|p| {
+        if let Some(func_id) = p.function {
+            func_id == method.r25_function(woog).pop().unwrap().id
+                && p.r1c_parameter(woog).len() == 0
+        } else {
+            false
+        }
+    });
 
     ensure!(
         param.is_some(),
@@ -410,7 +428,7 @@ pub(crate) fn render_make_uuid_new(
             description: format!(
                 "No parameter found for {}::{}",
                 object.as_type(&Ownership::Owned(OWNED), woog, domain),
-                method.as_ident()
+                method.r25_function(woog).pop().unwrap().as_ident()
             )
         }
     );
@@ -433,11 +451,11 @@ pub(crate) fn render_make_uuid_new(
         match &ty {
             GraceType::Reference(_) => {
                 format_string.extend(["{:?}:"]);
-                args.extend([param.name.to_owned(), ",".to_owned()]);
+                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
             }
             GraceType::WoogOption(_) => {
                 format_string.extend(["{:?}:"]);
-                args.extend([param.name.to_owned(), ",".to_owned()]);
+                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
             }
             GraceType::Ty(id) => {
                 let ty = domain.sarzak().exhume_ty(id).unwrap();
@@ -448,13 +466,13 @@ pub(crate) fn render_make_uuid_new(
                     Ty::External(_) => {}
                     _ => {
                         format_string.extend(["{}:"]);
-                        args.extend([param.name.to_owned(), ",".to_owned()]);
+                        args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
                     }
                 }
             }
             _ => {
                 format_string.extend(["{}:"]);
-                args.extend([param.name.to_owned(), ",".to_owned()]);
+                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
             }
         }
 
@@ -473,7 +491,7 @@ pub(crate) fn render_make_uuid_new(
     emit!(
         buffer,
         "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
-        var.name,
+        var.r8_variable(woog)[0].name,
         format_string,
         args
     );
@@ -671,6 +689,229 @@ pub(crate) fn render_new_instance(
     Ok(())
 }
 
+pub(crate) fn render_new_instance_new(
+    buffer: &mut Buffer,
+    object: &Object,
+    var: &Local,
+    structure: &Structure,
+    table: &SymbolTable,
+    config: &GraceConfig,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
+    let ty = var
+        .r8_variable(woog)
+        .pop()
+        .unwrap()
+        .r7_value(woog)
+        .pop()
+        .unwrap()
+        .r3_grace_type(woog)[0];
+
+    ensure!(
+        match ty {
+            GraceType::Reference(id) => {
+                let reference = woog.exhume_reference(&id).unwrap();
+                ensure!(
+                    reference.object == object.id,
+                    CompilerSnafu {
+                        description: format!(
+                            "type mismatch: found `{:?}`, expected `{:?}`",
+                            reference, object
+                        )
+                    }
+                );
+                true
+            }
+            _ => false,
+        },
+        CompilerSnafu {
+            description: format!(
+                "type mismatch: found `{:?}`, expected `SarzakType::Reference`",
+                ty
+            )
+        }
+    );
+
+    let fields = structure.r27_structure_field(woog);
+    let first = fields
+        .iter()
+        .find(|&&field| field.r30c_structure_field(woog).len() == 0)
+        .clone();
+
+    write!(buffer, "let {} = ", var.r8_variable(woog)[0].name).context(FormatSnafu)?;
+
+    emit!(
+        buffer,
+        "{} {{",
+        object.as_type(&Ownership::new_borrowed(), woog, domain)
+    );
+
+    // Now we need to extract the values for the fields from the symbol table.
+    // Except that it's not so simple since it's not a map. So really, it needs
+    // to become a map asap. Maybe after I get EE's working? I haven't thought
+    // about it too much. For now I guess I'll do a linear search.
+    let rvals = fields
+        .iter()
+        .map(|field| {
+            table
+                .r20_variable(woog)
+                .iter()
+                .find(|&var| var.name == field.r27_field(woog)[0].name)
+                .unwrap()
+                .clone()
+        })
+        .collect::<Vec<_>>();
+
+    let tuples = zip(fields, rvals);
+
+    for (field, rval) in tuples {
+        let f = field.r27_field(woog)[0];
+        let ty = f.r29_grace_type(woog)[0];
+        let rval_string = typecheck_and_coerce(ty, rval, config, woog, domain)?;
+        emit!(buffer, "{}: {},", f.as_ident(), rval_string);
+    }
+
+    emit!(buffer, "}};");
+
+    Ok(())
+}
+
+/// This function takes a type, presumably from the left-hand side of an assignment,
+/// and a variable, presumably from the right-hand side of an assignment, and checks
+/// that the types are compatible. The result, assuming compatibility, is a string
+/// representation of what the right-hand side of the assignment should be in able
+/// to match the types.
+fn typecheck_and_coerce(
+    lhs_ty: &GraceType,
+    rhs: &Variable,
+    config: &GraceConfig,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<String> {
+    let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
+
+    Ok(match &lhs_ty {
+        // GraceType::Reference(id) => {}
+        GraceType::WoogOption(_) => {
+            // ✨ Until this comment changes, i.e., until this is used by more than
+            // rendering a new Self item, the type of the lhs option is uuid.
+            match &rhs_ty {
+                GraceType::WoogOption(id) => {
+                    let opt = woog.exhume_woog_option(&id).unwrap();
+                    let opt_ty = opt.r20_grace_type(woog)[0];
+                    match &opt_ty {
+                        GraceType::Reference(id) => {
+                            let reference = woog.exhume_reference(&id).unwrap();
+                            let object = reference.r13_object(domain.sarzak())[0];
+
+                            if inner_object_is_enum(object, config, domain) {
+                                format!(
+                                    "{}.map(|{}| {}.id())",
+                                    rhs.as_ident(),
+                                    object.as_ident(),
+                                    object.as_ident()
+                                )
+                            } else {
+                                format!(
+                                    "{}.map(|{}| {}.id)",
+                                    rhs.as_ident(),
+                                    object.as_ident(),
+                                    object.as_ident()
+                                )
+                            }
+                        }
+                        _ => {
+                            ensure!(
+                                &lhs_ty == &rhs_ty,
+                                CompilerSnafu {
+                                    description: format!(
+                                        "type mismatch: found `{:?}`, expected `{:?}`",
+                                        rhs_ty, lhs_ty
+                                    )
+                                }
+                            );
+                            rhs.as_ident()
+                        }
+                    }
+                }
+                _ => {
+                    ensure!(
+                        &lhs_ty == &rhs_ty,
+                        CompilerSnafu {
+                            description: format!(
+                                "type mismatch: found `{:?}`, expected `{:?}`",
+                                rhs_ty, lhs_ty
+                            )
+                        }
+                    );
+                    rhs.as_ident()
+                }
+            }
+        }
+        // GraceType::TimeStamp(id) => {}
+        GraceType::Ty(id) => {
+            let ty = domain.sarzak().exhume_ty(&id).unwrap();
+            match ty {
+                Ty::Uuid(_) => {
+                    // If the lhs is a uuid, and the rhs is a reference, we need to
+                    // pull it's id.
+                    match &rhs_ty {
+                        GraceType::Reference(id) => {
+                            let obj = woog
+                                .exhume_reference(&id)
+                                .unwrap()
+                                .r13_object(domain.sarzak())[0];
+
+                            if inner_object_is_enum(obj, config, domain) {
+                                format!("{}.id()", rhs.as_ident())
+                            } else {
+                                format!("{}.id", rhs.as_ident())
+                            }
+                        }
+                        _ => {
+                            ensure!(
+                                &lhs_ty == &rhs_ty,
+                                CompilerSnafu {
+                                    description: format!(
+                                        "type mismatch: found `{:?}`, expected `{:?}`",
+                                        rhs_ty, lhs_ty
+                                    )
+                                }
+                            );
+                            rhs.as_ident()
+                        }
+                    }
+                }
+                _ => {
+                    ensure!(
+                        &lhs_ty == &rhs_ty,
+                        CompilerSnafu {
+                            description: format!(
+                                "type mismatch: found `{:?}`, expected `{:?}`",
+                                rhs_ty, lhs_ty
+                            )
+                        }
+                    );
+                    rhs.as_ident()
+                }
+            }
+        }
+        _ => {
+            ensure!(
+                &lhs_ty == &rhs_ty,
+                CompilerSnafu {
+                    description: format!(
+                        "type mismatch: found `{:?}`, expected `{:?}`",
+                        rhs_ty, lhs_ty
+                    )
+                }
+            );
+            rhs.as_ident()
+        }
+    })
+}
+
 macro_rules! test_local_and_imports {
     ($name:ident, $func:ident) => {
         pub(crate) fn $name(
@@ -731,7 +972,7 @@ pub(crate) fn inner_object_is_struct(
         && !inner_object_is_singleton(object, config, domain)
 }
 
-// test_local_and_imports!(object_is_hybrid, inner_object_is_hybrid);
+test_local_and_imports!(object_is_hybrid, inner_object_is_hybrid);
 pub(crate) fn inner_object_is_hybrid(
     object: &Object,
     config: &GraceConfig,
