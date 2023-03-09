@@ -739,7 +739,7 @@ pub(crate) fn render_new_instance_new(
         }
     );
 
-    let first = structure
+    let mut first = structure
         .r27_structure_field(woog)
         .iter()
         .find(|&&field| field.r30c_structure_field(woog).len() == 0)
@@ -750,6 +750,7 @@ pub(crate) fn render_new_instance_new(
     loop {
         if let Some(next) = first.r30_structure_field(woog).pop() {
             fields.push(next);
+            first = next;
         } else {
             break;
         }

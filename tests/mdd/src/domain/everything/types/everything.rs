@@ -42,11 +42,11 @@ impl Everything {
             format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
         );
         let new = Everything {
+            bool: bool,
+            float: float,
             id: id,
             int: int,
             string: string,
-            bool: bool,
-            float: float,
             rando: rando.id,
         };
         store.inter_everything(new.clone());

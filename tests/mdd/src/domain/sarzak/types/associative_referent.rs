@@ -52,10 +52,10 @@ impl AssociativeReferent {
             .as_bytes(),
         );
         let new = AssociativeReferent {
-            conditionality: conditionality.id(),
-            cardinality: cardinality.id(),
             description: description,
             id: id,
+            cardinality: cardinality.id(),
+            conditionality: conditionality.id(),
             obj_id: obj_id.id,
         };
         store.inter_associative_referent(new.clone());
@@ -82,11 +82,11 @@ impl AssociativeReferent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-cond-to-associative"}}}
-    /// Navigate to [`Associative`] across R23(1-1c)
-    pub fn r23c_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
+    /// Navigate to [`Associative`] across R22(1-1c)
+    pub fn r22c_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
         let associative = store
             .iter_associative()
-            .find(|associative| associative.one == self.id);
+            .find(|associative| associative.other == self.id);
         match associative {
             Some(ref associative) => vec![associative],
             None => Vec::new(),
@@ -95,11 +95,11 @@ impl AssociativeReferent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-cond-to-associative"}}}
-    /// Navigate to [`Associative`] across R22(1-1c)
-    pub fn r22c_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
+    /// Navigate to [`Associative`] across R23(1-1c)
+    pub fn r23c_associative<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Associative> {
         let associative = store
             .iter_associative()
-            .find(|associative| associative.other == self.id);
+            .find(|associative| associative.one == self.id);
         match associative {
             Some(ref associative) => vec![associative],
             None => Vec::new(),

@@ -36,9 +36,9 @@ impl AcknowledgedEvent {
             format!("{:?}:{:?}", event_id, state_id).as_bytes(),
         );
         let new = AcknowledgedEvent {
-            state_id: state_id.id,
             id: id,
             event_id: event_id.id,
+            state_id: state_id.id,
         };
         store.inter_acknowledged_event(new.clone());
         new

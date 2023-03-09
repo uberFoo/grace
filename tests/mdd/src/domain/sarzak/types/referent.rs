@@ -49,8 +49,8 @@ impl Referent {
             .as_bytes(),
         );
         let new = Referent {
-            id: id,
             description: description,
+            id: id,
             cardinality: cardinality.id(),
             conditionality: conditionality.id(),
             obj_id: obj_id.id,

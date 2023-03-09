@@ -41,8 +41,8 @@ impl AnotherObject {
     ) -> AnotherObject {
         let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", ptr, edge).as_bytes());
         let new = AnotherObject {
-            ptr: ptr.id,
             id: id,
+            ptr: ptr.id,
             edge: edge.id,
         };
         store.inter_another_object(new.clone());

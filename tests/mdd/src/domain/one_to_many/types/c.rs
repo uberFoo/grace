@@ -30,8 +30,8 @@ impl C {
         let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", jackpot, ptr).as_bytes());
         let new = C {
             id: id,
-            ptr: ptr.id,
             jackpot: jackpot,
+            ptr: ptr.id,
         };
         store.inter_c(new.clone());
         new

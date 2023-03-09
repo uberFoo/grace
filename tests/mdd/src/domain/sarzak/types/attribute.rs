@@ -42,10 +42,10 @@ impl Attribute {
             format!("{}:{:?}:{:?}", name, obj_id, ty).as_bytes(),
         );
         let new = Attribute {
-            name: name,
-            ty: ty.id(),
             id: id,
+            name: name,
             obj_id: obj_id.map(|object| object.id),
+            ty: ty.id(),
         };
         store.inter_attribute(new.clone());
         new
