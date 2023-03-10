@@ -425,7 +425,20 @@ impl RenderType for Ty {
             Self::Uuid(_) => "Uuid".to_owned(),
             Self::External(e) => {
                 let ext = domain.sarzak().exhume_external(&e).unwrap();
-                format!("&{}", ext.as_type(mutability, woog, domain))
+                // format!("&{}", ext.as_type(mutability, woog, domain))
+                match mutability {
+                    Ownership::Owned(_) => {
+                        format!("{}", ext.name.sanitize().to_upper_camel_case())
+                    }
+                    Ownership::Borrowed(_) => {
+                        format!("&{}", ext.name.sanitize().to_upper_camel_case())
+                    }
+                    Ownership::Mutable(_) => {
+                        // Shit, this doesn't belong here. Is it a reference or owned? Let's pretend
+                        // Mutable means mutable reference, what do you say?
+                        format!("&mut {}", ext.name.sanitize().to_upper_camel_case())
+                    }
+                }
             }
             Self::Float(_) => "f64".to_owned(),
             Self::Integer(_) => "i64".to_owned(),

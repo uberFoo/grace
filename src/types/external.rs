@@ -13,9 +13,12 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments,
+        emit_object_comments, find_store,
         generator::{FileGenerator, GenerationAction},
-        render::{RenderIdent, RenderType},
+        render::{
+            render_associative_attributes, render_attributes, render_referential_attributes,
+            RenderIdent, RenderType,
+        },
         render_method_new,
     },
     options::GraceConfig,
@@ -38,7 +41,7 @@ impl FileGenerator for ExternalGenerator {
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
-        _module: &str,
+        module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<GenerationAction> {
@@ -70,6 +73,17 @@ impl FileGenerator for ExternalGenerator {
             |buffer| {
                 emit!(buffer, "use {}::{};", external.path, external.name);
                 emit!(buffer, "use uuid::Uuid;");
+                emit!(buffer, "use crate::{}::UUID_NS;", module);
+
+                // Add the use statements from the options.
+                if let Some(use_paths) = config.get_use_paths(&object.id) {
+                    for path in use_paths {
+                        emit!(buffer, "use {};", path);
+                    }
+                }
+
+                let store = find_store(module, woog, domain);
+                emit!(buffer, "use {} as {};", store.path, store.name);
 
                 Ok(())
             },
@@ -86,12 +100,25 @@ impl FileGenerator for ExternalGenerator {
             DirectiveKind::IgnoreOrig,
             format!("{}-ee-definition", object.as_ident()),
             |buffer| {
+                if let Some(derives) = config.get_derives(&object.id) {
+                    write!(buffer, "#[derive(").context(FormatSnafu)?;
+                    for d in derives {
+                        write!(buffer, "{},", d).context(FormatSnafu)?;
+                    }
+                    emit!(buffer, ")]");
+                }
                 emit!(
                     buffer,
-                    "pub struct {} {{pub id: Uuid, pub value: {}}}",
+                    "pub struct {} {{",
                     object.as_type(&Ownership::new_borrowed(), woog, domain),
-                    external.name
                 );
+
+                render_attributes(buffer, object, woog, domain)?;
+                render_referential_attributes(buffer, object, woog, domain)?;
+                render_associative_attributes(buffer, object, woog, domain)?;
+                emit!(buffer, "ext_value: {},", external.name);
+
+                emit!(buffer, "}}");
 
                 Ok(())
             },
@@ -109,6 +136,8 @@ impl FileGenerator for ExternalGenerator {
 
                 // Darn. So I need to insert a local here. And hybrid has similar needs.
                 render_method_new(buffer, object, config, woog, domain)?;
+
+                emit!(buffer, "}}");
 
                 Ok(())
             },

@@ -455,9 +455,11 @@ pub(crate) fn parse_config_value(input: &str) -> ConfigValue {
         let mut iter = input.split("🐶");
         iter.next();
         if let Some(input) = iter.next() {
-            serde_json::from_str(input)
+            let value = serde_json::from_str(input)
                 .map_err(|e| panic!("error {}\nparsing config value {}", e, input))
-                .unwrap()
+                .unwrap();
+            log::debug!("parsed config value: {:?}", value);
+            value
         } else {
             panic!(
                 "error parsing config value {}, no value after marker: 🐶",

@@ -464,7 +464,18 @@ pub(crate) fn render_make_uuid_new(
                     // This is really about the store, and we don't want to include that.
                     // However, I don't think we'd want to try printing anything external,
                     // so this here is generally a Good Thing.
-                    Ty::External(_) => {}
+                    Ty::External(e) => {
+                        let ext = domain.sarzak().exhume_external(e).unwrap();
+                        // 🚧 This is lame. I need something better, and nothing comes
+                        // immediately to mind.
+                        if ext.name == "SystemTime" {
+                            format_string.extend(["{:?}:"]);
+                            args.extend([
+                                param.r8_variable(woog)[0].name.as_ident(),
+                                ",".to_owned(),
+                            ]);
+                        }
+                    }
                     _ => {
                         format_string.extend(["{}:"]);
                         args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
