@@ -26,6 +26,7 @@ macro_rules! test_target_domain {
                 derive.push("Serialize".to_string());
             }
             options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            options.always_process = Some(true);
 
             let grace = ModelCompiler::default();
 
@@ -87,6 +88,7 @@ macro_rules! test_target_domain {
                 imports.push($imports.to_string());
             )*
             options.imported_domains = Some(imports);
+            options.always_process = Some(true);
 
             let grace = ModelCompiler::default();
 
@@ -132,7 +134,8 @@ macro_rules! test_target_application {
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
 
-            let options = GraceCompilerOptions::default();
+            let mut options = GraceCompilerOptions::default();
+            options.always_process = Some(true);
             let grace = ModelCompiler::default();
 
             // Build the domains
@@ -231,6 +234,7 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
         derive.push("Serialize".to_string());
     }
     options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+    options.always_process = Some(true);
 
     let grace = ModelCompiler::default();
 

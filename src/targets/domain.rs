@@ -304,8 +304,8 @@ impl<'a> DomainTarget<'a> {
 
             // Update the timestamp in woog.
             let now = SystemTime::now();
-            // let ts = Timestamp::new(now.)
-            // let gu = GenerationUnit::new(&obj, &SystemTime::now(), &mut self.woog);
+            let ts = TimeStamp::now(now, &mut self.woog);
+            let _ = GenerationUnit::new(&obj, &ts, &mut self.woog);
         }
 
         Ok(())
@@ -403,8 +403,7 @@ impl<'a> Target for DomainTarget<'a> {
             self.generate_from_module(&domain)?;
         }
 
-        // 🚧 put this back once timestamps are working, which I think depends on EEs working.
-        // persist_woog(&self.woog, self.src_path, &self.domain)?;
+        persist_woog(&self.woog, self.src_path, &self.domain)?;
 
         Ok(())
     }

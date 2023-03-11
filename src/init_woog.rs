@@ -58,17 +58,15 @@ pub(crate) fn init_woog(
     path.push(BUILD_DIR);
     path.push(domain.name());
 
-    // 🚧 put this back once timestamps are working, which I think depends on EEs working.
-    // let mut woog = if path.exists() {
-    //     log::debug!("Loading Woog store from: {}", path.display());
-    //     WoogStore::load(&path).unwrap_or_else(|e| {
-    //         log::warn!("Failed to load Woog store: {}", e);
-    //         WoogStore::new()
-    //     })
-    // } else {
-    //     WoogStore::new()
-    // };
-    let mut woog = WoogStore::new();
+    let mut woog = if path.exists() && !config.get_always_process() {
+        log::debug!("Loading Woog store from: {}", path.display());
+        WoogStore::load(&path).unwrap_or_else(|e| {
+            log::warn!("Failed to load Woog store: {}", e);
+            WoogStore::new()
+        })
+    } else {
+        WoogStore::new()
+    };
 
     let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
     objects.sort_by(|a, b| a.name.cmp(&b.name));
@@ -76,6 +74,7 @@ pub(crate) fn init_woog(
     // Iterate over the objects and create ObjectMethods for each.
     for obj in objects {
         if !is_object_stale(obj, &woog, domain) {
+            log::debug!("Skipping woog for: {}", obj.name);
             continue;
         }
 

@@ -23,12 +23,6 @@ use uuid::{uuid, Uuid};
 
 const _TARGET_: Uuid = uuid!("a42b46ea-820a-5132-b1d2-b1a6363e4cc1");
 
-const DEFAULT_TARGET: Target = Target::Application;
-const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
-const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
-const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
-const DEFAULT_DOC_TEST: bool = true;
-
 /// Compiler Target
 ///
 /// Currently grace supports two targets: Domain and Application.
@@ -166,6 +160,13 @@ pub struct GraceCompilerOptions {
     /// Document tests are generated for all generated functions.
     #[arg(long, short = 't')]
     pub doc_test: Option<bool>,
+    /// Disable Optimized Generation
+    ///
+    /// By default the compiler will only generate code for changed model
+    /// artifacts. Enabling this option will disable this behavior, and all
+    /// model elements will be processed.
+    #[arg(long, short)]
+    pub always_process: Option<bool>,
 }
 
 impl ModelCompilerOptions for GraceCompilerOptions {
@@ -173,6 +174,13 @@ impl ModelCompilerOptions for GraceCompilerOptions {
         self
     }
 }
+
+const DEFAULT_TARGET: Target = Target::Application;
+const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
+const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
+const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
+const DEFAULT_DOC_TEST: bool = true;
+const DEFAULT_ALWAYS_PROCESS: bool = false;
 
 impl Default for GraceCompilerOptions {
     fn default() -> Self {
@@ -182,6 +190,7 @@ impl Default for GraceCompilerOptions {
             use_paths: DEFAULT_USE_PATHS,
             imported_domains: DEFAULT_IMPORTED_DOMAINS,
             doc_test: Some(DEFAULT_DOC_TEST),
+            always_process: Some(DEFAULT_ALWAYS_PROCESS),
         }
     }
 }
@@ -271,18 +280,29 @@ impl GraceConfig {
         }
     }
 
-    // 🚧 Put it back when we are back to generating tests, after v2.
-    // pub(crate) fn get_doc_test(&self) -> bool {
-    //     if let Some(config_value) = self.get(_TARGET_) {
-    //         if let Some(doc_test) = config_value.doc_test {
-    //             doc_test
-    //         } else {
-    //             DEFAULT_DOC_TEST
-    //         }
-    //     } else {
-    //         DEFAULT_DOC_TEST
-    //     }
-    // }
+    pub(crate) fn get_doc_test(&self) -> bool {
+        if let Some(config_value) = self.get(_TARGET_) {
+            if let Some(doc_test) = config_value.doc_test {
+                doc_test
+            } else {
+                DEFAULT_DOC_TEST
+            }
+        } else {
+            DEFAULT_DOC_TEST
+        }
+    }
+
+    pub(crate) fn get_always_process(&self) -> bool {
+        if let Some(config_value) = self.get(_TARGET_) {
+            if let Some(always_process) = config_value.always_process {
+                always_process
+            } else {
+                DEFAULT_ALWAYS_PROCESS
+            }
+        } else {
+            DEFAULT_ALWAYS_PROCESS
+        }
+    }
 
     pub(crate) fn get_use_paths(&self, key: &Uuid) -> Option<&Vec<String>> {
         if let Some(config_value) = self.get(*key) {
@@ -398,6 +418,7 @@ pub(crate) struct ConfigValue {
     pub(crate) derive: Option<Vec<String>>,
     pub(crate) use_paths: Option<Vec<String>>,
     pub(crate) doc_test: Option<bool>,
+    pub(crate) always_process: Option<bool>,
 }
 
 impl ConfigValue {
@@ -409,6 +430,7 @@ impl ConfigValue {
             derive: None,
             use_paths: None,
             doc_test: None,
+            always_process: None,
         }
     }
 }
@@ -426,6 +448,7 @@ impl From<&GraceCompilerOptions> for ConfigValue {
             derive: options.derive.clone(),
             use_paths: options.use_paths.clone(),
             doc_test: options.doc_test.clone(),
+            always_process: options.always_process.clone(),
         }
     }
 }
