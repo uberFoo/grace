@@ -549,6 +549,10 @@ impl Sanitize for &str {
             "Struct" => "woog_struct".to_owned(),
             "const" => "woog_const".to_owned(),
             "Const" => "woog_const".to_owned(),
+            "true" => "true_literal".to_owned(),
+            "True" => "true_literal".to_owned(),
+            "false" => "false_literal".to_owned(),
+            "False" => "false_literal".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -574,6 +578,10 @@ impl Sanitize for String {
             "Struct" => "woog_struct".to_owned(),
             "const" => "woog_const".to_owned(),
             "Const" => "woog_const".to_owned(),
+            "true" => "true_literal".to_owned(),
+            "True" => "true_literal".to_owned(),
+            "false" => "false_literal".to_owned(),
+            "False" => "false_literal".to_owned(),
             _ => self.to_owned(),
         }
     }
