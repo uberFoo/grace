@@ -24,7 +24,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
         },
-        render_method_definition, render_method_new, render_new_instance,
+        render_method_new,
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
