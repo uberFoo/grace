@@ -8,12 +8,8 @@ use std::{
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::Conditionality,
     v2::domain::Domain,
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Ownership, BORROWED, MUTABLE, PUBLIC},
-    },
+    woog::{store::ObjectStore as WoogStore, types::Ownership},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -25,12 +21,12 @@ use crate::{
         emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
         get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
         get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
-        get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
+        get_subtypes_sorted, object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
         },
-        render_method_definition, render_method_new, render_new_instance,
+        render_method_new,
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
@@ -290,7 +286,11 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub enum {}Enum {{",
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    obj.as_type(
+                        &Ownership::new_borrowed(&Borrowed::new_shared(),),
+                        woog,
+                        domain
+                    )
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];

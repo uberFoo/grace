@@ -1,3 +1,4 @@
+#[allow(uncommon_codepoints)]
 use std::path::Path;
 
 use sarzak::mc::ModelCompilerOptions;

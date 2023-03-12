@@ -171,13 +171,13 @@ impl<'a> DomainTarget<'a> {
         }
 
         // Create our local compiler domain.
-        let woog = init_woog(
+        let woog = populate_woog(
             src_path.as_ref(),
             module,
             &config,
             &imported_domains,
             &domain,
-        );
+        )?;
 
         Ok(Box::new(Self {
             config,

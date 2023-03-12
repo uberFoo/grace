@@ -9,7 +9,7 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership, BORROWED, PUBLIC},
+    woog::{store::ObjectStore as WoogStore, Ownership, PUBLIC},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -332,47 +332,49 @@ impl CodeWriter for DefaultImplementation {
         );
         let local_woog = woog.as_ref().unwrap();
 
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-struct-implementation", object.as_ident()),
-            |buffer| {
-                let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
+        Ok(())
 
-                let referrers = obj.r17_referrer(domain.sarzak());
-                let has_referential_attrs = referrers.len() > 0;
+        // buffer.block(
+        //     DirectiveKind::IgnoreOrig,
+        //     format!("{}-struct-implementation", object.as_ident()),
+        //     |buffer| {
+        //         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                if has_referential_attrs {
-                    emit!(
-                        buffer,
-                        "impl<'a> {}<'a> {{",
-                        obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
-                    );
-                } else {
-                    emit!(
-                        buffer,
-                        "impl {} {{",
-                        obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
-                    );
-                }
+        //         let referrers = obj.r17_referrer(domain.sarzak());
+        //         let has_referential_attrs = referrers.len() > 0;
 
-                for method in &self.methods {
-                    method.write_code(
-                        config,
-                        domain,
-                        woog,
-                        imports,
-                        package,
-                        module,
-                        Some(obj_id),
-                        buffer,
-                    )?;
-                }
+        //         if has_referential_attrs {
+        //             emit!(
+        //                 buffer,
+        //                 "impl<'a> {}<'a> {{",
+        //                 obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
+        //             );
+        //         } else {
+        //             emit!(
+        //                 buffer,
+        //                 "impl {} {{",
+        //                 obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
+        //             );
+        //         }
 
-                emit!(buffer, "}}");
+        //         for method in &self.methods {
+        //             method.write_code(
+        //                 config,
+        //                 domain,
+        //                 woog,
+        //                 imports,
+        //                 package,
+        //                 module,
+        //                 Some(obj_id),
+        //                 buffer,
+        //             )?;
+        //         }
 
-                Ok(())
-            },
-        )
+        //         emit!(buffer, "}}");
+
+        //         Ok(())
+        //     },
+        // )
     }
 }
 
@@ -409,318 +411,317 @@ impl CodeWriter for DefaultNewImpl {
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
-        ensure!(
-            obj_id.is_some(),
-            CompilerSnafu {
-                description: "obj_id is required by DefaultNewImpl"
-            }
-        );
-        ensure!(
-            woog.is_some(),
-            CompilerSnafu {
-                description: "woog is required by DefaultNewImpl"
-            }
-        );
-        let woog = match woog {
-            Some(ref woog) => woog,
-            _ => unreachable!(),
-        };
-        let obj_id = obj_id.unwrap();
-        let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        //         ensure!(
+        //             obj_id.is_some(),
+        //             CompilerSnafu {
+        //                 description: "obj_id is required by DefaultNewImpl"
+        //             }
+        //         );
+        //         ensure!(
+        //             woog.is_some(),
+        //             CompilerSnafu {
+        //                 description: "woog is required by DefaultNewImpl"
+        //             }
+        //         );
+        //         let woog = match woog {
+        //             Some(ref woog) => woog,
+        //             _ => unreachable!(),
+        //         };
+        //         let obj_id = obj_id.unwrap();
+        //         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        let referrers = get_referrers_sorted!(obj, domain.sarzak());
+        //         let referrers = get_referrers_sorted!(obj, domain.sarzak());
 
-        // Collect the attributes
-        let mut params: Vec<Parameter> = Vec::new();
-        let mut rvals: Vec<RValue> = Vec::new();
-        let mut fields: Vec<LValue> = Vec::new();
+        //         // Collect the attributes
+        //         let mut params: Vec<Parameter> = Vec::new();
+        //         let mut rvals: Vec<RValue> = Vec::new();
+        //         let mut fields: Vec<LValue> = Vec::new();
 
-        let mut attrs = obj.r1_attribute(domain.sarzak());
-        attrs.sort_by(|a, b| a.name.cmp(&b.name));
-        for attr in attrs {
-            // We are going to generate the id, so don't include it in the
-            // list of parameters.
-            if attr.name != "id" {
-                let ty = attr.r2_ty(domain.sarzak())[0];
-                fields.push(LValue::new(attr.name.as_ident(), ty.into()));
-                params.push(Parameter::new(
-                    BORROWED,
-                    None,
-                    ty.into(),
-                    PUBLIC,
-                    attr.as_ident(),
-                ));
-                rvals.push(RValue::new(attr.as_ident(), ty.into()));
-            }
-        }
+        //         let mut attrs = obj.r1_attribute(domain.sarzak());
+        //         attrs.sort_by(|a, b| a.name.cmp(&b.name));
+        //         for attr in attrs {
+        //             // We are going to generate the id, so don't include it in the
+        //             // list of parameters.
+        //             if attr.name != "id" {
+        //                 let ty = attr.r2_ty(domain.sarzak())[0];
+        //                 fields.push(LValue::new(attr.name.as_ident(), ty.into()));
+        //                 params.push(Parameter::new(
+        //                     Ownership::new_borrowed().id(),
+        //                     None,
+        //                     ty.into(),
+        //                     PUBLIC,
+        //                     attr.as_ident(),
+        //                 ));
+        //                 rvals.push(RValue::new(attr.as_ident(), ty.into()));
+        //             }
+        //         }
+        //         // And the referential attributes
+        //         for referrer in &referrers {
+        //             let binary = referrer.r6_binary(domain.sarzak())[0];
+        //             let referent = binary.r5_referent(domain.sarzak())[0];
+        //             let r_obj = referent.r16_object(domain.sarzak())[0];
 
-        // And the referential attributes
-        for referrer in &referrers {
-            let binary = referrer.r6_binary(domain.sarzak())[0];
-            let referent = binary.r5_referent(domain.sarzak())[0];
-            let r_obj = referent.r16_object(domain.sarzak())[0];
+        //             // This determines how a reference is stored in the struct. In this
+        //             // case a reference.
+        //             fields.push(LValue::new(
+        //                 referrer.referential_attribute.as_ident(),
+        //                 GType::Reference(r_obj.id),
+        //             ));
+        //             params.push(Parameter::new(
+        //                     Ownership::new_borrowed().id(),
+        //                 None,
+        //                 GType::Reference(r_obj.id),
+        //                 PUBLIC,
+        //                 referrer.referential_attribute.as_ident(),
+        //             ));
 
-            // This determines how a reference is stored in the struct. In this
-            // case a reference.
-            fields.push(LValue::new(
-                referrer.referential_attribute.as_ident(),
-                GType::Reference(r_obj.id),
-            ));
-            params.push(Parameter::new(
-                BORROWED,
-                None,
-                GType::Reference(r_obj.id),
-                PUBLIC,
-                referrer.referential_attribute.as_ident(),
-            ));
+        //             // 🚧
+        //             rvals.push(RValue::new(
+        //                 referrer.referential_attribute.as_ident(),
+        //                 GType::Reference(r_obj.id),
+        //             ));
+        //         }
 
-            // 🚧
-            rvals.push(RValue::new(
-                referrer.referential_attribute.as_ident(),
-                GType::Reference(r_obj.id),
-            ));
-        }
+        //         // Link the params. The result is the head of the list.
+        //         let param = if params.len() > 0 {
+        //             let mut iter = params.iter_mut().rev();
+        //             let mut last = iter.next().unwrap();
+        //             loop {
+        //                 match iter.next() {
+        //                     Some(param) => {
+        //                         param.next = Some(last);
+        //                         last = param;
+        //                     }
+        //                     None => break,
+        //                 }
+        //             }
+        //             log::trace!("param: {:?}", last);
+        //             Some(last.clone())
+        //         } else {
+        //             None
+        //         };
 
-        // Link the params. The result is the head of the list.
-        let param = if params.len() > 0 {
-            let mut iter = params.iter_mut().rev();
-            let mut last = iter.next().unwrap();
-            loop {
-                match iter.next() {
-                    Some(param) => {
-                        param.next = Some(last);
-                        last = param;
-                    }
-                    None => break,
-                }
-            }
-            log::trace!("param: {:?}", last);
-            Some(last.clone())
-        } else {
-            None
-        };
+        //         // Find the method
+        //         // This is going to suck. We don't have cross-domain relationship
+        //         // navigation -- something to be addressed.
+        //         // let mut iter = woog.iter_object_method();
+        //         // let method = loop {
+        //         // match iter.next() {
+        //         // Some((_, method)) => {
+        //         // if method.object == obj.id && method.name == "new" {
+        //         // break method;
+        //         // }
+        //         // }
+        //         // None => {
+        //         // panic!("Unable to find the new method for {}", obj.name);
+        //         // }
+        //         // }
+        //         // };
 
-        // Find the method
-        // This is going to suck. We don't have cross-domain relationship
-        // navigation -- something to be addressed.
-        // let mut iter = woog.iter_object_method();
-        // let method = loop {
-        // match iter.next() {
-        // Some((_, method)) => {
-        // if method.object == obj.id && method.name == "new" {
-        // break method;
+        //         // Create an ObjectMethod
+        //         // The uniqueness of this instance depends on the inputs to it's
+        //         // new method. Param can be None, and two methods on the same
+        //         // object will have the same obj. So it comes down to a unique
+        //         // name for each object. So just "new" should suffice for name,
+        //         // because it's scoped by obj already.
+        //         let method = ObjectMethod::new(
+        //             param.as_ref(),
+        //             obj.id,
+        //             GType::Object(obj.id),
+        //             PUBLIC,
+        //             "new".to_owned(),
+        //             "Create a new instance".to_owned(),
+        //         );
+
+        //         buffer.block(
+        //             DirectiveKind::CommentOrig,
+        //             format!("{}-struct-impl-new", obj.as_ident()),
+        //             |buffer| {
+        //                 // Output a docstring
+        //                 emit!(
+        //                     buffer,
+        //                     "/// Inter a new {} in the store, and return it's `id`.",
+        //                     obj.as_type(&Ownership::new_borrowed(), woog, domain)
+        //                 );
+
+        //                 // Output the top of the function definition
+        //                 render_method_definition(buffer, &method, woog, domain)?;
+
+        //                 // Output the code to create the `id`.
+        //                 let id = LValue::new("id", GType::Uuid);
+        //                 render_make_uuid(buffer, &id, &rvals, domain)?;
+
+        //                 // Output code to create the instance
+        //                 render_new_instance(buffer, obj, None, &fields, &rvals, config, woog, domain)?;
+
+        //                 emit!(buffer, "}}");
+
+        //                 Ok(())
+        //             },
+        //         )
+        //     }
         // }
+
+        // pub(crate) struct DefaultModuleBuilder {
+        //     definition: Option<Box<dyn ModuleDefinition>>,
         // }
-        // None => {
-        // panic!("Unable to find the new method for {}", obj.name);
+
+        // impl DefaultModuleBuilder {
+        //     pub(crate) fn new() -> Self {
+        //         DefaultModuleBuilder { definition: None }
+        //     }
+
+        //     pub(crate) fn definition(mut self, definition: Box<dyn ModuleDefinition>) -> Self {
+        //         self.definition = Some(definition);
+
+        //         self
+        //     }
+
+        //     pub(crate) fn build(self) -> Result<Box<DefaultModuleGenerator>> {
+        //         ensure!(
+        //             self.definition.is_some(),
+        //             CompilerSnafu {
+        //                 description: "missing ModuleDefinition"
+        //             }
+        //         );
+
+        //         Ok(Box::new(DefaultModuleGenerator {
+        //             definition: self.definition.unwrap(),
+        //         }))
+        //     }
         // }
+
+        // /// Generator -- Code Generator Engine
+        // ///
+        // /// This is supposed to be general, but it's very much geared towards generating
+        // /// a file that contains a struct definition and implementations. I need to
+        // /// do some refactoring.
+        // ///
+        // /// As just hinted at, the idea is that you plug in different code writers that
+        // /// know how to write different parts of some rust code. This one is for
+        // /// structs.
+        // pub(crate) struct DefaultModuleGenerator {
+        //     definition: Box<dyn ModuleDefinition>,
         // }
-        // };
 
-        // Create an ObjectMethod
-        // The uniqueness of this instance depends on the inputs to it's
-        // new method. Param can be None, and two methods on the same
-        // object will have the same obj. So it comes down to a unique
-        // name for each object. So just "new" should suffice for name,
-        // because it's scoped by obj already.
-        let method = ObjectMethod::new(
-            param.as_ref(),
-            obj.id,
-            GType::Object(obj.id),
-            PUBLIC,
-            "new".to_owned(),
-            "Create a new instance".to_owned(),
-        );
+        // impl FileGenerator for DefaultModuleGenerator {
+        //     fn generate(
+        //         &self,
+        //         config: &GraceConfig,
+        //         domain: &Domain,
+        //         woog: &Option<&mut WoogStore>,
+        //         imports: &Option<&HashMap<String, Domain>>,
+        //         package: &str,
+        //         module: &str,
+        //         obj_id: Option<&Uuid>,
+        //         buffer: &mut Buffer,
+        //     ) -> Result<GenerationAction> {
+        //         // Output the domain/module documentation/description
+        //         for line in domain.description().lines() {
+        //             emit!(buffer, "//! {}", line);
+        //         }
 
-        buffer.block(
-            DirectiveKind::CommentOrig,
-            format!("{}-struct-impl-new", obj.as_ident()),
-            |buffer| {
-                // Output a docstring
-                emit!(
-                    buffer,
-                    "/// Inter a new {} in the store, and return it's `id`.",
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                );
+        //         buffer.block(
+        //             DirectiveKind::AllowEditing,
+        //             format!("{}-module-definition-file", module),
+        //             |buffer| {
+        //                 self.definition.write_code(
+        //                     config, domain, woog, imports, package, module, obj_id, buffer,
+        //                 )?;
 
-                // Output the top of the function definition
-                render_method_definition(buffer, &method, woog, domain)?;
+        //                 Ok(())
+        //             },
+        //         )?;
 
-                // Output the code to create the `id`.
-                let id = LValue::new("id", GType::Uuid);
-                render_make_uuid(buffer, &id, &rvals, domain)?;
+        //         Ok(GenerationAction::Write)
+        //     }
+        // }
 
-                // Output code to create the instance
-                render_new_instance(buffer, obj, None, &fields, &rvals, config, woog, domain)?;
+        // /// Default Types Module Generator / CodeWriter
+        // ///
+        // /// This generates a rust file that imports the generated type implementations.
+        // pub(crate) struct DefaultModule;
 
-                emit!(buffer, "}}");
+        // impl DefaultModule {
+        //     pub(crate) fn new() -> Box<dyn ModuleDefinition> {
+        //         Box::new(Self)
+        //     }
+        // }
 
-                Ok(())
-            },
-        )
-    }
-}
+        // impl ModuleDefinition for DefaultModule {}
 
-pub(crate) struct DefaultModuleBuilder {
-    definition: Option<Box<dyn ModuleDefinition>>,
-}
+        // impl CodeWriter for DefaultModule {
+        //     fn write_code(
+        //         &self,
+        //         config: &GraceConfig,
+        //         domain: &Domain,
+        //         woog: &Option<&mut WoogStore>,
+        //         imports: &Option<&HashMap<String, Domain>>,
+        //         _package: &str,
+        //         module: &str,
+        //         _obj_id: Option<&Uuid>,
+        //         buffer: &mut Buffer,
+        //     ) -> Result<()> {
+        //         ensure!(
+        //             woog.is_some(),
+        //             CompilerSnafu {
+        //                 description: "woog is required by DefaultModule"
+        //             }
+        //         );
+        //         let woog = woog.as_ref().unwrap();
 
-impl DefaultModuleBuilder {
-    pub(crate) fn new() -> Self {
-        DefaultModuleBuilder { definition: None }
-    }
+        //         buffer.block(
+        //             DirectiveKind::IgnoreOrig,
+        //             format!("{}-module-definition", module),
+        //             |buffer| {
+        //                 let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+        //                 objects.sort_by(|a, b| a.name.cmp(&b.name));
+        //                 let objects = objects
+        //                     .iter()
+        //                     .filter(|obj| {
+        //                         // Don't include imported objects
+        //                         !config.is_imported(&obj.id)
+        //                     })
+        //                     .collect::<Vec<_>>();
 
-    pub(crate) fn definition(mut self, definition: Box<dyn ModuleDefinition>) -> Self {
-        self.definition = Some(definition);
+        //                 for obj in &objects {
+        //                     emit!(buffer, "pub mod {};", obj.as_ident());
+        //                 }
+        //                 emit!(buffer, "");
+        //                 for obj in &objects {
+        //                     if object_is_singleton(obj, config, imports, domain)?
+        //                         && !object_is_supertype(obj, config, imports, domain)?
+        //                     {
+        //                         emit!(
+        //                             buffer,
+        //                             "pub use crate::{}::{}::{};",
+        //                             module,
+        //                             obj.as_ident(),
+        //                             obj.as_const()
+        //                         );
+        //                     } else {
+        //                         emit!(
+        //                             buffer,
+        //                             "pub use crate::{}::{}::{};",
+        //                             module,
+        //                             obj.as_ident(),
+        //                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
+        //                         );
+        //                         if object_is_hybrid(obj, config, imports, domain)? {
+        //                             emit!(
+        //                                 buffer,
+        //                                 "pub use crate::{}::{}::{}Enum;",
+        //                                 module,
+        //                                 obj.as_ident(),
+        //                                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
+        //                             );
+        //                         }
+        //                     }
+        //                 }
 
-        self
-    }
-
-    pub(crate) fn build(self) -> Result<Box<DefaultModuleGenerator>> {
-        ensure!(
-            self.definition.is_some(),
-            CompilerSnafu {
-                description: "missing ModuleDefinition"
-            }
-        );
-
-        Ok(Box::new(DefaultModuleGenerator {
-            definition: self.definition.unwrap(),
-        }))
-    }
-}
-
-/// Generator -- Code Generator Engine
-///
-/// This is supposed to be general, but it's very much geared towards generating
-/// a file that contains a struct definition and implementations. I need to
-/// do some refactoring.
-///
-/// As just hinted at, the idea is that you plug in different code writers that
-/// know how to write different parts of some rust code. This one is for
-/// structs.
-pub(crate) struct DefaultModuleGenerator {
-    definition: Box<dyn ModuleDefinition>,
-}
-
-impl FileGenerator for DefaultModuleGenerator {
-    fn generate(
-        &self,
-        config: &GraceConfig,
-        domain: &Domain,
-        woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
-        package: &str,
-        module: &str,
-        obj_id: Option<&Uuid>,
-        buffer: &mut Buffer,
-    ) -> Result<GenerationAction> {
-        // Output the domain/module documentation/description
-        for line in domain.description().lines() {
-            emit!(buffer, "//! {}", line);
-        }
-
-        buffer.block(
-            DirectiveKind::AllowEditing,
-            format!("{}-module-definition-file", module),
-            |buffer| {
-                self.definition.write_code(
-                    config, domain, woog, imports, package, module, obj_id, buffer,
-                )?;
-
-                Ok(())
-            },
-        )?;
-
-        Ok(GenerationAction::Write)
-    }
-}
-
-/// Default Types Module Generator / CodeWriter
-///
-/// This generates a rust file that imports the generated type implementations.
-pub(crate) struct DefaultModule;
-
-impl DefaultModule {
-    pub(crate) fn new() -> Box<dyn ModuleDefinition> {
-        Box::new(Self)
-    }
-}
-
-impl ModuleDefinition for DefaultModule {}
-
-impl CodeWriter for DefaultModule {
-    fn write_code(
-        &self,
-        config: &GraceConfig,
-        domain: &Domain,
-        woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
-        _package: &str,
-        module: &str,
-        _obj_id: Option<&Uuid>,
-        buffer: &mut Buffer,
-    ) -> Result<()> {
-        ensure!(
-            woog.is_some(),
-            CompilerSnafu {
-                description: "woog is required by DefaultModule"
-            }
-        );
-        let woog = woog.as_ref().unwrap();
-
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-module-definition", module),
-            |buffer| {
-                let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
-                objects.sort_by(|a, b| a.name.cmp(&b.name));
-                let objects = objects
-                    .iter()
-                    .filter(|obj| {
-                        // Don't include imported objects
-                        !config.is_imported(&obj.id)
-                    })
-                    .collect::<Vec<_>>();
-
-                for obj in &objects {
-                    emit!(buffer, "pub mod {};", obj.as_ident());
-                }
-                emit!(buffer, "");
-                for obj in &objects {
-                    if object_is_singleton(obj, config, imports, domain)?
-                        && !object_is_supertype(obj, config, imports, domain)?
-                    {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_const()
-                        );
-                    } else {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
-                        if object_is_hybrid(obj, config, imports, domain)? {
-                            emit!(
-                                buffer,
-                                "pub use crate::{}::{}::{}Enum;",
-                                module,
-                                obj.as_ident(),
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            );
-                        }
-                    }
-                }
-
-                Ok(())
-            },
-        )?;
+        //                 Ok(())
+        //             },
+        //         )?;
 
         Ok(())
     }

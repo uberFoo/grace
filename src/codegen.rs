@@ -787,7 +787,7 @@ pub(crate) fn render_new_instance_new(
     //     .iter()
     //     .map(|field| {
     //         table
-    //             .r20_variable(woog)
+    //             .r29_variable(woog)
     //             .iter()
     //             .find(|&var| var.name == field.r27_field(woog)[0].name)
     //             .unwrap()
@@ -975,7 +975,7 @@ pub(crate) fn render_method_new(
             // Find the properly scoped variable named `id`.
             let table = method.r25_function(woog)[0].r23_block(woog)[0].r24_symbol_table(woog)[0];
             let var = &table
-                .r20_variable(woog)
+                .r29_variable(woog)
                 .iter()
                 .find(|&&v| v.name == "id")
                 .unwrap()
@@ -996,7 +996,7 @@ pub(crate) fn render_method_new(
 
             // Look up the properly scoped variable named `new`.
             let var = &table
-                .r20_variable(woog)
+                .r29_variable(woog)
                 .iter()
                 .find(|&&v| v.name == "new")
                 .unwrap()
