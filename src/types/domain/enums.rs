@@ -86,11 +86,17 @@ impl CodeWriter for Enum {
                     }
                 }
 
-                // Ad use statements for supertypes.
+                // Add use statements for supertypes.
+                // Include the store? There is a situation where the store needs
+                // to be added. I only just ran across it. There is a test case for it
+                // It's the ownership one. This fails looking for IsaStore in borrowed.rs.
+                let mut import_store = false;
                 for subtype in obj.r15c_subtype(domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
+
+                    import_store = true;
 
                     uses.insert(format!(
                         "use crate::{}::types::{}::{};",
@@ -149,7 +155,7 @@ impl CodeWriter for Enum {
                     emit!(buffer, "{}", use_statement);
                 }
 
-                if !only_singletons {
+                if import_store || !only_singletons {
                     emit!(buffer, "");
                     let store = find_store(module, woog, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);

@@ -1,1 +1,740 @@
-{"paper":{"ids":["fdd6c56b-f3fb-59ba-b387-31dd1ff762ea"],"entities":{"fdd6c56b-f3fb-59ba-b387-31dd1ff762ea":{"id":"fdd6c56b-f3fb-59ba-b387-31dd1ff762ea","description":"Domain to test the supertype/subtype relationship.","domain_name":"Isa Relationship","domain_ns":"b49d6fe1-e5e9-5896-bd42-b72012429e52","width":4000,"height":3200,"offset":{"x":-21,"y":-255},"objects":{"1d0706f7-0c46-589b-8f3a-944f0e5aa612":{"x":1612,"y":1187,"width":216,"height":139},"03487ec7-c497-58eb-9ab5-f27bc1db3e35":{"x":1126,"y":1171,"width":273,"height":141},"78833415-f92b-59be-9e0b-b35db2d119e9":{"x":1799,"y":875,"width":248,"height":130},"6339b18b-3929-51ae-ad1a-f0cb4dc73362":{"x":967,"y":873,"width":262,"height":139},"8deb75d7-beb7-5451-8152-34255a4f3937":{"x":1986,"y":1187,"width":206,"height":138},"df1e7590-eae6-5a19-8b4e-5009f946f0dd":{"x":799,"y":1171,"width":270,"height":144},"fb7dad6f-2f01-529a-abca-0c27a828dea3":{"x":1795,"y":502,"width":246,"height":140,"id":"fb7dad6f-2f01-529a-abca-0c27a828dea3"},"87ee8741-f992-53fd-9c54-ba7f26935968":{"x":2373,"y":867,"width":217,"height":137,"id":"87ee8741-f992-53fd-9c54-ba7f26935968"},"a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4":{"x":808,"y":1472,"width":263,"height":158,"id":"a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4"},"cd524281-1c3f-5064-bdf7-29e15d3d35ad":{"x":340,"y":1174,"width":266,"height":143,"id":"cd524281-1c3f-5064-bdf7-29e15d3d35ad"}},"relationships":{"e343be02-315a-5d51-af09-86ac3ad16d93":{"IsaUI":{"from":{"id":"78833415-f92b-59be-9e0b-b35db2d119e9","dir":"South","x":1895,"y":1005,"offset":{"x":20,"y":20}},"to":[{"id":"1d0706f7-0c46-589b-8f3a-944f0e5aa612","dir":"North","x":1712,"y":1187,"offset":{"x":20,"y":20}},{"id":"8deb75d7-beb7-5451-8152-34255a4f3937","dir":"North","x":2077,"y":1187,"offset":{"x":20,"y":20}}]}},"095e5ab1-a295-5368-bdd2-14752582fa16":{"IsaUI":{"from":{"id":"6339b18b-3929-51ae-ad1a-f0cb4dc73362","dir":"South","x":1094,"y":1012,"offset":{"x":20,"y":20}},"to":[{"id":"df1e7590-eae6-5a19-8b4e-5009f946f0dd","dir":"North","x":936,"y":1171,"offset":{"x":20,"y":20}},{"id":"03487ec7-c497-58eb-9ab5-f27bc1db3e35","dir":"North","x":1240,"y":1171,"offset":{"x":20,"y":20}}]}},"bca95adb-b5f1-564f-96a7-6355c52d1fa7":{"BinaryUI":{"from":{"id":"fb7dad6f-2f01-529a-abca-0c27a828dea3","x":1848,"y":642,"offset":{"x":19,"y":28},"dir":"South"},"to":{"id":"78833415-f92b-59be-9e0b-b35db2d119e9","x":1850,"y":875,"offset":{"x":27,"y":-18},"dir":"North"}}},"f93876b1-e86f-51e4-b2c8-7f1ba30e57c1":{"BinaryUI":{"from":{"id":"78833415-f92b-59be-9e0b-b35db2d119e9","x":2047,"y":952,"offset":{"x":20,"y":20},"dir":"East"},"to":{"id":"87ee8741-f992-53fd-9c54-ba7f26935968","x":2373,"y":951,"offset":{"x":-69,"y":43},"dir":"West"}}},"0deb1f31-d17a-5edf-8845-b4d9fb59e579":{"IsaUI":{"from":{"id":"df1e7590-eae6-5a19-8b4e-5009f946f0dd","x":921,"y":1315,"offset":{"x":20,"y":20},"dir":"South"},"to":[{"id":"a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4","x":920,"y":1472,"offset":{"x":20,"y":20},"dir":"North"}]}},"b871ebbe-c894-57e9-89c5-22d34f245fd3":{"BinaryUI":{"from":{"id":"cd524281-1c3f-5064-bdf7-29e15d3d35ad","x":606,"y":1251,"offset":{"x":26,"y":36},"dir":"East"},"to":{"id":"df1e7590-eae6-5a19-8b4e-5009f946f0dd","x":799,"y":1251,"offset":{"x":-35,"y":-23},"dir":"West"}}}},"config":null}}},"objects":{"ids":["6339b18b-3929-51ae-ad1a-f0cb4dc73362","df1e7590-eae6-5a19-8b4e-5009f946f0dd","03487ec7-c497-58eb-9ab5-f27bc1db3e35","78833415-f92b-59be-9e0b-b35db2d119e9","1d0706f7-0c46-589b-8f3a-944f0e5aa612","8deb75d7-beb7-5451-8152-34255a4f3937","fb7dad6f-2f01-529a-abca-0c27a828dea3","87ee8741-f992-53fd-9c54-ba7f26935968","a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4","cd524281-1c3f-5064-bdf7-29e15d3d35ad"],"entities":{"03487ec7-c497-58eb-9ab5-f27bc1db3e35":{"id":"03487ec7-c497-58eb-9ab5-f27bc1db3e35","key_letter":"SSB","name":"Simple Subtype B","description":"Simple [`Subtype`] B\n\nThis is represented as a singleton.\n\n❗️{ \"singleton_object\": true }","attributes":{"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"}}},"78833415-f92b-59be-9e0b-b35db2d119e9":{"id":"78833415-f92b-59be-9e0b-b35db2d119e9","key_letter":"S","name":"Super T","description":"A [`Supertype`] with normal [`Subtype`]s\n\nThis was called \"Super\". Rust didn't like it when it became \"super\". There needs to be a way of fixing keywords.","attributes":{"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"}}},"df1e7590-eae6-5a19-8b4e-5009f946f0dd":{"id":"df1e7590-eae6-5a19-8b4e-5009f946f0dd","key_letter":"SSA","name":"Simple Subtype A","description":"Simple [`Subtype`] A\n\nThis is represented as a singleton.\n\n❗️{ \"singleton_object\": true }","attributes":{"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"}}},"6339b18b-3929-51ae-ad1a-f0cb4dc73362":{"id":"6339b18b-3929-51ae-ad1a-f0cb4dc73362","key_letter":"SS","name":"Simple Supertype","description":"This [`Supertype`] is Simple\n\nBy that I mean that it's [`Subtypes`] consist only of singletons.\n\nNot any more they don't. I sort of wonder if hijacking this test was a bad idea, because now we don't have the singleton test. I'll put it back.\n\nAnyway, there's a bug, and I thought adding something to [`OhBoy`] would surface the bug, but it didn't. See it's description for more info.\n\nSo now, I think the bug is happening when this is a hybrid, so it's getting some attributes. This is going to raise all sorts of hell, because I think I only made hybrid work with referentials. Maybe not. We'll see. Fun! 💥💥💥💥","attributes":{"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"},"0a861a41-436f-5387-a8b1-c1cdb201dec1":{"id":"0a861a41-436f-5387-a8b1-c1cdb201dec1","name":"state","type":"Boolean"}}},"1d0706f7-0c46-589b-8f3a-944f0e5aa612":{"id":"1d0706f7-0c46-589b-8f3a-944f0e5aa612","key_letter":"SA","name":"Subtype A","description":"This [`Subtype`][s] has [`Attribute`][a]s\n\n[a]: nut::sarzak::Attribute\n[s]: nut::sarzak::Subtype","attributes":{"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"},"6695235e-4f1a-5e9c-9e1e-7df811c9f276":{"id":"6695235e-4f1a-5e9c-9e1e-7df811c9f276","name":"name","type":"String"}}},"8deb75d7-beb7-5451-8152-34255a4f3937":{"id":"8deb75d7-beb7-5451-8152-34255a4f3937","key_letter":"SB","name":"Subtype B","description":"This [`Subtype`][s] has a number\n\n[s]: nut::sarzak::Subtype","attributes":{"da88d452-73e4-5344-a0a9-ae0bac76b845":{"id":"da88d452-73e4-5344-a0a9-ae0bac76b845","name":"number","type":"Integer"},"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"}}},"fb7dad6f-2f01-529a-abca-0c27a828dea3":{"id":"fb7dad6f-2f01-529a-abca-0c27a828dea3","key_letter":"NI","name":"Not Important","description":"Optional Enum Attribute\n\nThis is testing code generation as specified in the description. The specific issue is in the grace Domain code. Here's what it's currently generating. The problem is commented inline.\n\n```ignore\n    pub fn new(\n        description: String,\n        name: String,\n        object: Option<&Object>,\n        param: &Parameter,\n        ty: Option<&Ty>,\n        visibility: Option<&Visibility>,\n        store: &mut WoogStore,\n    ) -> ObjectMethod {\n        let id = Uuid::new_v5(\n            &UUID_NS,\n            format!(\n                \"{}:{}:{:?}:{:?}:{:?}:{:?}\",\n                description, name, object, param, ty, visibility\n            )\n            .as_bytes(),\n        );\n        let new = ObjectMethod {\n            description: description,\n            name: name,\n            object: object.map(|object| object.id),\n            param: param.id,\n            ty: ty.map(|ty| ty.id),\n            // Should be visibility.id()\n            visibility: visibility.map(|visibility| visibility.id),\n            id,\n        };\n        store.inter_object_method(new.clone());\n        new\n    }\n```","attributes":{"8abde953-bee2-538f-b420-b9941a969dce":{"id":"8abde953-bee2-538f-b420-b9941a969dce","name":"id","type":"Uuid"},"e52309ee-5473-551d-bf9f-cc28463cc683":{"id":"e52309ee-5473-551d-bf9f-cc28463cc683","name":"name","type":"Uuid"}}},"87ee8741-f992-53fd-9c54-ba7f26935968":{"id":"87ee8741-f992-53fd-9c54-ba7f26935968","key_letter":"R","name":"Reference","description":"Something to Refer To\n\nI'm the guy you need to keep track of.","attributes":{"c4230763-b026-55c3-b106-15d59c64e0d6":{"id":"c4230763-b026-55c3-b106-15d59c64e0d6","name":"id","type":"Uuid"},"b8045075-5bfb-5e31-8885-8aa804e3b02f":{"id":"b8045075-5bfb-5e31-8885-8aa804e3b02f","name":"name","type":"String"}}},"a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4":{"id":"a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4","key_letter":"OB","name":"Oh Boy!","description":"This should break all sorts of shit.\n\nThe only purpose of this is to make [`SimpleSubtypeA`] a supertype. Then I got crafty with the name. One of these days I'm going to throw an emoji in there...😝\n\nSo, more testing. Grace as of this moment (1677427948) doesn't properly recognize when a subtype, that's also a supertype, has a subtype that isn't const... when rendering the subtype code in the supertype. Whew, parsing that someday will be a nightmare.\n\nBasically, [`SimpleSupertype`] thinks this object is a const. And it was (no attributes besides id) until this moment.","attributes":{"cdc3daa1-58ac-5f95-8409-3c778da89c6e":{"id":"cdc3daa1-58ac-5f95-8409-3c778da89c6e","name":"id","type":"Uuid"},"3c5993e0-4b14-50bb-b600-b07c7c427ced":{"id":"3c5993e0-4b14-50bb-b600-b07c7c427ced","name":"attribution","type":"String"}}},"cd524281-1c3f-5064-bdf7-29e15d3d35ad":{"id":"cd524281-1c3f-5064-bdf7-29e15d3d35ad","key_letter":"H","name":"Henry","description":"","attributes":{"726619f1-eee1-53a6-bda5-81bf8df38129":{"id":"726619f1-eee1-53a6-bda5-81bf8df38129","name":"id","type":"Uuid"},"4630c8c9-b4f1-52ed-9406-5eef7cfa928e":{"id":"4630c8c9-b4f1-52ed-9406-5eef7cfa928e","name":"last name","type":"String"}}}}},"relationships":{"ids":["095e5ab1-a295-5368-bdd2-14752582fa16","e343be02-315a-5d51-af09-86ac3ad16d93","bca95adb-b5f1-564f-96a7-6355c52d1fa7","f93876b1-e86f-51e4-b2c8-7f1ba30e57c1","0deb1f31-d17a-5edf-8845-b4d9fb59e579","b871ebbe-c894-57e9-89c5-22d34f245fd3"],"entities":{"095e5ab1-a295-5368-bdd2-14752582fa16":{"Isa":{"id":"095e5ab1-a295-5368-bdd2-14752582fa16","number":1,"obj_id":"6339b18b-3929-51ae-ad1a-f0cb4dc73362","subtypes":["df1e7590-eae6-5a19-8b4e-5009f946f0dd","03487ec7-c497-58eb-9ab5-f27bc1db3e35"]}},"e343be02-315a-5d51-af09-86ac3ad16d93":{"Isa":{"id":"e343be02-315a-5d51-af09-86ac3ad16d93","number":2,"obj_id":"78833415-f92b-59be-9e0b-b35db2d119e9","subtypes":["1d0706f7-0c46-589b-8f3a-944f0e5aa612","8deb75d7-beb7-5451-8152-34255a4f3937"]}},"bca95adb-b5f1-564f-96a7-6355c52d1fa7":{"Binary":{"id":"bca95adb-b5f1-564f-96a7-6355c52d1fa7","number":888,"from":{"obj_id":"fb7dad6f-2f01-529a-abca-0c27a828dea3","description":"is referring to","cardinality":"One","conditionality":"Unconditional","formalizing_attribute_name":"ref"},"to":{"obj_id":"78833415-f92b-59be-9e0b-b35db2d119e9","description":"is being rudely referred to by","cardinality":"One","conditionality":"Conditional"}}},"f93876b1-e86f-51e4-b2c8-7f1ba30e57c1":{"Binary":{"id":"f93876b1-e86f-51e4-b2c8-7f1ba30e57c1","number":88,"from":{"obj_id":"78833415-f92b-59be-9e0b-b35db2d119e9","description":"refers to","cardinality":"One","conditionality":"Unconditional","formalizing_attribute_name":"pointer"},"to":{"obj_id":"87ee8741-f992-53fd-9c54-ba7f26935968","description":"is pointed at by","cardinality":"One","conditionality":"Unconditional"}}},"0deb1f31-d17a-5edf-8845-b4d9fb59e579":{"Isa":{"id":"0deb1f31-d17a-5edf-8845-b4d9fb59e579","number":8,"obj_id":"df1e7590-eae6-5a19-8b4e-5009f946f0dd","subtypes":["a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4"]}},"b871ebbe-c894-57e9-89c5-22d34f245fd3":{"Binary":{"id":"b871ebbe-c894-57e9-89c5-22d34f245fd3","number":3,"from":{"obj_id":"cd524281-1c3f-5064-bdf7-29e15d3d35ad","description":"foo","cardinality":"One","conditionality":"Unconditional","formalizing_attribute_name":"bar"},"to":{"obj_id":"df1e7590-eae6-5a19-8b4e-5009f946f0dd","description":"baz","cardinality":"One","conditionality":"Unconditional"}}}}}}
+{
+    "paper": {
+        "ids": [
+            "fdd6c56b-f3fb-59ba-b387-31dd1ff762ea"
+        ],
+        "entities": {
+            "fdd6c56b-f3fb-59ba-b387-31dd1ff762ea": {
+                "id": "fdd6c56b-f3fb-59ba-b387-31dd1ff762ea",
+                "description": "Domain to test the supertype/subtype relationship.",
+                "domain_name": "Isa Relationship",
+                "domain_ns": "b49d6fe1-e5e9-5896-bd42-b72012429e52",
+                "width": 4000,
+                "height": 3200,
+                "offset": {
+                    "x": -21,
+                    "y": -255
+                },
+                "objects": {
+                    "1d0706f7-0c46-589b-8f3a-944f0e5aa612": {
+                        "x": 1612,
+                        "y": 1187,
+                        "width": 216,
+                        "height": 139
+                    },
+                    "03487ec7-c497-58eb-9ab5-f27bc1db3e35": {
+                        "x": 1126,
+                        "y": 1171,
+                        "width": 273,
+                        "height": 141
+                    },
+                    "78833415-f92b-59be-9e0b-b35db2d119e9": {
+                        "x": 1799,
+                        "y": 875,
+                        "width": 248,
+                        "height": 130
+                    },
+                    "6339b18b-3929-51ae-ad1a-f0cb4dc73362": {
+                        "x": 967,
+                        "y": 873,
+                        "width": 262,
+                        "height": 139
+                    },
+                    "8deb75d7-beb7-5451-8152-34255a4f3937": {
+                        "x": 1986,
+                        "y": 1187,
+                        "width": 206,
+                        "height": 138
+                    },
+                    "df1e7590-eae6-5a19-8b4e-5009f946f0dd": {
+                        "x": 799,
+                        "y": 1171,
+                        "width": 270,
+                        "height": 144
+                    },
+                    "fb7dad6f-2f01-529a-abca-0c27a828dea3": {
+                        "x": 1795,
+                        "y": 502,
+                        "width": 246,
+                        "height": 140,
+                        "id": "fb7dad6f-2f01-529a-abca-0c27a828dea3"
+                    },
+                    "87ee8741-f992-53fd-9c54-ba7f26935968": {
+                        "x": 2373,
+                        "y": 867,
+                        "width": 217,
+                        "height": 137,
+                        "id": "87ee8741-f992-53fd-9c54-ba7f26935968"
+                    },
+                    "a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4": {
+                        "x": 808,
+                        "y": 1472,
+                        "width": 263,
+                        "height": 158,
+                        "id": "a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4"
+                    },
+                    "cd524281-1c3f-5064-bdf7-29e15d3d35ad": {
+                        "x": 340,
+                        "y": 1174,
+                        "width": 266,
+                        "height": 143,
+                        "id": "cd524281-1c3f-5064-bdf7-29e15d3d35ad"
+                    },
+                    "87082daa-8c8e-5745-be20-331f2ca86caf": {
+                        "x": 3541,
+                        "y": 241,
+                        "width": 215,
+                        "height": 86,
+                        "id": "87082daa-8c8e-5745-be20-331f2ca86caf"
+                    },
+                    "608ed052-4176-5ec1-b467-09562104ac60": {
+                        "x": 3240,
+                        "y": 238,
+                        "width": 223,
+                        "height": 86
+                    },
+                    "46904a8d-0a08-5336-95c8-f844120dfc65": {
+                        "x": 3407,
+                        "y": 459,
+                        "width": 216,
+                        "height": 86
+                    },
+                    "8e82a8e4-bae2-5b7a-9ca4-e2fd3a1eac7e": {
+                        "x": 3158,
+                        "y": 458,
+                        "width": 202,
+                        "height": 87,
+                        "id": "8e82a8e4-bae2-5b7a-9ca4-e2fd3a1eac7e"
+                    },
+                    "0ad03d1f-4171-57c9-8c36-2c369e2e5819": {
+                        "x": 3253,
+                        "y": 712,
+                        "width": 221,
+                        "height": 97
+                    }
+                },
+                "relationships": {
+                    "4a7eb95e-e17a-5519-82e7-f72ab892f727": {
+                        "IsaUI": {
+                            "from": {
+                                "id": "46904a8d-0a08-5336-95c8-f844120dfc65",
+                                "x": 3504,
+                                "y": 459,
+                                "offset": {
+                                    "x": 20,
+                                    "y": 20
+                                },
+                                "dir": "North"
+                            },
+                            "to": [
+                                {
+                                    "id": "87082daa-8c8e-5745-be20-331f2ca86caf",
+                                    "x": 3615,
+                                    "y": 327,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    },
+                                    "dir": "South"
+                                },
+                                {
+                                    "id": "608ed052-4176-5ec1-b467-09562104ac60",
+                                    "x": 3382,
+                                    "y": 324,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    },
+                                    "dir": "South"
+                                }
+                            ]
+                        }
+                    },
+                    "5b76fc22-cc37-525d-9400-3bb04494116e": {
+                        "IsaUI": {
+                            "from": {
+                                "id": "0ad03d1f-4171-57c9-8c36-2c369e2e5819",
+                                "dir": "North",
+                                "x": 3374,
+                                "y": 712,
+                                "offset": {
+                                    "x": 20,
+                                    "y": 20
+                                }
+                            },
+                            "to": [
+                                {
+                                    "id": "46904a8d-0a08-5336-95c8-f844120dfc65",
+                                    "dir": "South",
+                                    "x": 3519,
+                                    "y": 545,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    }
+                                },
+                                {
+                                    "id": "8e82a8e4-bae2-5b7a-9ca4-e2fd3a1eac7e",
+                                    "x": 3265,
+                                    "y": 545,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    },
+                                    "dir": "South"
+                                }
+                            ]
+                        }
+                    },
+                    "e343be02-315a-5d51-af09-86ac3ad16d93": {
+                        "IsaUI": {
+                            "from": {
+                                "id": "78833415-f92b-59be-9e0b-b35db2d119e9",
+                                "dir": "South",
+                                "x": 1895,
+                                "y": 1005,
+                                "offset": {
+                                    "x": 20,
+                                    "y": 20
+                                }
+                            },
+                            "to": [
+                                {
+                                    "id": "1d0706f7-0c46-589b-8f3a-944f0e5aa612",
+                                    "dir": "North",
+                                    "x": 1712,
+                                    "y": 1187,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    }
+                                },
+                                {
+                                    "id": "8deb75d7-beb7-5451-8152-34255a4f3937",
+                                    "dir": "North",
+                                    "x": 2077,
+                                    "y": 1187,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "095e5ab1-a295-5368-bdd2-14752582fa16": {
+                        "IsaUI": {
+                            "from": {
+                                "id": "6339b18b-3929-51ae-ad1a-f0cb4dc73362",
+                                "dir": "South",
+                                "x": 1094,
+                                "y": 1012,
+                                "offset": {
+                                    "x": 20,
+                                    "y": 20
+                                }
+                            },
+                            "to": [
+                                {
+                                    "id": "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+                                    "dir": "North",
+                                    "x": 936,
+                                    "y": 1171,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    }
+                                },
+                                {
+                                    "id": "03487ec7-c497-58eb-9ab5-f27bc1db3e35",
+                                    "dir": "North",
+                                    "x": 1240,
+                                    "y": 1171,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "bca95adb-b5f1-564f-96a7-6355c52d1fa7": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "fb7dad6f-2f01-529a-abca-0c27a828dea3",
+                                "x": 1848,
+                                "y": 642,
+                                "offset": {
+                                    "x": 19,
+                                    "y": 28
+                                },
+                                "dir": "South"
+                            },
+                            "to": {
+                                "id": "78833415-f92b-59be-9e0b-b35db2d119e9",
+                                "x": 1850,
+                                "y": 875,
+                                "offset": {
+                                    "x": 27,
+                                    "y": -18
+                                },
+                                "dir": "North"
+                            }
+                        }
+                    },
+                    "f93876b1-e86f-51e4-b2c8-7f1ba30e57c1": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "78833415-f92b-59be-9e0b-b35db2d119e9",
+                                "x": 2047,
+                                "y": 952,
+                                "offset": {
+                                    "x": 20,
+                                    "y": 20
+                                },
+                                "dir": "East"
+                            },
+                            "to": {
+                                "id": "87ee8741-f992-53fd-9c54-ba7f26935968",
+                                "x": 2373,
+                                "y": 951,
+                                "offset": {
+                                    "x": -69,
+                                    "y": 43
+                                },
+                                "dir": "West"
+                            }
+                        }
+                    },
+                    "0deb1f31-d17a-5edf-8845-b4d9fb59e579": {
+                        "IsaUI": {
+                            "from": {
+                                "id": "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+                                "x": 921,
+                                "y": 1315,
+                                "offset": {
+                                    "x": 20,
+                                    "y": 20
+                                },
+                                "dir": "South"
+                            },
+                            "to": [
+                                {
+                                    "id": "a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4",
+                                    "x": 920,
+                                    "y": 1472,
+                                    "offset": {
+                                        "x": 20,
+                                        "y": 20
+                                    },
+                                    "dir": "North"
+                                }
+                            ]
+                        }
+                    },
+                    "b871ebbe-c894-57e9-89c5-22d34f245fd3": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "cd524281-1c3f-5064-bdf7-29e15d3d35ad",
+                                "x": 606,
+                                "y": 1251,
+                                "offset": {
+                                    "x": 26,
+                                    "y": 36
+                                },
+                                "dir": "East"
+                            },
+                            "to": {
+                                "id": "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+                                "x": 799,
+                                "y": 1251,
+                                "offset": {
+                                    "x": -35,
+                                    "y": -23
+                                },
+                                "dir": "West"
+                            }
+                        }
+                    }
+                },
+                "config": null
+            }
+        }
+    },
+    "objects": {
+        "ids": [
+            "6339b18b-3929-51ae-ad1a-f0cb4dc73362",
+            "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+            "03487ec7-c497-58eb-9ab5-f27bc1db3e35",
+            "78833415-f92b-59be-9e0b-b35db2d119e9",
+            "1d0706f7-0c46-589b-8f3a-944f0e5aa612",
+            "8deb75d7-beb7-5451-8152-34255a4f3937",
+            "fb7dad6f-2f01-529a-abca-0c27a828dea3",
+            "87ee8741-f992-53fd-9c54-ba7f26935968",
+            "a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4",
+            "cd524281-1c3f-5064-bdf7-29e15d3d35ad",
+            "87082daa-8c8e-5745-be20-331f2ca86caf",
+            "608ed052-4176-5ec1-b467-09562104ac60",
+            "46904a8d-0a08-5336-95c8-f844120dfc65",
+            "8e82a8e4-bae2-5b7a-9ca4-e2fd3a1eac7e",
+            "0ad03d1f-4171-57c9-8c36-2c369e2e5819"
+        ],
+        "entities": {
+            "0ad03d1f-4171-57c9-8c36-2c369e2e5819": {
+                "id": "0ad03d1f-4171-57c9-8c36-2c369e2e5819",
+                "key_letter": "OWN",
+                "name": "Ownership",
+                "description": "Type Ownership\n\nThis is tied closely with Rust. There are tthree possible options: owned, mutable and borrowed.",
+                "attributes": {
+                    "8097965d-015a-5eee-87b7-e6dda34671b4": {
+                        "id": "8097965d-015a-5eee-87b7-e6dda34671b4",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "8e82a8e4-bae2-5b7a-9ca4-e2fd3a1eac7e": {
+                "id": "8e82a8e4-bae2-5b7a-9ca4-e2fd3a1eac7e",
+                "key_letter": "M_OWN",
+                "name": "Owned",
+                "description": "An owned value\n\nSomeone has to be responsible for it, right?",
+                "attributes": {
+                    "8d446d72-0985-5555-b4ac-b05cbcd77b19": {
+                        "id": "8d446d72-0985-5555-b4ac-b05cbcd77b19",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "46904a8d-0a08-5336-95c8-f844120dfc65": {
+                "id": "46904a8d-0a08-5336-95c8-f844120dfc65",
+                "key_letter": "M_BWD",
+                "name": "Borrowed",
+                "description": "Borrowed\n\nThe type is declared as borrowed.\n\n❗️{\"singleton_object\": true}",
+                "attributes": {
+                    "43e88091-28dd-5766-9d86-cd94ecbd39b8": {
+                        "id": "43e88091-28dd-5766-9d86-cd94ecbd39b8",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "608ed052-4176-5ec1-b467-09562104ac60": {
+                "id": "608ed052-4176-5ec1-b467-09562104ac60",
+                "key_letter": "BWD_MUT",
+                "name": "Mutable",
+                "description": "Mutable\n\nThe type is declared as `mut`.\n\n❗️{\"singleton_object\": true}",
+                "attributes": {
+                    "59ffa935-aee3-550b-8b8f-19467efcc959": {
+                        "id": "59ffa935-aee3-550b-8b8f-19467efcc959",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "87082daa-8c8e-5745-be20-331f2ca86caf": {
+                "id": "87082daa-8c8e-5745-be20-331f2ca86caf",
+                "key_letter": "BWD_SHR",
+                "name": "Shared",
+                "description": "A shared borrow.\n\nAccording to rust rules, you may have any number of shared references outstanding at one time. Just as long as there are zero mutable references.",
+                "attributes": {
+                    "7a9b7aaa-0947-52c1-a3ce-df644046ae2e": {
+                        "id": "7a9b7aaa-0947-52c1-a3ce-df644046ae2e",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "03487ec7-c497-58eb-9ab5-f27bc1db3e35": {
+                "id": "03487ec7-c497-58eb-9ab5-f27bc1db3e35",
+                "key_letter": "SSB",
+                "name": "Simple Subtype B",
+                "description": "Simple [`Subtype`] B\n\nThis is represented as a singleton.\n\n❗️{ \"singleton_object\": true }",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "78833415-f92b-59be-9e0b-b35db2d119e9": {
+                "id": "78833415-f92b-59be-9e0b-b35db2d119e9",
+                "key_letter": "S",
+                "name": "Super T",
+                "description": "A [`Supertype`] with normal [`Subtype`]s\n\nThis was called \"Super\". Rust didn't like it when it became \"super\". There needs to be a way of fixing keywords.",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "df1e7590-eae6-5a19-8b4e-5009f946f0dd": {
+                "id": "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+                "key_letter": "SSA",
+                "name": "Simple Subtype A",
+                "description": "Simple [`Subtype`] A\n\nThis is represented as a singleton.\n\n❗️{ \"singleton_object\": true }",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "6339b18b-3929-51ae-ad1a-f0cb4dc73362": {
+                "id": "6339b18b-3929-51ae-ad1a-f0cb4dc73362",
+                "key_letter": "SS",
+                "name": "Simple Supertype",
+                "description": "This [`Supertype`] is Simple\n\nBy that I mean that it's [`Subtypes`] consist only of singletons.\n\nNot any more they don't. I sort of wonder if hijacking this test was a bad idea, because now we don't have the singleton test. I'll put it back.\n\nAnyway, there's a bug, and I thought adding something to [`OhBoy`] would surface the bug, but it didn't. See it's description for more info.\n\nSo now, I think the bug is happening when this is a hybrid, so it's getting some attributes. This is going to raise all sorts of hell, because I think I only made hybrid work with referentials. Maybe not. We'll see. Fun! 💥💥💥💥",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "0a861a41-436f-5387-a8b1-c1cdb201dec1": {
+                        "id": "0a861a41-436f-5387-a8b1-c1cdb201dec1",
+                        "name": "state",
+                        "type": "Boolean"
+                    }
+                }
+            },
+            "1d0706f7-0c46-589b-8f3a-944f0e5aa612": {
+                "id": "1d0706f7-0c46-589b-8f3a-944f0e5aa612",
+                "key_letter": "SA",
+                "name": "Subtype A",
+                "description": "This [`Subtype`][s] has [`Attribute`][a]s\n\n[a]: nut::sarzak::Attribute\n[s]: nut::sarzak::Subtype",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "6695235e-4f1a-5e9c-9e1e-7df811c9f276": {
+                        "id": "6695235e-4f1a-5e9c-9e1e-7df811c9f276",
+                        "name": "name",
+                        "type": "String"
+                    }
+                }
+            },
+            "8deb75d7-beb7-5451-8152-34255a4f3937": {
+                "id": "8deb75d7-beb7-5451-8152-34255a4f3937",
+                "key_letter": "SB",
+                "name": "Subtype B",
+                "description": "This [`Subtype`][s] has a number\n\n[s]: nut::sarzak::Subtype",
+                "attributes": {
+                    "da88d452-73e4-5344-a0a9-ae0bac76b845": {
+                        "id": "da88d452-73e4-5344-a0a9-ae0bac76b845",
+                        "name": "number",
+                        "type": "Integer"
+                    },
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "fb7dad6f-2f01-529a-abca-0c27a828dea3": {
+                "id": "fb7dad6f-2f01-529a-abca-0c27a828dea3",
+                "key_letter": "NI",
+                "name": "Not Important",
+                "description": "Optional Enum Attribute\n\nThis is testing code generation as specified in the description. The specific issue is in the grace Domain code. Here's what it's currently generating. The problem is commented inline.\n\n```ignore\n    pub fn new(\n        description: String,\n        name: String,\n        object: Option<&Object>,\n        param: &Parameter,\n        ty: Option<&Ty>,\n        visibility: Option<&Visibility>,\n        store: &mut WoogStore,\n    ) -> ObjectMethod {\n        let id = Uuid::new_v5(\n            &UUID_NS,\n            format!(\n                \"{}:{}:{:?}:{:?}:{:?}:{:?}\",\n                description, name, object, param, ty, visibility\n            )\n            .as_bytes(),\n        );\n        let new = ObjectMethod {\n            description: description,\n            name: name,\n            object: object.map(|object| object.id),\n            param: param.id,\n            ty: ty.map(|ty| ty.id),\n            // Should be visibility.id()\n            visibility: visibility.map(|visibility| visibility.id),\n            id,\n        };\n        store.inter_object_method(new.clone());\n        new\n    }\n```",
+                "attributes": {
+                    "8abde953-bee2-538f-b420-b9941a969dce": {
+                        "id": "8abde953-bee2-538f-b420-b9941a969dce",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "e52309ee-5473-551d-bf9f-cc28463cc683": {
+                        "id": "e52309ee-5473-551d-bf9f-cc28463cc683",
+                        "name": "name",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "87ee8741-f992-53fd-9c54-ba7f26935968": {
+                "id": "87ee8741-f992-53fd-9c54-ba7f26935968",
+                "key_letter": "R",
+                "name": "Reference",
+                "description": "Something to Refer To\n\nI'm the guy you need to keep track of.",
+                "attributes": {
+                    "c4230763-b026-55c3-b106-15d59c64e0d6": {
+                        "id": "c4230763-b026-55c3-b106-15d59c64e0d6",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "b8045075-5bfb-5e31-8885-8aa804e3b02f": {
+                        "id": "b8045075-5bfb-5e31-8885-8aa804e3b02f",
+                        "name": "name",
+                        "type": "String"
+                    }
+                }
+            },
+            "a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4": {
+                "id": "a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4",
+                "key_letter": "OB",
+                "name": "Oh Boy!",
+                "description": "This should break all sorts of shit.\n\nThe only purpose of this is to make [`SimpleSubtypeA`] a supertype. Then I got crafty with the name. One of these days I'm going to throw an emoji in there...😝\n\nSo, more testing. Grace as of this moment (1677427948) doesn't properly recognize when a subtype, that's also a supertype, has a subtype that isn't const... when rendering the subtype code in the supertype. Whew, parsing that someday will be a nightmare.\n\nBasically, [`SimpleSupertype`] thinks this object is a const. And it was (no attributes besides id) until this moment.",
+                "attributes": {
+                    "cdc3daa1-58ac-5f95-8409-3c778da89c6e": {
+                        "id": "cdc3daa1-58ac-5f95-8409-3c778da89c6e",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "3c5993e0-4b14-50bb-b600-b07c7c427ced": {
+                        "id": "3c5993e0-4b14-50bb-b600-b07c7c427ced",
+                        "name": "attribution",
+                        "type": "String"
+                    }
+                }
+            },
+            "cd524281-1c3f-5064-bdf7-29e15d3d35ad": {
+                "id": "cd524281-1c3f-5064-bdf7-29e15d3d35ad",
+                "key_letter": "H",
+                "name": "Henry",
+                "description": "",
+                "attributes": {
+                    "726619f1-eee1-53a6-bda5-81bf8df38129": {
+                        "id": "726619f1-eee1-53a6-bda5-81bf8df38129",
+                        "name": "id",
+                        "type": "Uuid"
+                    },
+                    "4630c8c9-b4f1-52ed-9406-5eef7cfa928e": {
+                        "id": "4630c8c9-b4f1-52ed-9406-5eef7cfa928e",
+                        "name": "last name",
+                        "type": "String"
+                    }
+                }
+            }
+        }
+    },
+    "relationships": {
+        "ids": [
+            "095e5ab1-a295-5368-bdd2-14752582fa16",
+            "e343be02-315a-5d51-af09-86ac3ad16d93",
+            "bca95adb-b5f1-564f-96a7-6355c52d1fa7",
+            "f93876b1-e86f-51e4-b2c8-7f1ba30e57c1",
+            "0deb1f31-d17a-5edf-8845-b4d9fb59e579",
+            "b871ebbe-c894-57e9-89c5-22d34f245fd3",
+            "5b76fc22-cc37-525d-9400-3bb04494116e",
+            "4a7eb95e-e17a-5519-82e7-f72ab892f727"
+        ],
+        "entities": {
+            "4a7eb95e-e17a-5519-82e7-f72ab892f727": {
+                "Isa": {
+                    "id": "4a7eb95e-e17a-5519-82e7-f72ab892f727",
+                    "number": 34,
+                    "obj_id": "46904a8d-0a08-5336-95c8-f844120dfc65",
+                    "subtypes": [
+                        "87082daa-8c8e-5745-be20-331f2ca86caf",
+                        "608ed052-4176-5ec1-b467-09562104ac60"
+                    ]
+                }
+            },
+            "5b76fc22-cc37-525d-9400-3bb04494116e": {
+                "Isa": {
+                    "id": "5b76fc22-cc37-525d-9400-3bb04494116e",
+                    "number": 9,
+                    "obj_id": "0ad03d1f-4171-57c9-8c36-2c369e2e5819",
+                    "subtypes": [
+                        "46904a8d-0a08-5336-95c8-f844120dfc65",
+                        "8e82a8e4-bae2-5b7a-9ca4-e2fd3a1eac7e"
+                    ]
+                }
+            },
+            "095e5ab1-a295-5368-bdd2-14752582fa16": {
+                "Isa": {
+                    "id": "095e5ab1-a295-5368-bdd2-14752582fa16",
+                    "number": 1,
+                    "obj_id": "6339b18b-3929-51ae-ad1a-f0cb4dc73362",
+                    "subtypes": [
+                        "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+                        "03487ec7-c497-58eb-9ab5-f27bc1db3e35"
+                    ]
+                }
+            },
+            "e343be02-315a-5d51-af09-86ac3ad16d93": {
+                "Isa": {
+                    "id": "e343be02-315a-5d51-af09-86ac3ad16d93",
+                    "number": 2,
+                    "obj_id": "78833415-f92b-59be-9e0b-b35db2d119e9",
+                    "subtypes": [
+                        "1d0706f7-0c46-589b-8f3a-944f0e5aa612",
+                        "8deb75d7-beb7-5451-8152-34255a4f3937"
+                    ]
+                }
+            },
+            "bca95adb-b5f1-564f-96a7-6355c52d1fa7": {
+                "Binary": {
+                    "id": "bca95adb-b5f1-564f-96a7-6355c52d1fa7",
+                    "number": 888,
+                    "from": {
+                        "obj_id": "fb7dad6f-2f01-529a-abca-0c27a828dea3",
+                        "description": "is referring to",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional",
+                        "formalizing_attribute_name": "ref"
+                    },
+                    "to": {
+                        "obj_id": "78833415-f92b-59be-9e0b-b35db2d119e9",
+                        "description": "is being rudely referred to by",
+                        "cardinality": "One",
+                        "conditionality": "Conditional"
+                    }
+                }
+            },
+            "f93876b1-e86f-51e4-b2c8-7f1ba30e57c1": {
+                "Binary": {
+                    "id": "f93876b1-e86f-51e4-b2c8-7f1ba30e57c1",
+                    "number": 88,
+                    "from": {
+                        "obj_id": "78833415-f92b-59be-9e0b-b35db2d119e9",
+                        "description": "refers to",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional",
+                        "formalizing_attribute_name": "pointer"
+                    },
+                    "to": {
+                        "obj_id": "87ee8741-f992-53fd-9c54-ba7f26935968",
+                        "description": "is pointed at by",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional"
+                    }
+                }
+            },
+            "0deb1f31-d17a-5edf-8845-b4d9fb59e579": {
+                "Isa": {
+                    "id": "0deb1f31-d17a-5edf-8845-b4d9fb59e579",
+                    "number": 8,
+                    "obj_id": "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+                    "subtypes": [
+                        "a8c57a99-0d4a-5dab-a1aa-1e5ea16b94c4"
+                    ]
+                }
+            },
+            "b871ebbe-c894-57e9-89c5-22d34f245fd3": {
+                "Binary": {
+                    "id": "b871ebbe-c894-57e9-89c5-22d34f245fd3",
+                    "number": 3,
+                    "from": {
+                        "obj_id": "cd524281-1c3f-5064-bdf7-29e15d3d35ad",
+                        "description": "foo",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional",
+                        "formalizing_attribute_name": "bar"
+                    },
+                    "to": {
+                        "obj_id": "df1e7590-eae6-5a19-8b4e-5009f946f0dd",
+                        "description": "baz",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional"
+                    }
+                }
+            }
+        }
+    }
+}

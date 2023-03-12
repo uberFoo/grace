@@ -7,9 +7,11 @@
 //!
 //! # Contents:
 //!
+//! * [`Borrowed`]
 //! * [`Henry`]
 //! * [`NotImportant`]
 //! * [`OhBoy`]
+//! * [`Ownership`]
 //! * [`Reference`]
 //! * [`SimpleSubtypeA`]
 //! * [`SimpleSupertype`]
@@ -24,15 +26,17 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa::types::{
-    Henry, NotImportant, OhBoy, Reference, SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB,
-    SuperT,
+    Borrowed, Henry, NotImportant, OhBoy, Ownership, Reference, SimpleSubtypeA, SimpleSupertype,
+    SubtypeA, SubtypeB, SuperT, MUTABLE, OWNED, SHARED,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
+    borrowed: HashMap<Uuid, Borrowed>,
     henry: HashMap<Uuid, Henry>,
     not_important: HashMap<Uuid, NotImportant>,
     oh_boy: HashMap<Uuid, OhBoy>,
+    ownership: HashMap<Uuid, Ownership>,
     reference: HashMap<Uuid, Reference>,
     simple_subtype_a: HashMap<Uuid, SimpleSubtypeA>,
     simple_supertype: HashMap<Uuid, SimpleSupertype>,
@@ -43,10 +47,12 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        let store = Self {
+        let mut store = Self {
+            borrowed: HashMap::new(),
             henry: HashMap::new(),
             not_important: HashMap::new(),
             oh_boy: HashMap::new(),
+            ownership: HashMap::new(),
             reference: HashMap::new(),
             simple_subtype_a: HashMap::new(),
             simple_supertype: HashMap::new(),
@@ -56,11 +62,38 @@ impl ObjectStore {
         };
 
         // Initialize Singleton Subtypes
+        store.inter_borrowed(Borrowed::Mutable(MUTABLE));
+        store.inter_borrowed(Borrowed::Shared(SHARED));
+        store.inter_ownership(Ownership::Owned(OWNED));
 
         store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa-object-store-methods"}}}
+    /// Inter [`Borrowed`] into the store.
+    ///
+    pub fn inter_borrowed(&mut self, borrowed: Borrowed) {
+        self.borrowed.insert(borrowed.id(), borrowed);
+    }
+
+    /// Exhume [`Borrowed`] from the store.
+    ///
+    pub fn exhume_borrowed(&self, id: &Uuid) -> Option<&Borrowed> {
+        self.borrowed.get(id)
+    }
+
+    /// Exhume [`Borrowed`] from the store — mutably.
+    ///
+    pub fn exhume_borrowed_mut(&mut self, id: &Uuid) -> Option<&mut Borrowed> {
+        self.borrowed.get_mut(id)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Borrowed>`.
+    ///
+    pub fn iter_borrowed(&self) -> impl Iterator<Item = &Borrowed> {
+        self.borrowed.values()
+    }
+
     /// Inter [`Henry`] into the store.
     ///
     pub fn inter_henry(&mut self, henry: Henry) {
@@ -131,6 +164,30 @@ impl ObjectStore {
     ///
     pub fn iter_oh_boy(&self) -> impl Iterator<Item = &OhBoy> {
         self.oh_boy.values()
+    }
+
+    /// Inter [`Ownership`] into the store.
+    ///
+    pub fn inter_ownership(&mut self, ownership: Ownership) {
+        self.ownership.insert(ownership.id(), ownership);
+    }
+
+    /// Exhume [`Ownership`] from the store.
+    ///
+    pub fn exhume_ownership(&self, id: &Uuid) -> Option<&Ownership> {
+        self.ownership.get(id)
+    }
+
+    /// Exhume [`Ownership`] from the store — mutably.
+    ///
+    pub fn exhume_ownership_mut(&mut self, id: &Uuid) -> Option<&mut Ownership> {
+        self.ownership.get_mut(id)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Ownership>`.
+    ///
+    pub fn iter_ownership(&self) -> impl Iterator<Item = &Ownership> {
+        self.ownership.values()
     }
 
     /// Inter [`Reference`] into the store.
@@ -292,6 +349,18 @@ impl ObjectStore {
         let path = path.join("Isa Relationship.json");
         fs::create_dir_all(&path)?;
 
+        // Persist Borrowed.
+        {
+            let path = path.join("borrowed");
+            fs::create_dir_all(&path)?;
+            for borrowed in self.borrowed.values() {
+                let path = path.join(format!("{}.json", borrowed.id()));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &borrowed)?;
+            }
+        }
+
         // Persist Henry.
         {
             let path = path.join("henry");
@@ -325,6 +394,18 @@ impl ObjectStore {
                 let file = fs::File::create(path)?;
                 let mut writer = io::BufWriter::new(file);
                 serde_json::to_writer_pretty(&mut writer, &oh_boy)?;
+            }
+        }
+
+        // Persist Ownership.
+        {
+            let path = path.join("ownership");
+            fs::create_dir_all(&path)?;
+            for ownership in self.ownership.values() {
+                let path = path.join(format!("{}.json", ownership.id()));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &ownership)?;
             }
         }
 
@@ -414,6 +495,20 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
+        // Load Borrowed.
+        {
+            let path = path.join("borrowed");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let borrowed: Borrowed = serde_json::from_reader(reader)?;
+                store.borrowed.insert(borrowed.id(), borrowed);
+            }
+        }
+
         // Load Henry.
         {
             let path = path.join("henry");
@@ -453,6 +548,20 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let oh_boy: OhBoy = serde_json::from_reader(reader)?;
                 store.oh_boy.insert(oh_boy.id, oh_boy);
+            }
+        }
+
+        // Load Ownership.
+        {
+            let path = path.join("ownership");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let ownership: Ownership = serde_json::from_reader(reader)?;
+                store.ownership.insert(ownership.id(), ownership);
             }
         }
 

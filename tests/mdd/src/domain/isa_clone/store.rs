@@ -7,9 +7,11 @@
 //!
 //! # Contents:
 //!
+//! * [`Borrowed`]
 //! * [`Henry`]
 //! * [`NotImportant`]
 //! * [`OhBoy`]
+//! * [`Ownership`]
 //! * [`Reference`]
 //! * [`SimpleSubtypeA`]
 //! * [`SimpleSupertype`]
@@ -24,15 +26,17 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::{
-    Henry, NotImportant, OhBoy, Reference, SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB,
-    SuperT,
+    Borrowed, Henry, NotImportant, OhBoy, Ownership, Reference, SimpleSubtypeA, SimpleSupertype,
+    SubtypeA, SubtypeB, SuperT, MUTABLE, OWNED, SHARED,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
+    borrowed: HashMap<Uuid, (Borrowed, SystemTime)>,
     henry: HashMap<Uuid, (Henry, SystemTime)>,
     not_important: HashMap<Uuid, (NotImportant, SystemTime)>,
     oh_boy: HashMap<Uuid, (OhBoy, SystemTime)>,
+    ownership: HashMap<Uuid, (Ownership, SystemTime)>,
     reference: HashMap<Uuid, (Reference, SystemTime)>,
     simple_subtype_a: HashMap<Uuid, (SimpleSubtypeA, SystemTime)>,
     simple_supertype: HashMap<Uuid, (SimpleSupertype, SystemTime)>,
@@ -43,10 +47,12 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        let store = Self {
+        let mut store = Self {
+            borrowed: HashMap::new(),
             henry: HashMap::new(),
             not_important: HashMap::new(),
             oh_boy: HashMap::new(),
+            ownership: HashMap::new(),
             reference: HashMap::new(),
             simple_subtype_a: HashMap::new(),
             simple_supertype: HashMap::new(),
@@ -56,11 +62,48 @@ impl ObjectStore {
         };
 
         // Initialize Singleton Subtypes
+        store.inter_borrowed(Borrowed::Mutable(MUTABLE));
+        store.inter_borrowed(Borrowed::Shared(SHARED));
+        store.inter_ownership(Ownership::Owned(OWNED));
 
         store
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-methods"}}}
+    /// Inter [`Borrowed`] into the store.
+    ///
+    pub fn inter_borrowed(&mut self, borrowed: Borrowed) {
+        self.borrowed
+            .insert(borrowed.id(), (borrowed, SystemTime::now()));
+    }
+
+    /// Exhume [`Borrowed`] from the store.
+    ///
+    pub fn exhume_borrowed(&self, id: &Uuid) -> Option<&Borrowed> {
+        self.borrowed.get(id).map(|borrowed| &borrowed.0)
+    }
+
+    /// Exhume [`Borrowed`] from the store — mutably.
+    ///
+    pub fn exhume_borrowed_mut(&mut self, id: &Uuid) -> Option<&mut Borrowed> {
+        self.borrowed.get_mut(id).map(|borrowed| &mut borrowed.0)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Borrowed>`.
+    ///
+    pub fn iter_borrowed(&self) -> impl Iterator<Item = &Borrowed> {
+        self.borrowed.values().map(|borrowed| &borrowed.0)
+    }
+
+    /// Get the timestamp for Borrowed.
+    ///
+    pub fn borrowed_timestamp(&self, borrowed: &Borrowed) -> SystemTime {
+        self.borrowed
+            .get(&borrowed.id())
+            .map(|borrowed| borrowed.1)
+            .unwrap_or(SystemTime::now())
+    }
+
     /// Inter [`Henry`] into the store.
     ///
     pub fn inter_henry(&mut self, henry: Henry) {
@@ -164,6 +207,40 @@ impl ObjectStore {
         self.oh_boy
             .get(&oh_boy.id)
             .map(|oh_boy| oh_boy.1)
+            .unwrap_or(SystemTime::now())
+    }
+
+    /// Inter [`Ownership`] into the store.
+    ///
+    pub fn inter_ownership(&mut self, ownership: Ownership) {
+        self.ownership
+            .insert(ownership.id(), (ownership, SystemTime::now()));
+    }
+
+    /// Exhume [`Ownership`] from the store.
+    ///
+    pub fn exhume_ownership(&self, id: &Uuid) -> Option<&Ownership> {
+        self.ownership.get(id).map(|ownership| &ownership.0)
+    }
+
+    /// Exhume [`Ownership`] from the store — mutably.
+    ///
+    pub fn exhume_ownership_mut(&mut self, id: &Uuid) -> Option<&mut Ownership> {
+        self.ownership.get_mut(id).map(|ownership| &mut ownership.0)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Ownership>`.
+    ///
+    pub fn iter_ownership(&self) -> impl Iterator<Item = &Ownership> {
+        self.ownership.values().map(|ownership| &ownership.0)
+    }
+
+    /// Get the timestamp for Ownership.
+    ///
+    pub fn ownership_timestamp(&self, ownership: &Ownership) -> SystemTime {
+        self.ownership
+            .get(&ownership.id())
+            .map(|ownership| ownership.1)
             .unwrap_or(SystemTime::now())
     }
 
@@ -396,6 +473,40 @@ impl ObjectStore {
         let path = path.join("Isa Relationship.json");
         fs::create_dir_all(&path)?;
 
+        // Persist Borrowed.
+        {
+            let path = path.join("borrowed");
+            fs::create_dir_all(&path)?;
+            for borrowed_tuple in self.borrowed.values() {
+                let path = path.join(format!("{}.json", borrowed_tuple.0.id()));
+                if path.exists() {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    let on_disk: (Borrowed, SystemTime) = serde_json::from_reader(reader)?;
+                    if on_disk.0 != borrowed_tuple.0 {
+                        let file = fs::File::create(path)?;
+                        let mut writer = io::BufWriter::new(file);
+                        serde_json::to_writer_pretty(&mut writer, &borrowed_tuple)?;
+                    }
+                } else {
+                    let file = fs::File::create(&path)?;
+                    let mut writer = io::BufWriter::new(file);
+                    serde_json::to_writer_pretty(&mut writer, &borrowed_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.borrowed.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+
         // Persist Henry.
         {
             let path = path.join("henry");
@@ -492,6 +603,40 @@ impl ObjectStore {
                 let id = file_name.split(".").next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.oh_boy.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+
+        // Persist Ownership.
+        {
+            let path = path.join("ownership");
+            fs::create_dir_all(&path)?;
+            for ownership_tuple in self.ownership.values() {
+                let path = path.join(format!("{}.json", ownership_tuple.0.id()));
+                if path.exists() {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    let on_disk: (Ownership, SystemTime) = serde_json::from_reader(reader)?;
+                    if on_disk.0 != ownership_tuple.0 {
+                        let file = fs::File::create(path)?;
+                        let mut writer = io::BufWriter::new(file);
+                        serde_json::to_writer_pretty(&mut writer, &ownership_tuple)?;
+                    }
+                } else {
+                    let file = fs::File::create(&path)?;
+                    let mut writer = io::BufWriter::new(file);
+                    serde_json::to_writer_pretty(&mut writer, &ownership_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.ownership.contains_key(&id) {
                         fs::remove_file(path)?;
                     }
                 }
@@ -716,6 +861,20 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
+        // Load Borrowed.
+        {
+            let path = path.join("borrowed");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let borrowed: (Borrowed, SystemTime) = serde_json::from_reader(reader)?;
+                store.borrowed.insert(borrowed.0.id(), borrowed);
+            }
+        }
+
         // Load Henry.
         {
             let path = path.join("henry");
@@ -757,6 +916,20 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let oh_boy: (OhBoy, SystemTime) = serde_json::from_reader(reader)?;
                 store.oh_boy.insert(oh_boy.0.id, oh_boy);
+            }
+        }
+
+        // Load Ownership.
+        {
+            let path = path.join("ownership");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let ownership: (Ownership, SystemTime) = serde_json::from_reader(reader)?;
+                store.ownership.insert(ownership.0.id(), ownership);
             }
         }
 
