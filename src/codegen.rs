@@ -551,7 +551,7 @@ pub(crate) fn render_new_instance(
                 if let Some(sub) = obj.r15c_subtype(domain.sarzak()).pop() {
                     let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
                         .r14_object(domain.sarzak())[0];
-                    if inner_object_is_hybrid(s_obj, config, domain) {
+                    if local_object_is_hybrid(s_obj, config, domain) {
                         match rval.ty {
                             GType::Uuid => {
                                 emit!(
@@ -565,7 +565,7 @@ pub(crate) fn render_new_instance(
                             }
                             GType::Reference(r_obj) => {
                                 let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
-                                if inner_object_is_enum(r_obj, config, domain) {
+                                if local_object_is_enum(r_obj, config, domain) {
                                     emit!(
                                         buffer,
                                         "{}: {}Enum::{}({}.id()),",
@@ -610,7 +610,7 @@ pub(crate) fn render_new_instance(
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                    if inner_object_is_enum(obj, config, domain) {
+                    if local_object_is_enum(obj, config, domain) {
                         emit!(buffer, "{}: {}.id(),", field.name, rval.name)
                     } else {
                         emit!(buffer, "{}: {}.id,", field.name, rval.name)
@@ -633,7 +633,7 @@ pub(crate) fn render_new_instance(
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                        if inner_object_is_enum(obj, config, domain) {
+                        if local_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
                                 "{}: {}.map(|{}| {}.id()),",
@@ -833,7 +833,7 @@ fn typecheck_and_coerce(
                             let reference = woog.exhume_reference(&id).unwrap();
                             let object = reference.r13_object(domain.sarzak())[0];
 
-                            if inner_object_is_enum(object, config, domain) {
+                            if local_object_is_enum(object, config, domain) {
                                 format!(
                                     "{}.map(|{}| {}.id())",
                                     rhs.as_ident(),
@@ -891,7 +891,7 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            if inner_object_is_enum(obj, config, domain) {
+                            if local_object_is_enum(obj, config, domain) {
                                 format!("{}.id()", rhs.as_ident())
                             } else {
                                 format!("{}.id", rhs.as_ident())
@@ -1106,33 +1106,33 @@ macro_rules! test_local_and_imports {
     };
 }
 
-pub(crate) fn inner_object_is_struct(
+pub(crate) fn local_object_is_struct(
     object: &Object,
     config: &GraceConfig,
     domain: &Domain,
 ) -> bool {
-    !inner_object_is_supertype(object, config, domain)
-        && !inner_object_is_singleton(object, config, domain)
+    !local_object_is_supertype(object, config, domain)
+        && !local_object_is_singleton(object, config, domain)
 }
 
-test_local_and_imports!(object_is_hybrid, inner_object_is_hybrid);
-pub(crate) fn inner_object_is_hybrid(
+test_local_and_imports!(object_is_hybrid, local_object_is_hybrid);
+pub(crate) fn local_object_is_hybrid(
     object: &Object,
     config: &GraceConfig,
     domain: &Domain,
 ) -> bool {
-    inner_object_is_supertype(object, config, domain)
-        && !inner_object_is_singleton(object, config, domain)
+    local_object_is_supertype(object, config, domain)
+        && !local_object_is_singleton(object, config, domain)
 }
 
-test_local_and_imports!(object_is_enum, inner_object_is_enum);
-pub(crate) fn inner_object_is_enum(object: &Object, config: &GraceConfig, domain: &Domain) -> bool {
-    inner_object_is_supertype(object, config, domain)
-        && inner_object_is_singleton(object, config, domain)
+test_local_and_imports!(object_is_enum, local_object_is_enum);
+pub(crate) fn local_object_is_enum(object: &Object, config: &GraceConfig, domain: &Domain) -> bool {
+    local_object_is_supertype(object, config, domain)
+        && local_object_is_singleton(object, config, domain)
 }
 
-test_local_and_imports!(object_is_supertype, inner_object_is_supertype);
-pub(crate) fn inner_object_is_supertype(
+test_local_and_imports!(object_is_supertype, local_object_is_supertype);
+pub(crate) fn local_object_is_supertype(
     object: &Object,
     config: &GraceConfig,
     domain: &Domain,
@@ -1143,8 +1143,8 @@ pub(crate) fn inner_object_is_supertype(
     is_super.len() > 0
 }
 
-test_local_and_imports!(object_is_singleton, inner_object_is_singleton);
-pub(crate) fn inner_object_is_singleton(
+test_local_and_imports!(object_is_singleton, local_object_is_singleton);
+pub(crate) fn local_object_is_singleton(
     object: &Object,
     config: &GraceConfig,
     domain: &Domain,
@@ -1156,11 +1156,11 @@ pub(crate) fn inner_object_is_singleton(
     let attrs = object.r1_attribute(domain.sarzak());
     log::debug!("attrs: {:?}", attrs);
 
-    attrs.len() < 2 && !inner_object_is_referrer(object, config, domain)
+    attrs.len() < 2 && !local_object_is_referrer(object, config, domain)
 }
 
 // test_local_and_imports!(object_is_referrer, inner_object_is_referrer);
-fn inner_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Domain) -> bool {
+fn local_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Domain) -> bool {
     let referrers = object.r17_referrer(domain.sarzak());
     let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
     log::debug!("referrers: {:?}", referrers);

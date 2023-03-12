@@ -19,8 +19,8 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, inner_object_is_hybrid, inner_object_is_singleton,
-        inner_object_is_supertype, is_object_stale, render::RenderIdent,
+        generator::GeneratorBuilder, is_object_stale, local_object_is_hybrid,
+        local_object_is_singleton, local_object_is_supertype, render::RenderIdent,
     },
     init_woog::{init_woog, persist_woog},
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
@@ -130,9 +130,6 @@ impl<'a> DomainTarget<'a> {
             }
         }
 
-        // Create our local compiler domain.
-        let woog = init_woog(src_path.as_ref(), module, &config, &domain);
-
         // Suck in the imported domains for later use.
         let mut imported_domains = HashMap::new();
         // Include the from domain, if there is one.
@@ -172,6 +169,15 @@ impl<'a> DomainTarget<'a> {
                 }
             }
         }
+
+        // Create our local compiler domain.
+        let woog = init_woog(
+            src_path.as_ref(),
+            module,
+            &config,
+            &imported_domains,
+            &domain,
+        );
 
         Box::new(Self {
             config,
@@ -223,12 +229,12 @@ impl<'a> DomainTarget<'a> {
             );
 
             // Test if the object is a supertype. For those we generate as enums.
-            let generator = if inner_object_is_supertype(obj, &self.config, &self.domain) {
+            let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
                 // Unless it's got referential attributes. Then we generate what
                 // I now dub, a _hybrid_. What about regular attributes you ask?
                 // Well, I don't have a use case for that at the moment, so they
                 // will be done in due time.
-                if inner_object_is_hybrid(obj, &self.config, &self.domain) {
+                if local_object_is_hybrid(obj, &self.config, &self.domain) {
                     DefaultStructBuilder::new()
                         .definition(Hybrid::new())
                         .implementation(
@@ -259,7 +265,7 @@ impl<'a> DomainTarget<'a> {
                 // If the object is external, we create a newtype to wrap it.
 
                 ExternalGenerator::new()
-            } else if inner_object_is_singleton(obj, &self.config, &self.domain) {
+            } else if local_object_is_singleton(obj, &self.config, &self.domain) {
                 // Look for naked objects, and generate a singleton for them.
 
                 log::debug!("Generating singleton for {}", obj.name);

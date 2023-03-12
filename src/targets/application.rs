@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
@@ -12,7 +13,6 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
-    init_woog::init_woog,
     options::{GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::default::{
@@ -43,8 +43,11 @@ impl<'a> ApplicationTarget<'a> {
     ) -> Box<dyn Target + 'a> {
         let config: GraceConfig = (options, &domain).into();
 
+        // let imports: HashMap<String, sarzak::v2::domain::Domain> = HashMap::new();
+
         // Create our local compiler domain.
-        let woog = init_woog(src_path.as_ref(), module, &config, &domain);
+        // let woog = init_woog(src_path.as_ref(), module, &config, &imports, &domain);
+        let woog = WoogStore::new();
 
         Box::new(Self {
             config,

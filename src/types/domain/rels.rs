@@ -14,7 +14,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        find_store, get_referents_sorted, get_referrers_sorted, inner_object_is_enum,
+        find_store, get_referents_sorted, get_referrers_sorted, local_object_is_enum,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -888,7 +888,7 @@ fn subtype_to_supertype(
                 store.name,
                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
-            if inner_object_is_enum(obj, config, domain) {
+            if local_object_is_enum(obj, config, domain) {
                 emit!(
                     buffer,
                     "vec![store.exhume_{}(&self.id()).unwrap()]",

@@ -16,8 +16,8 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_referrers_sorted, get_subtypes_sorted, inner_object_is_singleton,
-        inner_object_is_supertype, object_is_supertype,
+        get_referrers_sorted, get_subtypes_sorted, local_object_is_singleton,
+        local_object_is_supertype, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
@@ -204,8 +204,8 @@ impl CodeWriter for DomainFromImpl {
                         .iter()
                         .filter(|obj| {
                             !config.is_imported(&obj.id)
-                                && inner_object_is_supertype(obj, config, domain)
-                                || !inner_object_is_singleton(obj, config, domain)
+                                && local_object_is_supertype(obj, config, domain)
+                                || !local_object_is_singleton(obj, config, domain)
                         })
                         .collect::<Vec<_>>(),
                 )
