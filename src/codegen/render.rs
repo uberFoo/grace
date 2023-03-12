@@ -14,7 +14,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Field, Function, GraceType, Ownership, Variable},
+        types::{Function, GraceType, Ownership, Variable},
     },
 };
 use snafu::prelude::*;
@@ -72,7 +72,7 @@ pub(crate) trait RenderIdent {
     fn as_ident(&self) -> String;
 }
 
-render_ident!(Attribute, Event, Object, State, Function, Field, Variable);
+render_ident!(Attribute, Event, Object, State, Function, Variable);
 
 impl<'a> RenderIdent for ObjectMethod<'a> {
     fn as_ident(&self) -> String {
@@ -498,6 +498,7 @@ impl RenderType for GraceType {
                 format!("&{}", object.as_type(mutability, woog, domain))
             }
             Self::TimeStamp(_) => "SystemTime".to_owned(),
+            Self::Function(_) => unimplemented!(), // Now this is going to be neat.
         }
     }
 }

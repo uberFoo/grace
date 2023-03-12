@@ -15,8 +15,8 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            GraceType, Item, Local, ObjectMethod as WoogObjectMethod, Ownership, StatementEnum,
-            Structure, SymbolTable, Variable, VariableEnum, OWNED,
+            GraceType, Local, ObjectMethod as WoogObjectMethod, Ownership, StructExpression,
+            SymbolTable, Variable, VariableEnum, OWNED,
         },
     },
 };
@@ -705,7 +705,7 @@ pub(crate) fn render_new_instance_new(
     buffer: &mut Buffer,
     object: &Object,
     var: &Local,
-    structure: &Structure,
+    structure: &StructExpression,
     table: &SymbolTable,
     config: &GraceConfig,
     woog: &WoogStore,
@@ -750,6 +750,9 @@ pub(crate) fn render_new_instance_new(
         }
     );
 
+    // Get the fields for the struct, in the order in which god intended. It's a pain
+    // in the ass. I do this elsewhere, and it's a pain in the ass there too. I would
+    // think a macro possible...
     let mut first = structure
         .r27_structure_field(woog)
         .iter()
@@ -779,26 +782,27 @@ pub(crate) fn render_new_instance_new(
     // Except that it's not so simple since it's not a map. So really, it needs
     // to become a map asap. Maybe after I get EE's working? I haven't thought
     // about it too much. For now I guess I'll do a linear search.
-    let rvals = fields
-        .iter()
-        .map(|field| {
-            table
-                .r20_variable(woog)
-                .iter()
-                .find(|&var| var.name == field.r27_field(woog)[0].name)
-                .unwrap()
-                .clone()
-        })
-        .collect::<Vec<_>>();
+    // 💥 put this back once things are sorted
+    // let rvals = fields
+    //     .iter()
+    //     .map(|field| {
+    //         table
+    //             .r20_variable(woog)
+    //             .iter()
+    //             .find(|&var| var.name == field.r27_field(woog)[0].name)
+    //             .unwrap()
+    //             .clone()
+    //     })
+    //     .collect::<Vec<_>>();
 
-    let tuples = zip(fields, rvals);
+    // let tuples = zip(fields, rvals);
 
-    for (field, rval) in tuples {
-        let f = field.r27_field(woog)[0];
-        let ty = f.r29_grace_type(woog)[0];
-        let rval_string = typecheck_and_coerce(ty, rval, config, woog, domain)?;
-        emit!(buffer, "{}: {},", f.as_ident(), rval_string);
-    }
+    // for (field, rval) in tuples {
+    //     let f = field.r27_field(woog)[0];
+    //     let ty = f.r29_grace_type(woog)[0];
+    //     let rval_string = typecheck_and_coerce(ty, rval, config, woog, domain)?;
+    //     emit!(buffer, "{}: {},", f.as_ident(), rval_string);
+    // }
 
     emit!(buffer, "}};");
 
@@ -969,7 +973,7 @@ pub(crate) fn render_method_new(
             render_method_definition_new(buffer, &method, woog, domain)?;
 
             // Find the properly scoped variable named `id`.
-            let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
+            let table = method.r25_function(woog)[0].r23_block(woog)[0].r24_symbol_table(woog)[0];
             let var = &table
                 .r20_variable(woog)
                 .iter()
@@ -1007,44 +1011,45 @@ pub(crate) fn render_method_new(
             // for populating a new method I created a statement: a struct item.
             // It's the struct for Self. I pull that out here, and then use when
             // I call the renderer.
-            let stmt = match &method
-                .r23_block(woog)
-                .pop()
-                .unwrap()
-                .r12_statement(woog)
-                .pop()
-                .unwrap()
-                .subtype
-            {
-                StatementEnum::Item(id) => {
-                    let item = woog.exhume_item(id).unwrap();
-                    match item {
-                        Item::Structure(id) => woog.exhume_structure(id).unwrap(),
-                        _ => unimplemented!(),
-                    }
-                }
-                _ => unimplemented!(),
-            };
+            // 💥 put this back once things are sorted
+            // let stmt = match &method
+            //     .r23_block(woog)
+            //     .pop()
+            //     .unwrap()
+            //     .r12_statement(woog)
+            //     .pop()
+            //     .unwrap()
+            //     .subtype
+            // {
+            //     StatementEnum::Item(id) => {
+            //         let item = woog.exhume_item(id).unwrap();
+            //         match item {
+            //             Item::Structure(id) => woog.exhume_structure(id).unwrap(),
+            //             _ => unimplemented!(),
+            //         }
+            //     }
+            //     _ => unimplemented!(),
+            // };
 
-            // I wrote this this morning, and already I'can't say how it works
-            // exactly. It takes a structure, and not a statement, so it's
-            // pretty low level. It's also assigning the let. Refactor time.
-            render_new_instance_new(
-                buffer,
-                obj,
-                &new,
-                &stmt,
-                &method
-                    .r23_block(woog)
-                    .pop()
-                    .unwrap()
-                    .r24_symbol_table(woog)
-                    .pop()
-                    .unwrap(),
-                config,
-                woog,
-                domain,
-            )?;
+            // // I wrote this this morning, and already I'can't say how it works
+            // // exactly. It takes a structure, and not a statement, so it's
+            // // pretty low level. It's also assigning the let. Refactor time.
+            // render_new_instance_new(
+            //     buffer,
+            //     obj,
+            //     &new,
+            //     &stmt,
+            //     &method
+            //         .r23_block(woog)
+            //         .pop()
+            //         .unwrap()
+            //         .r24_symbol_table(woog)
+            //         .pop()
+            //         .unwrap(),
+            //     config,
+            //     woog,
+            //     domain,
+            // )?;
 
             emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
             emit!(buffer, "new");

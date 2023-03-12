@@ -22,7 +22,6 @@ use crate::{
         generator::GeneratorBuilder, is_object_stale, local_object_is_hybrid,
         local_object_is_singleton, local_object_is_supertype, render::RenderIdent,
     },
-    init_woog::{init_woog, persist_woog},
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
@@ -38,6 +37,7 @@ use crate::{
         external::ExternalGenerator,
         null::NullGenerator,
     },
+    woog::{persist_woog, populate_woog},
     RS_EXT, TYPES,
 };
 
@@ -62,7 +62,7 @@ impl<'a> DomainTarget<'a> {
         src_path: &'a Path,
         mut domain: sarzak::v2::domain::Domain,
         _test: bool,
-    ) -> Box<dyn Target + 'a> {
+    ) -> Result<Box<dyn Target + 'a>> {
         // This creates an external entity of the ObjectStore so that
         // we can use it from within the domain. Remember that the ObjectStore is a
         // generated construct, and appears as if it was an external library to the
@@ -179,7 +179,7 @@ impl<'a> DomainTarget<'a> {
             &domain,
         );
 
-        Box::new(Self {
+        Ok(Box::new(Self {
             config,
             package,
             module,
@@ -188,7 +188,7 @@ impl<'a> DomainTarget<'a> {
             imports: imported_domains,
             woog,
             _test,
-        })
+        }))
     }
 
     fn generate_types(&mut self) -> Result<(), ModelCompilerError> {

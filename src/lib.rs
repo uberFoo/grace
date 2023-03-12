@@ -3,11 +3,11 @@ use std::path::Path;
 use sarzak::mc::ModelCompilerOptions;
 
 mod codegen;
-mod init_woog;
 pub mod options;
 mod targets;
 mod todo;
 mod types;
+mod woog;
 
 pub use options::{DomainConfig, GraceCompilerOptions, Target};
 pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
@@ -43,10 +43,10 @@ impl SarzakModelCompiler for ModelCompiler {
 
         let mut target = match options.target {
             Target::Domain(_) => {
-                DomainTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+                DomainTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
             Target::Application => {
-                ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+                ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
         };
 
