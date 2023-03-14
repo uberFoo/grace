@@ -52,7 +52,7 @@ macro_rules! test_target_domain {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain/{}", $domain))
+                .arg(format!("domain::{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
@@ -114,7 +114,7 @@ macro_rules! test_target_domain {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain/{}", $domain))
+                .arg(format!("domain::{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
@@ -160,7 +160,7 @@ macro_rules! test_target_application {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("app/{}", $domain))
+                .arg(format!("app::{}", $domain))
                 .arg("--")
                 .arg("--nocapture")
                 .current_dir("tests/mdd")
