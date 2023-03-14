@@ -49,7 +49,7 @@ pub(crate) fn persist_woog(woog: &WoogStore, src_path: &Path, domain: &Domain) -
 ///
 /// We also inter types in woog that exist in sarzak, so that we can access them
 /// during code generation.
-pub(crate) fn init_woog(
+pub(crate) fn populate_woog(
     src_path: &Path,
     module: &str,
     config: &GraceConfig,

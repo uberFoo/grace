@@ -22,7 +22,6 @@ use crate::{
         generator::GeneratorBuilder, is_object_stale, local_object_is_hybrid,
         local_object_is_singleton, local_object_is_supertype, render::RenderIdent,
     },
-    init_woog::{init_woog, persist_woog},
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
     targets::Target,
     types::{
@@ -38,6 +37,7 @@ use crate::{
         external::ExternalGenerator,
         null::NullGenerator,
     },
+    woog::{persist_woog, populate_woog},
     RS_EXT, TYPES,
 };
 
@@ -171,7 +171,7 @@ impl<'a> DomainTarget<'a> {
         }
 
         // Create our local compiler domain.
-        let woog = init_woog(
+        let woog = populate_woog(
             src_path.as_ref(),
             module,
             &config,

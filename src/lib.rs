@@ -3,11 +3,11 @@ use std::path::Path;
 use sarzak::mc::ModelCompilerOptions;
 
 mod codegen;
-mod init_woog;
 pub mod options;
 mod targets;
 mod todo;
 mod types;
+mod woog;
 
 pub use options::{DomainConfig, GraceCompilerOptions, Target};
 pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
