@@ -101,7 +101,7 @@ impl<'a> DomainTarget<'a> {
                 "new".to_owned(),
                 format!(
                     "{}Store",
-                    // name.as_type(&Ownership::new_borrowed(), &woog, &domain)
+                    // name.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), &woog, &domain)
                     name.to_upper_camel_case()
                 ),
                 format!("crate::{}::store::ObjectStore", store,),

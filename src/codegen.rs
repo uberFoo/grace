@@ -17,7 +17,7 @@ use sarzak::{
         store::ObjectStore as WoogStore,
         types::{
             GraceType, Local, ObjectMethod as WoogObjectMethod, Ownership, StructExpression,
-            SymbolTable, Variable, VariableEnum, OWNED,
+            SymbolTable, Variable, VariableEnum, OWNED, SHARED,
         },
     },
 };
@@ -217,7 +217,13 @@ pub(crate) fn render_method_definition(
     writeln!(
         buffer,
         ") -> {} {{",
-        method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+        method.ty.as_type(
+            &woog
+                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                .unwrap(),
+            woog,
+            domain
+        )
     )
     .context(FormatSnafu)?;
 
@@ -301,7 +307,13 @@ pub(crate) fn render_method_definition_new(
     writeln!(
         buffer,
         ") -> {} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
+        object.as_type(
+            &woog
+                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                .unwrap(),
+            woog,
+            domain
+        )
     )
     .context(FormatSnafu)?;
 
@@ -529,7 +541,13 @@ pub(crate) fn render_new_instance(
     emit!(
         buffer,
         "{} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
+        object.as_type(
+            &woog
+                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                .unwrap(),
+            woog,
+            domain
+        )
     );
 
     let tuples = zip(fields, rvals);
@@ -559,8 +577,24 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}),",
                                     field.name,
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    s_obj.as_type(
+                                        &woog
+                                            .exhume_ownership(
+                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                            )
+                                            .unwrap(),
+                                        woog,
+                                        domain
+                                    ),
+                                    obj.as_type(
+                                        &woog
+                                            .exhume_ownership(
+                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                            )
+                                            .unwrap(),
+                                        woog,
+                                        domain
+                                    ),
                                     rval.name
                                 )
                             }
@@ -571,8 +605,24 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id()),",
                                         field.name,
-                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        s_obj.as_type(
+                                            &woog
+                                                .exhume_ownership(
+                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                                )
+                                                .unwrap(),
+                                            woog,
+                                            domain
+                                        ),
+                                        obj.as_type(
+                                            &woog
+                                                .exhume_ownership(
+                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                                )
+                                                .unwrap(),
+                                            woog,
+                                            domain
+                                        ),
                                         rval.name
                                     )
                                 } else {
@@ -580,8 +630,24 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id),",
                                         field.name,
-                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        s_obj.as_type(
+                                            &woog
+                                                .exhume_ownership(
+                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                                )
+                                                .unwrap(),
+                                            woog,
+                                            domain
+                                        ),
+                                        obj.as_type(
+                                            &woog
+                                                .exhume_ownership(
+                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                                )
+                                                .unwrap(),
+                                            woog,
+                                            domain
+                                        ),
                                         rval.name
                                     )
                                 }
@@ -591,8 +657,24 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}.id),",
                                     field.name,
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    s_obj.as_type(
+                                        &woog
+                                            .exhume_ownership(
+                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                            )
+                                            .unwrap(),
+                                        woog,
+                                        domain
+                                    ),
+                                    obj.as_type(
+                                        &woog
+                                            .exhume_ownership(
+                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                            )
+                                            .unwrap(),
+                                        woog,
+                                        domain
+                                    ),
                                     rval.name
                                 )
                             }
@@ -776,7 +858,13 @@ pub(crate) fn render_new_instance_new(
     emit!(
         buffer,
         "{} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
+        object.as_type(
+            &woog
+                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                .unwrap(),
+            woog,
+            domain
+        )
     );
 
     // Now we need to extract the values for the fields from the symbol table.
@@ -1241,7 +1329,13 @@ pub(crate) fn find_store<'a>(name: &str, woog: &WoogStore, domain: &'a Domain) -
     };
     let name = format!(
         "{}Store",
-        name.as_type(&Ownership::new_borrowed(), woog, domain)
+        name.as_type(
+            &woog
+                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                .unwrap(),
+            woog,
+            domain
+        )
     );
 
     let mut iter = domain.sarzak().iter_ty();

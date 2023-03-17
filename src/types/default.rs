@@ -10,7 +10,7 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership, PUBLIC},
+    woog::{store::ObjectStore as WoogStore, Ownership, PUBLIC, SHARED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -203,22 +203,46 @@ impl CodeWriter for DefaultStruct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        r_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
 
                     emit!(
                         paste,
                         "/// R{}: [`{}`] '{}' [`{}`]",
                         binary.number,
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        ),
                         referrer.description,
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        r_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     emit!(
                         paste,
                         "pub {}: &'a {},",
                         referrer.referential_attribute.as_ident(),
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        r_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                 }
 
@@ -251,13 +275,25 @@ impl CodeWriter for DefaultStruct {
                     emit!(
                         buffer,
                         "pub struct {}<'a> {{",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                 } else {
                     emit!(
                         buffer,
                         "pub struct {} {{",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                 }
 
@@ -348,13 +384,13 @@ impl CodeWriter for DefaultImplementation {
         //             emit!(
         //                 buffer,
         //                 "impl<'a> {}<'a> {{",
-        //                 obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
+        //                 obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), local_woog, domain)
         //             );
         //         } else {
         //             emit!(
         //                 buffer,
         //                 "impl {} {{",
-        //                 obj.as_type(&Ownership::new_borrowed(), local_woog, domain)
+        //                 obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), local_woog, domain)
         //             );
         //         }
 
@@ -447,7 +483,7 @@ impl CodeWriter for DefaultNewImpl {
         //                 let ty = attr.r2_ty(domain.sarzak())[0];
         //                 fields.push(LValue::new(attr.name.as_ident(), ty.into()));
         //                 params.push(Parameter::new(
-        //                     Ownership::new_borrowed().id(),
+        //                     woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap().id(),
         //                     None,
         //                     ty.into(),
         //                     PUBLIC,
@@ -469,7 +505,7 @@ impl CodeWriter for DefaultNewImpl {
         //                 GType::Reference(r_obj.id),
         //             ));
         //             params.push(Parameter::new(
-        //                     Ownership::new_borrowed().id(),
+        //                     woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap().id(),
         //                 None,
         //                 GType::Reference(r_obj.id),
         //                 PUBLIC,
@@ -542,7 +578,7 @@ impl CodeWriter for DefaultNewImpl {
         //                 emit!(
         //                     buffer,
         //                     "/// Inter a new {} in the store, and return it's `id`.",
-        //                     obj.as_type(&Ownership::new_borrowed(), woog, domain)
+        //                     obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), woog, domain)
         //                 );
 
         //                 // Output the top of the function definition
@@ -560,169 +596,184 @@ impl CodeWriter for DefaultNewImpl {
         //                 Ok(())
         //             },
         //         )
-        //     }
-        // }
+        Ok(())
+    }
+}
 
-        // pub(crate) struct DefaultModuleBuilder {
-        //     definition: Option<Box<dyn ModuleDefinition>>,
-        // }
+pub(crate) struct DefaultModuleBuilder {
+    definition: Option<Box<dyn ModuleDefinition>>,
+}
 
-        // impl DefaultModuleBuilder {
-        //     pub(crate) fn new() -> Self {
-        //         DefaultModuleBuilder { definition: None }
-        //     }
+impl DefaultModuleBuilder {
+    pub(crate) fn new() -> Self {
+        DefaultModuleBuilder { definition: None }
+    }
 
-        //     pub(crate) fn definition(mut self, definition: Box<dyn ModuleDefinition>) -> Self {
-        //         self.definition = Some(definition);
+    pub(crate) fn definition(mut self, definition: Box<dyn ModuleDefinition>) -> Self {
+        self.definition = Some(definition);
 
-        //         self
-        //     }
+        self
+    }
 
-        //     pub(crate) fn build(self) -> Result<Box<DefaultModuleGenerator>> {
-        //         ensure!(
-        //             self.definition.is_some(),
-        //             CompilerSnafu {
-        //                 description: "missing ModuleDefinition"
-        //             }
-        //         );
+    pub(crate) fn build(self) -> Result<Box<DefaultModuleGenerator>> {
+        ensure!(
+            self.definition.is_some(),
+            CompilerSnafu {
+                description: "missing ModuleDefinition"
+            }
+        );
 
-        //         Ok(Box::new(DefaultModuleGenerator {
-        //             definition: self.definition.unwrap(),
-        //         }))
-        //     }
-        // }
+        Ok(Box::new(DefaultModuleGenerator {
+            definition: self.definition.unwrap(),
+        }))
+    }
+}
 
-        // /// Generator -- Code Generator Engine
-        // ///
-        // /// This is supposed to be general, but it's very much geared towards generating
-        // /// a file that contains a struct definition and implementations. I need to
-        // /// do some refactoring.
-        // ///
-        // /// As just hinted at, the idea is that you plug in different code writers that
-        // /// know how to write different parts of some rust code. This one is for
-        // /// structs.
-        // pub(crate) struct DefaultModuleGenerator {
-        //     definition: Box<dyn ModuleDefinition>,
-        // }
+/// Generator -- Code Generator Engine
+///
+/// This is supposed to be general, but it's very much geared towards generating
+/// a file that contains a struct definition and implementations. I need to
+/// do some refactoring.
+///
+/// As just hinted at, the idea is that you plug in different code writers that
+/// know how to write different parts of some rust code. This one is for
+/// structs.
+pub(crate) struct DefaultModuleGenerator {
+    definition: Box<dyn ModuleDefinition>,
+}
 
-        // impl FileGenerator for DefaultModuleGenerator {
-        //     fn generate(
-        //         &self,
-        //         config: &GraceConfig,
-        //         domain: &Domain,
-        //         woog: &Option<&mut WoogStore>,
-        //         imports: &Option<&HashMap<String, Domain>>,
-        //         package: &str,
-        //         module: &str,
-        //         obj_id: Option<&Uuid>,
-        //         buffer: &mut Buffer,
-        //     ) -> Result<GenerationAction> {
-        //         // Output the domain/module documentation/description
-        //         for line in domain.description().lines() {
-        //             emit!(buffer, "//! {}", line);
-        //         }
+impl FileGenerator for DefaultModuleGenerator {
+    fn generate(
+        &self,
+        config: &GraceConfig,
+        domain: &Domain,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
+        package: &str,
+        module: &str,
+        obj_id: Option<&Uuid>,
+        buffer: &mut Buffer,
+    ) -> Result<GenerationAction> {
+        // Output the domain/module documentation/description
+        for line in domain.description().lines() {
+            emit!(buffer, "//! {}", line);
+        }
 
-        //         buffer.block(
-        //             DirectiveKind::AllowEditing,
-        //             format!("{}-module-definition-file", module),
-        //             |buffer| {
-        //                 self.definition.write_code(
-        //                     config, domain, woog, imports, package, module, obj_id, buffer,
-        //                 )?;
+        buffer.block(
+            DirectiveKind::AllowEditing,
+            format!("{}-module-definition-file", module),
+            |buffer| {
+                self.definition.write_code(
+                    config, domain, woog, imports, package, module, obj_id, buffer,
+                )?;
 
-        //                 Ok(())
-        //             },
-        //         )?;
+                Ok(())
+            },
+        )?;
 
-        //         Ok(GenerationAction::Write)
-        //     }
-        // }
+        Ok(GenerationAction::Write)
+    }
+}
 
-        // /// Default Types Module Generator / CodeWriter
-        // ///
-        // /// This generates a rust file that imports the generated type implementations.
-        // pub(crate) struct DefaultModule;
+/// Default Types Module Generator / CodeWriter
+///
+/// This generates a rust file that imports the generated type implementations.
+pub(crate) struct DefaultModule;
 
-        // impl DefaultModule {
-        //     pub(crate) fn new() -> Box<dyn ModuleDefinition> {
-        //         Box::new(Self)
-        //     }
-        // }
+impl DefaultModule {
+    pub(crate) fn new() -> Box<dyn ModuleDefinition> {
+        Box::new(Self)
+    }
+}
 
-        // impl ModuleDefinition for DefaultModule {}
+impl ModuleDefinition for DefaultModule {}
 
-        // impl CodeWriter for DefaultModule {
-        //     fn write_code(
-        //         &self,
-        //         config: &GraceConfig,
-        //         domain: &Domain,
-        //         woog: &Option<&mut WoogStore>,
-        //         imports: &Option<&HashMap<String, Domain>>,
-        //         _package: &str,
-        //         module: &str,
-        //         _obj_id: Option<&Uuid>,
-        //         buffer: &mut Buffer,
-        //     ) -> Result<()> {
-        //         ensure!(
-        //             woog.is_some(),
-        //             CompilerSnafu {
-        //                 description: "woog is required by DefaultModule"
-        //             }
-        //         );
-        //         let woog = woog.as_ref().unwrap();
+impl CodeWriter for DefaultModule {
+    fn write_code(
+        &self,
+        config: &GraceConfig,
+        domain: &Domain,
+        woog: &Option<&mut WoogStore>,
+        imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
+        module: &str,
+        _obj_id: Option<&Uuid>,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DefaultModule"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
 
-        //         buffer.block(
-        //             DirectiveKind::IgnoreOrig,
-        //             format!("{}-module-definition", module),
-        //             |buffer| {
-        //                 let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
-        //                 objects.sort_by(|a, b| a.name.cmp(&b.name));
-        //                 let objects = objects
-        //                     .iter()
-        //                     .filter(|obj| {
-        //                         // Don't include imported objects
-        //                         !config.is_imported(&obj.id)
-        //                     })
-        //                     .collect::<Vec<_>>();
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-module-definition", module),
+            |buffer| {
+                let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+                objects.sort_by(|a, b| a.name.cmp(&b.name));
+                let objects = objects
+                    .iter()
+                    .filter(|obj| {
+                        // Don't include imported objects
+                        !config.is_imported(&obj.id)
+                    })
+                    .collect::<Vec<_>>();
 
-        //                 for obj in &objects {
-        //                     emit!(buffer, "pub mod {};", obj.as_ident());
-        //                 }
-        //                 emit!(buffer, "");
-        //                 for obj in &objects {
-        //                     if object_is_singleton(obj, config, imports, domain)?
-        //                         && !object_is_supertype(obj, config, imports, domain)?
-        //                     {
-        //                         emit!(
-        //                             buffer,
-        //                             "pub use crate::{}::{}::{};",
-        //                             module,
-        //                             obj.as_ident(),
-        //                             obj.as_const()
-        //                         );
-        //                     } else {
-        //                         emit!(
-        //                             buffer,
-        //                             "pub use crate::{}::{}::{};",
-        //                             module,
-        //                             obj.as_ident(),
-        //                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
-        //                         );
-        //                         if object_is_hybrid(obj, config, imports, domain)? {
-        //                             emit!(
-        //                                 buffer,
-        //                                 "pub use crate::{}::{}::{}Enum;",
-        //                                 module,
-        //                                 obj.as_ident(),
-        //                                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
-        //                             );
-        //                         }
-        //                     }
-        //                 }
+                for obj in &objects {
+                    emit!(buffer, "pub mod {};", obj.as_ident());
+                }
+                emit!(buffer, "");
+                for obj in &objects {
+                    if object_is_singleton(obj, config, imports, domain)?
+                        && !object_is_supertype(obj, config, imports, domain)?
+                    {
+                        emit!(
+                            buffer,
+                            "pub use crate::{}::{}::{};",
+                            module,
+                            obj.as_ident(),
+                            obj.as_const()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "pub use crate::{}::{}::{};",
+                            module,
+                            obj.as_ident(),
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
+                        );
+                        if object_is_hybrid(obj, config, imports, domain)? {
+                            emit!(
+                                buffer,
+                                "pub use crate::{}::{}::{}Enum;",
+                                module,
+                                obj.as_ident(),
+                                obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                )
+                            );
+                        }
+                    }
+                }
 
-        //                 Ok(())
-        //             },
-        //         )?;
+                Ok(())
+            },
+        )?;
 
         Ok(())
     }

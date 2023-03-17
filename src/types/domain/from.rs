@@ -7,7 +7,7 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::Ownership},
+    woog::{store::ObjectStore as WoogStore, types::SHARED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -242,7 +242,13 @@ impl CodeWriter for DomainFromImpl {
                     emit!(
                         buffer,
                         "{},",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                 }
                 emit!(buffer, "}};");
@@ -252,15 +258,33 @@ impl CodeWriter for DomainFromImpl {
                     buffer,
                     "use crate::{}::ObjectStore as {}Store;",
                     from_module,
-                    from_name.as_type(&Ownership::new_borrowed(), woog, domain)
+                    from_name.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
                 emit!(buffer, "use crate::{}::types::{{", from_module);
                 for obj in &objects {
                     emit!(
                         buffer,
                         "{} as From{},",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        ),
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                 }
                 emit!(buffer, "}};");
@@ -270,12 +294,24 @@ impl CodeWriter for DomainFromImpl {
                 emit!(
                     buffer,
                     "impl From<&{}Store> for ObjectStore {{",
-                    from_name.as_type(&Ownership::new_borrowed(), woog, domain)
+                    from_name.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
                 emit!(
                     buffer,
                     "fn from(from: &{}Store) -> Self {{",
-                    from_name.as_type(&Ownership::new_borrowed(), woog, domain)
+                    from_name.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
                 emit!(buffer, "let mut to = ObjectStore::new();");
                 for obj in &objects {
@@ -298,7 +334,13 @@ impl CodeWriter for DomainFromImpl {
                     emit!(
                         buffer,
                         "let instance = {}::from(instance);",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     emit!(buffer, "to.inter_{}(instance);", obj.as_ident());
                     emit!(buffer, "}}");
@@ -317,13 +359,31 @@ impl CodeWriter for DomainFromImpl {
                         emit!(
                             buffer,
                             "impl From<&From{}> for {} {{",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            ),
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         emit!(
                             buffer,
                             "fn from(src: &From{}) -> Self {{",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         emit!(buffer, "match src {{");
                         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
@@ -332,10 +392,42 @@ impl CodeWriter for DomainFromImpl {
                             emit!(
                                 buffer,
                                 "From{}::{}(src) => {}::{}({}),",
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                ),
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                ),
+                                obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                ),
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                ),
                                 s_obj.as_const()
                             );
                         }
@@ -346,13 +438,31 @@ impl CodeWriter for DomainFromImpl {
                         emit!(
                             buffer,
                             "impl From<&From{}> for {} {{",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            ),
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         emit!(
                             buffer,
                             "fn from(src: &From{}) -> Self {{",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         emit!(buffer, "Self {{");
 

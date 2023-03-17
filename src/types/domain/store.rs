@@ -9,7 +9,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{Ownership, MUTABLE},
+        types::{Ownership, MUTABLE, SHARED},
     },
 };
 use snafu::prelude::*;
@@ -120,7 +120,23 @@ impl FileGenerator for DomainStoreGenerator {
                     emit!(
                         buffer,
                         "//! * [`{}`]",
-                        obj.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
+                        obj.as_type(
+                            // Damn this is bad.
+                            &woog
+                                .as_ref()
+                                .unwrap()
+                                .exhume_ownership(
+                                    &woog
+                                        .as_ref()
+                                        .unwrap()
+                                        .exhume_borrowed(&SHARED)
+                                        .unwrap()
+                                        .id()
+                                )
+                                .unwrap(),
+                            woog.as_ref().unwrap(),
+                            domain
+                        )
                     );
                 }
 
@@ -161,7 +177,13 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Inter [`{}`] into the store.",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     emit!(buffer, "///");
                     emit!(
@@ -169,7 +191,13 @@ impl DomainStore {
                         "pub fn inter_{}(&mut self, {}: {}) {{",
                         obj.as_ident(),
                         obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     if local_object_is_enum(obj, config, domain) {
                         if timestamp {
@@ -213,14 +241,26 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store.",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}(&self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     if timestamp {
                         emit!(
@@ -238,14 +278,26 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store — mutably.",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::Mutable(MUTABLE), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&MUTABLE).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     if timestamp {
                         emit!(
@@ -263,14 +315,26 @@ impl DomainStore {
                     emit!(
                         buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     emit!(buffer, "///");
                     emit!(
                         buffer,
                         "pub fn iter_{}(&self) -> impl Iterator<Item = &{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                     if timestamp {
                         emit!(
@@ -289,7 +353,13 @@ impl DomainStore {
                         emit!(
                             buffer,
                             "/// Get the timestamp for {}.",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         emit!(buffer, "///");
                         emit!(
@@ -297,7 +367,13 @@ impl DomainStore {
                             "pub fn {}_timestamp(&self, {}: &{}) -> SystemTime {{",
                             obj.as_ident(),
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         if local_object_is_enum(obj, config, domain) {
                             emit!(
@@ -398,7 +474,13 @@ impl DomainStore {
                         emit!(
                             buffer,
                             "let on_disk: ({}, SystemTime) = serde_json::from_reader(reader)?;",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         emit!(buffer, "if on_disk.0 != {}_tuple.0 {{", obj.as_ident());
                         emit!(buffer, "let file = fs::File::create(path)?;");
@@ -510,7 +592,13 @@ impl DomainStore {
                             buffer,
                             "let {}: ({}, SystemTime) = serde_json::from_reader(reader)?;",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         if local_object_is_enum(obj, config, domain) {
                             emit!(
@@ -534,7 +622,13 @@ impl DomainStore {
                             buffer,
                             "let {}: {} = serde_json::from_reader(reader)?;",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                         if local_object_is_enum(obj, config, domain) {
                             emit!(
@@ -642,7 +736,13 @@ impl CodeWriter for DomainStore {
                     emit!(
                         buffer,
                         "{},",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
                 }
                 for obj in &supertypes {
@@ -668,14 +768,26 @@ impl CodeWriter for DomainStore {
                             buffer,
                             "{}: HashMap<Uuid, ({}, SystemTime)>,",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                     } else {
                         emit!(
                             buffer,
                             "{}: HashMap<Uuid, {}>,",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         );
                     }
                 }
@@ -705,8 +817,24 @@ impl CodeWriter for DomainStore {
                                     buffer,
                                     "store.inter_{}({}::{}({}));",
                                     obj.as_ident(),
-                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    obj.as_type(
+                                        &woog
+                                            .exhume_ownership(
+                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                            )
+                                            .unwrap(),
+                                        woog,
+                                        domain
+                                    ),
+                                    s_obj.as_type(
+                                        &woog
+                                            .exhume_ownership(
+                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
+                                            )
+                                            .unwrap(),
+                                        woog,
+                                        domain
+                                    ),
                                     s_obj.as_const()
                                 );
                             }

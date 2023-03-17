@@ -7,7 +7,7 @@ use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership},
+    woog::{store::ObjectStore as WoogStore, types::SHARED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -100,7 +100,13 @@ impl CodeWriter for Enum {
                         "use crate::{}::types::{}::{};",
                         module,
                         s_obj.as_ident(),
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        s_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     ));
                 }
 
@@ -126,7 +132,15 @@ impl CodeWriter for Enum {
                                 "use crate::{}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                )
                             ));
                         }
                     } else {
@@ -143,7 +157,15 @@ impl CodeWriter for Enum {
                                 "use crate::{}::types::{}::{};",
                                 module,
                                 s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                )
                             ));
                         }
                     }
@@ -190,14 +212,26 @@ impl CodeWriter for Enum {
                 emit!(
                     buffer,
                     "pub enum {} {{",
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    obj.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        s_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        ),
                     );
                 }
                 emit!(buffer, "}}");
@@ -260,8 +294,20 @@ impl CodeWriter for EnumGetIdImpl {
                     emit!(
                         buffer,
                         "{}::{}(id) => *id,",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        ),
+                        s_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        ),
                     );
                 }
                 emit!(buffer, "}}");
@@ -371,8 +417,20 @@ impl CodeWriter for EnumNewImpl {
                     emit!(
                         buffer,
                         "/// Create a new instance of {}::{}",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        ),
+                        s_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     );
 
                     // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
@@ -385,7 +443,13 @@ impl CodeWriter for EnumNewImpl {
                         emit!(
                             buffer,
                             "Self::{}({})",
-                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                            s_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            ),
                             s_obj.as_const()
                         );
                     } else {
@@ -394,7 +458,13 @@ impl CodeWriter for EnumNewImpl {
                             "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
                             s_obj.as_ident(),
                             s_obj.as_ident(),
-                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                            s_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            ),
                             store.name
                         );
                         // I feel sort of gross doing this, but also sort of not. Part of me feels
@@ -408,14 +478,30 @@ impl CodeWriter for EnumNewImpl {
                             emit!(
                                 buffer,
                                 "let new = Self::{}({}.id());",
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                ),
                                 s_obj.as_ident()
                             );
                         } else {
                             emit!(
                                 buffer,
                                 "let new = Self::{}({}.id);",
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                ),
                                 s_obj.as_ident()
                             );
                         }

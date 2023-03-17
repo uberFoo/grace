@@ -7,7 +7,10 @@ use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::Ownership},
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{Ownership, SHARED},
+    },
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -141,7 +144,15 @@ impl CodeWriter for Hybrid {
                                 "use crate::{}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                )
                             ));
                         }
                     } else {
@@ -157,7 +168,15 @@ impl CodeWriter for Hybrid {
                                 "use crate::{}::types::{}::{};",
                                 module,
                                 s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                s_obj.as_type(
+                                    &woog
+                                        .exhume_ownership(
+                                            &woog.exhume_borrowed(&SHARED).unwrap().id()
+                                        )
+                                        .unwrap(),
+                                    woog,
+                                    domain
+                                )
                             ));
                         }
                     }
@@ -172,14 +191,26 @@ impl CodeWriter for Hybrid {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            r_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         ));
                     } else {
                         uses.insert(format!(
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            r_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         ));
                     }
                 }
@@ -190,7 +221,13 @@ impl CodeWriter for Hybrid {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        r_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     ));
                 }
 
@@ -204,7 +241,13 @@ impl CodeWriter for Hybrid {
                         "use crate::{}::types::{}::{};",
                         module,
                         s_obj.as_ident(),
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        s_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     ));
                 }
 
@@ -247,14 +290,26 @@ impl CodeWriter for Hybrid {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    obj.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
 
                 emit!(
                     buffer,
                     "pub {}: {}Enum,",
                     SUBTYPE_ATTR,
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    obj.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
 
                 render_attributes(buffer, obj, woog, domain)?;
@@ -285,7 +340,9 @@ impl CodeWriter for Hybrid {
                     buffer,
                     "pub enum {}Enum {{",
                     obj.as_type(
-                        &Ownership::new_borrowed(&Borrowed::new_shared(),),
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
                         woog,
                         domain
                     )
@@ -295,7 +352,13 @@ impl CodeWriter for Hybrid {
                     emit!(
                         buffer,
                         "{}(Uuid),",
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        s_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        ),
                     );
                 }
                 emit!(buffer, "}}");
@@ -577,7 +640,7 @@ impl CodeWriter for HybridNewImpl {
         //             emit!(
         //                 buffer,
         //                 "/// Inter a new {} in the store, and return it's `id`.",
-        //                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
+        //                 obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), woog, domain)
         //             );
 
         //             // 🚧 Put this back in once I'm done moving to v2.

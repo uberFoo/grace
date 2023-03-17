@@ -71,7 +71,9 @@ pub(crate) fn populate_woog(
     // };
     let mut woog = WoogStore::new();
 
-    let borrowed = Ownership::new_borrowed();
+    let borrowed = woog
+        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+        .unwrap();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, &mut woog);
 

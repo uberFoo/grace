@@ -15,9 +15,10 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            Access, Block, Borrowed, Call, Expression, Function, GraceType, Local, ObjectMethod,
-            Ownership, Parameter, Reference, Statement, StructExpression, StructureField,
-            SymbolTable, Value, Variable, Visibility, WoogOption, XLet, PUBLIC,
+            Access, Block, Borrowed, Call, Expression, Field, Function, GraceType, Hack, Literal,
+            Local, ObjectMethod, Ownership, Parameter, Reference, Statement, StructExpression,
+            StructExpressionField, StructureField, SymbolTable, Value, Variable, Visibility,
+            WoogOption, XLet, PUBLIC, SHARED,
         },
     },
 };
@@ -129,11 +130,13 @@ fn inter_struct_method_new(
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> () {
-    let borrowed = Ownership::new_borrowed();
+    let borrowed = woog
+        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+        .unwrap();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
-    let mutable = Ownership::new_mutable();
+    let mutable = Ownership::new_borrowed(&Borrowed::new_mutable(), woog);
     let mut_access = Access::new(&mutable, &public, woog);
 
     let block = Block::new(Uuid::new_v4(), woog);
@@ -212,11 +215,11 @@ fn inter_struct_method_new(
     // Same-same for the fields. Something that calls us is going to have to do the
     // same thing with all of these statements. I need to keep that in the back of
     // my head.
-    fields.iter_mut().rev().fold(None, |next, field| {
-        field.next = next;
-        woog.inter_structure_field(field.clone());
-        Some(field.id)
-    });
+    // fields.iter_mut().rev().fold(None, |next, field| {
+    //     field.next = next;
+    //     woog.inter_structure_field(field.clone());
+    //     Some(field.id)
+    // });
 
     let expr = Expression::new_struct_expression(&structure, woog);
     // The type of the StructExpression is the object itself.
@@ -230,7 +233,7 @@ fn inter_struct_method_new(
 
     // This is the statement.
     let xlet = XLet::new(&expr, &var, woog);
-    let _ = Statement::new_x_let(&block, &xlet, woog);
+    let _ = Statement::new_x_let(&block, None, &xlet, woog);
 }
 
 fn inter_hybrid_method_new(
@@ -243,11 +246,13 @@ fn inter_hybrid_method_new(
 ) -> () {
     const SUBTYPE_ATTR: &str = "subtype";
 
-    let borrowed = Ownership::new_borrowed();
+    let borrowed = woog
+        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+        .unwrap();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
-    let mutable = Ownership::new_mutable();
+    let mutable = Ownership::new_borrowed(&Borrowed::new_mutable(), woog);
     let mut_access = Access::new(&mutable, &public, woog);
 
     let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
@@ -309,9 +314,9 @@ fn inter_hybrid_method_new(
         let reference = Reference::new(&s_obj, woog);
         let ty = GraceType::new_reference(&reference, woog);
 
-        let field = Field::new(SUBTYPE_ATTR.to_owned(), &ty, woog);
-        let field = StructureField::new(None, &field, &structure, woog);
-        fields.insert(0, field);
+        // let field = Field::new(SUBTYPE_ATTR.to_owned(), &ty, woog);
+        // let field = StructureField::new(None, &field, &structure, woog);
+        // fields.insert(0, field);
 
         // Fix these unwraps later.
         if object_is_singleton(s_obj, config, &Some(imports), domain).unwrap()
@@ -345,11 +350,11 @@ fn inter_hybrid_method_new(
             Some(param.id)
         });
         // Same-same for the fields
-        fields.iter_mut().rev().fold(None, |next, field| {
-            field.next = next;
-            woog.inter_structure_field(field.clone());
-            Some(field.id)
-        });
+        // fields.iter_mut().rev().fold(None, |next, field| {
+        //     field.next = next;
+        //     woog.inter_structure_field(field.clone());
+        //     Some(field.id)
+        // });
 
         let expr = Expression::new_struct_expression(&structure, woog);
         let obj_type = domain
@@ -362,7 +367,7 @@ fn inter_hybrid_method_new(
 
         // This is the statement.
         let xlet = XLet::new(&expr, &var, woog);
-        let _ = Statement::new_x_let(&block, &xlet, woog);
+        let _ = Statement::new_x_let(&block, None, &xlet, woog);
     }
 }
 
@@ -376,16 +381,18 @@ fn inter_external_method_new(
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> () {
-    const VALUE_ATTR: &str = "ext_value";
+    const VALUE_FIELD: &str = "ext_value";
 
-    let borrowed = Ownership::new_borrowed();
+    let borrowed = woog
+        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+        .unwrap();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
     let owned = Ownership::new_owned();
     let owned_access = Access::new(&owned, &public, woog);
 
-    let mutable = Ownership::new_mutable();
+    let mutable = Ownership::new_borrowed(&Borrowed::new_mutable(), woog);
     let mut_access = Access::new(&mutable, &public, woog);
 
     let block = Block::new(Uuid::new_v4(), woog);
@@ -449,12 +456,12 @@ fn inter_external_method_new(
     let ty = ee.r3_ty(domain.sarzak())[0];
     let ty = GraceType::new_ty(&ty, woog);
 
-    let field = Field::new(VALUE_ATTR.to_owned(), &ty, woog);
-    let field = StructureField::new(None, &field, &structure, woog);
+    let field = Field::new(VALUE_FIELD.to_owned(), &ty, woog);
+    let field = StructExpressionField::new(VALUE_FIELD.to_owned(), &expr, &structure, None, woog);
     fields.insert(0, field);
 
     let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-    let var = Variable::new_parameter(VALUE_ATTR.to_owned(), &table, &param, woog);
+    let var = Variable::new_parameter(VALUE_FIELD.to_owned(), &table, &param, woog);
     let _ = Value::new_variable(&owned_access, &ty.into(), &var, woog);
     params.insert(0, param);
 
@@ -480,11 +487,11 @@ fn inter_external_method_new(
         Some(param.id)
     });
     // Same-same for the fields
-    fields.iter_mut().rev().fold(None, |next, field| {
-        field.next = next;
-        woog.inter_structure_field(field.clone());
-        Some(field.id)
-    });
+    // fields.iter_mut().rev().fold(None, |next, field| {
+    //     field.next = next;
+    //     woog.inter_structure_field(field.clone());
+    //     Some(field.id)
+    // });
 
     let expr = Expression::new_struct_expression(&structure, woog);
     let obj_type = domain
@@ -497,7 +504,7 @@ fn inter_external_method_new(
 
     // This is the statement.
     let xlet = XLet::new(&expr, &var, woog);
-    let _ = Statement::new_x_let(&block, &xlet, woog);
+    let _ = Statement::new_x_let(&block, None, &xlet, woog);
 }
 
 fn collect_attributes(
@@ -510,7 +517,9 @@ fn collect_attributes(
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> (Vec<Parameter>, Vec<StructureField>) {
-    let borrowed = Ownership::new_borrowed();
+    let borrowed = woog
+        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+        .unwrap();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
@@ -526,7 +535,12 @@ fn collect_attributes(
         // let field = Field::new(attr.as_ident(), &ty, woog);
         // let field = StructureField::new(None, &field, &structure, woog);
         // fields.push(field);
-        fields.push(attr.as_ident());
+        // fields.push(attr.as_ident());
+
+        // let value = typecheck_and_coerce()
+        // let hack = Hack::new()
+        // let field = StructureField::new(attr.as_ident(), &expr, &structure, None, woog);
+        // fields.push(field);
 
         // We are going to generate the id, so don't include it in the
         // list of parameters.
@@ -570,14 +584,14 @@ fn collect_attributes(
                 let uuid = GraceType::new_ty(&Ty::new_uuid(), woog);
                 let option = WoogOption::new(&uuid, woog);
                 let ty = GraceType::new_woog_option(&option, woog);
-                let field = StructureField::new(
-                    referrer.referential_attribute.as_ident(),
-                    &expr,
-                    &structure,
-                    None,
-                    woog,
-                );
-                fields.push(field);
+                // let field = StructureField::new(
+                // referrer.referential_attribute.as_ident(),
+                // &expr,
+                // &structure,
+                // None,
+                // woog,
+                // );
+                // fields.push(field);
                 // fields.push(referrer.referential_attribute.as_ident());
             }
             // An unconditional reference translates into a reference to the referent.
@@ -601,7 +615,7 @@ fn collect_attributes(
                 // );
                 // let field = StructureField::new(None, &field, &structure, woog);
                 // fields.push(field);
-                fields.push(referrer.referential_attribute.as_ident());
+                // fields.push(referrer.referential_attribute.as_ident());
             }
         }
     }
@@ -636,7 +650,7 @@ fn collect_attributes(
         // );
         // let field = StructureField::new(None, &field, &structure, woog);
         // fields.push(field);
-        fields.push(assoc_referrer.one_referential_attribute.as_ident());
+        // fields.push(assoc_referrer.one_referential_attribute.as_ident());
 
         // Other side
         let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
@@ -658,7 +672,7 @@ fn collect_attributes(
         // );
         // let field = StructureField::new(None, &field, &structure, woog);
         // fields.push(field);
-        fields.push(assoc_referrer.other_referential_attribute.as_ident());
+        // fields.push(assoc_referrer.other_referential_attribute.as_ident());
     }
 
     (params, fields)
@@ -678,7 +692,9 @@ fn typecheck_and_coerce(
 ) -> Result<String> {
     let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
 
-    let borrowed = Ownership::new_borrowed(&Borrowed::new_shared());
+    let borrowed = woog
+        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+        .unwrap();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 

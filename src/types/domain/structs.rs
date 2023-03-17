@@ -8,7 +8,10 @@ use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::Ownership},
+    woog::{
+        store::ObjectStore as WoogStore,
+        types::{Ownership, SHARED},
+    },
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -137,14 +140,26 @@ impl CodeWriter for Struct {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            r_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         ));
                     } else {
                         uses.insert(format!(
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            r_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         ));
                     }
                 }
@@ -155,7 +170,13 @@ impl CodeWriter for Struct {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        r_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     ));
                 }
 
@@ -169,7 +190,13 @@ impl CodeWriter for Struct {
                         "use crate::{}::types::{}::{};",
                         module,
                         s_obj.as_ident(),
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        s_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     ));
                 }
 
@@ -214,7 +241,13 @@ impl CodeWriter for Struct {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    obj.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
 
                 render_attributes(buffer, obj, woog, domain)?;
@@ -296,7 +329,22 @@ impl CodeWriter for DomainImplementation {
                 emit!(
                     buffer,
                     "impl {} {{",
-                    obj.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
+                    obj.as_type(
+                        &woog
+                            .as_ref()
+                            .unwrap()
+                            .exhume_ownership(
+                                &woog
+                                    .as_ref()
+                                    .unwrap()
+                                    .exhume_borrowed(&SHARED)
+                                    .unwrap()
+                                    .id()
+                            )
+                            .unwrap(),
+                        woog.as_ref().unwrap(),
+                        domain
+                    )
                 );
 
                 for method in &self.methods {

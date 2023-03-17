@@ -6,7 +6,7 @@ use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::Ownership},
+    woog::{store::ObjectStore as WoogStore, types::Ownership, SHARED},
 };
 use uuid::Uuid;
 
@@ -111,7 +111,13 @@ impl FileGenerator for ExternalGenerator {
                 emit!(
                     buffer,
                     "pub struct {} {{",
-                    object.as_type(&Ownership::new_borrowed(), woog, domain),
+                    object.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    ),
                 );
 
                 render_attributes(buffer, object, woog, domain)?;
@@ -132,7 +138,13 @@ impl FileGenerator for ExternalGenerator {
                 emit!(
                     buffer,
                     "impl {} {{",
-                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                    object.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
 
                 // Darn. So I need to insert a local here. And hybrid has similar needs.

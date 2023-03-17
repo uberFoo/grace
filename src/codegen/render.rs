@@ -12,10 +12,7 @@ use sarzak::{
         Attribute, Conditionality, Event, External as SarzakExternal, Object, State, Ty,
     },
     v2::domain::Domain,
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Function, GraceType, Ownership, Variable},
-    },
+    woog::{store::ObjectStore as WoogStore, Function, GraceType, Ownership, Variable, SHARED},
 };
 use snafu::prelude::*;
 
@@ -197,7 +194,7 @@ impl RenderStatement for GType {
                     // problem in the interim.
                     "use mdd::{}::types::{};",
                     module,
-                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                    object.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), woog, domain)
                 ));
 
                 // Recurse into the method
@@ -223,7 +220,7 @@ impl RenderStatement for GType {
                 uses.insert(format!(
                     "use mdd::{}::types::{};",
                     module,
-                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                    object.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), woog, domain)
                 ));
 
                 // Recurse into the method
@@ -263,7 +260,7 @@ impl RenderStatement for GType {
                     RValue::new(
                         format!(
                             "{}::{};",
-                            e.as_type(&Ownership::new_borrowed(), woog, domain),
+                            e.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), woog, domain),
                             // 🚧  Oops. I don't have this any longer, and I'm not putting
                             // it back until I'm on v2. So here's the hack.
                             // ext.initialization,
@@ -363,7 +360,7 @@ impl<'a> RenderStatement for ObjectMethod<'a> {
             RValue::new(
                 format!(
                     "{}::{}()",
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                    obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), woog, domain),
                     self.name.as_ident(),
                 ),
                 ty,
@@ -390,8 +387,11 @@ render_type!(Attribute, Event, Object, State, External, SarzakExternal);
 impl RenderType for String {
     fn as_type(&self, mutability: &Ownership, _woog: &WoogStore, _domain: &Domain) -> String {
         match mutability {
-            Ownership::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
-            _ => self.sanitize().to_upper_camel_case(),
+            Ownership::Borrowed(id) => match id {
+                MUTABLE => format!("mut {}", self.sanitize().to_upper_camel_case()),
+                BORROWED => self.sanitize().to_upper_camel_case(),
+            },
+            Ownership::Owned(_) => self.sanitize().to_upper_camel_case(),
         }
     }
 }
@@ -399,8 +399,11 @@ impl RenderType for String {
 impl RenderType for &str {
     fn as_type(&self, mutability: &Ownership, _woog: &WoogStore, _domain: &Domain) -> String {
         match mutability {
-            Ownership::Mutable(_) => format!("mut {}", self.sanitize().to_upper_camel_case()),
-            _ => self.sanitize().to_upper_camel_case(),
+            Ownership::Borrowed(id) => match id {
+                MUTABLE => format!("mut {}", self.sanitize().to_upper_camel_case()),
+                BORROWED => self.sanitize().to_upper_camel_case(),
+            },
+            Ownership::Owned(_) => self.sanitize().to_upper_camel_case(),
         }
     }
 }
@@ -427,17 +430,11 @@ impl RenderType for Ty {
                 let ext = domain.sarzak().exhume_external(&e).unwrap();
                 // format!("&{}", ext.as_type(mutability, woog, domain))
                 match mutability {
-                    Ownership::Owned(_) => {
-                        format!("{}", ext.name.sanitize().to_upper_camel_case())
-                    }
-                    Ownership::Borrowed(_) => {
-                        format!("&{}", ext.name.sanitize().to_upper_camel_case())
-                    }
-                    Ownership::Mutable(_) => {
-                        // Shit, this doesn't belong here. Is it a reference or owned? Let's pretend
-                        // Mutable means mutable reference, what do you say?
-                        format!("&mut {}", ext.name.sanitize().to_upper_camel_case())
-                    }
+                    Ownership::Borrowed(id) => match id {
+                        MUTABLE => format!("&mut {}", ext.name.sanitize().to_upper_camel_case()),
+                        BORROWED => format!("&{}", ext.name.sanitize().to_upper_camel_case()),
+                    },
+                    Ownership::Owned(_) => format!("{}", ext.name.sanitize().to_upper_camel_case()),
                 }
             }
             Self::Float(_) => "f64".to_owned(),
@@ -611,7 +608,13 @@ pub(crate) fn render_attributes(
             buffer,
             "pub {}: {},",
             attr.as_ident(),
-            ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            ty.as_type(
+                &woog
+                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                    .unwrap(),
+                woog,
+                domain
+            )
         );
     }
 
@@ -683,9 +686,21 @@ pub(crate) fn render_referential_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             binary.number,
-            obj.as_type(&Ownership::new_borrowed(), woog, domain),
+            obj.as_type(
+                &woog
+                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                    .unwrap(),
+                woog,
+                domain
+            ),
             referrer.description,
-            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+            r_obj.as_type(
+                &woog
+                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                    .unwrap(),
+                woog,
+                domain
+            )
         );
         match cond {
             Conditionality::Conditional(_) => emit!(
@@ -726,10 +741,22 @@ pub(crate) fn render_associative_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             assoc.number,
-            one_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+            one_obj.as_type(
+                &woog
+                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                    .unwrap(),
+                woog,
+                domain
+            ),
             // one_obj.description,
             "🚧 Out of order — see sarzak#14.".to_owned(),
-            one_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+            one_obj.as_type(
+                &woog
+                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                    .unwrap(),
+                woog,
+                domain
+            )
         );
         emit!(
             buffer,
@@ -741,10 +768,22 @@ pub(crate) fn render_associative_attributes(
             buffer,
             "/// R{}: [`{}`] '{}' [`{}`]",
             assoc.number,
-            other_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+            other_obj.as_type(
+                &woog
+                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                    .unwrap(),
+                woog,
+                domain
+            ),
             // other_obj.description,
             "🚧 Out of order — see sarzak#14.".to_owned(),
-            other_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+            other_obj.as_type(
+                &woog
+                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                    .unwrap(),
+                woog,
+                domain
+            )
         );
         emit!(
             buffer,

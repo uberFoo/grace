@@ -6,7 +6,7 @@ use sarzak::{
     mc::{FormatSnafu, Result},
     sarzak::types::{Binary, Cardinality, Conditionality, External, Object, Referrer},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::Ownership},
+    woog::{store::ObjectStore as WoogStore, types::SHARED},
 };
 use snafu::prelude::*;
 
@@ -310,7 +310,13 @@ fn forward(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 binary.number,
             );
             emit!(
@@ -319,7 +325,13 @@ fn forward(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(
                 buffer,
@@ -355,7 +367,13 @@ fn forward_conditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*c)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 binary.number,
             );
             emit!(
@@ -364,7 +382,13 @@ fn forward_conditional(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(
                 buffer,
@@ -408,7 +432,13 @@ fn backward_one(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 binary.number
             );
             emit!(
@@ -417,7 +447,13 @@ fn backward_one(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -455,7 +491,13 @@ fn backward_one_conditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 binary.number
             );
             emit!(
@@ -464,7 +506,13 @@ fn backward_one_conditional(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(
                 buffer,
@@ -516,7 +564,13 @@ fn backward_one_biconditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1c-1c)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 binary.number
             );
             emit!(
@@ -525,7 +579,13 @@ fn backward_one_biconditional(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(
                 buffer,
@@ -577,7 +637,13 @@ fn backward_1_m(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 binary.number
             );
             emit!(
@@ -586,7 +652,13 @@ fn backward_1_m(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -626,7 +698,13 @@ fn backward_1_mc(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-Mc)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 binary.number
             );
             emit!(
@@ -635,7 +713,13 @@ fn backward_1_mc(
                 binary.number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -675,7 +759,13 @@ fn forward_assoc(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 number,
             );
             emit!(
@@ -684,7 +774,13 @@ fn forward_assoc(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(
                 buffer,
@@ -720,7 +816,13 @@ fn backward_assoc_one(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 number
             );
             emit!(
@@ -729,7 +831,13 @@ fn backward_assoc_one(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -767,7 +875,13 @@ fn backward_assoc_one_conditional(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 number
             );
             emit!(
@@ -776,7 +890,13 @@ fn backward_assoc_one_conditional(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(
                 buffer,
@@ -828,7 +948,13 @@ fn backward_assoc_many(
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 number
             );
             emit!(
@@ -837,7 +963,13 @@ fn backward_assoc_many(
                 number,
                 r_obj.as_ident(),
                 store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
@@ -877,7 +1009,13 @@ fn subtype_to_supertype(
             emit!(
                 buffer,
                 "// Navigate to [`{}`] across R{}(isa)",
-                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                s_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                ),
                 number
             );
             emit!(
@@ -886,7 +1024,13 @@ fn subtype_to_supertype(
                 number,
                 s_obj.as_ident(),
                 store.name,
-                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                s_obj.as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain
+                )
             );
             if local_object_is_enum(obj, config, domain) {
                 emit!(
