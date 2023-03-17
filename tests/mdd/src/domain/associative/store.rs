@@ -14,7 +14,7 @@
 //! * [`State`]
 //! * [`SubtypeAnchor`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative-object-store-definition"}}}
-use std::collections::HashMap;
+use fnv::FnvHashMap as HashMap;
 use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -37,12 +37,12 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            acknowledged_event: HashMap::new(),
-            anchor: HashMap::new(),
-            event: HashMap::new(),
-            isa_ui: HashMap::new(),
-            state: HashMap::new(),
-            subtype_anchor: HashMap::new(),
+            acknowledged_event: HashMap::default(),
+            anchor: HashMap::default(),
+            event: HashMap::default(),
+            isa_ui: HashMap::default(),
+            state: HashMap::default(),
+            subtype_anchor: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
