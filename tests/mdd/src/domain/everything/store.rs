@@ -10,7 +10,7 @@
 //! * [`Everything`]
 //! * [`RandoObject`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything-object-store-definition"}}}
-use std::collections::HashMap;
+use fnv::FnvHashMap as HashMap;
 use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -27,8 +27,8 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            everything: HashMap::new(),
-            rando_object: HashMap::new(),
+            everything: HashMap::default(),
+            rando_object: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes

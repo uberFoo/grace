@@ -13,7 +13,7 @@
 //! * [`Parameter`]
 //! * [`Referent`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_one-object-store-definition"}}}
-use std::collections::HashMap;
+use fnv::FnvHashMap as HashMap;
 use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -33,11 +33,11 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            a: HashMap::new(),
-            b: HashMap::new(),
-            c: HashMap::new(),
-            parameter: HashMap::new(),
-            referent: HashMap::new(),
+            a: HashMap::default(),
+            b: HashMap::default(),
+            c: HashMap::default(),
+            parameter: HashMap::default(),
+            referent: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes

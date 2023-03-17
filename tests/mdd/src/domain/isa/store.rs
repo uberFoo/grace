@@ -19,7 +19,7 @@
 //! * [`SubtypeB`]
 //! * [`SuperT`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa-object-store-definition"}}}
-use std::collections::HashMap;
+use fnv::FnvHashMap as HashMap;
 use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -48,17 +48,17 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
-            borrowed: HashMap::new(),
-            henry: HashMap::new(),
-            not_important: HashMap::new(),
-            oh_boy: HashMap::new(),
-            ownership: HashMap::new(),
-            reference: HashMap::new(),
-            simple_subtype_a: HashMap::new(),
-            simple_supertype: HashMap::new(),
-            subtype_a: HashMap::new(),
-            subtype_b: HashMap::new(),
-            super_t: HashMap::new(),
+            borrowed: HashMap::default(),
+            henry: HashMap::default(),
+            not_important: HashMap::default(),
+            oh_boy: HashMap::default(),
+            ownership: HashMap::default(),
+            reference: HashMap::default(),
+            simple_subtype_a: HashMap::default(),
+            simple_supertype: HashMap::default(),
+            subtype_a: HashMap::default(),
+            subtype_b: HashMap::default(),
+            super_t: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes

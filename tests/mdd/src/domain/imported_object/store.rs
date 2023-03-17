@@ -9,7 +9,7 @@
 //!
 //! * [`AnotherObject`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-definition"}}}
-use std::collections::HashMap;
+use fnv::FnvHashMap as HashMap;
 use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,7 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            another_object: HashMap::new(),
+            another_object: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes

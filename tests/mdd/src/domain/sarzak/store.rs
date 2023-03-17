@@ -27,7 +27,7 @@
 //! * [`Supertype`]
 //! * [`Ty`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-definition"}}}
-use std::collections::HashMap;
+use fnv::FnvHashMap as HashMap;
 use std::{fs, io, path::Path};
 
 use serde::{Deserialize, Serialize};
@@ -66,25 +66,25 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
-            acknowledged_event: HashMap::new(),
-            associative: HashMap::new(),
-            associative_referent: HashMap::new(),
-            associative_referrer: HashMap::new(),
-            attribute: HashMap::new(),
-            binary: HashMap::new(),
-            cardinality: HashMap::new(),
-            conditionality: HashMap::new(),
-            event: HashMap::new(),
-            external: HashMap::new(),
-            isa: HashMap::new(),
-            object: HashMap::new(),
-            referent: HashMap::new(),
-            referrer: HashMap::new(),
-            relationship: HashMap::new(),
-            state: HashMap::new(),
-            subtype: HashMap::new(),
-            supertype: HashMap::new(),
-            ty: HashMap::new(),
+            acknowledged_event: HashMap::default(),
+            associative: HashMap::default(),
+            associative_referent: HashMap::default(),
+            associative_referrer: HashMap::default(),
+            attribute: HashMap::default(),
+            binary: HashMap::default(),
+            cardinality: HashMap::default(),
+            conditionality: HashMap::default(),
+            event: HashMap::default(),
+            external: HashMap::default(),
+            isa: HashMap::default(),
+            object: HashMap::default(),
+            referent: HashMap::default(),
+            referrer: HashMap::default(),
+            relationship: HashMap::default(),
+            state: HashMap::default(),
+            subtype: HashMap::default(),
+            supertype: HashMap::default(),
+            ty: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
