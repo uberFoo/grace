@@ -14,9 +14,10 @@
 //! I need te generate a struct definition anyway. All generating this would
 //! be is modifying a struct definition. And that's just the sort of problem that
 //! I should solve early.
-use std::{any::Any, collections::HashMap, path::PathBuf};
+use std::{any::Any, path::PathBuf};
 
 use clap::{ArgAction, Args, Subcommand};
+use fnv::FnvHashMap as HashMap;
 use sarzak::{mc::ModelCompilerOptions, v2::domain::Domain};
 use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
@@ -216,7 +217,7 @@ pub(crate) struct GraceConfig {
 impl GraceConfig {
     pub(crate) fn new() -> Self {
         Self {
-            inner: HashMap::new(),
+            inner: HashMap::default(),
         }
     }
 

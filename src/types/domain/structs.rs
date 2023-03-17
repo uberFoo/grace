@@ -1,11 +1,9 @@
 //! Domain Struct Generation
 //!
 //! Your one-stop-shop for everything to do with structs in Rust!
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Write,
-};
+use std::fmt::Write;
 
+use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -113,8 +111,8 @@ impl CodeWriter for Struct {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
-                let mut imports = HashSet::new();
-                let mut uses = HashSet::new();
+                let mut imports = HashSet::default();
+                let mut uses = HashSet::default();
 
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");

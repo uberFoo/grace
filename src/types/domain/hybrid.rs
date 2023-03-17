@@ -1,11 +1,9 @@
 //! Domain Enum with extras Generation
 //!
 //! Here we are.
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Write,
-};
+use std::fmt::Write;
 
+use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
@@ -107,8 +105,8 @@ impl CodeWriter for Hybrid {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
-                let mut imported_domains = HashSet::new();
-                let mut uses = HashSet::new();
+                let mut imported_domains = HashSet::default();
+                let mut uses = HashSet::default();
 
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");

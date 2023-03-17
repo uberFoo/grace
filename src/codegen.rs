@@ -6,8 +6,9 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{collections::HashMap, fmt::Write, iter::zip};
+use std::{fmt::Write, iter::zip};
 
+use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{External, Object, Ty},
