@@ -19,16 +19,19 @@ diff = "0.1.13"
 tempfile = "3.3.0"
 unicode-segmentation = "1.10.0"
 names = "0.14.0"
-# time = "0.3.20"
 chrono = "0.4.23"
 
 [build-dependencies]
 chrono = "0.4.23"
-# time = "0.3.20"
 
 [dev-dependencies]
 env_logger = "0.10.0"
+criterion = "0.4.0"
 
 [features]
 default = ["vscode"]
 vscode = []
+
+[[bench]]
+name = "everything"
+harness = false
