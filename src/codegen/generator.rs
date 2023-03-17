@@ -2,12 +2,12 @@
 //!
 //!
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io::prelude::*,
     path::{Path, PathBuf},
 };
 
+use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
     v2::domain::Domain,

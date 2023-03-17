@@ -1,7 +1,8 @@
 //! Generate ObjectStore for use in sarzak Domain
 //!
-use std::{collections::HashMap, fmt::Write};
+use std::fmt::Write;
 
+use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
@@ -630,7 +631,7 @@ impl CodeWriter for DomainStore {
                         emit!(buffer, "use std::{{io, fs, path::Path}};");
                     }
                 }
-                emit!(buffer, "use std::collections::HashMap;");
+                emit!(buffer, "use fnv::FnvHashMap as HashMap;");
                 emit!(buffer, "");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
@@ -688,7 +689,7 @@ impl CodeWriter for DomainStore {
                     emit!(buffer, "let store = Self {{");
                 }
                 for obj in &objects {
-                    emit!(buffer, "{}: HashMap::new(),", obj.as_ident());
+                    emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");

@@ -1,7 +1,8 @@
 //! A type for generating an external type.
 //!
-use std::{collections::HashMap, fmt::Write};
+use std::fmt::Write;
 
+use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,

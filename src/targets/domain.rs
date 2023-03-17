@@ -1,10 +1,10 @@
 use std::{
-    collections::{HashMap, HashSet},
     fs,
     path::{Path, PathBuf},
     time::SystemTime,
 };
 
+use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use heck::ToUpperCamelCase;
 use sarzak::{
     domain::DomainBuilder,
@@ -69,7 +69,7 @@ impl<'a> DomainTarget<'a> {
         // domain. Now, if it were modeled, we'd probably include some aspect of it's
         // model as an imported object, and we wouldn't need this. We'd probably need
         // something else...
-        let mut external = HashSet::new();
+        let mut external = HashSet::default();
 
         // This is the object store for _this_ domain.
         external.insert(module.replace("/", "::"));
@@ -131,7 +131,7 @@ impl<'a> DomainTarget<'a> {
         }
 
         // Suck in the imported domains for later use.
-        let mut imported_domains = HashMap::new();
+        let mut imported_domains = HashMap::default();
         // Include the from domain, if there is one.
         if let Some(from_domain) = config.get_from_domain() {
             let domain = DomainBuilder::new()

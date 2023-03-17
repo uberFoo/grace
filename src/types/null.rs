@@ -1,7 +1,6 @@
 //! A type for not generating anything
 //!
-use std::collections::HashMap;
-
+use fnv::FnvHashMap as HashMap;
 use sarzak::{mc::Result, v2::domain::Domain, woog::store::ObjectStore as WoogStore};
 use uuid::Uuid;
 

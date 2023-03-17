@@ -2,8 +2,9 @@
 //!
 //! This is the place to find all the default implementations for generating structs.
 //! These are meant to be used in an application domain.
-use std::{collections::HashMap, fmt::Write};
+use std::fmt::Write;
 
+use fnv::FnvHashMap as HashMap;
 use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},

@@ -1,7 +1,8 @@
 //! Generate From trait implementations for use in sarzak Domain
 //!
-use std::{collections::HashMap, fmt::Write};
+use std::fmt::Write;
 
+use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},

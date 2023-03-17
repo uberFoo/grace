@@ -2,11 +2,9 @@
 //!
 //! This involves creating instances in Woog that the compiler stages depend
 //! upon.
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
+use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{FileSnafu, Result},
     sarzak::types::{Conditionality, Object, Ty},
