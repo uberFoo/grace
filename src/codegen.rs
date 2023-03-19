@@ -1215,26 +1215,41 @@ pub(crate) fn local_object_is_hybrid(
     config: &GraceConfig,
     domain: &Domain,
 ) -> bool {
+    let attrs = object.r1_attribute(domain.sarzak());
+    log::debug!("attrs: {:?}", attrs);
+
     local_object_is_supertype(object, config, domain)
-        && !local_object_is_singleton(object, config, domain)
+        && (attrs.len() > 2 || local_object_is_referrer(object, config, domain))
 }
 
 test_local_and_imports!(object_is_enum, local_object_is_enum);
 pub(crate) fn local_object_is_enum(object: &Object, config: &GraceConfig, domain: &Domain) -> bool {
     local_object_is_supertype(object, config, domain)
-        && local_object_is_singleton(object, config, domain)
+        && !local_object_is_hybrid(object, config, domain)
 }
 
 test_local_and_imports!(object_is_supertype, local_object_is_supertype);
 pub(crate) fn local_object_is_supertype(
     object: &Object,
-    config: &GraceConfig,
+    _config: &GraceConfig,
     domain: &Domain,
 ) -> bool {
     let is_super = object.r14_supertype(domain.sarzak());
     log::debug!("is_super: {:?}", is_super);
 
     is_super.len() > 0
+}
+
+test_local_and_imports!(object_is_subtype, local_object_is_subtype);
+pub(crate) fn local_object_is_subtype(
+    object: &Object,
+    _config: &GraceConfig,
+    domain: &Domain,
+) -> bool {
+    let is_sub = object.r15c_subtype(domain.sarzak());
+    log::debug!("is_sub: {:?}", is_sub);
+
+    is_sub.len() > 0
 }
 
 test_local_and_imports!(object_is_singleton, local_object_is_singleton);
@@ -1250,7 +1265,9 @@ pub(crate) fn local_object_is_singleton(
     let attrs = object.r1_attribute(domain.sarzak());
     log::debug!("attrs: {:?}", attrs);
 
-    attrs.len() < 2 && !local_object_is_referrer(object, config, domain)
+    attrs.len() < 2
+        && !local_object_is_referrer(object, config, domain)
+        && !local_object_is_supertype(object, config, domain)
 }
 
 // test_local_and_imports!(object_is_referrer, inner_object_is_referrer);
