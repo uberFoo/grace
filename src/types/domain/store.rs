@@ -602,14 +602,12 @@ impl CodeWriter for DomainStore {
         ) -> Result<bool> {
             let mut result = false;
 
-            // dbg!("start", &sup.name, depth);
             for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
                 if !config.is_imported(&s_obj.id) {
                     if local_object_is_supertype(s_obj, config, domain)
                         && !local_object_is_subtype(s_obj, config, domain)
                     {
-                        // dbg!("going down", &s_obj.name, depth);
                         emit_singleton_subtype_uses(
                             s_obj,
                             config,
@@ -620,12 +618,6 @@ impl CodeWriter for DomainStore {
                         )?;
                     } else if local_object_is_singleton(s_obj, config, domain) {
                         result = true;
-                        // dbg!(
-                        //     "emit",
-                        //     &s_obj.name,
-                        //     depth,
-                        //     local_object_is_singleton(s_obj, config, domain)
-                        // );
                         emit!(buffer, "{},", s_obj.as_const());
                     }
                 }
@@ -648,10 +640,8 @@ impl CodeWriter for DomainStore {
             woog: &WoogStore,
             buffer: &mut Buffer,
         ) -> Result<()> {
-            dbg!("enter", &sup.name);
             for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
-                dbg!("subtype", &s_obj.name);
 
                 if local_object_is_hybrid(sup, config, domain) {
                     continue;
@@ -701,8 +691,6 @@ impl CodeWriter for DomainStore {
             .collect::<Vec<_>>();
 
         let timestamp = config.get_persist_timestamps().unwrap_or(false);
-
-        dbg!("supertypes", &supertypes);
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
