@@ -837,15 +837,15 @@ pub(crate) fn render_new_instance_new(
     // in the ass. I do this elsewhere, and it's a pain in the ass there too. I would
     // think a macro possible...
     let mut first = structure
-        .r27_structure_field(woog)
+        .r27_struct_expression_field(woog)
         .iter()
-        .find(|&&field| field.r30c_structure_field(woog).len() == 0)
+        .find(|&&field| field.r30c_struct_expression_field(woog).len() == 0)
         .unwrap()
         .clone();
 
     let mut fields = vec![first];
     loop {
-        if let Some(next) = first.r30_structure_field(woog).pop() {
+        if let Some(next) = first.r30_struct_expression_field(woog).pop() {
             fields.push(next);
             first = next;
         } else {

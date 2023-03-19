@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
-    mc::{FileSnafu, Result},
+    mc::{CompilerSnafu, FileSnafu, Result},
     sarzak::types::{Conditionality, Object, Ty},
     v2::domain::Domain,
     woog::{
@@ -55,7 +55,7 @@ pub(crate) fn populate_woog(
     config: &GraceConfig,
     imports: &HashMap<String, Domain>,
     domain: &Domain,
-) -> WoogStore {
+) -> Result<WoogStore> {
     // Look for a persisted store.
     let mut path = PathBuf::from(src_path);
     path.pop();
@@ -101,7 +101,7 @@ pub(crate) fn populate_woog(
         let _ = GraceType::new_ty(&ty, &mut woog);
     }
 
-    woog
+    Ok(woog)
 }
 
 /// I'm trying to organize this function to be as similar to how the code is generated.
@@ -129,7 +129,8 @@ fn inter_struct_method_new(
 ) -> () {
     let borrowed = woog
         .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-        .unwrap();
+        .unwrap()
+        .clone();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
@@ -146,6 +147,7 @@ fn inter_struct_method_new(
             obj.name
         ),
         "new".to_owned(),
+        &block,
         &method,
         woog,
     );
@@ -244,7 +246,8 @@ fn inter_hybrid_method_new(
 
     let borrowed = woog
         .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-        .unwrap();
+        .unwrap()
+        .clone();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
@@ -381,7 +384,8 @@ fn inter_external_method_new(
 
     let borrowed = woog
         .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-        .unwrap();
+        .unwrap()
+        .clone();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
@@ -452,9 +456,9 @@ fn inter_external_method_new(
     let ty = ee.r3_ty(domain.sarzak())[0];
     let ty = GraceType::new_ty(&ty, woog);
 
-    let field = Field::new(VALUE_FIELD.to_owned(), &ty, woog);
-    let field = StructExpressionField::new(VALUE_FIELD.to_owned(), &expr, &structure, None, woog);
-    fields.insert(0, field);
+    // let field = Field::new(VALUE_FIELD.to_owned(), &ty, woog);
+    // let field = StructExpressionField::new(VALUE_FIELD.to_owned(), &expr, &structure, None, woog);
+    // fields.insert(0, field);
 
     let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
     let var = Variable::new_parameter(VALUE_FIELD.to_owned(), &table, &param, woog);
@@ -515,7 +519,8 @@ fn collect_attributes(
 ) -> (Vec<Parameter>, Vec<StructureField>) {
     let borrowed = woog
         .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-        .unwrap();
+        .unwrap()
+        .clone();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
@@ -686,11 +691,12 @@ fn typecheck_and_coerce(
     woog: &mut WoogStore,
     domain: &Domain,
 ) -> Result<String> {
-    let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
+    let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0].clone();
 
     let borrowed = woog
         .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-        .unwrap();
+        .unwrap()
+        .clone();
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
@@ -705,7 +711,7 @@ fn typecheck_and_coerce(
                     let opt_ty = opt.r20_grace_type(woog)[0];
                     match &opt_ty {
                         GraceType::Reference(id) => {
-                            let reference = woog.exhume_reference(&id).unwrap();
+                            let reference = woog.exhume_reference(&id).unwrap().clone();
                             let object = reference.r13_object(domain.sarzak())[0];
 
                             if local_object_is_enum(object, config, domain) {
@@ -792,7 +798,7 @@ fn typecheck_and_coerce(
                         }
                         _ => {
                             ensure!(
-                                &lhs_ty == &rhs_ty,
+                                lhs_ty == &rhs_ty,
                                 CompilerSnafu {
                                     description: format!(
                                         "type mismatch: found `{:?}`, expected `{:?}`",
@@ -806,7 +812,7 @@ fn typecheck_and_coerce(
                 }
                 _ => {
                     ensure!(
-                        &lhs_ty == &rhs_ty,
+                        lhs_ty == &rhs_ty,
                         CompilerSnafu {
                             description: format!(
                                 "type mismatch: found `{:?}`, expected `{:?}`",
@@ -840,7 +846,7 @@ fn typecheck_and_coerce(
                         }
                         _ => {
                             ensure!(
-                                &lhs_ty == &rhs_ty,
+                                lhs_ty == &rhs_ty,
                                 CompilerSnafu {
                                     description: format!(
                                         "type mismatch: found `{:?}`, expected `{:?}`",
@@ -854,7 +860,7 @@ fn typecheck_and_coerce(
                 }
                 _ => {
                     ensure!(
-                        &lhs_ty == &rhs_ty,
+                        lhs_ty == &rhs_ty,
                         CompilerSnafu {
                             description: format!(
                                 "type mismatch: found `{:?}`, expected `{:?}`",
@@ -868,7 +874,7 @@ fn typecheck_and_coerce(
         }
         _ => {
             ensure!(
-                &lhs_ty == &rhs_ty,
+                lhs_ty == &rhs_ty,
                 CompilerSnafu {
                     description: format!(
                         "type mismatch: found `{:?}`, expected `{:?}`",

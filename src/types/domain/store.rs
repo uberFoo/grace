@@ -701,14 +701,7 @@ impl CodeWriter for DomainStore {
                     if local_object_is_supertype(s_obj, config, domain)
                         && !local_object_is_subtype(s_obj, config, domain)
                     {
-                        emit_singleton_subtype_uses(
-                            s_obj,
-                            config,
-                            domain,
-                            woog,
-                            buffer,
-                            depth + 1,
-                        )?;
+                        emit_singleton_subtype_uses(s_obj, config, domain, woog, buffer)?;
                     } else if local_object_is_singleton(s_obj, config, domain) {
                         result = true;
                         emit!(buffer, "{},", s_obj.as_const());
@@ -743,8 +736,20 @@ impl CodeWriter for DomainStore {
                 let prefix = format!(
                     "{}{}::{}",
                     prefix,
-                    sup.as_type(&Ownership::new_borrowed(), woog, domain),
-                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    sup.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    ),
+                    s_obj.as_type(
+                        &woog
+                            .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                            .unwrap(),
+                        woog,
+                        domain
+                    )
                 );
 
                 if !config.is_imported(&s_obj.id) {
