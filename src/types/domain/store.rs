@@ -701,7 +701,14 @@ impl CodeWriter for DomainStore {
                     if local_object_is_supertype(s_obj, config, domain)
                         && !local_object_is_subtype(s_obj, config, domain)
                     {
-                        result |= emit_singleton_subtype_uses(s_obj, config, domain, woog, buffer)?;
+                        emit_singleton_subtype_uses(
+                            s_obj,
+                            config,
+                            domain,
+                            woog,
+                            buffer,
+                            depth + 1,
+                        )?;
                     } else if local_object_is_singleton(s_obj, config, domain) {
                         result = true;
                         emit!(buffer, "{},", s_obj.as_const());
