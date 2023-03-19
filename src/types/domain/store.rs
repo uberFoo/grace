@@ -778,8 +778,6 @@ impl CodeWriter for DomainStore {
 
         let timestamp = config.get_persist_timestamps().unwrap_or(false);
 
-        dbg!("supertypes", &supertypes);
-
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-object-store-definition", module),
