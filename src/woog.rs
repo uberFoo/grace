@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
-    mc::{CompilerSnafu, FileSnafu, Result},
+    mc::{FileSnafu, Result},
     sarzak::types::{Conditionality, Object, Ty},
     v2::domain::Domain,
     woog::{
@@ -55,7 +55,7 @@ pub(crate) fn populate_woog(
     config: &GraceConfig,
     imports: &HashMap<String, Domain>,
     domain: &Domain,
-) -> Result<WoogStore> {
+) -> WoogStore {
     // Look for a persisted store.
     let mut path = PathBuf::from(src_path);
     path.pop();
@@ -101,7 +101,7 @@ pub(crate) fn populate_woog(
         let _ = GraceType::new_ty(&ty, &mut woog);
     }
 
-    Ok(woog)
+    woog
 }
 
 /// I'm trying to organize this function to be as similar to how the code is generated.
@@ -146,7 +146,6 @@ fn inter_struct_method_new(
             obj.name
         ),
         "new".to_owned(),
-        &block,
         &method,
         woog,
     );

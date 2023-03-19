@@ -44,4 +44,17 @@ mod tests {
         assert_eq!(&sa, a.r2_super_t(&store)[0]);
         assert_eq!(&sb, b.r2_super_t(&store)[0]);
     }
+
+    #[test]
+    fn test_init() {
+        let store = ObjectStore::new();
+
+        let mutable = Borrowed::new_mutable();
+        let shared = Borrowed::new_shared();
+
+        // Just making sure that they exist in the store. Thsi will panic if they
+        // do not.
+        store.exhume_ownership(&mutable.id()).unwrap();
+        store.exhume_ownership(&shared.id()).unwrap();
+    }
 }

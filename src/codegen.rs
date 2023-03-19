@@ -1219,7 +1219,7 @@ pub(crate) fn local_object_is_hybrid(
     log::debug!("attrs: {:?}", attrs);
 
     local_object_is_supertype(object, config, domain)
-        && (attrs.len() > 2 || local_object_is_referrer(object, config, domain))
+        && (attrs.len() > 1 || local_object_is_referrer(object, config, domain))
 }
 
 test_local_and_imports!(object_is_enum, local_object_is_enum);

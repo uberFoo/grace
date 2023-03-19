@@ -692,34 +692,18 @@ impl CodeWriter for DomainStore {
             domain: &Domain,
             woog: &WoogStore,
             buffer: &mut Buffer,
-            depth: usize,
         ) -> Result<bool> {
             let mut result = false;
 
-            // dbg!("start", &sup.name, depth);
             for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
                 if !config.is_imported(&s_obj.id) {
                     if local_object_is_supertype(s_obj, config, domain)
                         && !local_object_is_subtype(s_obj, config, domain)
                     {
-                        // dbg!("going down", &s_obj.name, depth);
-                        emit_singleton_subtype_uses(
-                            s_obj,
-                            config,
-                            domain,
-                            woog,
-                            buffer,
-                            depth + 1,
-                        )?;
+                        result |= emit_singleton_subtype_uses(s_obj, config, domain, woog, buffer)?;
                     } else if local_object_is_singleton(s_obj, config, domain) {
                         result = true;
-                        // dbg!(
-                        //     "emit",
-                        //     &s_obj.name,
-                        //     depth,
-                        //     local_object_is_singleton(s_obj, config, domain)
-                        // );
                         emit!(buffer, "{},", s_obj.as_const());
                     }
                 }
@@ -733,7 +717,7 @@ impl CodeWriter for DomainStore {
         /// Our job is to add the rest.
         /// It starts with "Foo::"", and for each subtype we'll either add Bar(BAR), or if bar is a supertype,
         /// we start over with "Bar::"", and continue as before, i.e., "Foo::Bar::Baz(BAZ)".
-        fn emit_singleton_subtypes_instances(
+        fn emit_singleton_subtype_instances(
             sup: &Object,
             prefix: &str,
             suffix: &str,
@@ -742,10 +726,8 @@ impl CodeWriter for DomainStore {
             woog: &WoogStore,
             buffer: &mut Buffer,
         ) -> Result<()> {
-            dbg!("enter", &sup.name);
             for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
-                dbg!("subtype", &s_obj.name);
 
                 if local_object_is_hybrid(sup, config, domain) {
                     continue;
@@ -762,7 +744,7 @@ impl CodeWriter for DomainStore {
                     if local_object_is_supertype(s_obj, config, domain) {
                         let prefix = format!("{}(", prefix);
                         let suffix = format!(".id()){}", suffix);
-                        emit_singleton_subtypes_instances(
+                        emit_singleton_subtype_instances(
                             s_obj, &prefix, &suffix, config, domain, woog, buffer,
                         )?;
                     } else if local_object_is_singleton(s_obj, config, domain) {
@@ -837,8 +819,8 @@ impl CodeWriter for DomainStore {
                     );
                 }
                 for obj in &supertypes {
-                    singleton_subs =
-                        emit_singleton_subtype_uses(obj, config, domain, woog, buffer, 0)?;
+                    singleton_subs |=
+                        emit_singleton_subtype_uses(obj, config, domain, woog, buffer)?;
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
@@ -889,7 +871,7 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "");
                 emit!(buffer, "// Initialize Singleton Subtypes");
                 for obj in &supertypes {
-                    emit_singleton_subtypes_instances(
+                    emit_singleton_subtype_instances(
                         obj,
                         &format!("store.inter_{}(", obj.as_ident()),
                         &");",

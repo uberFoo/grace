@@ -64,6 +64,8 @@ impl ObjectStore {
         // Initialize Singleton Subtypes
         store.inter_borrowed(Borrowed::Mutable(MUTABLE));
         store.inter_borrowed(Borrowed::Shared(SHARED));
+        store.inter_ownership(Ownership::Borrowed(Borrowed::Mutable(MUTABLE).id()));
+        store.inter_ownership(Ownership::Borrowed(Borrowed::Shared(SHARED).id()));
         store.inter_ownership(Ownership::Owned(OWNED));
 
         store
