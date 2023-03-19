@@ -20,8 +20,8 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_subtypes_sorted, local_object_is_enum, local_object_is_singleton,
-        local_object_is_supertype,
+        get_subtypes_sorted, local_object_is_enum, local_object_is_hybrid,
+        local_object_is_singleton, local_object_is_subtype, local_object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -592,6 +592,95 @@ impl CodeWriter for DomainStore {
         );
         let woog = woog.as_ref().unwrap();
 
+        fn emit_singleton_subtype_uses(
+            sup: &Object,
+            config: &GraceConfig,
+            domain: &Domain,
+            woog: &WoogStore,
+            buffer: &mut Buffer,
+            depth: usize,
+        ) -> Result<bool> {
+            let mut result = false;
+
+            // dbg!("start", &sup.name, depth);
+            for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
+                let s_obj = subtype.r15_object(domain.sarzak())[0];
+                if !config.is_imported(&s_obj.id) {
+                    if local_object_is_supertype(s_obj, config, domain)
+                        && !local_object_is_subtype(s_obj, config, domain)
+                    {
+                        // dbg!("going down", &s_obj.name, depth);
+                        emit_singleton_subtype_uses(
+                            s_obj,
+                            config,
+                            domain,
+                            woog,
+                            buffer,
+                            depth + 1,
+                        )?;
+                    } else if local_object_is_singleton(s_obj, config, domain) {
+                        result = true;
+                        // dbg!(
+                        //     "emit",
+                        //     &s_obj.name,
+                        //     depth,
+                        //     local_object_is_singleton(s_obj, config, domain)
+                        // );
+                        emit!(buffer, "{},", s_obj.as_const());
+                    }
+                }
+            }
+
+            Ok(result)
+        }
+
+        /// We are emitting a list of inter statements.
+        /// It's assumed that the initial prefix is "store.inter_foo(", where foo is the supertype.
+        /// Our job is to add the rest.
+        /// It starts with "Foo::"", and for each subtype we'll either add Bar(BAR), or if bar is a supertype,
+        /// we start over with "Bar::"", and continue as before, i.e., "Foo::Bar::Baz(BAZ)".
+        fn emit_singleton_subtypes_instances(
+            sup: &Object,
+            prefix: &str,
+            suffix: &str,
+            config: &GraceConfig,
+            domain: &Domain,
+            woog: &WoogStore,
+            buffer: &mut Buffer,
+        ) -> Result<()> {
+            dbg!("enter", &sup.name);
+            for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
+                let s_obj = subtype.r15_object(domain.sarzak())[0];
+                dbg!("subtype", &s_obj.name);
+
+                if local_object_is_hybrid(sup, config, domain) {
+                    continue;
+                }
+
+                let prefix = format!(
+                    "{}{}::{}",
+                    prefix,
+                    sup.as_type(&Ownership::new_borrowed(), woog, domain),
+                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+
+                if !config.is_imported(&s_obj.id) {
+                    if local_object_is_supertype(s_obj, config, domain) {
+                        let prefix = format!("{}(", prefix);
+                        let suffix = format!(".id()){}", suffix);
+                        emit_singleton_subtypes_instances(
+                            s_obj, &prefix, &suffix, config, domain, woog, buffer,
+                        )?;
+                    } else if local_object_is_singleton(s_obj, config, domain) {
+                        writeln!(buffer, "{}({}){}", prefix, s_obj.as_const(), suffix)
+                            .context(FormatSnafu)?;
+                    }
+                }
+            }
+
+            Ok(())
+        }
+
         let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
@@ -612,6 +701,8 @@ impl CodeWriter for DomainStore {
             .collect::<Vec<_>>();
 
         let timestamp = config.get_persist_timestamps().unwrap_or(false);
+
+        dbg!("supertypes", &supertypes);
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -646,17 +737,8 @@ impl CodeWriter for DomainStore {
                     );
                 }
                 for obj in &supertypes {
-                    for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
-                        let s_obj = subtype.r15_object(domain.sarzak())[0];
-                        if !config.is_imported(&s_obj.id) {
-                            if local_object_is_singleton(s_obj, config, domain)
-                                && !local_object_is_supertype(s_obj, config, domain)
-                            {
-                                singleton_subs = true;
-                                emit!(buffer, "{},", s_obj.as_const());
-                            }
-                        }
-                    }
+                    singleton_subs =
+                        emit_singleton_subtype_uses(obj, config, domain, woog, buffer, 0)?;
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
@@ -695,23 +777,15 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "");
                 emit!(buffer, "// Initialize Singleton Subtypes");
                 for obj in &supertypes {
-                    for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
-                        let s_obj = subtype.r15_object(domain.sarzak())[0];
-                        if !config.is_imported(&s_obj.id) {
-                            if local_object_is_singleton(s_obj, config, domain)
-                                && !local_object_is_supertype(s_obj, config, domain)
-                            {
-                                emit!(
-                                    buffer,
-                                    "store.inter_{}({}::{}({}));",
-                                    obj.as_ident(),
-                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    s_obj.as_const()
-                                );
-                            }
-                        }
-                    }
+                    emit_singleton_subtypes_instances(
+                        obj,
+                        &format!("store.inter_{}(", obj.as_ident()),
+                        &");",
+                        config,
+                        domain,
+                        woog,
+                        buffer,
+                    )?;
                 }
                 emit!(buffer, "");
                 emit!(buffer, "store");
