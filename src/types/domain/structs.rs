@@ -346,7 +346,7 @@ impl CodeWriter for StructNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -364,11 +364,13 @@ impl CodeWriter for StructNewImpl {
                 description: "woog is required by DomainNewImpl"
             }
         );
-
-        let woog = match woog {
-            Some(woog) => woog,
-            None => unreachable!(),
-        };
+        let woog = woog.as_ref().unwrap();
+        ensure!(
+            imports.is_some(),
+            CompilerSnafu {
+                description: "imports is required by DomainNewImpl"
+            }
+        );
 
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
@@ -401,7 +403,7 @@ impl CodeWriter for StructNewImpl {
         //     )?;
         // }
 
-        render_method_new(buffer, obj, config, woog, domain)
+        render_method_new(buffer, obj, config, imports, woog, domain)
     }
 }
 
@@ -449,9 +451,9 @@ impl CodeWriter for StructRelNavImpl {
         let woog = woog.as_ref().unwrap();
 
         generate_binary_referrer_rels(buffer, config, module, obj, woog, domain)?;
-        generate_binary_referent_rels(buffer, config, module, obj, woog, domain)?;
+        generate_binary_referent_rels(buffer, config, module, obj, "id", woog, domain)?;
         generate_assoc_referrer_rels(buffer, config, module, obj, woog, domain)?;
-        generate_assoc_referent_rels(buffer, config, module, obj, woog, domain)?;
+        generate_assoc_referent_rels(buffer, config, module, obj, "id", woog, domain)?;
         generate_subtype_rels(buffer, config, module, obj, woog, domain)?;
 
         Ok(())

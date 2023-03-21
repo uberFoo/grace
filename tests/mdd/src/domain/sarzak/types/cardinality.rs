@@ -1,7 +1,12 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"cardinality-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"cardinality-use-statements"}}}
+use crate::domain::sarzak::store::ObjectStore as SarzakStore;
+use crate::domain::sarzak::types::associative_referent::AssociativeReferent;
+use crate::domain::sarzak::types::associative_referrer::AssociativeReferrer;
 use crate::domain::sarzak::types::many::MANY;
 use crate::domain::sarzak::types::one::ONE;
+use crate::domain::sarzak::types::referent::Referent;
+use crate::domain::sarzak::types::referrer::Referrer;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -35,6 +40,72 @@ impl Cardinality {
             Cardinality::Many(id) => *id,
             Cardinality::One(id) => *id,
         }
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"cardinality-struct-impl-nav-backward-1_M-to-associative_referent"}}}
+    /// Navigate to [`AssociativeReferent`] across R88(1-M)
+    pub fn r88_associative_referent<'a>(
+        &'a self,
+        store: &'a SarzakStore,
+    ) -> Vec<&AssociativeReferent> {
+        store
+            .iter_associative_referent()
+            .filter_map(|associative_referent| {
+                if associative_referent.cardinality == self.id() {
+                    Some(associative_referent)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"cardinality-struct-impl-nav-backward-1_M-to-associative_referrer"}}}
+    /// Navigate to [`AssociativeReferrer`] across R89(1-M)
+    pub fn r89_associative_referrer<'a>(
+        &'a self,
+        store: &'a SarzakStore,
+    ) -> Vec<&AssociativeReferrer> {
+        store
+            .iter_associative_referrer()
+            .filter_map(|associative_referrer| {
+                if associative_referrer.cardinality == self.id() {
+                    Some(associative_referrer)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"cardinality-struct-impl-nav-backward-1_M-to-referent"}}}
+    /// Navigate to [`Referent`] across R8(1-M)
+    pub fn r8_referent<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referent> {
+        store
+            .iter_referent()
+            .filter_map(|referent| {
+                if referent.cardinality == self.id() {
+                    Some(referent)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"cardinality-struct-impl-nav-backward-1_M-to-referrer"}}}
+    /// Navigate to [`Referrer`] across R9(1-M)
+    pub fn r9_referrer<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referrer> {
+        store
+            .iter_referrer()
+            .filter_map(|referrer| {
+                if referrer.cardinality == self.id() {
+                    Some(referrer)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

@@ -709,6 +709,7 @@ pub(crate) fn render_new_instance_new(
     structure: &Structure,
     table: &SymbolTable,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -797,7 +798,7 @@ pub(crate) fn render_new_instance_new(
     for (field, rval) in tuples {
         let f = field.r27_field(woog)[0];
         let ty = f.r29_grace_type(woog)[0];
-        let rval_string = typecheck_and_coerce(ty, rval, config, woog, domain)?;
+        let rval_string = typecheck_and_coerce(ty, rval, config, imports, woog, domain)?;
         emit!(buffer, "{}: {},", f.as_ident(), rval_string);
     }
 
@@ -815,6 +816,7 @@ fn typecheck_and_coerce(
     lhs_ty: &GraceType,
     rhs: &Variable,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<String> {
@@ -892,7 +894,7 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            if local_object_is_enum(obj, config, domain) {
+                            if object_is_enum(obj, config, imports, domain)? {
                                 format!("{}.id()", rhs.as_ident())
                             } else {
                                 format!("{}.id", rhs.as_ident())
@@ -945,6 +947,7 @@ pub(crate) fn render_method_new(
     buffer: &mut Buffer,
     obj: &Object,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -1043,6 +1046,7 @@ pub(crate) fn render_method_new(
                     .pop()
                     .unwrap(),
                 config,
+                imports,
                 woog,
                 domain,
             )?;
@@ -1077,6 +1081,7 @@ macro_rules! test_local_and_imports {
                 );
                 let imports = imports.unwrap();
 
+                // We are shadowing domain here...
                 let domain = imports.get(&imported.domain);
                 ensure!(
                     domain.is_some(),
@@ -1090,11 +1095,16 @@ macro_rules! test_local_and_imports {
                 let domain = domain.unwrap();
 
                 ensure!(
-                    domain.sarzak().exhume_object(&object.id).is_some(),
+                    // This is not the domain you were passed.
+                    // Note that we are testing for the id of the imported object.
+                    // Oddly this test worked before, and now it's broken. More
+                    // interesting perhaps is that we don't actually use this id
+                    // anyplace else...
+                    domain.sarzak().exhume_object(&imported.id).is_some(),
                     CompilerSnafu {
                         description: format!(
-                            "object `{}` is not found in imported domain {}",
-                            object.name, imported.domain
+                            "object `{}` ({}) is not found in imported domain {}",
+                            object.name, object.id, imported.domain
                         )
                     }
                 );

@@ -1,12 +1,11 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"borrowed-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-use-statements"}}}
+use crate::domain::isa::store::ObjectStore as IsaStore;
 use crate::domain::isa::types::mutable::MUTABLE;
 use crate::domain::isa::types::ownership::Ownership;
 use crate::domain::isa::types::shared::SHARED;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use crate::domain::isa::store::ObjectStore as IsaStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-enum-documentation"}}}

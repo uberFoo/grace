@@ -66,6 +66,7 @@ pub(crate) fn generate_binary_referent_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    id: &str,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -93,27 +94,27 @@ pub(crate) fn generate_binary_referent_rels(
 
         match card {
             Cardinality::One(_) => match my_cond {
-                Conditionality::Unconditional(_) => {
-                    backward_one(buffer, obj, r_obj, binary, &store, referrer, &woog, &domain)?
-                }
+                Conditionality::Unconditional(_) => backward_one(
+                    buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
+                )?,
                 Conditionality::Conditional(_) => match other_cond {
                     Conditionality::Unconditional(_) => backward_one_conditional(
-                        buffer, obj, r_obj, binary, &store, referrer, &woog, &domain,
+                        buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
                     )?,
                     Conditionality::Conditional(_) => backward_one_biconditional(
-                        buffer, obj, r_obj, binary, &store, referrer, &woog, &domain,
+                        buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
                     )?,
                 },
             },
             // It's interesting that there are only really two possibilities, and
             // that neither of them depend on the conditionality of the this side.
             Cardinality::Many(_) => match other_cond {
-                Conditionality::Unconditional(_) => {
-                    backward_1_m(buffer, obj, r_obj, binary, store, referrer, woog, domain)?
-                }
-                Conditionality::Conditional(_) => {
-                    backward_1_mc(buffer, obj, r_obj, binary, store, referrer, woog, domain)?
-                }
+                Conditionality::Unconditional(_) => backward_1_m(
+                    buffer, obj, r_obj, id, binary, store, referrer, woog, domain,
+                )?,
+                Conditionality::Conditional(_) => backward_1_mc(
+                    buffer, obj, r_obj, id, binary, store, referrer, woog, domain,
+                )?,
             },
         }
     }
@@ -189,6 +190,7 @@ pub(crate) fn generate_assoc_referent_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    id: &str,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -224,6 +226,7 @@ pub(crate) fn generate_assoc_referent_rels(
                     buffer,
                     obj,
                     r_obj,
+                    id,
                     assoc.number,
                     store,
                     referential_attribute,
@@ -234,6 +237,7 @@ pub(crate) fn generate_assoc_referent_rels(
                     buffer,
                     obj,
                     r_obj,
+                    id,
                     assoc.number,
                     store,
                     referential_attribute,
@@ -245,6 +249,7 @@ pub(crate) fn generate_assoc_referent_rels(
                 buffer,
                 obj,
                 r_obj,
+                id,
                 assoc.number,
                 store,
                 referential_attribute,
@@ -391,6 +396,7 @@ fn backward_one(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -422,10 +428,11 @@ fn backward_one(
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id).unwrap()]",
+                ".find(|{}| {}.{} == self.{}).unwrap()]",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referrer.referential_attribute.as_ident()
+                referrer.referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "}}");
 
@@ -438,6 +445,7 @@ fn backward_one_conditional(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -474,10 +482,11 @@ fn backward_one_conditional(
             );
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id);",
+                ".find(|{}| {}.{} == self.{});",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referrer.referential_attribute.as_ident()
+                referrer.referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "match {} {{", r_obj.as_ident());
             emit!(
@@ -499,6 +508,7 @@ fn backward_one_biconditional(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -535,10 +545,11 @@ fn backward_one_biconditional(
             );
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == Some(self.id));",
+                ".find(|{}| {}.{} == Some(self.{}));",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referrer.referential_attribute.as_ident()
+                referrer.referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "match {} {{", r_obj.as_ident());
             emit!(
@@ -560,6 +571,7 @@ fn backward_1_m(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -591,10 +603,11 @@ fn backward_1_m(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".filter_map(|{}| if {}.{} == self.id {{ Some({}) }} else {{ None }})",
+                ".filter_map(|{}| if {}.{} == self.{} {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
                 referrer.referential_attribute.as_ident(),
+                id,
                 r_obj.as_ident(),
             );
             emit!(buffer, ".collect()");
@@ -609,6 +622,7 @@ fn backward_1_mc(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -640,10 +654,11 @@ fn backward_1_mc(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".filter_map(|{}| if {}.{} == Some(self.id) {{ Some({}) }} else {{ None }})",
+                ".filter_map(|{}| if {}.{} == Some(self.{}) {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
                 referrer.referential_attribute.as_ident(),
+                id,
                 r_obj.as_ident(),
             );
             emit!(buffer, ".collect()");
@@ -703,6 +718,7 @@ fn backward_assoc_one(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     number: i64,
     store: &External,
     referential_attribute: &String,
@@ -734,10 +750,11 @@ fn backward_assoc_one(
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id).unwrap()]",
+                ".find(|{}| {}.{} == self.{}).unwrap()]",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referential_attribute.as_ident()
+                referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "}}");
 
@@ -750,6 +767,7 @@ fn backward_assoc_one_conditional(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     number: i64,
     store: &External,
     referential_attribute: &String,
@@ -786,10 +804,11 @@ fn backward_assoc_one_conditional(
             );
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id);",
+                ".find(|{}| {}.{} == self.{});",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referential_attribute.as_ident()
+                referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "match {} {{", r_obj.as_ident());
             emit!(
@@ -811,6 +830,7 @@ fn backward_assoc_many(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     number: i64,
     store: &External,
     referential_attribute: &String,
@@ -842,10 +862,11 @@ fn backward_assoc_many(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".filter_map(|{}| if {}.{} == self.id {{ Some({}) }} else {{ None }})",
+                ".filter_map(|{}| if {}.{} == self.{} {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
                 referential_attribute.as_ident(),
+                id,
                 r_obj.as_ident(),
             );
             emit!(buffer, ".collect()");

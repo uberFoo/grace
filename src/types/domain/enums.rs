@@ -16,13 +16,19 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments, find_store, get_subtypes_sorted, object_is_enum, object_is_singleton,
-        object_is_supertype,
+        emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
+        get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
+        get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
+        get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
     types::{
-        domain::rels::generate_subtype_rels, CodeWriter, MethodImplementation, TypeDefinition,
+        domain::rels::{
+            generate_assoc_referent_rels, generate_assoc_referrer_rels,
+            generate_binary_referent_rels, generate_binary_referrer_rels, generate_subtype_rels,
+        },
+        CodeWriter, MethodImplementation, TypeDefinition,
     },
 };
 
@@ -66,6 +72,32 @@ impl CodeWriter for Enum {
         );
         let woog = woog.as_ref().unwrap();
 
+        // These need to be sorted, as they are output as attributes and we require
+        // stable output.
+        let mut referrer_objs = get_objs_for_referrers_sorted!(obj, domain.sarzak());
+        referrer_objs.append(&mut get_objs_for_assoc_referents_sorted!(
+            obj,
+            domain.sarzak()
+        ));
+        let referrer_objs: HashSet<_> = referrer_objs.into_iter().collect();
+        // Remove ourselves, should that happen. Spoiler alert: it does.
+        let referrer_objs: HashSet<_> = referrer_objs
+            .into_iter()
+            .filter(|r_obj| r_obj.id != obj.id)
+            .collect();
+
+        let mut referent_objs = get_objs_for_referents_sorted!(obj, domain.sarzak());
+        referent_objs.append(&mut get_objs_for_assoc_referrers_sorted!(
+            obj,
+            domain.sarzak()
+        ));
+        let referent_objs: HashSet<_> = referent_objs.into_iter().collect();
+        // Remove ourselves, should that happen. Spoiler alert: it does.
+        let referent_objs: HashSet<_> = referent_objs
+            .into_iter()
+            .filter(|r_obj| r_obj.id != obj.id)
+            .collect();
+
         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
 
         // Output the use statements.
@@ -73,7 +105,10 @@ impl CodeWriter for Enum {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
+                let mut stores = HashSet::default();
                 let mut uses = HashSet::default();
+                let mut import_store = false;
+
                 // Everything has an `id`, everything needs this.
                 uses.insert("use uuid::Uuid;".to_owned());
 
@@ -84,11 +119,43 @@ impl CodeWriter for Enum {
                     }
                 }
 
+                // 🚧 I don't think that this will ever apply, otherwise it would
+                // be a hybrid. This use-statement logic can probably be refactored.
+                //
+                // Add use statements for all the referrers.
+                for r_obj in &referrer_objs {
+                    if config.is_imported(&r_obj.id) {
+                        let imported_object = config.get_imported(&r_obj.id).unwrap();
+                        stores.insert(imported_object.domain.as_str());
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            imported_object.domain,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    } else {
+                        import_store = true;
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    }
+                }
+
+                // Add use statements for all the referents.
+                for r_obj in &referent_objs {
+                    import_store = true;
+                    uses.insert(format!(
+                        "use crate::{}::types::{}::{};",
+                        module,
+                        r_obj.as_ident(),
+                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    ));
+                }
+
                 // Add use statements for supertypes.
-                // Include the store? There is a situation where the store needs
-                // to be added. I only just ran across it. There is a test case for it
-                // It's the ownership one. This fails looking for IsaStore in borrowed.rs.
-                let mut import_store = false;
                 for subtype in obj.r15c_subtype(domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
@@ -149,13 +216,17 @@ impl CodeWriter for Enum {
                     }
                 }
 
-                for use_statement in uses {
-                    emit!(buffer, "{}", use_statement);
+                // Add the use statements, plus the use for any imported objects.
+                for use_path in uses {
+                    emit!(buffer, "{}", use_path);
                 }
 
+                // Add the ObjectStore, plus the store for any imported objects.
                 if import_store || !only_singletons {
-                    emit!(buffer, "");
-                    let store = find_store(module, woog, domain);
+                    stores.insert(module);
+                }
+                for import in stores {
+                    let store = find_store(import, woog, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
 
@@ -312,6 +383,10 @@ impl CodeWriter for EnumRelNavImpl {
         );
         let woog = woog.as_ref().unwrap();
 
+        generate_binary_referrer_rels(buffer, config, module, obj, woog, domain)?;
+        generate_binary_referent_rels(buffer, config, module, obj, "id()", woog, domain)?;
+        generate_assoc_referrer_rels(buffer, config, module, obj, woog, domain)?;
+        generate_assoc_referent_rels(buffer, config, module, obj, "id()", woog, domain)?;
         generate_subtype_rels(buffer, config, module, obj, woog, domain)?;
 
         Ok(())
