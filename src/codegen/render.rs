@@ -557,6 +557,8 @@ impl Sanitize for &str {
             "Uuid" => "woog_uuid".to_owned(),
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
+            "super" => "x_super".to_owned(),
+            "Super" => "x_super".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -590,6 +592,8 @@ impl Sanitize for String {
             "Uuid" => "woog_uuid".to_owned(),
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
+            "super" => "x_super".to_owned(),
+            "Super" => "x_super".to_owned(),
             _ => self.to_owned(),
         }
     }
