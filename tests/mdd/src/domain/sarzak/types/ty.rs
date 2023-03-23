@@ -1,5 +1,7 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"ty-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-use-statements"}}}
+use crate::domain::sarzak::store::ObjectStore as SarzakStore;
+use crate::domain::sarzak::types::attribute::Attribute;
 use crate::domain::sarzak::types::boolean::BOOLEAN;
 use crate::domain::sarzak::types::external::External;
 use crate::domain::sarzak::types::float::FLOAT;
@@ -9,8 +11,6 @@ use crate::domain::sarzak::types::string::STRING;
 use crate::domain::sarzak::types::uuid::UUID;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-enum-documentation"}}}
@@ -91,6 +91,15 @@ impl Ty {
             Ty::String(id) => *id,
             Ty::Uuid(id) => *id,
         }
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-struct-impl-nav-backward-one-to-attribute"}}}
+    /// Navigate to [`Attribute`] across R2(1-1)
+    pub fn r2_attribute<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Attribute> {
+        vec![store
+            .iter_attribute()
+            .find(|attribute| attribute.ty == self.id())
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

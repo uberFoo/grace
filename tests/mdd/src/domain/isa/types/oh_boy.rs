@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use crate::domain::isa::store::ObjectStore as IsaStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-const-documentation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-documentation"}}}
 /// This should break all sorts of shit.
 ///
@@ -24,7 +23,6 @@ use crate::domain::isa::store::ObjectStore as IsaStore;
 /// besides id) until this moment.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-const-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct OhBoy {

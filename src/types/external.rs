@@ -40,7 +40,7 @@ impl FileGenerator for ExternalGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -60,6 +60,12 @@ impl FileGenerator for ExternalGenerator {
             }
         );
         let woog = woog.as_ref().unwrap();
+        ensure!(
+            imports.is_some(),
+            CompilerSnafu {
+                description: "imports is required by DomainNewImpl"
+            }
+        );
 
         let object = domain.sarzak().exhume_object(&obj_id).unwrap();
         let external = config.get_external(&obj_id).unwrap();
@@ -148,7 +154,7 @@ impl FileGenerator for ExternalGenerator {
                 );
 
                 // Darn. So I need to insert a local here. And hybrid has similar needs.
-                render_method_new(buffer, object, config, woog, domain)?;
+                render_method_new(buffer, object, config, imports, woog, domain)?;
 
                 emit!(buffer, "}}");
 

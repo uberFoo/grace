@@ -17,8 +17,8 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_referrers_sorted, get_subtypes_sorted, local_object_is_singleton,
-        local_object_is_supertype, object_is_supertype,
+        get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted, get_subtypes_sorted,
+        local_object_is_singleton, local_object_is_supertype, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
@@ -495,7 +495,7 @@ impl CodeWriter for DomainFromImpl {
                         }
 
                         // Referential Attributes
-                        for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
+                        for referrer in get_binary_referrers_sorted!(obj, domain.sarzak()) {
                             emit!(
                                 buffer,
                                 "{}: src.{},",
@@ -504,18 +504,24 @@ impl CodeWriter for DomainFromImpl {
                             );
                         }
                         for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-                            emit!(
-                                buffer,
-                                "{}: src.{},",
-                                assoc_referrer.one_referential_attribute.as_ident(),
-                                assoc_referrer.one_referential_attribute.as_ident()
+                            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+                            let referents = get_assoc_referent_from_referrer_sorted!(
+                                assoc_referrer,
+                                domain.sarzak()
                             );
-                            emit!(
-                                buffer,
-                                "{}: src.{},",
-                                assoc_referrer.other_referential_attribute.as_ident(),
-                                assoc_referrer.other_referential_attribute.as_ident()
-                            );
+
+                            for referent in referents {
+                                let an_ass =
+                                    referent.r22_an_associative_referent(domain.sarzak())[0];
+                                let assoc_obj = referent.r25_object(domain.sarzak())[0];
+
+                                emit!(
+                                    buffer,
+                                    "{}: src.{},",
+                                    an_ass.referential_attribute.as_ident(),
+                                    an_ass.referential_attribute.as_ident()
+                                );
+                            }
                         }
                         emit!(buffer, "}}");
                         emit!(buffer, "}}");

@@ -2,6 +2,7 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-use-statements"}}}
 use uuid::Uuid;
 
+use crate::domain::isa::types::baz::Baz;
 use crate::domain::isa::types::simple_subtype_a::SimpleSubtypeA;
 use crate::domain::isa::types::simple_subtype_b::SIMPLE_SUBTYPE_B;
 use serde::{Deserialize, Serialize};
@@ -80,6 +81,12 @@ impl SimpleSupertype {
         };
         store.inter_simple_supertype(new.clone());
         new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-nav-backward-one-to-baz"}}}
+    /// Navigate to [`Baz`] across R4(1-1)
+    pub fn r4_baz<'a>(&'a self, store: &'a IsaStore) -> Vec<&Baz> {
+        vec![store.iter_baz().find(|baz| baz.fugue == self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

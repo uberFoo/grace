@@ -7,6 +7,7 @@
 //!
 //! # Contents:
 //!
+//! * [`Baz`]
 //! * [`Borrowed`]
 //! * [`Henry`]
 //! * [`NotImportant`]
@@ -26,12 +27,13 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa::types::{
-    Borrowed, Henry, NotImportant, OhBoy, Ownership, Reference, SimpleSubtypeA, SimpleSupertype,
-    SubtypeA, SubtypeB, SuperT, MUTABLE, OWNED, SHARED,
+    Baz, Borrowed, Henry, NotImportant, OhBoy, Ownership, Reference, SimpleSubtypeA,
+    SimpleSupertype, SubtypeA, SubtypeB, SuperT, MUTABLE, OWNED, SHARED,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
+    baz: HashMap<Uuid, Baz>,
     borrowed: HashMap<Uuid, Borrowed>,
     henry: HashMap<Uuid, Henry>,
     not_important: HashMap<Uuid, NotImportant>,
@@ -48,6 +50,7 @@ pub struct ObjectStore {
 impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
+            baz: HashMap::default(),
             borrowed: HashMap::default(),
             henry: HashMap::default(),
             not_important: HashMap::default(),
@@ -72,6 +75,30 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa-object-store-methods"}}}
+    /// Inter [`Baz`] into the store.
+    ///
+    pub fn inter_baz(&mut self, baz: Baz) {
+        self.baz.insert(baz.id, baz);
+    }
+
+    /// Exhume [`Baz`] from the store.
+    ///
+    pub fn exhume_baz(&self, id: &Uuid) -> Option<&Baz> {
+        self.baz.get(id)
+    }
+
+    /// Exhume [`Baz`] from the store — mutably.
+    ///
+    pub fn exhume_baz_mut(&mut self, id: &Uuid) -> Option<&mut Baz> {
+        self.baz.get_mut(id)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Baz>`.
+    ///
+    pub fn iter_baz(&self) -> impl Iterator<Item = &Baz> {
+        self.baz.values()
+    }
+
     /// Inter [`Borrowed`] into the store.
     ///
     pub fn inter_borrowed(&mut self, borrowed: Borrowed) {
@@ -351,6 +378,18 @@ impl ObjectStore {
         let path = path.join("Isa Relationship.json");
         fs::create_dir_all(&path)?;
 
+        // Persist Baz.
+        {
+            let path = path.join("baz");
+            fs::create_dir_all(&path)?;
+            for baz in self.baz.values() {
+                let path = path.join(format!("{}.json", baz.id));
+                let file = fs::File::create(path)?;
+                let mut writer = io::BufWriter::new(file);
+                serde_json::to_writer_pretty(&mut writer, &baz)?;
+            }
+        }
+
         // Persist Borrowed.
         {
             let path = path.join("borrowed");
@@ -496,6 +535,20 @@ impl ObjectStore {
         let path = path.join("Isa Relationship.json");
 
         let mut store = Self::new();
+
+        // Load Baz.
+        {
+            let path = path.join("baz");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let baz: Baz = serde_json::from_reader(reader)?;
+                store.baz.insert(baz.id, baz);
+            }
+        }
 
         // Load Borrowed.
         {

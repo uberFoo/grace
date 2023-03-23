@@ -21,7 +21,7 @@ use crate::{
         diff_engine::DirectiveKind,
         emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_referrers_sorted, object_is_hybrid, object_is_singleton, object_is_supertype,
+        get_binary_referrers_sorted, object_is_hybrid, object_is_singleton, object_is_supertype,
         render::{render_attributes, RenderConst, RenderIdent, RenderType},
         render_make_uuid, render_method_definition, render_new_instance,
     },
@@ -180,7 +180,7 @@ impl CodeWriter for DefaultStruct {
 
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        let referrers = get_referrers_sorted!(obj, domain.sarzak());
+        let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
         let has_referential_attrs = referrers.len() > 0;
 
         // Everything has an `id`, everything needs these.
@@ -467,7 +467,11 @@ impl CodeWriter for DefaultNewImpl {
         //         let obj_id = obj_id.unwrap();
         //         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
+<<<<<<< HEAD
         //         let referrers = get_referrers_sorted!(obj, domain.sarzak());
+=======
+        let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
+>>>>>>> develop
 
         //         // Collect the attributes
         //         let mut params: Vec<Parameter> = Vec::new();

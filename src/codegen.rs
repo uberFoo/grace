@@ -36,8 +36,6 @@ use crate::{
 
 macro_rules! get_subtypes_sorted {
     ($obj:expr, $store:expr) => {{
-        // I'm convinced that R14 and R15 are broken.
-        // They are probably aliased. I wonder why I was convinced of that...
         let sup = $obj.r14_supertype($store)[0];
         let isa = sup.r13_isa($store)[0];
         let mut subtypes = isa.r27_subtype($store);
@@ -52,16 +50,44 @@ macro_rules! get_subtypes_sorted {
 }
 pub(crate) use get_subtypes_sorted;
 
+macro_rules! get_assoc_referent_from_referrer_sorted {
+    ($obj:expr, $store:expr) => {{
+        let assoc = $obj.r21_associative($store)[0];
+        let mut referrers = assoc
+            .r22_an_associative_referent($store)
+            .iter()
+            .map(|r| r.r22_associative_referent($store)[0])
+            .collect::<Vec<_>>();
+
+        referrers.sort_by(|a, b| {
+            let a = a.r25_object($store)[0];
+            let b = b.r25_object($store)[0];
+            a.name.cmp(&b.name)
+        });
+
+        referrers
+    }};
+}
+pub(crate) use get_assoc_referent_from_referrer_sorted;
+
 macro_rules! get_objs_for_assoc_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
         let referrers = $obj.r26_associative_referrer($store);
         for referrer in &referrers {
+            // For some stupid reason the compiler can't see this macro.
+            // let referents = get_assoc_referent_from_referrer_sorted!(referrer, $store);
             let assoc = referrer.r21_associative($store)[0];
-            let one = assoc.r23_associative_referent($store)[0];
-            let other = assoc.r22_associative_referent($store)[0];
-            objs.push(one.r25_object($store)[0]);
-            objs.push(other.r25_object($store)[0]);
+            let referents = assoc
+                .r22_an_associative_referent($store)
+                .iter()
+                .map(|r| {
+                    let referent = r.r22_associative_referent($store)[0];
+                    let obj = referent.r25_object($store)[0];
+                    obj
+                })
+                .collect::<Vec<_>>();
+            objs.extend(referents);
         }
 
         objs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -71,31 +97,15 @@ macro_rules! get_objs_for_assoc_referrers_sorted {
 }
 pub(crate) use get_objs_for_assoc_referrers_sorted;
 
-macro_rules! get_objs_for_assoc_referents_sorted {
+macro_rules! get_assoc_referrer_obj_from_obj_via_assoc_referent {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
         let referents = $obj.r25_associative_referent($store);
         for referent in &referents {
-            let r23 = referent.r23c_associative($store);
-
-            if r23.is_empty() {
-                let assoc = referent.r22c_associative($store)[0];
-                let referrer = assoc.r21_associative_referrer($store)[0];
-                objs.push(referrer.r26_object($store)[0]);
-            } else {
-                let assoc = r23[0];
-                let referrer = assoc.r21_associative_referrer($store)[0];
-                objs.push(referrer.r26_object($store)[0]);
-            }
-
-            // if let Some(assoc) = sarzak_get_one_r_assoc_across_r23!(referent, $store) {
-            //     let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
-            //     objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
-            // } else {
-            //     let assoc = sarzak_get_one_r_assoc_across_r22!(referent, $store);
-            //     let referrer = sarzak_get_one_ass_from_across_r21!(assoc, $store);
-            //     objs.push(sarzak_get_one_obj_across_r26!(referrer, $store));
-            // }
+            let aar = referent.r22_an_associative_referent($store)[0];
+            let assoc = aar.r22_associative($store)[0];
+            let referrer = assoc.r21_associative_referrer($store)[0];
+            objs.push(referrer.r26_object($store)[0]);
         }
 
         objs.sort_by(|a, b| a.name.cmp(&b.name));
@@ -103,12 +113,12 @@ macro_rules! get_objs_for_assoc_referents_sorted {
         objs
     }};
 }
-pub(crate) use get_objs_for_assoc_referents_sorted;
+pub(crate) use get_assoc_referrer_obj_from_obj_via_assoc_referent;
 
-macro_rules! get_objs_for_referrers_sorted {
+macro_rules! get_objs_for_binary_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
-        let referrers = get_referrers_sorted!($obj, $store);
+        let referrers = get_binary_referrers_sorted!($obj, $store);
         for referrer in &referrers {
             let binary = referrer.r6_binary($store)[0];
             let referent = binary.r5_referent($store)[0];
@@ -119,12 +129,12 @@ macro_rules! get_objs_for_referrers_sorted {
         objs
     }};
 }
-pub(crate) use get_objs_for_referrers_sorted;
+pub(crate) use get_objs_for_binary_referrers_sorted;
 
-macro_rules! get_objs_for_referents_sorted {
+macro_rules! get_objs_for_binary_referents_sorted {
     ($obj:expr, $store:expr) => {{
         let mut objs = Vec::new();
-        let referents = get_referents_sorted!($obj, $store);
+        let referents = get_binary_referents_sorted!($obj, $store);
         for referent in &referents {
             let binary = referent.r5_binary($store)[0];
             let referrer = binary.r6_referrer($store)[0];
@@ -135,9 +145,9 @@ macro_rules! get_objs_for_referents_sorted {
         objs
     }};
 }
-pub(crate) use get_objs_for_referents_sorted;
+pub(crate) use get_objs_for_binary_referents_sorted;
 
-macro_rules! get_referrers_sorted {
+macro_rules! get_binary_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut referrers = $obj.r17_referrer($store);
         referrers.sort_by(|a, b| {
@@ -155,9 +165,9 @@ macro_rules! get_referrers_sorted {
         referrers
     }};
 }
-pub(crate) use get_referrers_sorted;
+pub(crate) use get_binary_referrers_sorted;
 
-macro_rules! get_referents_sorted {
+macro_rules! get_binary_referents_sorted {
     ($obj:expr, $store:expr) => {{
         let mut referents = $obj.r16_referent($store);
         referents.sort_by(|a, b| {
@@ -175,7 +185,7 @@ macro_rules! get_referents_sorted {
         referents
     }};
 }
-pub(crate) use get_referents_sorted;
+pub(crate) use get_binary_referents_sorted;
 
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
@@ -791,6 +801,7 @@ pub(crate) fn render_new_instance_new(
     structure: &StructExpression,
     table: &SymbolTable,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -907,6 +918,7 @@ fn typecheck_and_coerce(
     lhs_ty: &GraceType,
     rhs: &Variable,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<String> {
@@ -984,7 +996,7 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            if local_object_is_enum(obj, config, domain) {
+                            if object_is_enum(obj, config, imports, domain)? {
                                 format!("{}.id()", rhs.as_ident())
                             } else {
                                 format!("{}.id", rhs.as_ident())
@@ -1037,6 +1049,7 @@ pub(crate) fn render_method_new(
     buffer: &mut Buffer,
     obj: &Object,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -1170,6 +1183,7 @@ macro_rules! test_local_and_imports {
                 );
                 let imports = imports.unwrap();
 
+                // We are shadowing domain here...
                 let domain = imports.get(&imported.domain);
                 ensure!(
                     domain.is_some(),
@@ -1183,11 +1197,16 @@ macro_rules! test_local_and_imports {
                 let domain = domain.unwrap();
 
                 ensure!(
-                    domain.sarzak().exhume_object(&object.id).is_some(),
+                    // This is not the domain you were passed.
+                    // Note that we are testing for the id of the imported object.
+                    // Oddly this test worked before, and now it's broken. More
+                    // interesting perhaps is that we don't actually use this id
+                    // anyplace else...
+                    domain.sarzak().exhume_object(&imported.id).is_some(),
                     CompilerSnafu {
                         description: format!(
-                            "object `{}` is not found in imported domain {}",
-                            object.name, imported.domain
+                            "object `{}` ({}) is not found in imported domain {}",
+                            object.name, object.id, imported.domain
                         )
                     }
                 );

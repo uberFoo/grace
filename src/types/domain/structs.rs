@@ -22,9 +22,9 @@ use crate::{
         diff_engine::DirectiveKind,
         emit_object_comments, find_store,
         generator::CodeWriter,
-        get_objs_for_assoc_referents_sorted, get_objs_for_assoc_referrers_sorted,
-        get_objs_for_referents_sorted, get_objs_for_referrers_sorted, get_referents_sorted,
-        get_referrers_sorted,
+        get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
+        get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
+        get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
@@ -85,8 +85,8 @@ impl CodeWriter for Struct {
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
-        let mut referrer_objs = get_objs_for_referrers_sorted!(obj, domain.sarzak());
-        referrer_objs.append(&mut get_objs_for_assoc_referents_sorted!(
+        let mut referrer_objs = get_objs_for_binary_referrers_sorted!(obj, domain.sarzak());
+        referrer_objs.append(&mut get_assoc_referrer_obj_from_obj_via_assoc_referent!(
             obj,
             domain.sarzak()
         ));
@@ -97,7 +97,7 @@ impl CodeWriter for Struct {
             .filter(|r_obj| r_obj.id != obj.id)
             .collect();
 
-        let mut referent_objs = get_objs_for_referents_sorted!(obj, domain.sarzak());
+        let mut referent_objs = get_objs_for_binary_referents_sorted!(obj, domain.sarzak());
         referent_objs.append(&mut get_objs_for_assoc_referrers_sorted!(
             obj,
             domain.sarzak()
@@ -394,7 +394,7 @@ impl CodeWriter for StructNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -412,11 +412,13 @@ impl CodeWriter for StructNewImpl {
                 description: "woog is required by DomainNewImpl"
             }
         );
-
-        let woog = match woog {
-            Some(woog) => woog,
-            None => unreachable!(),
-        };
+        let woog = woog.as_ref().unwrap();
+        ensure!(
+            imports.is_some(),
+            CompilerSnafu {
+                description: "imports is required by DomainNewImpl"
+            }
+        );
 
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
@@ -449,7 +451,7 @@ impl CodeWriter for StructNewImpl {
         //     )?;
         // }
 
-        render_method_new(buffer, obj, config, woog, domain)
+        render_method_new(buffer, obj, config, imports, woog, domain)
     }
 }
 
@@ -497,9 +499,9 @@ impl CodeWriter for StructRelNavImpl {
         let woog = woog.as_ref().unwrap();
 
         generate_binary_referrer_rels(buffer, config, module, obj, woog, domain)?;
-        generate_binary_referent_rels(buffer, config, module, obj, woog, domain)?;
+        generate_binary_referent_rels(buffer, config, module, obj, "id", woog, domain)?;
         generate_assoc_referrer_rels(buffer, config, module, obj, woog, domain)?;
-        generate_assoc_referent_rels(buffer, config, module, obj, woog, domain)?;
+        generate_assoc_referent_rels(buffer, config, module, obj, "id", woog, domain)?;
         generate_subtype_rels(buffer, config, module, obj, woog, domain)?;
 
         Ok(())

@@ -14,7 +14,8 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        find_store, get_referents_sorted, get_referrers_sorted, local_object_is_enum,
+        find_store, get_assoc_referent_from_referrer_sorted, get_binary_referents_sorted,
+        get_binary_referrers_sorted, local_object_is_enum,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -29,7 +30,7 @@ pub(crate) fn generate_binary_referrer_rels(
     domain: &Domain,
 ) -> Result<()> {
     // Generate binary relationship navigation for the referrer side.
-    for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
+    for referrer in get_binary_referrers_sorted!(obj, domain.sarzak()) {
         let binary = referrer.r6_binary(domain.sarzak())[0];
         let referent = binary.r5_referent(domain.sarzak())[0];
         let r_obj = referent.r16_object(domain.sarzak())[0];
@@ -66,11 +67,12 @@ pub(crate) fn generate_binary_referent_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    id: &str,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     // Generate binary relationship navigation for the referent side.
-    for referent in get_referents_sorted!(obj, domain.sarzak()) {
+    for referent in get_binary_referents_sorted!(obj, domain.sarzak()) {
         let binary = referent.r5_binary(domain.sarzak())[0];
         let referrer = binary.r6_referrer(domain.sarzak())[0];
         let r_obj = referrer.r17_object(domain.sarzak())[0];
@@ -93,27 +95,27 @@ pub(crate) fn generate_binary_referent_rels(
 
         match card {
             Cardinality::One(_) => match my_cond {
-                Conditionality::Unconditional(_) => {
-                    backward_one(buffer, obj, r_obj, binary, &store, referrer, &woog, &domain)?
-                }
+                Conditionality::Unconditional(_) => backward_one(
+                    buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
+                )?,
                 Conditionality::Conditional(_) => match other_cond {
                     Conditionality::Unconditional(_) => backward_one_conditional(
-                        buffer, obj, r_obj, binary, &store, referrer, &woog, &domain,
+                        buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
                     )?,
                     Conditionality::Conditional(_) => backward_one_biconditional(
-                        buffer, obj, r_obj, binary, &store, referrer, &woog, &domain,
+                        buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
                     )?,
                 },
             },
             // It's interesting that there are only really two possibilities, and
             // that neither of them depend on the conditionality of the this side.
             Cardinality::Many(_) => match other_cond {
-                Conditionality::Unconditional(_) => {
-                    backward_1_m(buffer, obj, r_obj, binary, store, referrer, woog, domain)?
-                }
-                Conditionality::Conditional(_) => {
-                    backward_1_mc(buffer, obj, r_obj, binary, store, referrer, woog, domain)?
-                }
+                Conditionality::Unconditional(_) => backward_1_m(
+                    buffer, obj, r_obj, id, binary, store, referrer, woog, domain,
+                )?,
+                Conditionality::Conditional(_) => backward_1_mc(
+                    buffer, obj, r_obj, id, binary, store, referrer, woog, domain,
+                )?,
             },
         }
     }
@@ -132,53 +134,32 @@ pub(crate) fn generate_assoc_referrer_rels(
     // Generate associative relationship navigation for the referrer side.
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
         let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+        let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
 
-        let one = assoc.r23_associative_referent(domain.sarzak())[0];
-        let one_obj = one.r25_object(domain.sarzak())[0];
+        for referent in referents {
+            let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+            let assoc_obj = referent.r25_object(domain.sarzak())[0];
 
-        let other = assoc.r22_associative_referent(domain.sarzak())[0];
-        let other_obj = other.r25_object(domain.sarzak())[0];
+            let module = if config.is_imported(&assoc_obj.id) {
+                config.get_imported(&assoc_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
 
-        let module = if config.is_imported(&one_obj.id) {
-            config.get_imported(&one_obj.id).unwrap().domain.as_str()
-        } else {
-            module
-        };
-
-        // Grab a reference to the store so that we can use it to exhume
-        // things.
-        let store = find_store(module, woog, domain);
-
-        forward_assoc(
-            buffer,
-            obj,
-            &assoc_referrer.one_referential_attribute,
-            assoc.number,
-            store,
-            one_obj,
-            woog,
-            domain,
-        )?;
-
-        let module = if config.is_imported(&other_obj.id) {
-            config.get_imported(&one_obj.id).unwrap().domain.as_str()
-        } else {
-            module
-        };
-
-        // Grab a reference to the store so that we can use it to exhume
-        // things.
-        let store = find_store(module, woog, domain);
-        forward_assoc(
-            buffer,
-            obj,
-            &assoc_referrer.other_referential_attribute,
-            assoc.number,
-            store,
-            other_obj,
-            woog,
-            domain,
-        )?;
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let store = find_store(module, woog, domain);
+            forward_assoc(
+                buffer,
+                obj,
+                &an_ass.referential_attribute,
+                assoc.number,
+                store,
+                assoc_obj,
+                woog,
+                domain,
+            )?;
+        }
     }
 
     Ok(())
@@ -189,21 +170,17 @@ pub(crate) fn generate_assoc_referent_rels(
     config: &GraceConfig,
     module: &str,
     obj: &Object,
+    id: &str,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     // Generate associative relationship navigation for the referent side.
     for assoc_referent in obj.r25_associative_referent(domain.sarzak()) {
-        let r23 = assoc_referent.r23c_associative(domain.sarzak());
-        let (assoc, referrer, referential_attribute) = if r23.is_empty() {
-            let assoc = assoc_referent.r22c_associative(domain.sarzak())[0];
-            let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
-            (assoc, referrer, &referrer.other_referential_attribute)
-        } else {
-            let assoc = r23[0];
-            let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
-            (assoc, referrer, &referrer.one_referential_attribute)
-        };
+        let an_ass = assoc_referent.r22_an_associative_referent(domain.sarzak())[0];
+        let assoc = an_ass.r22_associative(domain.sarzak())[0];
+        let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
+        let referential_attribute = &an_ass.referential_attribute;
+
         let card = assoc_referent.r88_cardinality(domain.sarzak())[0];
         let cond = assoc_referent.r77_conditionality(domain.sarzak())[0];
         let r_obj = referrer.r26_object(domain.sarzak())[0];
@@ -224,6 +201,7 @@ pub(crate) fn generate_assoc_referent_rels(
                     buffer,
                     obj,
                     r_obj,
+                    id,
                     assoc.number,
                     store,
                     referential_attribute,
@@ -234,6 +212,7 @@ pub(crate) fn generate_assoc_referent_rels(
                     buffer,
                     obj,
                     r_obj,
+                    id,
                     assoc.number,
                     store,
                     referential_attribute,
@@ -245,9 +224,10 @@ pub(crate) fn generate_assoc_referent_rels(
                 buffer,
                 obj,
                 r_obj,
+                id,
                 assoc.number,
                 store,
-                referential_attribute,
+                &referential_attribute,
                 woog,
                 domain,
             )?,
@@ -415,6 +395,7 @@ fn backward_one(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -458,10 +439,11 @@ fn backward_one(
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id).unwrap()]",
+                ".find(|{}| {}.{} == self.{}).unwrap()]",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referrer.referential_attribute.as_ident()
+                referrer.referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "}}");
 
@@ -474,6 +456,7 @@ fn backward_one_conditional(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -522,10 +505,11 @@ fn backward_one_conditional(
             );
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id);",
+                ".find(|{}| {}.{} == self.{});",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referrer.referential_attribute.as_ident()
+                referrer.referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "match {} {{", r_obj.as_ident());
             emit!(
@@ -547,6 +531,7 @@ fn backward_one_biconditional(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -595,10 +580,11 @@ fn backward_one_biconditional(
             );
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == Some(self.id));",
+                ".find(|{}| {}.{} == Some(self.{}));",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referrer.referential_attribute.as_ident()
+                referrer.referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "match {} {{", r_obj.as_ident());
             emit!(
@@ -620,6 +606,7 @@ fn backward_1_m(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -663,10 +650,11 @@ fn backward_1_m(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".filter_map(|{}| if {}.{} == self.id {{ Some({}) }} else {{ None }})",
+                ".filter_map(|{}| if {}.{} == self.{} {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
                 referrer.referential_attribute.as_ident(),
+                id,
                 r_obj.as_ident(),
             );
             emit!(buffer, ".collect()");
@@ -681,6 +669,7 @@ fn backward_1_mc(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
@@ -724,10 +713,11 @@ fn backward_1_mc(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".filter_map(|{}| if {}.{} == Some(self.id) {{ Some({}) }} else {{ None }})",
+                ".filter_map(|{}| if {}.{} == Some(self.{}) {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
                 referrer.referential_attribute.as_ident(),
+                id,
                 r_obj.as_ident(),
             );
             emit!(buffer, ".collect()");
@@ -799,6 +789,7 @@ fn backward_assoc_one(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     number: i64,
     store: &External,
     referential_attribute: &String,
@@ -842,10 +833,11 @@ fn backward_assoc_one(
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id).unwrap()]",
+                ".find(|{}| {}.{} == self.{}).unwrap()]",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referential_attribute.as_ident()
+                referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "}}");
 
@@ -858,6 +850,7 @@ fn backward_assoc_one_conditional(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     number: i64,
     store: &External,
     referential_attribute: &String,
@@ -906,10 +899,11 @@ fn backward_assoc_one_conditional(
             );
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.id);",
+                ".find(|{}| {}.{} == self.{});",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
-                referential_attribute.as_ident()
+                referential_attribute.as_ident(),
+                id
             );
             emit!(buffer, "match {} {{", r_obj.as_ident());
             emit!(
@@ -931,6 +925,7 @@ fn backward_assoc_many(
     buffer: &mut Buffer,
     obj: &Object,
     r_obj: &Object,
+    id: &str,
     number: i64,
     store: &External,
     referential_attribute: &String,
@@ -974,10 +969,11 @@ fn backward_assoc_many(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
-                ".filter_map(|{}| if {}.{} == self.id {{ Some({}) }} else {{ None }})",
+                ".filter_map(|{}| if {}.{} == self.{} {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
                 r_obj.as_ident(),
                 referential_attribute.as_ident(),
+                id,
                 r_obj.as_ident(),
             );
             emit!(buffer, ".collect()");

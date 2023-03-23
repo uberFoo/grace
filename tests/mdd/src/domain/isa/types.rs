@@ -1,6 +1,7 @@
 //! Domain to test the supertype/subtype relationship.
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"domain::isa-module-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa-module-definition"}}}
+pub mod baz;
 pub mod borrowed;
 pub mod henry;
 pub mod mutable;
@@ -17,6 +18,7 @@ pub mod subtype_a;
 pub mod subtype_b;
 pub mod super_t;
 
+pub use crate::domain::isa::baz::Baz;
 pub use crate::domain::isa::borrowed::Borrowed;
 pub use crate::domain::isa::henry::Henry;
 pub use crate::domain::isa::mutable::MUTABLE;

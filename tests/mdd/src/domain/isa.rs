@@ -46,6 +46,29 @@ mod tests {
     }
 
     #[test]
+    fn test_r3() {
+        let mut store = ObjectStore::new();
+
+        let oh_boy = OhBoy::new("The Wall Street Journal".to_owned(), &mut store);
+        let z = SimpleSubtypeA::new_oh_boy(&oh_boy, &mut store);
+        let henry = Henry::new("Henry".to_owned(), &z, &mut store);
+
+        assert_eq!(&z, henry.r3_simple_subtype_a(&store)[0]);
+        assert_eq!(&henry, z.r3_henry(&store)[0]);
+    }
+
+    #[test]
+    fn test_r4() {
+        let mut store = ObjectStore::new();
+
+        let b = SimpleSupertype::new_simple_subtype_b(false, &mut store);
+        let baz = Baz::new(1.0, &b, &mut store);
+
+        assert_eq!(&b, baz.r4_simple_supertype(&store)[0]);
+        assert_eq!(&baz, b.r4_baz(&store)[0]);
+    }
+
+    #[test]
     fn test_init() {
         let store = ObjectStore::new();
 

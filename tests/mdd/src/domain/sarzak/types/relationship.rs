@@ -1,12 +1,11 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"relationship-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-use-statements"}}}
+use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 use crate::domain::sarzak::types::associative::Associative;
 use crate::domain::sarzak::types::binary::Binary;
 use crate::domain::sarzak::types::isa::Isa;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-
-use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-enum-documentation"}}}
