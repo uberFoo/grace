@@ -22,7 +22,7 @@ use snafu::prelude::*;
 use crate::{
     codegen::{
         buffer::{emit, Buffer},
-        get_referrers_sorted,
+        get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
     },
     todo::{External, GType, ObjectMethod, Parameter as todoP},
 };
@@ -631,7 +631,7 @@ pub(crate) fn render_referential_attributes(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
+    for referrer in get_binary_referrers_sorted!(obj, domain.sarzak()) {
         let binary = referrer.r6_binary(domain.sarzak())[0];
         let referent = binary.r5_referent(domain.sarzak())[0];
         let r_obj = referent.r16_object(domain.sarzak())[0];
@@ -719,45 +719,27 @@ pub(crate) fn render_associative_attributes(
 ) -> Result<()> {
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
         let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+        let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
 
-        // ⛔️ It looks like r22 and r23 are aliased in the store.
-        // Sometimes code comes out with one before other, and
-        // sometimes other before one. See grace#39.
-        let one = assoc.r23_associative_referent(domain.sarzak())[0];
-        let one_obj = one.r25_object(domain.sarzak())[0];
+        for referent in referents {
+            let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+            let assoc_obj = referent.r25_object(domain.sarzak())[0];
 
-        let other = assoc.r22_associative_referent(domain.sarzak())[0];
-        let other_obj = other.r25_object(domain.sarzak())[0];
-
-        emit!(
-            buffer,
-            "/// R{}: [`{}`] '{}' [`{}`]",
-            assoc.number,
-            one_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-            // one_obj.description,
-            "🚧 Out of order — see sarzak#14.".to_owned(),
-            one_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-        );
-        emit!(
-            buffer,
-            "pub {}: Uuid,",
-            assoc_referrer.one_referential_attribute.as_ident(),
-        );
-
-        emit!(
-            buffer,
-            "/// R{}: [`{}`] '{}' [`{}`]",
-            assoc.number,
-            other_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-            // other_obj.description,
-            "🚧 Out of order — see sarzak#14.".to_owned(),
-            other_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-        );
-        emit!(
-            buffer,
-            "pub {}: Uuid,",
-            assoc_referrer.other_referential_attribute.as_ident(),
-        );
+            emit!(
+                buffer,
+                "/// R{}: [`{}`] '{}' [`{}`]",
+                assoc.number,
+                assoc_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                // one_obj.description,
+                "🚧 Out of order — see sarzak#14.".to_owned(),
+                assoc_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+            );
+            emit!(
+                buffer,
+                "pub {}: Uuid,",
+                an_ass.referential_attribute.as_ident(),
+            );
+        }
     }
 
     Ok(())

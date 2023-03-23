@@ -20,9 +20,10 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
-        get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
-        get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
+        emit_object_comments, find_store, get_assoc_referent_from_referrer_sorted,
+        get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
+        get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
+        get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
         get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
@@ -81,8 +82,8 @@ impl CodeWriter for Hybrid {
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
-        let mut referrer_objs = get_objs_for_referrers_sorted!(obj, domain.sarzak());
-        referrer_objs.append(&mut get_objs_for_assoc_referents_sorted!(
+        let mut referrer_objs = get_objs_for_binary_referrers_sorted!(obj, domain.sarzak());
+        referrer_objs.append(&mut get_assoc_referrer_obj_from_obj_via_assoc_referent!(
             obj,
             domain.sarzak()
         ));
@@ -93,7 +94,7 @@ impl CodeWriter for Hybrid {
             .filter(|r_obj| r_obj.id != obj.id)
             .collect();
 
-        let mut referent_objs = get_objs_for_referents_sorted!(obj, domain.sarzak());
+        let mut referent_objs = get_objs_for_binary_referents_sorted!(obj, domain.sarzak());
         referent_objs.append(&mut get_objs_for_assoc_referrers_sorted!(
             obj,
             domain.sarzak()
@@ -362,7 +363,7 @@ impl CodeWriter for HybridNewImpl {
         let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
 
         // These are more attributes on our object, and they should be sorted.
-        let referrers = get_referrers_sorted!(obj, domain.sarzak());
+        let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
 
         // Collect the attributes
         let mut params: Vec<Parameter> = Vec::new();
@@ -438,39 +439,27 @@ impl CodeWriter for HybridNewImpl {
         }
 
         for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+            let referents =
+                get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
 
-            let one = assoc.r23_associative_referent(domain.sarzak())[0];
-            let one_obj = one.r25_object(domain.sarzak())[0];
+            for referent in referents {
+                let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+                let obj = referent.r25_object(domain.sarzak())[0];
 
-            let other = assoc.r22_associative_referent(domain.sarzak())[0];
-            let other_obj = other.r25_object(domain.sarzak())[0];
-
-            // This determines how a reference is stored in the struct. In this
-            // case a UUID.
-            fields.push(LValue::new(
-                assoc_referrer.one_referential_attribute.as_ident(),
-                GType::Uuid,
-            ));
-            params.push(Parameter::new(
-                BORROWED,
-                None,
-                GType::Reference(one_obj.id),
-                PUBLIC,
-                assoc_referrer.one_referential_attribute.as_ident(),
-            ));
-
-            fields.push(LValue::new(
-                assoc_referrer.other_referential_attribute.as_ident(),
-                GType::Uuid,
-            ));
-            params.push(Parameter::new(
-                BORROWED,
-                None,
-                GType::Reference(other_obj.id),
-                PUBLIC,
-                assoc_referrer.other_referential_attribute.as_ident(),
-            ));
+                // This determines how a reference is stored in the struct. In this
+                // case a UUID.
+                fields.push(LValue::new(
+                    an_ass.referential_attribute.as_ident(),
+                    GType::Uuid,
+                ));
+                params.push(Parameter::new(
+                    BORROWED,
+                    None,
+                    GType::Reference(obj.id),
+                    PUBLIC,
+                    an_ass.referential_attribute.as_ident(),
+                ));
+            }
         }
 
         for subtype in subtypes {

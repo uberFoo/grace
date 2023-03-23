@@ -22,8 +22,6 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct AssociativeReferrer {
     pub id: Uuid,
-    pub one_referential_attribute: String,
-    pub other_referential_attribute: String,
     /// R89: [`AssociativeReferrer`] 'has' [`Cardinality`]
     pub cardinality: Uuid,
     /// R26: [`AssociativeReferrer`] 'is also an' [`Object`]
@@ -35,24 +33,16 @@ impl AssociativeReferrer {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
     /// Inter a new 'Associative Referrer' in the store, and return it's `id`.
     pub fn new(
-        one_referential_attribute: String,
-        other_referential_attribute: String,
         cardinality: &Cardinality,
         obj_id: &Object,
         store: &mut SarzakStore,
     ) -> AssociativeReferrer {
         let id = Uuid::new_v5(
             &UUID_NS,
-            format!(
-                "{}:{}:{:?}:{:?}",
-                one_referential_attribute, other_referential_attribute, cardinality, obj_id
-            )
-            .as_bytes(),
+            format!("{:?}:{:?}", cardinality, obj_id).as_bytes(),
         );
         let new = AssociativeReferrer {
             id: id,
-            one_referential_attribute: one_referential_attribute,
-            other_referential_attribute: other_referential_attribute,
             cardinality: cardinality.id(),
             obj_id: obj_id.id,
         };

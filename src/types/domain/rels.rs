@@ -14,7 +14,8 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        find_store, get_referents_sorted, get_referrers_sorted, local_object_is_enum,
+        find_store, get_assoc_referent_from_referrer_sorted, get_binary_referents_sorted,
+        get_binary_referrers_sorted, local_object_is_enum,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -29,7 +30,7 @@ pub(crate) fn generate_binary_referrer_rels(
     domain: &Domain,
 ) -> Result<()> {
     // Generate binary relationship navigation for the referrer side.
-    for referrer in get_referrers_sorted!(obj, domain.sarzak()) {
+    for referrer in get_binary_referrers_sorted!(obj, domain.sarzak()) {
         let binary = referrer.r6_binary(domain.sarzak())[0];
         let referent = binary.r5_referent(domain.sarzak())[0];
         let r_obj = referent.r16_object(domain.sarzak())[0];
@@ -71,7 +72,7 @@ pub(crate) fn generate_binary_referent_rels(
     domain: &Domain,
 ) -> Result<()> {
     // Generate binary relationship navigation for the referent side.
-    for referent in get_referents_sorted!(obj, domain.sarzak()) {
+    for referent in get_binary_referents_sorted!(obj, domain.sarzak()) {
         let binary = referent.r5_binary(domain.sarzak())[0];
         let referrer = binary.r6_referrer(domain.sarzak())[0];
         let r_obj = referrer.r17_object(domain.sarzak())[0];
@@ -133,53 +134,32 @@ pub(crate) fn generate_assoc_referrer_rels(
     // Generate associative relationship navigation for the referrer side.
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
         let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+        let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
 
-        let one = assoc.r23_associative_referent(domain.sarzak())[0];
-        let one_obj = one.r25_object(domain.sarzak())[0];
+        for referent in referents {
+            let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+            let assoc_obj = referent.r25_object(domain.sarzak())[0];
 
-        let other = assoc.r22_associative_referent(domain.sarzak())[0];
-        let other_obj = other.r25_object(domain.sarzak())[0];
+            let module = if config.is_imported(&assoc_obj.id) {
+                config.get_imported(&assoc_obj.id).unwrap().domain.as_str()
+            } else {
+                module
+            };
 
-        let module = if config.is_imported(&one_obj.id) {
-            config.get_imported(&one_obj.id).unwrap().domain.as_str()
-        } else {
-            module
-        };
-
-        // Grab a reference to the store so that we can use it to exhume
-        // things.
-        let store = find_store(module, woog, domain);
-
-        forward_assoc(
-            buffer,
-            obj,
-            &assoc_referrer.one_referential_attribute,
-            assoc.number,
-            store,
-            one_obj,
-            woog,
-            domain,
-        )?;
-
-        let module = if config.is_imported(&other_obj.id) {
-            config.get_imported(&one_obj.id).unwrap().domain.as_str()
-        } else {
-            module
-        };
-
-        // Grab a reference to the store so that we can use it to exhume
-        // things.
-        let store = find_store(module, woog, domain);
-        forward_assoc(
-            buffer,
-            obj,
-            &assoc_referrer.other_referential_attribute,
-            assoc.number,
-            store,
-            other_obj,
-            woog,
-            domain,
-        )?;
+            // Grab a reference to the store so that we can use it to exhume
+            // things.
+            let store = find_store(module, woog, domain);
+            forward_assoc(
+                buffer,
+                obj,
+                &an_ass.referential_attribute,
+                assoc.number,
+                store,
+                assoc_obj,
+                woog,
+                domain,
+            )?;
+        }
     }
 
     Ok(())
@@ -196,16 +176,11 @@ pub(crate) fn generate_assoc_referent_rels(
 ) -> Result<()> {
     // Generate associative relationship navigation for the referent side.
     for assoc_referent in obj.r25_associative_referent(domain.sarzak()) {
-        let r23 = assoc_referent.r23c_associative(domain.sarzak());
-        let (assoc, referrer, referential_attribute) = if r23.is_empty() {
-            let assoc = assoc_referent.r22c_associative(domain.sarzak())[0];
-            let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
-            (assoc, referrer, &referrer.other_referential_attribute)
-        } else {
-            let assoc = r23[0];
-            let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
-            (assoc, referrer, &referrer.one_referential_attribute)
-        };
+        let an_ass = assoc_referent.r22_an_associative_referent(domain.sarzak())[0];
+        let assoc = an_ass.r22_associative(domain.sarzak())[0];
+        let referrer = assoc.r21_associative_referrer(domain.sarzak())[0];
+        let referential_attribute = &an_ass.referential_attribute;
+
         let card = assoc_referent.r88_cardinality(domain.sarzak())[0];
         let cond = assoc_referent.r77_conditionality(domain.sarzak())[0];
         let r_obj = referrer.r26_object(domain.sarzak())[0];
@@ -252,7 +227,7 @@ pub(crate) fn generate_assoc_referent_rels(
                 id,
                 assoc.number,
                 store,
-                referential_attribute,
+                &referential_attribute,
                 woog,
                 domain,
             )?,

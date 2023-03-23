@@ -16,10 +16,11 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
-        get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
-        get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
-        get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
+        emit_object_comments, find_store, get_assoc_referrer_obj_from_obj_via_assoc_referent,
+        get_binary_referents_sorted, get_binary_referrers_sorted,
+        get_objs_for_assoc_referrers_sorted, get_objs_for_binary_referents_sorted,
+        get_objs_for_binary_referrers_sorted, get_subtypes_sorted, object_is_enum,
+        object_is_singleton, object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -74,8 +75,8 @@ impl CodeWriter for Enum {
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
-        let mut referrer_objs = get_objs_for_referrers_sorted!(obj, domain.sarzak());
-        referrer_objs.append(&mut get_objs_for_assoc_referents_sorted!(
+        let mut referrer_objs = get_objs_for_binary_referrers_sorted!(obj, domain.sarzak());
+        referrer_objs.append(&mut get_assoc_referrer_obj_from_obj_via_assoc_referent!(
             obj,
             domain.sarzak()
         ));
@@ -86,7 +87,7 @@ impl CodeWriter for Enum {
             .filter(|r_obj| r_obj.id != obj.id)
             .collect();
 
-        let mut referent_objs = get_objs_for_referents_sorted!(obj, domain.sarzak());
+        let mut referent_objs = get_objs_for_binary_referents_sorted!(obj, domain.sarzak());
         referent_objs.append(&mut get_objs_for_assoc_referrers_sorted!(
             obj,
             domain.sarzak()

@@ -23,8 +23,9 @@ use uuid::Uuid;
 
 use crate::{
     codegen::{
-        find_store, get_referrers_sorted, get_subtypes_sorted, is_object_stale,
-        local_object_is_hybrid, local_object_is_struct, object_is_singleton, object_is_supertype,
+        find_store, get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
+        get_subtypes_sorted, is_object_stale, local_object_is_hybrid, local_object_is_struct,
+        object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
     options::{ExternalEntity, GraceConfig, Target},
@@ -451,7 +452,7 @@ fn collect_attributes(
     }
 
     // These are more attributes on our object, and they should be sorted.
-    let referrers = get_referrers_sorted!(&obj, domain.sarzak());
+    let referrers = get_binary_referrers_sorted!(&obj, domain.sarzak());
     // And the referential attributes
     for referrer in &referrers {
         let binary = referrer.r6_binary(domain.sarzak())[0];
@@ -513,55 +514,32 @@ fn collect_attributes(
 
     // And the associative attributes
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-        let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+        let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
 
-        let one = assoc.r23_associative_referent(domain.sarzak())[0];
-        let one_obj = one.r25_object(domain.sarzak())[0];
+        for referent in referents {
+            let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+            let obj = referent.r25_object(domain.sarzak())[0];
 
-        let other = assoc.r22_associative_referent(domain.sarzak())[0];
-        let other_obj = other.r25_object(domain.sarzak())[0];
+            let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+            let var = Variable::new_parameter(
+                an_ass.referential_attribute.as_ident(),
+                &table,
+                &param,
+                woog,
+            );
+            let reference = Reference::new(&obj, woog);
+            let ty = GraceType::new_reference(&reference, woog);
+            let _ = Value::new_variable(&access, &ty, &var, woog);
+            params.push(param);
 
-        // One side
-        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-        let var = Variable::new_parameter(
-            assoc_referrer.one_referential_attribute.as_ident(),
-            &table,
-            &param,
-            woog,
-        );
-        let reference = Reference::new(&one_obj, woog);
-        let ty = GraceType::new_reference(&reference, woog);
-        let _ = Value::new_variable(&access, &ty, &var, woog);
-        params.push(param);
-
-        let field = Field::new(
-            assoc_referrer.one_referential_attribute.as_ident(),
-            &GraceType::new_ty(&Ty::new_uuid(), woog),
-            woog,
-        );
-        let field = StructureField::new(None, &field, &structure, woog);
-        fields.push(field);
-
-        // Other side
-        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-        let var = Variable::new_parameter(
-            assoc_referrer.other_referential_attribute.as_ident(),
-            &table,
-            &param,
-            woog,
-        );
-        let reference = Reference::new(&other_obj, woog);
-        let ty = GraceType::new_reference(&reference, woog);
-        let _ = Value::new_variable(&access, &ty, &var, woog);
-        params.push(param);
-
-        let field = Field::new(
-            assoc_referrer.other_referential_attribute.as_ident(),
-            &GraceType::new_ty(&Ty::new_uuid(), woog),
-            woog,
-        );
-        let field = StructureField::new(None, &field, &structure, woog);
-        fields.push(field);
+            let field = Field::new(
+                an_ass.referential_attribute.as_ident(),
+                &GraceType::new_ty(&Ty::new_uuid(), woog),
+                woog,
+            );
+            let field = StructureField::new(None, &field, &structure, woog);
+            fields.push(field);
+        }
     }
 
     (params, fields)

@@ -4,6 +4,7 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"domain::sarzak-module-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-module-definition"}}}
 pub mod acknowledged_event;
+pub mod an_associative_referent;
 pub mod associative;
 pub mod associative_referent;
 pub mod associative_referrer;
@@ -33,6 +34,7 @@ pub mod unconditional;
 pub mod uuid;
 
 pub use crate::domain::sarzak::acknowledged_event::AcknowledgedEvent;
+pub use crate::domain::sarzak::an_associative_referent::AnAssociativeReferent;
 pub use crate::domain::sarzak::associative::Associative;
 pub use crate::domain::sarzak::associative_referent::AssociativeReferent;
 pub use crate::domain::sarzak::associative_referrer::AssociativeReferrer;

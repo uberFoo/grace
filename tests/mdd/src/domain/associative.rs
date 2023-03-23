@@ -26,8 +26,8 @@ mod tests {
         let a1 = Anchor::new(1, &mut store);
         let a2 = Anchor::new(2, &mut store);
         let _ = Anchor::new(3, &mut store);
-        let _ = SubtypeAnchor::new(&ui0, &a0, &mut store);
-        let _ = SubtypeAnchor::new(&ui0, &a1, &mut store);
+        let _ = SubtypeAnchor::new(&a0, &ui0, &mut store);
+        let _ = SubtypeAnchor::new(&a1, &ui0, &mut store);
 
         let subtype_anchors = ui0.r10_subtype_anchor(&store);
         assert_eq!(subtype_anchors.len(), 2);
