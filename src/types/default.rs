@@ -467,11 +467,7 @@ impl CodeWriter for DefaultNewImpl {
         //         let obj_id = obj_id.unwrap();
         //         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-<<<<<<< HEAD
-        //         let referrers = get_referrers_sorted!(obj, domain.sarzak());
-=======
-        let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
->>>>>>> develop
+        // let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
 
         //         // Collect the attributes
         //         let mut params: Vec<Parameter> = Vec::new();
