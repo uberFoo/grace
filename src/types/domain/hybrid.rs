@@ -7,10 +7,7 @@ use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Ownership, SHARED},
-    },
+    woog::{store::ObjectStore as WoogStore, types::SHARED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -19,26 +16,18 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-<<<<<<< HEAD
-        emit_object_comments, find_store, get_objs_for_assoc_referents_sorted,
-        get_objs_for_assoc_referrers_sorted, get_objs_for_referents_sorted,
-        get_objs_for_referrers_sorted, get_referents_sorted, get_referrers_sorted,
-        get_subtypes_sorted, object_is_singleton, object_is_supertype,
-=======
         emit_object_comments, find_store, get_assoc_referent_from_referrer_sorted,
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
         get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
->>>>>>> develop
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
         },
-        render_method_new,
+        render_method,
     },
     options::GraceConfig,
-    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{CodeWriter, MethodImplementation, TypeDefinition},
 };
 
@@ -711,6 +700,6 @@ impl CodeWriter for HybridNewImpl {
 
         // Ok(())
 
-        render_method_new(buffer, obj, config, woog, domain)
+        render_method(buffer, obj, config, imports, woog, domain)
     }
 }

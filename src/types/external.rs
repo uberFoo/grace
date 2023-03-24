@@ -6,7 +6,7 @@ use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, types::Ownership, SHARED},
+    woog::{store::ObjectStore as WoogStore, types::SHARED},
 };
 use uuid::Uuid;
 
@@ -20,7 +20,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_method_new,
+        render_method,
     },
     options::GraceConfig,
 };
@@ -154,7 +154,7 @@ impl FileGenerator for ExternalGenerator {
                 );
 
                 // Darn. So I need to insert a local here. And hybrid has similar needs.
-                render_method_new(buffer, object, config, imports, woog, domain)?;
+                render_method(buffer, object, config, imports, woog, domain)?;
 
                 emit!(buffer, "}}");
 

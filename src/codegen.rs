@@ -31,7 +31,6 @@ use crate::{
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
-    todo::{GType, LValue, ObjectMethod, RValue},
 };
 
 macro_rules! get_subtypes_sorted {
@@ -189,59 +188,6 @@ pub(crate) use get_binary_referents_sorted;
 
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
-    method: &ObjectMethod,
-    woog: &WoogStore,
-    domain: &Domain,
-) -> Result<()> {
-    // Write the beginning of the definition
-    write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
-
-    // Write the parameter list.
-    // TODO: This is so clumsy! I should clean it up.
-    if let Some(mut param) = method.param {
-        let mutability = woog.exhume_ownership(&param.mutability).unwrap();
-        write!(
-            buffer,
-            "{}: {},",
-            param.as_ident(),
-            param.ty.as_type(&mutability, woog, domain),
-        )
-        .context(FormatSnafu)?;
-
-        while let Some(next_param) = param.next {
-            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
-            write!(
-                buffer,
-                "{}: {},",
-                // Why do I need to drill down to name?
-                next_param.name.as_ident(),
-                next_param.ty.as_type(&mutability, woog, domain),
-            )
-            .context(FormatSnafu)?;
-
-            param = &next_param;
-        }
-    }
-
-    // Finish the first line of the definition
-    writeln!(
-        buffer,
-        ") -> {} {{",
-        method.ty.as_type(
-            &woog
-                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-                .unwrap(),
-            woog,
-            domain
-        )
-    )
-    .context(FormatSnafu)?;
-
-    Ok(())
-}
-
-pub(crate) fn render_method_definition_new(
-    buffer: &mut Buffer,
     method: &WoogObjectMethod,
     woog: &WoogStore,
     domain: &Domain,
@@ -330,78 +276,7 @@ pub(crate) fn render_method_definition_new(
     Ok(())
 }
 
-/// Generate code to create a new UUID
-///
-/// Hmmm. This is a function call. I happen to be modeling one of these. Let's
-/// see if we can't get it to work with our brand new method definition and
-/// friends.
-///
-/// We've got E_CALL, and expression. It's related to METH via R19. So I need
-/// a METH for this. I'm already using METH to generate the new method declaration.
-/// So, do I need a METH for this? Well, I don't generate a definition for the
-/// uuid methods. A METH would give me information about how to call it though.
-///
-/// Put a pin in that for a second, and discuss parameter. What's here is gonig
-/// away. I have both lvals (variables) and rvals (expressions).
-///
-/// This function is generating a statement. The lval is just used as a name for
-/// the LHS. The rvals are use as the arguments to the function call. So, we'll
-/// want to use/replace everything with entities from woog.
-///
-/// Now, the first thing that annoys me is the arguments to the function. They
-/// are locals, and should be in scope. And, now I notice that I don't have
-/// that in this model. So, I will merge that other branch as I was considering.
-
 pub(crate) fn render_make_uuid(
-    buffer: &mut Buffer,
-    lval: &LValue,
-    rvals: &Vec<RValue>,
-    _domain: &Domain,
-) -> Result<()> {
-    ensure!(
-        lval.ty == GType::Uuid,
-        CompilerSnafu {
-            description: format!(
-                "type mismatch, found `{:?}`, expected `GType::Uuid`",
-                lval.ty
-            )
-        }
-    );
-
-    let mut format_string = String::new();
-    let mut args = String::new();
-    for val in rvals {
-        match &val.ty {
-            GType::Reference(_) => {
-                format_string.extend(["{:?}:"]);
-            }
-            GType::Option(_) => {
-                format_string.extend(["{:?}:"]);
-            }
-            _ => {
-                format_string.extend(["{}:"]);
-            }
-        }
-
-        args.extend([val.name.to_owned(), ",".to_owned()]);
-    }
-    // Remove the trailing ":"
-    format_string.pop();
-    // And the trailining ","
-    args.pop();
-
-    emit!(
-        buffer,
-        "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
-        lval.name,
-        format_string,
-        args
-    );
-
-    Ok(())
-}
-
-pub(crate) fn render_make_uuid_new(
     buffer: &mut Buffer,
     var: &Local,
     method: &WoogObjectMethod,
@@ -535,266 +410,6 @@ pub(crate) fn render_make_uuid_new(
 }
 
 pub(crate) fn render_new_instance(
-    buffer: &mut Buffer,
-    object: &Object,
-    lval: Option<&LValue>,
-    fields: &Vec<LValue>,
-    rvals: &Vec<RValue>,
-    config: &GraceConfig,
-    woog: &WoogStore,
-    domain: &Domain,
-) -> Result<()> {
-    if let Some(lval) = lval {
-        assert!(lval.ty == GType::Reference(object.id));
-        write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
-    }
-    emit!(
-        buffer,
-        "{} {{",
-        object.as_type(
-            &woog
-                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-                .unwrap(),
-            woog,
-            domain
-        )
-    );
-
-    let tuples = zip(fields, rvals);
-
-    // Gee. I have a list of fields, and a list of parameters. How do I match
-    // them up? I could infer by type, and the UUID will be tricky, because
-    // how do I know that I cet get a UUID from an Object by calling id()?
-    // I think that maybe the best we can do is typecheck the incoming values
-    // against expected. Do that id() thing here, because we know. I think that
-    // maybe I'm forgetting that I'm the one calling this. Maybe I'm being too
-    // weird, and I just need a template engine. But then again, I'll be generating
-    // unit tests, and the more I have, the better I think I'll be.
-    for (field, rval) in tuples {
-        // 🚧: This type conversion should likely be a function.
-        match &field.ty {
-            GType::Object(obj) => {
-                let obj = domain.sarzak().exhume_object(&obj).unwrap();
-                // If this is a subtype, grab the supertype object and if it's a hybrid, we need to
-                // handle the inner enum specially.
-                if let Some(sub) = obj.r15c_subtype(domain.sarzak()).pop() {
-                    let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
-                        .r14_object(domain.sarzak())[0];
-                    if local_object_is_hybrid(s_obj, config, domain) {
-                        match rval.ty {
-                            GType::Uuid => {
-                                emit!(
-                                    buffer,
-                                    "{}: {}Enum::{}({}),",
-                                    field.name,
-                                    s_obj.as_type(
-                                        &woog
-                                            .exhume_ownership(
-                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                            )
-                                            .unwrap(),
-                                        woog,
-                                        domain
-                                    ),
-                                    obj.as_type(
-                                        &woog
-                                            .exhume_ownership(
-                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                            )
-                                            .unwrap(),
-                                        woog,
-                                        domain
-                                    ),
-                                    rval.name
-                                )
-                            }
-                            GType::Reference(r_obj) => {
-                                let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
-                                if local_object_is_enum(r_obj, config, domain) {
-                                    emit!(
-                                        buffer,
-                                        "{}: {}Enum::{}({}.id()),",
-                                        field.name,
-                                        s_obj.as_type(
-                                            &woog
-                                                .exhume_ownership(
-                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                                )
-                                                .unwrap(),
-                                            woog,
-                                            domain
-                                        ),
-                                        obj.as_type(
-                                            &woog
-                                                .exhume_ownership(
-                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                                )
-                                                .unwrap(),
-                                            woog,
-                                            domain
-                                        ),
-                                        rval.name
-                                    )
-                                } else {
-                                    emit!(
-                                        buffer,
-                                        "{}: {}Enum::{}({}.id),",
-                                        field.name,
-                                        s_obj.as_type(
-                                            &woog
-                                                .exhume_ownership(
-                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                                )
-                                                .unwrap(),
-                                            woog,
-                                            domain
-                                        ),
-                                        obj.as_type(
-                                            &woog
-                                                .exhume_ownership(
-                                                    &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                                )
-                                                .unwrap(),
-                                            woog,
-                                            domain
-                                        ),
-                                        rval.name
-                                    )
-                                }
-                            }
-                            _ => {
-                                emit!(
-                                    buffer,
-                                    "{}: {}Enum::{}({}.id),",
-                                    field.name,
-                                    s_obj.as_type(
-                                        &woog
-                                            .exhume_ownership(
-                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                            )
-                                            .unwrap(),
-                                        woog,
-                                        domain
-                                    ),
-                                    obj.as_type(
-                                        &woog
-                                            .exhume_ownership(
-                                                &&woog.exhume_borrowed(&SHARED).unwrap().id()
-                                            )
-                                            .unwrap(),
-                                        woog,
-                                        domain
-                                    ),
-                                    rval.name
-                                )
-                            }
-                        }
-                    } else {
-                        emit!(buffer, "{}: {},", field.name, rval.name)
-                    }
-                } else {
-                    emit!(buffer, "{}: {},", field.name, rval.name)
-                }
-            }
-            // The LHS is a Uuid, so we need to surface the correct means of
-            // getting to the Uuid, given the RHS.
-            GType::Uuid => match &rval.ty {
-                GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
-                GType::Reference(obj_id) => {
-                    let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
-
-                    if local_object_is_enum(obj, config, domain) {
-                        emit!(buffer, "{}: {}.id(),", field.name, rval.name)
-                    } else {
-                        emit!(buffer, "{}: {}.id,", field.name, rval.name)
-                    }
-                }
-                _ => ensure!(
-                    field.ty == rval.ty,
-                    CompilerSnafu {
-                        description: format!(
-                            "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
-                            rval.name, rval.ty, field.name, field.ty
-                        )
-                    }
-                ),
-            },
-            // The LHS is an Option<Uuid>, so we need to surface the correct means of
-            // getting to the Uuid, given the RHS.
-            GType::Option(_left) => match &rval.ty {
-                GType::Option(right) => match **right {
-                    GType::Reference(obj_id) => {
-                        let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
-
-                        if local_object_is_enum(obj, config, domain) {
-                            emit!(
-                                buffer,
-                                "{}: {}.map(|{}| {}.id()),",
-                                field.name,
-                                rval.name,
-                                obj.as_ident(),
-                                obj.as_ident()
-                            )
-                        } else {
-                            emit!(
-                                buffer,
-                                "{}: {}.map(|{}| {}.id),",
-                                field.name,
-                                rval.name,
-                                obj.as_ident(),
-                                obj.as_ident()
-                            )
-                        }
-                    }
-                    _ => {
-                        ensure!(
-                            field.ty == rval.ty,
-                            CompilerSnafu {
-                                description: format!(
-                                    "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
-                                    rval.name, rval.ty, field.name, field.ty
-                                )
-                            }
-                        );
-                    }
-                },
-                _ => ensure!(
-                    field.ty == rval.ty,
-                    CompilerSnafu {
-                        description: format!(
-                            "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
-                            rval.name, rval.ty, field.name, field.ty
-                        )
-                    }
-                ),
-            },
-            _ => {
-                ensure!(
-                    field.ty == rval.ty,
-                    CompilerSnafu {
-                        description: format!(
-                            "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
-                            rval.name, rval.ty, field.name, field.ty
-                        )
-                    }
-                );
-                emit!(buffer, "{}: {},", field.name, rval.name)
-            }
-        }
-    }
-
-    emit!(buffer, "id");
-
-    if lval.is_some() {
-        emit!(buffer, "}};");
-    } else {
-        emit!(buffer, "}}")
-    };
-
-    Ok(())
-}
-
-pub(crate) fn render_new_instance_new(
     buffer: &mut Buffer,
     object: &Object,
     var: &Local,
@@ -1045,7 +660,7 @@ fn typecheck_and_coerce(
     })
 }
 
-pub(crate) fn render_method_new(
+pub(crate) fn render_method(
     buffer: &mut Buffer,
     obj: &Object,
     config: &GraceConfig,
@@ -1072,7 +687,7 @@ pub(crate) fn render_method_new(
 
             // This renders the method signature.
             // It's probably ok as it is.
-            render_method_definition_new(buffer, &method, woog, domain)?;
+            render_method_definition(buffer, &method, woog, domain)?;
 
             // Find the properly scoped variable named `id`.
             let table = method.r25_function(woog)[0].r23_block(woog)[0].r24_symbol_table(woog)[0];
@@ -1094,7 +709,7 @@ pub(crate) fn render_method_new(
             // create (let) statements in the block whilst populating woog. Then
             // someplace else, maybe here, we iterate over the statements and generate
             // code. Maybe an as_statement trait, or something?
-            render_make_uuid_new(buffer, &id, &method, woog, domain)?;
+            render_make_uuid(buffer, &id, &method, woog, domain)?;
 
             // Look up the properly scoped variable named `new`.
             let var = &table

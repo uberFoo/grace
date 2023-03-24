@@ -132,7 +132,13 @@ impl CodeWriter for Enum {
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            r_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         ));
                     } else {
                         import_store = true;
@@ -140,7 +146,13 @@ impl CodeWriter for Enum {
                             "use crate::{}::types::{}::{};",
                             module,
                             r_obj.as_ident(),
-                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            r_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            )
                         ));
                     }
                 }
@@ -152,7 +164,13 @@ impl CodeWriter for Enum {
                         "use crate::{}::types::{}::{};",
                         module,
                         r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        r_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
                     ));
                 }
 

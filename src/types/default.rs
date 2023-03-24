@@ -10,7 +10,7 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership, PUBLIC, SHARED},
+    woog::{store::ObjectStore as WoogStore, types::SHARED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -23,10 +23,8 @@ use crate::{
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_binary_referrers_sorted, object_is_hybrid, object_is_singleton, object_is_supertype,
         render::{render_attributes, RenderConst, RenderIdent, RenderType},
-        render_make_uuid, render_method_definition, render_new_instance,
     },
     options::GraceConfig,
-    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation},
 };
 

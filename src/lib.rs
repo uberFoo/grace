@@ -1,4 +1,4 @@
-#[allow(uncommon_codepoints)]
+#![allow(uncommon_codepoints)]
 use std::path::Path;
 
 use sarzak::mc::ModelCompilerOptions;
@@ -6,7 +6,6 @@ use sarzak::mc::ModelCompilerOptions;
 mod codegen;
 pub mod options;
 mod targets;
-mod todo;
 mod types;
 mod woog;
 

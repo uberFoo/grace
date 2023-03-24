@@ -8,10 +8,7 @@ use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Ownership, SHARED},
-    },
+    woog::{store::ObjectStore as WoogStore, types::SHARED},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -29,7 +26,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_method_new,
+        render_method,
     },
     options::GraceConfig,
     types::{
@@ -451,7 +448,7 @@ impl CodeWriter for StructNewImpl {
         //     )?;
         // }
 
-        render_method_new(buffer, obj, config, imports, woog, domain)
+        render_method(buffer, obj, config, imports, woog, domain)
     }
 }
 
