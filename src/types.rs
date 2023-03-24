@@ -9,6 +9,11 @@ pub(crate) mod domain;
 pub(crate) mod external;
 pub(crate) mod null;
 
+/// Type Imports Trait
+///
+/// This trait is implemented by types that can render the imports for a type.
+pub(crate) trait TypeImports: CodeWriter {}
+
 /// Type Definition Trait
 ///
 /// This trait is implemented by types that are capable of generating a

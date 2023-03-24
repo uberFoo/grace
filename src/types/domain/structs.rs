@@ -34,25 +34,21 @@ use crate::{
             generate_assoc_referent_rels, generate_assoc_referrer_rels,
             generate_binary_referent_rels, generate_binary_referrer_rels, generate_subtype_rels,
         },
-        MethodImplementation, TypeDefinition, TypeImplementation,
+        MethodImplementation, TypeDefinition, TypeImplementation, TypeImports,
     },
 };
 
-/// Domain Struct Generator / CodeWriter
-///
-/// We need a builder for this so that we can add privacy modifiers, as
-/// well as derives.
-pub(crate) struct Struct;
+pub(crate) struct Imports;
 
-impl Struct {
-    pub(crate) fn new() -> Box<dyn TypeDefinition> {
+impl Imports {
+    pub(crate) fn new() -> Box<dyn TypeImports> {
         Box::new(Self)
     }
 }
 
-impl TypeDefinition for Struct {}
+impl TypeImports for Imports {}
 
-impl CodeWriter for Struct {
+impl CodeWriter for Imports {
     fn write_code(
         &self,
         config: &GraceConfig,
@@ -191,6 +187,52 @@ impl CodeWriter for Struct {
         )?;
         emit!(buffer, "");
 
+        Ok(())
+    }
+}
+
+/// Domain Struct Generator / CodeWriter
+///
+/// We need a builder for this so that we can add privacy modifiers, as
+/// well as derives.
+pub(crate) struct Struct;
+
+impl Struct {
+    pub(crate) fn new() -> Box<dyn TypeDefinition> {
+        Box::new(Self)
+    }
+}
+
+impl TypeDefinition for Struct {}
+
+impl CodeWriter for Struct {
+    fn write_code(
+        &self,
+        config: &GraceConfig,
+        domain: &Domain,
+        woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
+        module: &str,
+        obj_id: Option<&Uuid>,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
+        ensure!(
+            obj_id.is_some(),
+            CompilerSnafu {
+                description: "obj_id is required by DomainStruct"
+            }
+        );
+        let obj_id = obj_id.unwrap();
+        let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainStruct"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
+
         log::debug!("writing Struct Definition for {}", obj.name);
 
         buffer.block(
@@ -291,12 +333,10 @@ impl CodeWriter for DomainImplementation {
             DirectiveKind::IgnoreOrig,
             format!("{}-implementation", object.as_ident()),
             |buffer| {
-                let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
-
                 emit!(
                     buffer,
                     "impl {} {{",
-                    obj.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
+                    object.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
                 );
 
                 for method in &self.methods {

@@ -32,7 +32,7 @@ use crate::{
             from::{DomainFromBuilder, DomainFromImpl},
             hybrid::{Hybrid, HybridNewImpl},
             store::{DomainStore, DomainStoreBuilder},
-            structs::{DomainImplBuilder, Struct, StructNewImpl, StructRelNavImpl},
+            structs::{DomainImplBuilder, Imports, Struct, StructNewImpl, StructRelNavImpl},
         },
         external::ExternalGenerator,
         null::NullGenerator,
@@ -259,7 +259,20 @@ impl<'a> DomainTarget<'a> {
                 }
             } else if self.config.is_imported(&obj.id) {
                 // If the object is imported, we don't generate anything...here.
-
+                // I'd like to amend this position. Wouldn't it be cool if we could
+                // generate relationship navigation methods for imported objects?
+                // I think we can.
+                // We can create an implementation of the relationship navigation
+                // methods. We'd need to make sure that the names don't collide.
+                // They won't because the store would be different.
+                // DefaultStructBuilder::new()
+                //     .imports(Imports::new())
+                //     .implementation(
+                //         DomainImplBuilder::new()
+                //             .method(StructRelNavImpl::new())
+                //             .build(),
+                //     )
+                //     .build()?
                 NullGenerator::new()
             } else if self.config.is_external(&obj.id) {
                 // If the object is external, we create a newtype to wrap it.
@@ -274,6 +287,7 @@ impl<'a> DomainTarget<'a> {
                     .build()?
             } else {
                 DefaultStructBuilder::new()
+                    .imports(Imports::new())
                     // Definition type
                     .definition(Struct::new())
                     .implementation(

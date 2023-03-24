@@ -108,7 +108,7 @@ pub(crate) fn generate_binary_referent_rels(
                 },
             },
             // It's interesting that there are only really two possibilities, and
-            // that neither of them depend on the conditionality of the this side.
+            // that neither of them depend on the conditionality of this side.
             Cardinality::Many(_) => match other_cond {
                 Conditionality::Unconditional(_) => backward_1_m(
                     buffer, obj, r_obj, id, binary, store, referrer, woog, domain,

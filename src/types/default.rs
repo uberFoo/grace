@@ -27,10 +27,13 @@ use crate::{
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
-    types::{MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation},
+    types::{
+        MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation, TypeImports,
+    },
 };
 
 pub(crate) struct DefaultStructBuilder {
+    imports: Option<Box<dyn TypeImports>>,
     definition: Option<Box<dyn TypeDefinition>>,
     implementations: Vec<Box<dyn TypeImplementation>>,
 }
@@ -38,9 +41,16 @@ pub(crate) struct DefaultStructBuilder {
 impl DefaultStructBuilder {
     pub(crate) fn new() -> Self {
         DefaultStructBuilder {
+            imports: None,
             definition: None,
             implementations: Vec::new(),
         }
+    }
+
+    pub(crate) fn imports(mut self, imports: Box<dyn TypeImports>) -> Self {
+        self.imports = Some(imports);
+
+        self
     }
 
     pub(crate) fn definition(mut self, definition: Box<dyn TypeDefinition>) -> Self {
@@ -56,15 +66,9 @@ impl DefaultStructBuilder {
     }
 
     pub(crate) fn build(self) -> Result<Box<DefaultStructGenerator>> {
-        ensure!(
-            self.definition.is_some(),
-            CompilerSnafu {
-                description: "missing StructDefinition"
-            }
-        );
-
         Ok(Box::new(DefaultStructGenerator {
-            definition: self.definition.unwrap(),
+            imports: self.imports,
+            definition: self.definition,
             implementations: self.implementations,
         }))
     }
@@ -74,7 +78,8 @@ impl DefaultStructBuilder {
 ///
 /// Called by the [`Generator`] to write code for a struct.
 pub(crate) struct DefaultStructGenerator {
-    definition: Box<dyn TypeDefinition>,
+    imports: Option<Box<dyn TypeImports>>,
+    definition: Option<Box<dyn TypeDefinition>>,
     implementations: Vec<Box<dyn TypeImplementation>>,
 }
 
@@ -84,7 +89,7 @@ impl FileGenerator for DefaultStructGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
+        imports_map: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -103,25 +108,38 @@ impl FileGenerator for DefaultStructGenerator {
             DirectiveKind::AllowEditing,
             format!("{}-struct-definition-file", object.as_ident()),
             |buffer| {
-                // It's important that we maintain ordering for code injection and
-                // redaction. We begin with the struct definition.
-                self.definition.write_code(
-                    config,
-                    domain,
-                    woog,
-                    imports,
-                    package,
-                    module,
-                    Some(obj_id),
-                    buffer,
-                )?;
+                if let Some(imports) = self.imports.as_ref() {
+                    imports.write_code(
+                        config,
+                        domain,
+                        woog,
+                        imports_map,
+                        package,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
+                }
+
+                if let Some(definition) = self.definition.as_ref() {
+                    definition.write_code(
+                        config,
+                        domain,
+                        woog,
+                        imports_map,
+                        package,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
+                }
 
                 for implementation in &self.implementations {
                     implementation.write_code(
                         config,
                         domain,
                         woog,
-                        imports,
+                        imports_map,
                         package,
                         module,
                         Some(obj_id),
