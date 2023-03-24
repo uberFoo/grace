@@ -12,7 +12,9 @@ use sarzak::{
         Attribute, Conditionality, Event, External as SarzakExternal, Object, State, Ty,
     },
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Function, GraceType, Ownership, Variable, SHARED},
+    woog::{
+        store::ObjectStore as WoogStore, Borrowed, Function, GraceType, Ownership, Variable, SHARED,
+    },
 };
 use snafu::prelude::*;
 
@@ -122,24 +124,34 @@ pub(crate) trait RenderType {
 render_type!(Attribute, Event, Object, State, SarzakExternal);
 
 impl RenderType for String {
-    fn as_type(&self, mutability: &Ownership, _woog: &WoogStore, _domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, woog: &WoogStore, _domain: &Domain) -> String {
         match mutability {
-            Ownership::Borrowed(id) => match id {
-                MUTABLE => format!("mut {}", self.sanitize().to_upper_camel_case()),
-                BORROWED => self.sanitize().to_upper_camel_case(),
-            },
+            Ownership::Borrowed(id) => {
+                let borrowed = woog.exhume_borrowed(id).unwrap();
+                match borrowed {
+                    Borrowed::Mutable(_) => {
+                        format!("mut {}", self.sanitize().to_upper_camel_case())
+                    }
+                    Borrowed::Shared(_) => self.sanitize().to_upper_camel_case(),
+                }
+            }
             Ownership::Owned(_) => self.sanitize().to_upper_camel_case(),
         }
     }
 }
 
 impl RenderType for &str {
-    fn as_type(&self, mutability: &Ownership, _woog: &WoogStore, _domain: &Domain) -> String {
+    fn as_type(&self, mutability: &Ownership, woog: &WoogStore, _domain: &Domain) -> String {
         match mutability {
-            Ownership::Borrowed(id) => match id {
-                MUTABLE => format!("mut {}", self.sanitize().to_upper_camel_case()),
-                BORROWED => self.sanitize().to_upper_camel_case(),
-            },
+            Ownership::Borrowed(id) => {
+                let borrowed = woog.exhume_borrowed(id).unwrap();
+                match borrowed {
+                    Borrowed::Mutable(_) => {
+                        format!("mut {}", self.sanitize().to_upper_camel_case())
+                    }
+                    Borrowed::Shared(_) => self.sanitize().to_upper_camel_case(),
+                }
+            }
             Ownership::Owned(_) => self.sanitize().to_upper_camel_case(),
         }
     }
@@ -165,13 +177,17 @@ impl RenderType for Ty {
             Self::Uuid(_) => "Uuid".to_owned(),
             Self::External(e) => {
                 let ext = domain.sarzak().exhume_external(&e).unwrap();
-                // format!("&{}", ext.as_type(mutability, woog, domain))
                 match mutability {
-                    Ownership::Borrowed(id) => match id {
-                        MUTABLE => format!("&mut {}", ext.name.sanitize().to_upper_camel_case()),
-                        BORROWED => format!("&{}", ext.name.sanitize().to_upper_camel_case()),
-                    },
-                    Ownership::Owned(_) => format!("{}", ext.name.sanitize().to_upper_camel_case()),
+                    Ownership::Borrowed(id) => {
+                        let borrowed = woog.exhume_borrowed(id).unwrap();
+                        match borrowed {
+                            Borrowed::Mutable(_) => {
+                                format!("mut {}", ext.name.sanitize().to_upper_camel_case())
+                            }
+                            Borrowed::Shared(_) => ext.name.sanitize().to_upper_camel_case(),
+                        }
+                    }
+                    Ownership::Owned(_) => ext.name.sanitize().to_upper_camel_case(),
                 }
             }
             Self::Float(_) => "f64".to_owned(),
