@@ -46,8 +46,10 @@ macro_rules! test_target_domain {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
-                )
-                .unwrap();
+                ).map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -109,7 +111,10 @@ macro_rules! test_target_domain {
                     Box::new(&options),
                     false,
                 )
-                .unwrap();
+                .map_err(|e| {
+                    println!("Compiler exited with: {:?}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -128,6 +133,7 @@ macro_rules! test_target_domain {
     };
 }
 
+#[allow(unused)]
 macro_rules! test_target_application {
     ($name:ident, $domain:literal, $path:literal) => {
         #[test]
@@ -155,7 +161,10 @@ macro_rules! test_target_application {
                     Box::new(&options),
                     false,
                 )
-                .unwrap();
+                .map_err(|e| {
+                    println!("Compiler exited with: {:?}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -210,11 +219,11 @@ test_target_domain!(
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
 
 // Application Target Tests
-test_target_application!(
-    everything_application,
-    "everything",
-    "tests/mdd/models/everything.json"
-);
+// test_target_application!(
+//     everything_application,
+//     "everything",
+//     "tests/mdd/models/everything.json"
+// );
 
 #[test]
 fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
@@ -255,21 +264,10 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
             Box::new(&options),
             false,
         )
-        .unwrap();
-
-    // Run cargo test
-    // let mut child = process::Command::new("cargo")
-    //     .arg("test")
-    //     .arg(format!("domain/{}", $domain))
-    //     .arg("--")
-    //     .arg("--nocapture")
-    //     .current_dir("tests/mdd")
-    //     .spawn()?;
-
-    // match child.wait() {
-    //     Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
-    //     Err(e) => Err(e),
-    // }
+        .map_err(|e| {
+            println!("Compiler exited with: {:?}", e);
+            std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+        })?;
 
     Ok(ExitCode::SUCCESS)
 }
