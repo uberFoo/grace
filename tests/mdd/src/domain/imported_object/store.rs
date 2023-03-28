@@ -9,9 +9,13 @@
 //!
 //! * [`AnotherObject`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-definition"}}}
-use fnv::FnvHashMap as HashMap;
-use std::{fs, io, path::Path};
+use std::{
+    fs,
+    io::{self, prelude::*},
+    path::Path,
+};
 
+use fnv::FnvHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -69,6 +73,12 @@ impl ObjectStore {
     /// In fact, I intend to add automaagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
+
+        let bin_path = path.clone().join("imported_object.bin");
+        let mut bin_file = fs::File::create(bin_path)?;
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        bin_file.write_all(&encoded)?;
+
         let path = path.join("imported_object.json");
         fs::create_dir_all(&path)?;
 

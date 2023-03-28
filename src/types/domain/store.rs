@@ -363,6 +363,19 @@ impl DomainStore {
                     "pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
                 );
                 emit!(buffer, "let path = path.as_ref();");
+                emit!(buffer, "");
+                emit!(
+                    buffer,
+                    "let bin_path = path.clone().join(\"{}.bin\");",
+                    domain.name()
+                );
+                emit!(buffer, "let mut bin_file = fs::File::create(bin_path)?;");
+                emit!(
+                    buffer,
+                    "let encoded: Vec<u8> = bincode::serialize(&self).unwrap();"
+                );
+                emit!(buffer, "bin_file.write_all(&encoded)?;");
+                emit!(buffer, "");
                 // This is such a great joke! 🤣
                 emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
                 emit!(buffer, "fs::create_dir_all(&path)?;");
@@ -697,13 +710,14 @@ impl CodeWriter for DomainStore {
 
                 if persist {
                     if timestamp {
-                        emit!(buffer, "use std::{{io, fs, path::Path, time::SystemTime}};");
+                        emit!(buffer, "use std::{{io::{{self, prelude::*}}, fs, path::Path, time::SystemTime}};");
+                        emit!(buffer, "");
                     } else {
-                        emit!(buffer, "use std::{{io, fs, path::Path}};");
+                        emit!(buffer, "use std::{{io::{{self, prelude::*}}, fs, path::Path}};");
+                        emit!(buffer, "");
                     }
                 }
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
-                emit!(buffer, "");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");

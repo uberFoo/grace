@@ -257,19 +257,5 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
         )
         .unwrap();
 
-    // Run cargo test
-    // let mut child = process::Command::new("cargo")
-    //     .arg("test")
-    //     .arg(format!("domain/{}", $domain))
-    //     .arg("--")
-    //     .arg("--nocapture")
-    //     .current_dir("tests/mdd")
-    //     .spawn()?;
-
-    // match child.wait() {
-    //     Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
-    //     Err(e) => Err(e),
-    // }
-
     Ok(ExitCode::SUCCESS)
 }

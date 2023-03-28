@@ -176,7 +176,6 @@ impl Object {
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-subtype"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-cond-to-subtype"}}}
     /// Navigate to [`Subtype`] across R15(1-1c)
     pub fn r15c_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
