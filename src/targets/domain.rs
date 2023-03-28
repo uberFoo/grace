@@ -10,9 +10,10 @@ use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::types::{External, Object, Ty},
+    v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
-        types::{GenerationUnit, TimeStamp},
+        types::{GenerationUnit, HybridEnum, TimeStamp},
     },
 };
 use snafu::prelude::*;
@@ -37,7 +38,7 @@ use crate::{
         external::ExternalGenerator,
         null::NullGenerator,
     },
-    woog::{persist_woog, populate_woog},
+    woog::{init_woog, persist_woog, populate_woog},
     RS_EXT, TYPES,
 };
 
@@ -48,8 +49,8 @@ pub(crate) struct DomainTarget<'a> {
     package: &'a str,
     module: &'a str,
     src_path: &'a Path,
-    domain: sarzak::v2::domain::Domain,
-    imports: HashMap<String, sarzak::v2::domain::Domain>,
+    domain: Domain,
+    imports: HashMap<String, Domain>,
     woog: WoogStore,
     _test: bool,
 }
@@ -60,59 +61,19 @@ impl<'a> DomainTarget<'a> {
         package: &'a str,
         module: &'a str,
         src_path: &'a Path,
-        mut domain: sarzak::v2::domain::Domain,
+        mut domain: Domain,
         _test: bool,
     ) -> Result<Box<dyn Target + 'a>> {
-        // This creates an external entity of the ObjectStore so that
-        // we can use it from within the domain. Remember that the ObjectStore is a
-        // generated construct, and appears as if it was an external library to the
-        // domain. Now, if it were modeled, we'd probably include some aspect of it's
-        // model as an imported object, and we wouldn't need this. We'd probably need
-        // something else...
-        let mut external = HashSet::default();
-
-        // This is the object store for _this_ domain.
-        external.insert(module.replace("/", "::"));
-
-        if let Some(domains) = options.imported_domains.as_ref() {
-            for domain in domains {
-                external.insert(domain.replace("/", "::"));
-            }
-        }
-
-        for store in external {
-            // Store is a rust path at this point. That's fine for the path,
-            // but not so good for the name.
-            let name = store
-                .split("::")
-                .last()
-                // 🚧 Sigh, another expect.
-                .expect("Failed to get last part of path")
-                .to_string();
-
-            log::debug!("Adding ObjectStore for {}", name);
-            let external = External::new(
-                // 🚧 Hmmm. Well, I don't have a domain here, and I think that
-                // as_type should take one. So I'm going to do the gross thing,
-                // and hardcode what I need. It's really not that gross, since
-                // all the as_type stuff is overly complicated, in order to be
-                // used to generate code in places that maybe I don't know
-                // what it should be. Like here.
-                "new".to_owned(),
-                format!(
-                    "{}Store",
-                    // name.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), &woog, &domain)
-                    name.to_upper_camel_case()
-                ),
-                format!("crate::{}::store::ObjectStore", store,),
-                domain.sarzak_mut(),
-            );
-
-            Ty::new_external(&external, domain.sarzak_mut());
-        }
+        // Add EEs to the store
+        insert_external_entities(options, module, &mut domain);
 
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
+
+        let mut woog = init_woog(src_path, &config, &domain);
+
+        // Add hybrid enums to the store
+        insert_hybrid_enums(&config, &mut woog, &domain);
 
         // Create an external entity for any objects with the annotation.
         let borrow_checker_pleasure_yourself =
@@ -171,13 +132,7 @@ impl<'a> DomainTarget<'a> {
         }
 
         // Create our local compiler domain.
-        let woog = populate_woog(
-            src_path.as_ref(),
-            module,
-            &config,
-            &imported_domains,
-            &domain,
-        )?;
+        populate_woog(module, &config, &imported_domains, &mut woog, &domain)?;
 
         Ok(Box::new(Self {
             config,
@@ -196,7 +151,10 @@ impl<'a> DomainTarget<'a> {
         let mut types = PathBuf::from(self.src_path);
         types.push(self.module);
         types.push(TYPES);
-        fs::create_dir_all(&types).context(FileSnafu { path: &types })?;
+        fs::create_dir_all(&types).context(FileSnafu {
+            path: &types,
+            description: "creating types directory".to_owned(),
+        })?;
         types.push("discard");
 
         // Sort the objects -- I need to figure out how to do this automagically.
@@ -416,5 +374,74 @@ impl<'a> Target for DomainTarget<'a> {
 
     fn domain(&self) -> &str {
         self.domain.domain()
+    }
+}
+
+fn insert_external_entities(options: &GraceCompilerOptions, module: &str, domain: &mut Domain) {
+    // This creates an external entity of the ObjectStore so that
+    // we can use it from within the domain. Remember that the ObjectStore is a
+    // generated construct, and appears as if it was an external library to the
+    // domain. Now, if it were modeled, we'd probably include some aspect of it's
+    // model as an imported object, and we wouldn't need this. We'd probably need
+    // something else...
+    let mut external = HashSet::default();
+
+    // This is the object store for _this_ domain.
+    external.insert(module.replace("/", "::"));
+
+    // Here we are adding external entities for any objects colored as such.
+    if let Some(domains) = options.imported_domains.as_ref() {
+        for domain in domains {
+            external.insert(domain.replace("/", "::"));
+        }
+    }
+
+    for store in external {
+        // Store is a rust path at this point. That's fine for the path,
+        // but not so good for the name.
+        let name = store
+            .split("::")
+            .last()
+            // 🚧 Sigh, another expect.
+            .expect("Failed to get last part of path")
+            .to_string();
+
+        log::debug!("Adding ObjectStore for {}", name);
+        let external = External::new(
+            // 🚧 Hmmm. Well, I don't have a domain here, and I think that
+            // as_type should take one. So I'm going to do the gross thing,
+            // and hardcode what I need. It's really not that gross, since
+            // all the as_type stuff is overly complicated, in order to be
+            // used to generate code in places that maybe I don't know
+            // what it should be. Like here.
+            "new".to_owned(),
+            format!(
+                "{}Store",
+                // name.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), &woog, &domain)
+                name.to_upper_camel_case()
+            ),
+            format!("crate::{}::store::ObjectStore", store,),
+            domain.sarzak_mut(),
+        );
+
+        Ty::new_external(&external, domain.sarzak_mut());
+    }
+}
+
+/// Insert a new enum for each object that has a hybrid subtype.
+///
+/// 🚧 Seriously wondering if I really shouldn't have a HybridEnumField object hanging
+/// off of [`Object`] in woog.
+fn insert_hybrid_enums(config: &GraceConfig, woog: &mut WoogStore, domain: &Domain) {
+    let objects: Vec<Object> = domain.sarzak().iter_object().cloned().collect();
+
+    for obj in objects {
+        if local_object_is_hybrid(&obj, config, domain) {
+            HybridEnum::new(
+                format!("{}Enum", obj.name.to_upper_camel_case()),
+                &obj,
+                woog,
+            );
+        }
     }
 }

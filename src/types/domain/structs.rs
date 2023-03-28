@@ -393,7 +393,7 @@ impl CodeWriter for StructNewImpl {
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
-        module: &str,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {

@@ -289,7 +289,7 @@ impl DomainStore {
                     emit!(buffer, "///");
                     emit!(
                         buffer,
-                        "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
+                        "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<{}> {{",
                         obj.as_ident(),
                         obj.as_type(
                             &woog
@@ -432,7 +432,7 @@ impl DomainStore {
                 );
                 emit!(
                     buffer,
-                    "/// In fact, I intend to add automaagic git integration as an option."
+                    "/// In fact, I intend to add automagic git integration as an option."
                 );
                 emit!(
                     buffer,

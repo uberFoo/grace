@@ -504,7 +504,6 @@ impl CodeWriter for DomainFromImpl {
                             );
                         }
                         for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-                            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
                             let referents = get_assoc_referent_from_referrer_sorted!(
                                 assoc_referrer,
                                 domain.sarzak()
@@ -513,7 +512,6 @@ impl CodeWriter for DomainFromImpl {
                             for referent in referents {
                                 let an_ass =
                                     referent.r22_an_associative_referent(domain.sarzak())[0];
-                                let assoc_obj = referent.r25_object(domain.sarzak())[0];
 
                                 emit!(
                                     buffer,

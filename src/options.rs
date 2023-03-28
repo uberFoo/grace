@@ -281,6 +281,8 @@ impl GraceConfig {
         }
     }
 
+    // 🚧 testing...
+    #[allow(dead_code)]
     pub(crate) fn get_doc_test(&self) -> bool {
         if let Some(config_value) = self.get(_TARGET_) {
             if let Some(doc_test) = config_value.doc_test {

@@ -13,7 +13,8 @@ use sarzak::{
     },
     v2::domain::Domain,
     woog::{
-        store::ObjectStore as WoogStore, Borrowed, Function, GraceType, Ownership, Variable, SHARED,
+        store::ObjectStore as WoogStore, Borrowed, Field, Function, GraceType, HybridEnum,
+        Ownership, Referent, Variable, SHARED,
     },
 };
 use snafu::prelude::*;
@@ -68,7 +69,7 @@ pub(crate) trait RenderIdent {
     fn as_ident(&self) -> String;
 }
 
-render_ident!(Attribute, Event, Object, State, Function, Variable);
+render_ident!(Attribute, Event, Object, State, Function, Variable, HybridEnum, Field);
 
 impl RenderIdent for String {
     fn as_ident(&self) -> String {
@@ -121,7 +122,15 @@ pub(crate) trait RenderType {
     fn as_type(&self, mutability: &Ownership, woog: &WoogStore, domain: &Domain) -> String;
 }
 
-render_type!(Attribute, Event, Object, State, SarzakExternal);
+render_type!(
+    Attribute,
+    Event,
+    Object,
+    State,
+    SarzakExternal,
+    HybridEnum,
+    Field
+);
 
 impl RenderType for String {
     fn as_type(&self, mutability: &Ownership, woog: &WoogStore, _domain: &Domain) -> String {
@@ -130,7 +139,7 @@ impl RenderType for String {
                 let borrowed = woog.exhume_borrowed(id).unwrap();
                 match borrowed {
                     Borrowed::Mutable(_) => {
-                        format!("mut {}", self.sanitize().to_upper_camel_case())
+                        format!("&mut {}", self.sanitize().to_upper_camel_case())
                     }
                     Borrowed::Shared(_) => self.sanitize().to_upper_camel_case(),
                 }
@@ -147,7 +156,7 @@ impl RenderType for &str {
                 let borrowed = woog.exhume_borrowed(id).unwrap();
                 match borrowed {
                     Borrowed::Mutable(_) => {
-                        format!("mut {}", self.sanitize().to_upper_camel_case())
+                        format!("&mut {}", self.sanitize().to_upper_camel_case())
                     }
                     Borrowed::Shared(_) => self.sanitize().to_upper_camel_case(),
                 }
@@ -182,7 +191,7 @@ impl RenderType for Ty {
                         let borrowed = woog.exhume_borrowed(id).unwrap();
                         match borrowed {
                             Borrowed::Mutable(_) => {
-                                format!("mut {}", ext.name.sanitize().to_upper_camel_case())
+                                format!("&mut {}", ext.name.sanitize().to_upper_camel_case())
                             }
                             Borrowed::Shared(_) => ext.name.sanitize().to_upper_camel_case(),
                         }
@@ -210,7 +219,16 @@ impl RenderType for GraceType {
             }
             Self::Reference(r) => {
                 let reference = woog.exhume_reference(&r).unwrap();
-                let object = reference.r13_object(domain.sarzak())[0];
+                let referent = reference.r13_referent(woog)[0];
+                let object = match referent {
+                    Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                    Referent::EnumerationField(id) => woog
+                        .exhume_enumeration_field(&id)
+                        .unwrap()
+                        .r36_enumeration(woog)[0]
+                        .r40_object(domain.sarzak())[0],
+                    _ => unimplemented!(),
+                };
                 format!("&{}", object.as_type(mutability, woog, domain))
             }
             Self::TimeStamp(_) => "SystemTime".to_owned(),

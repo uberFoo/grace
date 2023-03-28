@@ -6,7 +6,7 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{fmt::Write, iter::zip};
+use std::fmt::Write;
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
@@ -16,8 +16,8 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            GraceType, Local, ObjectMethod as WoogObjectMethod, Ownership, StructExpression,
-            SymbolTable, Variable, VariableEnum, OWNED, SHARED,
+            Expression, GraceType, Literal, Local, ObjectMethod as WoogObjectMethod, Ownership,
+            Referent, StatementEnum, StructExpression, Variable, VariableEnum, OWNED, SHARED,
         },
     },
 };
@@ -412,22 +412,12 @@ pub(crate) fn render_make_uuid(
 pub(crate) fn render_new_instance(
     buffer: &mut Buffer,
     object: &Object,
-    var: &Local,
+    var: &Variable,
     structure: &StructExpression,
-    table: &SymbolTable,
-    config: &GraceConfig,
-    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    let ty = var
-        .r8_variable(woog)
-        .pop()
-        .unwrap()
-        .r7_value(woog)
-        .pop()
-        .unwrap()
-        .r3_grace_type(woog)[0];
+    let ty = var.r7_value(woog).pop().unwrap().r3_grace_type(woog)[0];
 
     // Check that the type of the variable is a reference to the object that we
     // are instantiating.
@@ -438,15 +428,39 @@ pub(crate) fn render_new_instance(
         match ty {
             GraceType::Reference(id) => {
                 let reference = woog.exhume_reference(&id).unwrap();
-                ensure!(
-                    reference.object == object.id,
+                let referent = reference.r13_referent(woog)[0];
+                let ref_obj = match referent {
+                    Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                    Referent::EnumerationField(id) => woog
+                        .exhume_enumeration_field(&id)
+                        .unwrap()
+                        .r36_enumeration(woog)[0]
+                        .r40_object(domain.sarzak())[0],
+                    _ => unimplemented!(),
+                };
+                ensure!(ref_obj.id == object.id, {
                     CompilerSnafu {
                         description: format!(
-                            "type mismatch: found `{:?}`, expected `{:?}`",
-                            reference, object
-                        )
+                            "type mismatch: found `{}: &{}`, expected `{}: &{}`",
+                            var.name.as_ident(),
+                            ref_obj.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            ),
+                            var.name.as_ident(),
+                            object.as_type(
+                                &woog
+                                    .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                    .unwrap(),
+                                woog,
+                                domain
+                            ),
+                        ),
                     }
-                );
+                });
                 true
             }
             _ => false,
@@ -462,6 +476,9 @@ pub(crate) fn render_new_instance(
     // Get the fields for the struct, in the order in which god intended. It's a pain
     // in the ass. I do this elsewhere, and it's a pain in the ass there too. I would
     // think a macro possible...
+    // The elsewhere is functions and parameters. From a modeling perspective this is
+    // probably appropriate. I could add a relationship to the first field/param I
+    // suppose...
     let mut first = structure
         .r27_struct_expression_field(woog)
         .iter()
@@ -479,7 +496,8 @@ pub(crate) fn render_new_instance(
         }
     }
 
-    write!(buffer, "let {} = ", var.r8_variable(woog)[0].name).context(FormatSnafu)?;
+    // this should be done as part of a let statement rendering
+    write!(buffer, "let {} = ", var.as_ident()).context(FormatSnafu)?;
 
     emit!(
         buffer,
@@ -493,288 +511,124 @@ pub(crate) fn render_new_instance(
         )
     );
 
-    // Now we need to extract the values for the fields from the symbol table.
-    // Except that it's not so simple since it's not a map. So really, it needs
-    // to become a map asap. Maybe after I get EE's working? I haven't thought
-    // about it too much. For now I guess I'll do a linear search.
-    // 💥 put this back once things are sorted
-    // let rvals = fields
-    //     .iter()
-    //     .map(|field| {
-    //         table
-    //             .r29_variable(woog)
-    //             .iter()
-    //             .find(|&var| var.name == field.r27_field(woog)[0].name)
-    //             .unwrap()
-    //             .clone()
-    //     })
-    //     .collect::<Vec<_>>();
-
-    // let tuples = zip(fields, rvals);
-
-    // for (field, rval) in tuples {
-    //     let f = field.r27_field(woog)[0];
-    //     let ty = f.r29_grace_type(woog)[0];
-    //     let rval_string = typecheck_and_coerce(ty, rval, config, woog, domain)?;
-    //     emit!(buffer, "{}: {},", f.as_ident(), rval_string);
-    // }
+    for field in fields {
+        dbg!(&field);
+        let expr = woog.exhume_expression(&field.expr).unwrap();
+        let rhs = match expr {
+            Expression::Literal(id) => {
+                let literal = woog.exhume_literal(id).unwrap();
+                match literal {
+                    Literal::Hack(id) => {
+                        let hack = woog.exhume_hack(id).unwrap();
+                        dbg!(&hack);
+                        &hack.value
+                    }
+                    _ => unimplemented!(),
+                }
+            }
+            _ => unimplemented!(),
+        };
+        emit!(buffer, "{}: {},", field.name.as_ident(), rhs);
+    }
 
     emit!(buffer, "}};");
 
     Ok(())
 }
 
-/// This function takes a type, presumably from the left-hand side of an assignment,
-/// and a variable, presumably from the right-hand side of an assignment, and checks
-/// that the types are compatible. The result, assuming compatibility, is a string
-/// representation of what the right-hand side of the assignment should be in able
-/// to match the types.
-fn typecheck_and_coerce(
-    lhs_ty: &GraceType,
-    rhs: &Variable,
-    config: &GraceConfig,
-    imports: &Option<&HashMap<String, Domain>>,
-    woog: &WoogStore,
-    domain: &Domain,
-) -> Result<String> {
-    let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
-
-    Ok(match &lhs_ty {
-        // GraceType::Reference(id) => {}
-        GraceType::WoogOption(_) => {
-            // ✨ Until this comment changes, i.e., until this is used by more than
-            // rendering a new Self item, the type of the lhs option is uuid.
-            match &rhs_ty {
-                GraceType::WoogOption(id) => {
-                    let opt = woog.exhume_woog_option(&id).unwrap();
-                    let opt_ty = opt.r20_grace_type(woog)[0];
-                    match &opt_ty {
-                        GraceType::Reference(id) => {
-                            let reference = woog.exhume_reference(&id).unwrap();
-                            let object = reference.r13_object(domain.sarzak())[0];
-
-                            if local_object_is_enum(object, config, domain) {
-                                format!(
-                                    "{}.map(|{}| {}.id())",
-                                    rhs.as_ident(),
-                                    object.as_ident(),
-                                    object.as_ident()
-                                )
-                            } else {
-                                format!(
-                                    "{}.map(|{}| {}.id)",
-                                    rhs.as_ident(),
-                                    object.as_ident(),
-                                    object.as_ident()
-                                )
-                            }
-                        }
-                        _ => {
-                            ensure!(
-                                &lhs_ty == &rhs_ty,
-                                CompilerSnafu {
-                                    description: format!(
-                                        "type mismatch: found `{:?}`, expected `{:?}`",
-                                        rhs_ty, lhs_ty
-                                    )
-                                }
-                            );
-                            rhs.as_ident()
-                        }
-                    }
-                }
-                _ => {
-                    ensure!(
-                        &lhs_ty == &rhs_ty,
-                        CompilerSnafu {
-                            description: format!(
-                                "type mismatch: found `{:?}`, expected `{:?}`",
-                                rhs_ty, lhs_ty
-                            )
-                        }
-                    );
-                    rhs.as_ident()
-                }
-            }
-        }
-        // GraceType::TimeStamp(id) => {}
-        GraceType::Ty(id) => {
-            let ty = domain.sarzak().exhume_ty(&id).unwrap();
-            match ty {
-                Ty::Uuid(_) => {
-                    // If the lhs is a uuid, and the rhs is a reference, we need to
-                    // pull it's id.
-                    match &rhs_ty {
-                        GraceType::Reference(id) => {
-                            let obj = woog
-                                .exhume_reference(&id)
-                                .unwrap()
-                                .r13_object(domain.sarzak())[0];
-
-                            if object_is_enum(obj, config, imports, domain)? {
-                                format!("{}.id()", rhs.as_ident())
-                            } else {
-                                format!("{}.id", rhs.as_ident())
-                            }
-                        }
-                        _ => {
-                            ensure!(
-                                &lhs_ty == &rhs_ty,
-                                CompilerSnafu {
-                                    description: format!(
-                                        "type mismatch: found `{:?}`, expected `{:?}`",
-                                        rhs_ty, lhs_ty
-                                    )
-                                }
-                            );
-                            rhs.as_ident()
-                        }
-                    }
-                }
-                _ => {
-                    ensure!(
-                        &lhs_ty == &rhs_ty,
-                        CompilerSnafu {
-                            description: format!(
-                                "type mismatch: found `{:?}`, expected `{:?}`",
-                                rhs_ty, lhs_ty
-                            )
-                        }
-                    );
-                    rhs.as_ident()
-                }
-            }
-        }
-        _ => {
-            ensure!(
-                &lhs_ty == &rhs_ty,
-                CompilerSnafu {
-                    description: format!(
-                        "type mismatch: found `{:?}`, expected `{:?}`",
-                        rhs_ty, lhs_ty
-                    )
-                }
-            );
-            rhs.as_ident()
-        }
-    })
-}
-
+/// 🚧 This renders the only method it can find, and the name of the local that
+/// it's assigned to is hard-coded. This is a problem.
 pub(crate) fn render_method(
     buffer: &mut Buffer,
     obj: &Object,
-    config: &GraceConfig,
-    imports: &Option<&HashMap<String, Domain>>,
+    _config: &GraceConfig,
+    _imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    let method = woog
-        .iter_object_method()
-        .find(|m| m.object == obj.id)
-        .unwrap()
-        .clone();
+    for method in woog.iter_object_method() {
+        if method.object == obj.id {
+            buffer.block(
+                DirectiveKind::IgnoreOrig,
+                format!("{}-struct-impl-new", obj.as_ident()),
+                |buffer| {
+                    // Output a docstring
+                    emit!(
+                        buffer,
+                        "/// {}",
+                        method.r25_function(woog).pop().unwrap().description
+                    );
 
-    buffer.block(
-        DirectiveKind::IgnoreOrig,
-        format!("{}-struct-impl-new", obj.as_ident()),
-        |buffer| {
-            // Output a docstring
-            emit!(
-                buffer,
-                "/// {}",
-                method.r25_function(woog).pop().unwrap().description
-            );
+                    // This renders the method signature.
+                    // It's probably ok as it is.
+                    render_method_definition(buffer, &method, woog, domain)?;
 
-            // This renders the method signature.
-            // It's probably ok as it is.
-            render_method_definition(buffer, &method, woog, domain)?;
+                    // Find the properly scoped variable named `id`.
+                    let table =
+                        method.r25_function(woog)[0].r23_block(woog)[0].r24_symbol_table(woog)[0];
+                    let var = &table
+                        .r29_variable(woog)
+                        .iter()
+                        .find(|&&v| v.name == "id")
+                        .unwrap()
+                        .subtype;
+                    let id = match var {
+                        // This works because the id of the variable is the same as the id of the
+                        // subtype enum.
+                        VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                        _ => panic!("This should never happen"),
+                    };
 
-            // Find the properly scoped variable named `id`.
-            let table = method.r25_function(woog)[0].r23_block(woog)[0].r24_symbol_table(woog)[0];
-            let var = &table
-                .r29_variable(woog)
-                .iter()
-                .find(|&&v| v.name == "id")
-                .unwrap()
-                .subtype;
-            let id = match var {
-                // This works because the id of the variable is the same as the id of the
-                // subtype enum.
-                VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
-                _ => panic!("This should never happen"),
-            };
+                    // This renders a let statement, assigning a new uuid to the id variable.
+                    // This is where the work lies. I think that what I really want to do is
+                    // create (let) statements in the block whilst populating woog. Then
+                    // someplace else, maybe here, we iterate over the statements and generate
+                    // code. Maybe an as_statement trait, or something?
+                    render_make_uuid(buffer, &id, &method, woog, domain)?;
 
-            // This renders a let statement, assigning a new uuid to the id variable.
-            // This is where the work lies. I think that what I really want to do is
-            // create (let) statements in the block whilst populating woog. Then
-            // someplace else, maybe here, we iterate over the statements and generate
-            // code. Maybe an as_statement trait, or something?
-            render_make_uuid(buffer, &id, &method, woog, domain)?;
+                    // Now this is interesting. This is good. It's getting close to what I
+                    // was talking about above. In the woog population code, the function
+                    // for populating a new method I created a statement: a struct item.
+                    // It's the struct for Self. I pull that out here, and then use it when
+                    // I call the renderer.
+                    // 💥 put this back once things are sorted
+                    let let_stmt = match &method.r25_function(woog)[0]
+                        .r23_block(woog)
+                        .pop()
+                        .unwrap()
+                        .r12_statement(woog)
+                        .pop()
+                        .unwrap()
+                        .subtype
+                    {
+                        StatementEnum::XLet(id) => woog.exhume_x_let(id).unwrap(),
+                        _ => unimplemented!(),
+                    };
 
-            // Look up the properly scoped variable named `new`.
-            let var = &table
-                .r29_variable(woog)
-                .iter()
-                .find(|&&v| v.name == "new")
-                .unwrap()
-                .subtype;
-            let new = match var {
-                VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
-                _ => panic!("This should never happen"),
-            };
+                    let var = let_stmt.r17_variable(woog)[0];
+                    let struct_expr = match &let_stmt.r18_expression(woog)[0] {
+                        Expression::StructExpression(id) => {
+                            woog.exhume_struct_expression(id).unwrap()
+                        }
+                        _ => unimplemented!(),
+                    };
 
-            // Now this is interesting. This is good. It's getting close to what I
-            // was talking about above. In the woog population code, the function
-            // for populating a new method I created a statement: a struct item.
-            // It's the struct for Self. I pull that out here, and then use when
-            // I call the renderer.
-            // 💥 put this back once things are sorted
-            // let stmt = match &method
-            //     .r23_block(woog)
-            //     .pop()
-            //     .unwrap()
-            //     .r12_statement(woog)
-            //     .pop()
-            //     .unwrap()
-            //     .subtype
-            // {
-            //     StatementEnum::Item(id) => {
-            //         let item = woog.exhume_item(id).unwrap();
-            //         match item {
-            //             Item::Structure(id) => woog.exhume_structure(id).unwrap(),
-            //             _ => unimplemented!(),
-            //         }
-            //     }
-            //     _ => unimplemented!(),
-            // };
+                    // I wrote this this morning, and already I'can't say how it works
+                    // exactly. It takes a structure, and not a statement, so it's
+                    // pretty low level. It's also assigning the let. Refactor time.
+                    render_new_instance(buffer, obj, &var, &struct_expr, woog, domain)?;
 
-            // // I wrote this this morning, and already I'can't say how it works
-            // // exactly. It takes a structure, and not a statement, so it's
-            // // pretty low level. It's also assigning the let. Refactor time.
-            // render_new_instance_new(
-            //     buffer,
-            //     obj,
-            //     &new,
-            //     &stmt,
-            //     &method
-            //         .r23_block(woog)
-            //         .pop()
-            //         .unwrap()
-            //         .r24_symbol_table(woog)
-            //         .pop()
-            //         .unwrap(),
-            //     config,
-            //     woog,
-            //     domain,
-            // )?;
+                    emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                    emit!(buffer, "new");
+                    emit!(buffer, "}}");
 
-            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
-            emit!(buffer, "new");
-            emit!(buffer, "}}");
+                    Ok(())
+                },
+            )?;
+        }
+    }
 
-            Ok(())
-        },
-    )
+    Ok(())
 }
 
 macro_rules! test_local_and_imports {
@@ -874,7 +728,7 @@ pub(crate) fn local_object_is_supertype(
     is_super.len() > 0
 }
 
-test_local_and_imports!(object_is_subtype, local_object_is_subtype);
+// test_local_and_imports!(object_is_subtype, local_object_is_subtype);
 pub(crate) fn local_object_is_subtype(
     object: &Object,
     _config: &GraceConfig,

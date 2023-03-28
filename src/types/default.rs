@@ -23,6 +23,7 @@ use crate::{
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_binary_referrers_sorted, object_is_hybrid, object_is_singleton, object_is_supertype,
         render::{render_attributes, RenderConst, RenderIdent, RenderType},
+        render_method,
     },
     options::GraceConfig,
     types::{MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation},
@@ -367,49 +368,77 @@ impl CodeWriter for DefaultImplementation {
         );
         let local_woog = woog.as_ref().unwrap();
 
-        Ok(())
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-struct-implementation", object.as_ident()),
+            |buffer| {
+                let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-        // buffer.block(
-        //     DirectiveKind::IgnoreOrig,
-        //     format!("{}-struct-implementation", object.as_ident()),
-        //     |buffer| {
-        //         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
+                let referrers = obj.r17_referrer(domain.sarzak());
+                let has_referential_attrs = referrers.len() > 0;
 
-        //         let referrers = obj.r17_referrer(domain.sarzak());
-        //         let has_referential_attrs = referrers.len() > 0;
+                if has_referential_attrs {
+                    emit!(
+                        buffer,
+                        "impl<'a> {}<'a> {{",
+                        obj.as_type(
+                            &woog
+                                .as_ref()
+                                .unwrap()
+                                .exhume_ownership(
+                                    &woog
+                                        .as_ref()
+                                        .unwrap()
+                                        .exhume_borrowed(&SHARED)
+                                        .unwrap()
+                                        .id()
+                                )
+                                .unwrap(),
+                            local_woog,
+                            domain
+                        )
+                    );
+                } else {
+                    emit!(
+                        buffer,
+                        "impl {} {{",
+                        obj.as_type(
+                            &woog
+                                .as_ref()
+                                .unwrap()
+                                .exhume_ownership(
+                                    &woog
+                                        .as_ref()
+                                        .unwrap()
+                                        .exhume_borrowed(&SHARED)
+                                        .unwrap()
+                                        .id()
+                                )
+                                .unwrap(),
+                            local_woog,
+                            domain
+                        )
+                    );
+                }
 
-        //         if has_referential_attrs {
-        //             emit!(
-        //                 buffer,
-        //                 "impl<'a> {}<'a> {{",
-        //                 obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), local_woog, domain)
-        //             );
-        //         } else {
-        //             emit!(
-        //                 buffer,
-        //                 "impl {} {{",
-        //                 obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), local_woog, domain)
-        //             );
-        //         }
+                for method in &self.methods {
+                    method.write_code(
+                        config,
+                        domain,
+                        woog,
+                        imports,
+                        package,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
+                }
 
-        //         for method in &self.methods {
-        //             method.write_code(
-        //                 config,
-        //                 domain,
-        //                 woog,
-        //                 imports,
-        //                 package,
-        //                 module,
-        //                 Some(obj_id),
-        //                 buffer,
-        //             )?;
-        //         }
+                emit!(buffer, "}}");
 
-        //         emit!(buffer, "}}");
-
-        //         Ok(())
-        //     },
-        // )
+                Ok(())
+            },
+        )
     }
 }
 
@@ -440,161 +469,64 @@ impl CodeWriter for DefaultNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
-        //         ensure!(
-        //             obj_id.is_some(),
-        //             CompilerSnafu {
-        //                 description: "obj_id is required by DefaultNewImpl"
+        ensure!(
+            obj_id.is_some(),
+            CompilerSnafu {
+                description: "obj_id is required by DomainNewImpl"
+            }
+        );
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainNewImpl"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
+        ensure!(
+            imports.is_some(),
+            CompilerSnafu {
+                description: "imports is required by DomainNewImpl"
+            }
+        );
+
+        let obj_id = obj_id.unwrap();
+        let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+
+        // 🚧 Put this back in once I'm done moving to v2.
+        // if options.get_doc_test() {
+        //     buffer.block(
+        //         DirectiveKind::IgnoreGenerated,
+        //         format!("{}-struct-test-new", obj.as_ident()),
+        //         |buffer| {
+        //             let mut uses = HashSet::new();
+        //             let stmts =
+        //                 method.as_statement(package, module, woog, domain, &mut uses);
+        //             emit!(buffer, "/// # Example");
+        //             emit!(buffer, "///");
+        //             emit!(buffer, "///```ignore");
+        //             // for s in use_stmts.split_terminator('\n') {
+        //             for s in uses.iter() {
+        //                 emit!(buffer, "/// {}", s);
         //             }
-        //         );
-        //         ensure!(
-        //             woog.is_some(),
-        //             CompilerSnafu {
-        //                 description: "woog is required by DefaultNewImpl"
+        //             emit!(buffer, "///");
+        //             // for s in stmts.split_terminator('\n') {
+        //             for s in stmts.iter() {
+        //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
         //             }
-        //         );
-        //         let woog = match woog {
-        //             Some(ref woog) => woog,
-        //             _ => unreachable!(),
-        //         };
-        //         let obj_id = obj_id.unwrap();
-        //         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        //             emit!(buffer, "///```");
 
-        // let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
+        //             Ok(())
+        //         },
+        //     )?;
+        // }
 
-        //         // Collect the attributes
-        //         let mut params: Vec<Parameter> = Vec::new();
-        //         let mut rvals: Vec<RValue> = Vec::new();
-        //         let mut fields: Vec<LValue> = Vec::new();
-
-        //         let mut attrs = obj.r1_attribute(domain.sarzak());
-        //         attrs.sort_by(|a, b| a.name.cmp(&b.name));
-        //         for attr in attrs {
-        //             // We are going to generate the id, so don't include it in the
-        //             // list of parameters.
-        //             if attr.name != "id" {
-        //                 let ty = attr.r2_ty(domain.sarzak())[0];
-        //                 fields.push(LValue::new(attr.name.as_ident(), ty.into()));
-        //                 params.push(Parameter::new(
-        //                     woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap().id(),
-        //                     None,
-        //                     ty.into(),
-        //                     PUBLIC,
-        //                     attr.as_ident(),
-        //                 ));
-        //                 rvals.push(RValue::new(attr.as_ident(), ty.into()));
-        //             }
-        //         }
-        //         // And the referential attributes
-        //         for referrer in &referrers {
-        //             let binary = referrer.r6_binary(domain.sarzak())[0];
-        //             let referent = binary.r5_referent(domain.sarzak())[0];
-        //             let r_obj = referent.r16_object(domain.sarzak())[0];
-
-        //             // This determines how a reference is stored in the struct. In this
-        //             // case a reference.
-        //             fields.push(LValue::new(
-        //                 referrer.referential_attribute.as_ident(),
-        //                 GType::Reference(r_obj.id),
-        //             ));
-        //             params.push(Parameter::new(
-        //                     woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap().id(),
-        //                 None,
-        //                 GType::Reference(r_obj.id),
-        //                 PUBLIC,
-        //                 referrer.referential_attribute.as_ident(),
-        //             ));
-
-        //             // 🚧
-        //             rvals.push(RValue::new(
-        //                 referrer.referential_attribute.as_ident(),
-        //                 GType::Reference(r_obj.id),
-        //             ));
-        //         }
-
-        //         // Link the params. The result is the head of the list.
-        //         let param = if params.len() > 0 {
-        //             let mut iter = params.iter_mut().rev();
-        //             let mut last = iter.next().unwrap();
-        //             loop {
-        //                 match iter.next() {
-        //                     Some(param) => {
-        //                         param.next = Some(last);
-        //                         last = param;
-        //                     }
-        //                     None => break,
-        //                 }
-        //             }
-        //             log::trace!("param: {:?}", last);
-        //             Some(last.clone())
-        //         } else {
-        //             None
-        //         };
-
-        //         // Find the method
-        //         // This is going to suck. We don't have cross-domain relationship
-        //         // navigation -- something to be addressed.
-        //         // let mut iter = woog.iter_object_method();
-        //         // let method = loop {
-        //         // match iter.next() {
-        //         // Some((_, method)) => {
-        //         // if method.object == obj.id && method.name == "new" {
-        //         // break method;
-        //         // }
-        //         // }
-        //         // None => {
-        //         // panic!("Unable to find the new method for {}", obj.name);
-        //         // }
-        //         // }
-        //         // };
-
-        //         // Create an ObjectMethod
-        //         // The uniqueness of this instance depends on the inputs to it's
-        //         // new method. Param can be None, and two methods on the same
-        //         // object will have the same obj. So it comes down to a unique
-        //         // name for each object. So just "new" should suffice for name,
-        //         // because it's scoped by obj already.
-        //         let method = ObjectMethod::new(
-        //             param.as_ref(),
-        //             obj.id,
-        //             GType::Object(obj.id),
-        //             PUBLIC,
-        //             "new".to_owned(),
-        //             "Create a new instance".to_owned(),
-        //         );
-
-        //         buffer.block(
-        //             DirectiveKind::CommentOrig,
-        //             format!("{}-struct-impl-new", obj.as_ident()),
-        //             |buffer| {
-        //                 // Output a docstring
-        //                 emit!(
-        //                     buffer,
-        //                     "/// Inter a new {} in the store, and return it's `id`.",
-        //                     obj.as_type(&woog.exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id()).unwrap(), woog, domain)
-        //                 );
-
-        //                 // Output the top of the function definition
-        //                 render_method_definition(buffer, &method, woog, domain)?;
-
-        //                 // Output the code to create the `id`.
-        //                 let id = LValue::new("id", GType::Uuid);
-        //                 render_make_uuid(buffer, &id, &rvals, domain)?;
-
-        //                 // Output code to create the instance
-        //                 render_new_instance(buffer, obj, None, &fields, &rvals, config, woog, domain)?;
-
-        //                 emit!(buffer, "}}");
-
-        //                 Ok(())
-        //             },
-        //         )
-        Ok(())
+        render_method(buffer, obj, config, imports, woog, domain)
     }
 }
 

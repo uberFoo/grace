@@ -12,8 +12,9 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            Access, Block, Borrowed, Call, Expression, Field, Function, GraceType, Hack, Literal,
-            Local, ObjectMethod, Ownership, Parameter, Reference, Statement, StructExpression,
+            Access, Block, Borrowed, Call, Enumeration, EnumerationEnum, EnumerationField,
+            Expression, Field, Function, GraceType, Hack, Item, Literal, Local, ObjectMethod,
+            Ownership, Parameter, Reference, Referent, Statement, StructExpression,
             StructExpressionField, Structure, StructureField, SymbolTable, Value, Variable,
             Visibility, WoogOption, XLet, PUBLIC, SHARED,
         },
@@ -26,21 +27,53 @@ use crate::{
     codegen::{
         find_store, get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
         get_subtypes_sorted, is_object_stale, local_object_is_enum, local_object_is_hybrid,
-        local_object_is_struct, object_is_singleton, object_is_supertype,
+        local_object_is_singleton, local_object_is_struct, local_object_is_supertype,
+        object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
     options::{ExternalEntity, GraceConfig, Target},
     BUILD_DIR, TARGET_DIR,
 };
 
-pub(crate) fn persist_woog(woog: &WoogStore, src_path: &Path, domain: &Domain) -> Result<()> {
-    let mut path = PathBuf::from(src_path);
+pub(crate) fn init_woog<P: AsRef<Path>>(
+    src_path: P,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> WoogStore {
+    // Look for a persisted store.
+    let mut path = PathBuf::from(src_path.as_ref());
     path.pop();
     path.push(TARGET_DIR);
     path.push(BUILD_DIR);
     path.push(domain.name());
 
-    woog.persist(&path).context(FileSnafu { path })
+    if path.exists() && !config.get_always_process() {
+        panic!("We don't want to load the store yet.");
+        log::debug!("Loading Woog store from: {}", path.display());
+        WoogStore::load(&path).unwrap_or_else(|e| {
+            log::warn!("Failed to load Woog store: {}", e);
+            WoogStore::new()
+        })
+    } else {
+        WoogStore::new()
+    }
+}
+
+pub(crate) fn persist_woog<P: AsRef<Path>>(
+    woog: &WoogStore,
+    src_path: P,
+    domain: &Domain,
+) -> Result<()> {
+    let mut path = PathBuf::from(src_path.as_ref());
+    path.pop();
+    path.push(TARGET_DIR);
+    path.push(BUILD_DIR);
+    path.push(domain.name());
+
+    woog.persist(&path).context(FileSnafu {
+        path,
+        description: "persisting Woog store".to_owned(),
+    })
 }
 
 /// Woog post-load domain processing
@@ -50,29 +83,12 @@ pub(crate) fn persist_woog(woog: &WoogStore, src_path: &Path, domain: &Domain) -
 /// We also inter types in woog that exist in sarzak, so that we can access them
 /// during code generation.
 pub(crate) fn populate_woog(
-    src_path: &Path,
     module: &str,
     config: &GraceConfig,
     imports: &HashMap<String, Domain>,
+    mut woog: &mut WoogStore,
     domain: &Domain,
-) -> Result<WoogStore> {
-    // Look for a persisted store.
-    let mut path = PathBuf::from(src_path);
-    path.pop();
-    path.push(TARGET_DIR);
-    path.push(BUILD_DIR);
-    path.push(domain.name());
-
-    let mut woog = if path.exists() && !config.get_always_process() {
-        log::debug!("Loading Woog store from: {}", path.display());
-        WoogStore::load(&path).unwrap_or_else(|e| {
-            log::warn!("Failed to load Woog store: {}", e);
-            WoogStore::new()
-        })
-    } else {
-        WoogStore::new()
-    };
-
+) -> Result<()> {
     let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
     objects.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -84,18 +100,40 @@ pub(crate) fn populate_woog(
         }
 
         log::debug!("Populating woog for: {}", obj.name);
-        make_data_structure(obj, domain, &mut woog);
+
+        // 🚧 Looking at the structure of this code here, I can see that I should
+        // process structs in a func, and hybrids in a func, etc. Do that sooner
+        // than later dude.
+
+        // dbg!(local_object_is_struct(obj, config, domain));
+        // dbg!(local_object_is_supertype(obj, config, domain));
+        // dbg!(local_object_is_hybrid(obj, config, domain));
+        // dbg!(local_object_is_singleton(obj, config, domain));
+
+        // This generates a struct for each object.
+        if local_object_is_struct(obj, config, domain) {
+            make_structure(obj, domain, &mut woog);
+        } else if local_object_is_supertype(obj, config, domain) {
+            if local_object_is_hybrid(obj, config, domain) {
+                // 🚧 Do something clever with the make_data_structure call to add
+                // the `subtype` field. Or whatever it is.
+                make_hybrid_enumeration(obj, &mut woog, domain);
+            } else {
+                // Create an enum for the supertype.
+                // make_enumeration(obj, &mut woog, domain);
+            }
+        }
 
         if config.is_external(&obj.id) {
             log::debug!("Populating woog for external: {}", obj.name);
             let ext = config.get_external(&obj.id).unwrap();
-            inter_external_method_new(obj, &ext, module, config, domain, &mut woog);
+            inter_external_method_new(obj, &ext, module, config, domain, &mut woog)?;
         } else if local_object_is_struct(obj, config, domain) {
             log::debug!("Populating woog for struct: {}", obj.name);
-            inter_struct_method_new(obj, module, config, domain, &mut woog);
+            inter_struct_method_new(obj, module, config, domain, &mut woog)?;
         } else if local_object_is_hybrid(obj, config, domain) {
-            // log::debug!("Populating woog for hybrid: {}", obj.name);
-            // inter_hybrid_method_new(obj, module, config, imports, domain, &mut woog);
+            log::debug!("Populating woog for hybrid: {}", obj.name);
+            inter_hybrid_method_new(obj, module, config, imports, domain, &mut woog)?;
         }
     }
 
@@ -104,7 +142,7 @@ pub(crate) fn populate_woog(
         let _ = GraceType::new_ty(&ty, &mut woog);
     }
 
-    Ok(woog)
+    Ok(())
 }
 
 /// I'm trying to organize this function to be as similar to how the code is generated.
@@ -129,7 +167,7 @@ fn inter_struct_method_new(
     config: &GraceConfig,
     domain: &Domain,
     woog: &mut WoogStore,
-) -> () {
+) -> Result<()> {
     let borrowed = woog
         .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
         .unwrap()
@@ -143,7 +181,7 @@ fn inter_struct_method_new(
     let block = Block::new(Uuid::new_v4(), woog);
     let table = SymbolTable::new(&block, woog);
 
-    let method = ObjectMethod::new(obj, woog);
+    let method = ObjectMethod::new(Uuid::new_v4(), obj, woog);
     let function = Function::new_object_method(
         format!(
             "Inter a new '{}' in the store, and return it's `id`.",
@@ -154,13 +192,6 @@ fn inter_struct_method_new(
         &method,
         woog,
     );
-
-    // This needs to be moved to someplace generic. It's only here as I develop
-    // the code.
-    //
-    // Create the structure definition
-    //
-    let structure = Structure::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
 
     //
     // Create statements in the body
@@ -183,60 +214,50 @@ fn inter_struct_method_new(
     // This is the variable.
     let new = Local::new(Uuid::new_v4(), woog);
     let var = Variable::new_local("new".to_owned(), &table, &new, woog);
+    let referent = Referent::new_object(&obj, woog);
     let _ = Value::new_variable(
         &access,
-        &GraceType::new_reference(&Reference::new(&obj, woog), woog),
+        &GraceType::new_reference(&Reference::new(&referent, woog), woog),
         &var,
         woog,
     );
 
     // This is the struct.
-    let struct_expr =
-        StructExpression::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
+    let struct_expr = StructExpression::new(
+        obj.as_type(&Ownership::new_owned(), woog, domain),
+        Uuid::new_v4(),
+        woog,
+    );
+
+    let store = if let Target::Domain(_) = config.get_target() {
+        // Add the store to the end of the  input parameters
+        let store = find_store(module, &woog, domain);
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+
+        let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
+        let external = Ty::External(store.id);
+        let ty = GraceType::new_ty(&external, woog);
+        let _ = Value::new_variable(&mut_access, &ty, &var, woog);
+
+        Some(param)
+    } else {
+        None
+    };
+
     // collect_attributes iterates over all the attributes and relationship-related bits
     // and creates Parameters and StructureFields from them.
-    let (mut params, mut fields) = collect_attributes(
+    collect_attributes(
         obj,
-        &structure,
         &struct_expr,
         &function,
+        store,
+        None,
         &table,
         module,
         config,
         domain,
         woog,
-    );
-
-    if let Target::Domain(_) = config.get_target() {
-        // Add the store to the end of the  input parameters
-        let store = find_store(module, &woog, domain);
-        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-        let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
-        let external = Ty::External(store.id);
-        let ty = GraceType::new_ty(&external, woog);
-        let _ = Value::new_variable(&mut_access, &ty, &var, woog);
-        params.push(param);
-    }
-
-    // Link the params
-    // I need to maintain the order I've adopted because I'don't need things
-    // changing. That said, I need to iterate over the local parameters,
-    // and not what's interred in the store. So, I do the weird thing, and
-    // iterate over the locals, and push the change to the store.
-    params.iter_mut().rev().fold(None, |next, param| {
-        param.next = next;
-        woog.inter_parameter(param.clone());
-        Some(param.id)
-    });
-
-    // Same-same for the fields. Something that calls us is going to have to do the
-    // same thing with all of these statements. I need to keep that in the back of
-    // my head.
-    // fields.iter_mut().rev().fold(None, |next, field| {
-    //     field.next = next;
-    //     woog.inter_structure_field(field.clone());
-    //     Some(field.id)
-    // });
+    )?;
 
     let expr = Expression::new_struct_expression(&struct_expr, woog);
     // The type of the StructExpression is the object itself.
@@ -251,16 +272,18 @@ fn inter_struct_method_new(
     // This is the statement.
     let xlet = XLet::new(&expr, &var, woog);
     let _ = Statement::new_x_let(&block, None, &xlet, woog);
+
+    Ok(())
 }
 
 fn inter_hybrid_method_new(
     obj: &Object,
     module: &str,
     config: &GraceConfig,
-    imports: &HashMap<String, Domain>,
+    _zimports: &HashMap<String, Domain>,
     domain: &Domain,
     woog: &mut WoogStore,
-) -> () {
+) -> Result<()> {
     const SUBTYPE_ATTR: &str = "subtype";
 
     let borrowed = woog
@@ -281,113 +304,159 @@ fn inter_hybrid_method_new(
         let block = Block::new(Uuid::new_v4(), woog);
         let table = SymbolTable::new(&block, woog);
 
-        let method = ObjectMethod::new(s_obj, woog);
+        let method = ObjectMethod::new(Uuid::new_v4(), obj, woog);
         let function = Function::new_object_method(
             format!(
-                "Inter a new '{}' in the store, and return it's `id`.",
+                "Inter a new `{}' in the store, and return it's `id`.",
                 s_obj.name
             ),
-            "new".to_owned(),
+            format!("new_{}", s_obj.name),
             &block,
             &method,
             woog,
         );
-
-        // This needs to be moved to someplace generic. It's only here as I develop
-        // the code.
-        //
-        // Create the structure definition
-        //
-        let structure = Structure::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
 
         //
         // Create statements in the body
         //
 
         //
-        // `let id = Uuid::new_v5(...)`
-        let id = Local::new(Uuid::new_v4(), woog);
-        let var = Variable::new_local("id".to_owned(), &table, &id, woog);
-        let _value = Value::new_variable(
-            &access,
-            &GraceType::new_ty(&Ty::new_uuid(), woog),
-            &var,
-            woog,
-        );
-
-        //
         // `let new = Struct {...}`
         //
         // This is the variable.
         let new = Local::new(Uuid::new_v4(), woog);
-        let var = Variable::new_local("new".to_owned(), &table, &new, woog);
+        let new_var = Variable::new_local("new".to_owned(), &table, &new, woog);
+        let referent = Referent::new_object(&obj, woog);
         let _ = Value::new_variable(
             &access,
-            &GraceType::new_reference(&Reference::new(&obj, woog), woog),
-            &var,
+            &GraceType::new_reference(&Reference::new(&referent, woog), woog),
+            &new_var,
             woog,
         );
 
         // This is the struct.
-        let struct_expr =
-            StructExpression::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
-        let (mut params, mut fields) = collect_attributes(
-            s_obj,
-            &structure,
+        let struct_expr = StructExpression::new(
+            obj.as_type(&Ownership::new_owned(), woog, domain),
+            Uuid::new_v4(),
+            woog,
+        );
+
+        let store = if let Target::Domain(_) = config.get_target() {
+            // Add the store to the end of the  input parameters
+            let store = find_store(module, &woog, domain);
+            let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+
+            let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
+            let external = Ty::External(store.id);
+            let ty = GraceType::new_ty(&external, woog);
+            let _ = Value::new_variable(&mut_access, &ty, &var, woog);
+
+            Some(param)
+        } else {
+            None
+        };
+
+        dbg!(&store);
+
+        // let (param, field) = if object_is_singleton(s_obj, config, &Some(imports), domain)?
+        // && !object_is_supertype(s_obj, config, &Some(imports), domain)?
+        // {
+        // 🚧 Add a field
+
+        // (store, None)
+        // } else {
+        let (param, field) = {
+            let referent = Referent::new_object(&s_obj, woog);
+            let reference = Reference::new(&referent, woog);
+            let ty = GraceType::new_reference(&reference, woog);
+
+            // This is the subtype param to the functions
+            // Put this before the store: that's the store.as_ref() below.
+            let param = Parameter::new(Uuid::new_v4(), Some(&function), store.as_ref(), woog);
+
+            let var = Variable::new_parameter(SUBTYPE_ATTR.to_owned(), &table, &param, woog);
+            let _ = Value::new_variable(&access, &ty, &var, woog);
+
+            // This is the subtype field in the struct
+            let aux_enum_field = woog
+                .iter_hybrid_enum()
+                .find(|ae| ae.object == obj.id)
+                .unwrap()
+                .r46_enumeration(woog)[0]
+                .r36_enumeration_field(woog)
+                .iter()
+                .cloned()
+                .find(|ef| {
+                    ef.r36_field(woog)
+                        .iter()
+                        .cloned()
+                        .find(|f| match f.r37_grace_type(woog)[0] {
+                            GraceType::Reference(id) => {
+                                let reference = woog.exhume_reference(&id).unwrap();
+                                let referent = reference.r13_referent(woog)[0];
+                                match referent {
+                                    Referent::Object(id) => {
+                                        let obj = domain.sarzak().exhume_object(&id).unwrap();
+                                        dbg!(&obj.name, &s_obj.name);
+                                        obj.name == s_obj.name
+                                    }
+                                    _ => false,
+                                }
+                            }
+                            GraceType::Ty(id) => {
+                                let ty = domain.sarzak().exhume_ty(&id).unwrap();
+                                panic!("{:?}", ty);
+                            }
+                            道 => unimplemented!("Apparently you need to deal with {:?}", 道),
+                        })
+                        .is_some()
+                })
+                .unwrap()
+                .clone();
+
+            let referent = Referent::new_enumeration_field(&aux_enum_field, woog);
+            let reference = Reference::new(&referent, woog);
+            let ty = GraceType::new_reference(&reference, woog);
+            let value = typecheck_and_coerce(&ty, &var, config, woog, domain)?;
+            // dbg!(&value);
+            // let hack = Hack::new(
+            //     format!(
+            //         "{}Enum::{}(subtype.id)",
+            //         obj.as_type(&Ownership::new_owned(), woog, domain),
+            //         s_obj.as_type(&Ownership::new_owned(), woog, domain)
+            //     ),
+            //     woog,
+            // );
+            let hack = Hack::new(value, woog);
+            // dbg!(&hack);
+            let literal = Literal::new_hack(&hack, woog);
+            let expr = Expression::new_literal(&literal, woog);
+            let field = StructExpressionField::new(
+                SUBTYPE_ATTR.to_owned(),
+                &expr,
+                &struct_expr,
+                None,
+                woog,
+            );
+            dbg!(&field);
+
+            (Some(param), Some(field))
+        };
+
+        // collect_attributes iterates over all the attributes and relationship-related bits
+        // and creates Parameters and StructureFields from them.
+        collect_attributes(
+            obj,
             &struct_expr,
             &function,
+            param,
+            field,
             &table,
             module,
             config,
             domain,
             woog,
-        );
-
-        // These are for the "subtype" attribute, which points at the subtype.
-        let reference = Reference::new(&s_obj, woog);
-        let ty = GraceType::new_reference(&reference, woog);
-
-        // let field = Field::new(SUBTYPE_ATTR.to_owned(), &ty, woog);
-        // let field = StructureField::new(None, &field, &structure, woog);
-        // fields.insert(0, field);
-
-        // Fix these unwraps later.
-        if object_is_singleton(s_obj, config, &Some(imports), domain).unwrap()
-            && !object_is_supertype(s_obj, config, &Some(imports), domain).unwrap()
-        {
-            let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-            let var = Variable::new_parameter(SUBTYPE_ATTR.to_owned(), &table, &param, woog);
-            let _ = Value::new_variable(&access, &ty.into(), &var, woog);
-            params.insert(0, param);
-        }
-
-        if let Target::Domain(_) = config.get_target() {
-            // Add the store to the end of the  input parameters
-            let store = find_store(module, &woog, domain);
-            let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-            let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
-            let external = Ty::External(store.id);
-            let ty = GraceType::new_ty(&external, woog);
-            let _ = Value::new_variable(&mut_access, &ty, &var, woog);
-            params.push(param);
-        }
-
-        // Link the params
-        // I need to maintain the order I've adopted because I'don't need things
-        // changing. That said, I need to iterate over the local parameters,
-        // and not what's interred in the store. So, I do the weird thing, and
-        // iterate over the locals, and push the change to the store.
-        params.iter_mut().rev().fold(None, |next, param| {
-            param.next = next;
-            woog.inter_parameter(param.clone());
-            Some(param.id)
-        });
-        // Same-same for the fields
-        // fields.iter_mut().rev().fold(None, |next, field| {
-        //     field.next = next;
-        //     woog.inter_structure_field(field.clone());
-        //     Some(field.id)
-        // });
+        )?;
 
         let expr = Expression::new_struct_expression(&struct_expr, woog);
         let obj_type = domain
@@ -399,9 +468,11 @@ fn inter_hybrid_method_new(
         let _ = Value::new_expression(&access, &ty, &expr, woog);
 
         // This is the statement.
-        let xlet = XLet::new(&expr, &var, woog);
+        let xlet = XLet::new(&expr, &new_var, woog);
         let _ = Statement::new_x_let(&block, None, &xlet, woog);
     }
+
+    Ok(())
 }
 
 /// Create a method to create a new instance of the external entity.
@@ -413,7 +484,7 @@ fn inter_external_method_new(
     config: &GraceConfig,
     domain: &Domain,
     woog: &mut WoogStore,
-) -> () {
+) -> Result<()> {
     const VALUE_FIELD: &str = "ext_value";
 
     let borrowed = woog
@@ -432,10 +503,10 @@ fn inter_external_method_new(
     let block = Block::new(Uuid::new_v4(), woog);
     let table = SymbolTable::new(&block, woog);
 
-    let method = ObjectMethod::new(obj, woog);
+    let method = ObjectMethod::new(Uuid::new_v4(), obj, woog);
     let function = Function::new_object_method(
         format!(
-            "Create a new instance of the external entity,  '{}', wrapped in an {}.",
+            "Create a new instance of the external entity, '{}', wrapped in an {}.",
             external.name, obj.name
         ),
         external.ctor.clone(),
@@ -443,13 +514,6 @@ fn inter_external_method_new(
         &method,
         woog,
     );
-
-    // This needs to be moved to someplace generic. It's only here as I develop
-    // the code.
-    //
-    // Create the structure definition
-    //
-    let structure = Structure::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
 
     //
     // Create statements in the body
@@ -472,27 +536,35 @@ fn inter_external_method_new(
     // This is the variable.
     let new = Local::new(Uuid::new_v4(), woog);
     let var = Variable::new_local("new".to_owned(), &table, &new, woog);
+    let referent = Referent::new_object(&obj, woog);
     let _ = Value::new_variable(
         &access,
-        &GraceType::new_reference(&Reference::new(&obj, woog), woog),
+        &GraceType::new_reference(&Reference::new(&referent, woog), woog),
         &var,
         woog,
     );
 
     // This is the struct.
-    let struct_expr =
-        StructExpression::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
-    let (mut params, mut fields) = collect_attributes(
-        obj,
-        &structure,
-        &struct_expr,
-        &function,
-        &table,
-        module,
-        config,
-        domain,
+    let struct_expr = StructExpression::new(
+        obj.as_type(&Ownership::new_owned(), woog, domain),
+        Uuid::new_v4(),
         woog,
     );
+
+    let store = if let Target::Domain(_) = config.get_target() {
+        // Add the store to the end of the  input parameters
+        let store = find_store(module, &woog, domain);
+        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+
+        let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
+        let ty = Ty::External(store.id);
+        let ty = GraceType::new_ty(&ty, woog);
+        let _ = Value::new_variable(&mut_access, &ty, &var, woog);
+
+        Some(param)
+    } else {
+        None
+    };
 
     // Maybe this is a hack, maybe it's cool. In any case, I'm inserting an
     // attribute on external entities to store the internal value of the thing.
@@ -503,45 +575,33 @@ fn inter_external_method_new(
         .iter_external()
         .find(|e| e.name == external.name)
         .unwrap();
+
     let ty = ee.r3_ty(domain.sarzak())[0];
     let ty = GraceType::new_ty(&ty, woog);
 
-    // let field = Field::new(VALUE_FIELD.to_owned(), &ty, woog);
-    // let field = StructExpressionField::new(VALUE_FIELD.to_owned(), &expr, &structure, None, woog);
-    // fields.insert(0, field);
-
-    let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
+    let param = Parameter::new(Uuid::new_v4(), Some(&function), store.as_ref(), woog);
     let var = Variable::new_parameter(VALUE_FIELD.to_owned(), &table, &param, woog);
+
     let _ = Value::new_variable(&owned_access, &ty.into(), &var, woog);
-    params.insert(0, param);
 
-    if let Target::Domain(_) = config.get_target() {
-        // Add the store to the end of the  input parameters
-        let store = find_store(module, &woog, domain);
-        let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-        let var = Variable::new_parameter("store".to_owned(), &table, &param, woog);
-        let ty = Ty::External(store.id);
-        let ty = GraceType::new_ty(&ty, woog);
-        let _ = Value::new_variable(&mut_access, &ty, &var, woog);
-        params.push(param);
-    }
+    // This is the value field in the struct
+    let hack = Hack::new(VALUE_FIELD.to_owned(), woog);
+    let literal = Literal::new_hack(&hack, woog);
+    let expr = Expression::new_literal(&literal, woog);
+    let field = StructExpressionField::new(VALUE_FIELD.to_owned(), &expr, &struct_expr, None, woog);
 
-    // Link the params
-    // I need to maintain the order I've adopted because I'don't need things
-    // changing. That said, I need to iterate over the local parameters,
-    // and not what's interred in teh store. So, I do the weird thing, and
-    // iterate over the locals, and push the change to the store.
-    params.iter_mut().rev().fold(None, |next, param| {
-        param.next = next;
-        woog.inter_parameter(param.clone());
-        Some(param.id)
-    });
-    // Same-same for the fields
-    // fields.iter_mut().rev().fold(None, |next, field| {
-    //     field.next = next;
-    //     woog.inter_structure_field(field.clone());
-    //     Some(field.id)
-    // });
+    collect_attributes(
+        obj,
+        &struct_expr,
+        &function,
+        Some(param),
+        Some(field),
+        &table,
+        module,
+        config,
+        domain,
+        woog,
+    )?;
 
     let expr = Expression::new_struct_expression(&struct_expr, woog);
     let obj_type = domain
@@ -555,23 +615,36 @@ fn inter_external_method_new(
     // This is the statement.
     let xlet = XLet::new(&expr, &var, woog);
     let _ = Statement::new_x_let(&block, None, &xlet, woog);
+
+    Ok(())
 }
 
-/// Create the structure definition
-fn make_data_structure(obj: &Object, domain: &Domain, woog: &mut WoogStore) {
-    //
-    // We should probably be creating an Item, and a Statement to be complete.
-    //
-    let structure = Structure::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
+/// Create the Structure definition
+///
+/// This creates a struct, or and enum, (or perhaps both?), including it's fields.
+///
+/// We lose information doing this, so we can't actually use this struct as a basis
+/// for creating a function that takes values by reference. It's got me thinking
+/// though. Wy do we take things by reference in new? Why not take the UUID that
+/// we are actually interested in? Oh, type-checking!
+///
+/// I noticed that we are missing visibility for both the data structure as well
+/// as it's fields.
+fn make_structure(obj: &Object, domain: &Domain, woog: &mut WoogStore) {
+    let mut structure = Structure::new(
+        obj.as_type(&Ownership::new_owned(), woog, domain),
+        None,
+        &obj,
+        woog,
+    );
 
-    let borrowed = woog
-        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
-        .unwrap()
-        .clone();
-    let public = Visibility::Public(PUBLIC);
-    let access = Access::new(&borrowed, &public, woog);
+    Item::new_structure(&structure, woog);
+
+    // Build a UUID type
+    let uuid = GraceType::new_ty(&Ty::new_uuid(), woog);
 
     let mut last_field: Option<Uuid> = None;
+    let mut field_zero: Option<Uuid> = None;
 
     // Collect the attributes
     let mut attrs = obj.r1_attribute(domain.sarzak());
@@ -581,17 +654,24 @@ fn make_data_structure(obj: &Object, domain: &Domain, woog: &mut WoogStore) {
         let ty = GraceType::new_ty(&ty, woog);
 
         let field = Field::new(attr.as_ident(), None, &ty, woog);
+
+        // This assumes the existence of an attribute.
+        if field_zero.is_none() {
+            field_zero = Some(field.id);
+        }
+
         if let Some(last) = last_field {
             let mut last_field = woog.exhume_field(&last).unwrap().clone();
             last_field.next = Some(field.id);
             woog.inter_field(last_field);
         }
         last_field = Some(field.id);
+
         let _field = StructureField::new(&field, &structure, woog);
     }
 
     // These are more attributes on our object, and they should be sorted.
-    let referrers = get_binary_referrers_sorted!(&obj, domain.sarzak());
+    let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
     // And the referential attributes
     for referrer in &referrers {
         let binary = referrer.r6_binary(domain.sarzak())[0];
@@ -599,38 +679,41 @@ fn make_data_structure(obj: &Object, domain: &Domain, woog: &mut WoogStore) {
         let r_obj = referent.r16_object(domain.sarzak())[0];
         let cond = referrer.r11_conditionality(domain.sarzak())[0];
 
+        let referent = Referent::new_object(&r_obj, woog);
+        let reference = Reference::new(&referent, woog);
+        let ty = GraceType::new_reference(&reference, woog);
+
         // This determines how a reference is stored in the struct. In this
         // case a UUID.
         match cond {
             // If it's conditional build a parameter that's an optional reference
             // to the referent.
             Conditionality::Conditional(_) => {
-                // Build an `Option<UUID>` type
-                let uuid = GraceType::new_ty(&Ty::new_uuid(), woog);
-                let option = WoogOption::new(&uuid, woog);
+                let option = WoogOption::new(&ty, woog);
                 let ty = GraceType::new_woog_option(&option, woog);
 
                 let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+
                 if let Some(last) = last_field {
                     let mut last_field = woog.exhume_field(&last).unwrap().clone();
                     last_field.next = Some(field.id);
                     woog.inter_field(last_field);
                 }
                 last_field = Some(field.id);
+
                 let _field = StructureField::new(&field, &structure, woog);
             }
             // An unconditional reference translates into a reference to the referent.
             Conditionality::Unconditional(_) => {
-                // Build a UUID type
-                let ty = GraceType::new_ty(&Ty::new_uuid(), woog);
-
                 let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+
                 if let Some(last) = last_field {
                     let mut last_field = woog.exhume_field(&last).unwrap().clone();
                     last_field.next = Some(field.id);
                     woog.inter_field(last_field);
                 }
                 last_field = Some(field.id);
+
                 let _field = StructureField::new(&field, &structure, woog);
             }
         }
@@ -642,41 +725,86 @@ fn make_data_structure(obj: &Object, domain: &Domain, woog: &mut WoogStore) {
 
         for referent in referents {
             let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
-            let assoc_obj = referent.r25_object(domain.sarzak())[0];
 
-            // Build a UUID type
-            let ty = GraceType::new_ty(&Ty::new_uuid(), woog);
+            let field = Field::new(an_ass.referential_attribute.as_ident(), None, &uuid, woog);
 
-            let field = Field::new(an_ass.referential_attribute.as_ident(), None, &ty, woog);
             if let Some(last) = last_field {
                 let mut last_field = woog.exhume_field(&last).unwrap().clone();
                 last_field.next = Some(field.id);
                 woog.inter_field(last_field);
             }
             last_field = Some(field.id);
+
             let _field = StructureField::new(&field, &structure, woog);
         }
     }
 
-    let sfs = structure
-        .r35_structure_field(woog)
-        .iter()
-        .map(|sf| sf.r35_field(woog))
-        .collect::<Vec<_>>();
-    dbg!(&sfs);
+    // Add the zeroth field
+    debug_assert!(field_zero.is_some());
+    structure.field_zero = field_zero;
+    woog.inter_structure(structure);
 }
 
+/// Create the Enumeration definition
+///
+/// This is awkward. We need the first field to create the enumeration, and we
+/// can't create any EnumerationField-s until we've built the enumeration. So
+/// we need to keep a local copy of the fields to build the EnumerationField-s
+/// after we've built the enumeration.
+fn make_hybrid_enumeration(obj: &Object, woog: &mut WoogStore, domain: &Domain) {
+    let mut fields = Vec::new();
+
+    for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
+        let s_obj = subtype.r15_object(domain.sarzak())[0];
+
+        let referent = Referent::new_object(&s_obj, woog);
+        let reference = Reference::new(&referent, woog);
+        let ty = GraceType::new_reference(&reference, woog);
+
+        let field = Field::new(
+            s_obj.as_type(&Ownership::new_owned(), woog, domain),
+            None,
+            &ty,
+            woog,
+        );
+
+        fields.push(field);
+    }
+
+    let hybrid = woog
+        .iter_hybrid_enum()
+        .find(|e| e.object == obj.id)
+        .unwrap()
+        .clone();
+    let enumeration = Enumeration::new_hybrid_enum(
+        obj.as_type(&Ownership::new_owned(), woog, domain),
+        &fields[0],
+        &obj,
+        &hybrid,
+        woog,
+    );
+
+    for field in fields {
+        let _field = EnumerationField::new(&enumeration, &field, woog);
+    }
+}
+
+/// Gather together all of the attributes for a type
+///
+/// 🚧 I'm now wondering if we could be iterating over the [`Structure`] instead of
+/// going through all the rigamarole of getting the attributes again.
 fn collect_attributes(
     obj: &Object,
-    structure: &Structure,
-    _struct_expr: &StructExpression,
+    struct_expr: &StructExpression,
     function: &Function,
+    tail_params: Option<Parameter>,
+    tail_fields: Option<StructExpressionField>,
     table: &SymbolTable,
     _module: &str,
-    _config: &GraceConfig,
+    config: &GraceConfig,
     domain: &Domain,
     woog: &mut WoogStore,
-) -> (Vec<Parameter>, Vec<Field>) {
+) -> Result<()> {
     let borrowed = woog
         .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
         .unwrap()
@@ -684,11 +812,11 @@ fn collect_attributes(
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
-    let mut last_field: Option<Uuid> = None;
-    let mut last_param: Option<Uuid> = None;
+    // Build a UUID type
+    let uuid = GraceType::new_ty(&Ty::new_uuid(), woog);
 
-    let mut params = Vec::new();
-    let mut fields = Vec::new();
+    let mut last_param_uuid: Option<Uuid> = None;
+    let mut last_field_uuid: Option<Uuid> = None;
 
     // Collect the attributes
     let mut attrs = obj.r1_attribute(domain.sarzak());
@@ -697,38 +825,43 @@ fn collect_attributes(
         let ty = attr.r2_ty(domain.sarzak())[0];
         let ty = GraceType::new_ty(&ty, woog);
 
-        let field = Field::new(attr.as_ident(), None, &ty, woog);
-        if let Some(last) = last_field {
-            let mut last_field = woog.exhume_field(&last).unwrap().clone();
-            last_field.next = Some(field.id);
-            woog.inter_field(last_field);
-        }
-        last_field = Some(field.id);
-        let _field = StructureField::new(&field, &structure, woog);
-        fields.push(field);
-        // fields.push(attr.as_ident());
-
-        // let value = typecheck_and_coerce()
-        // let hack = Hack::new()
-        // let field = StructureField::new(attr.as_ident(), &expr, &structure, None, woog);
-        // fields.push(field);
-
         // We are going to generate the id, so don't include it in the
         // list of parameters.
-        if attr.name != "id" {
+        let var = if attr.name != "id" {
             let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-            if let Some(last) = last_param {
+
+            if let Some(last) = last_param_uuid {
                 let mut last_param = woog.exhume_parameter(&last).unwrap().clone();
                 last_param.next = Some(param.id);
                 woog.inter_parameter(last_param);
             }
-            last_param = Some(param.id);
-            let var = Variable::new_parameter(attr.as_ident(), &table, &param, woog);
-            let _ = Value::new_variable(&access, &ty.into(), &var, woog);
-            params.push(param);
-        }
-    }
+            last_param_uuid = Some(param.id);
 
+            let var = Variable::new_parameter(attr.as_ident(), &table, &param, woog);
+            let _ = Value::new_variable(&access, &ty.clone().into(), &var, woog);
+
+            var
+        } else {
+            let local = Local::new(Uuid::new_v4(), woog);
+            let var = Variable::new_local(attr.as_ident(), &table, &local, woog);
+            let _ = Value::new_variable(&access, &ty.clone().into(), &var, woog);
+
+            var
+        };
+
+        let value = typecheck_and_coerce(&ty, &var, config, woog, domain)?;
+        let hack = Hack::new(value, woog);
+        let literal = Literal::new_hack(&hack, woog);
+        let expr = Expression::new_literal(&literal, woog);
+        let field = StructExpressionField::new(attr.as_ident(), &expr, struct_expr, None, woog);
+
+        if let Some(last) = last_field_uuid {
+            let mut last_field = woog.exhume_struct_expression_field(&last).unwrap().clone();
+            last_field.next = Some(field.id);
+            woog.inter_struct_expression_field(last_field);
+        }
+        last_field_uuid = Some(field.id);
+    }
     // These are more attributes on our object, and they should be sorted.
     let referrers = get_binary_referrers_sorted!(&obj, domain.sarzak());
     // And the referential attributes
@@ -745,80 +878,90 @@ fn collect_attributes(
             // to the referent.
             Conditionality::Conditional(_) => {
                 let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-                if let Some(last) = last_param {
+
+                if let Some(last) = last_param_uuid {
                     let mut last_param = woog.exhume_parameter(&last).unwrap().clone();
                     last_param.next = Some(param.id);
                     woog.inter_parameter(last_param);
                 }
-                last_param = Some(param.id);
+                last_param_uuid = Some(param.id);
+
                 let var = Variable::new_parameter(
                     referrer.referential_attribute.as_ident(),
                     &table,
                     &param,
                     woog,
                 );
-                let reference = Reference::new(&r_obj, woog);
+
+                let referent = Referent::new_object(&r_obj, woog);
+                let reference = Reference::new(&referent, woog);
                 let reference = GraceType::new_reference(&reference, woog);
                 let option = WoogOption::new(&reference, woog);
                 let ty = GraceType::new_woog_option(&option, woog);
                 let _ = Value::new_variable(&access, &ty, &var, woog);
-                params.push(param);
 
-                let uuid = GraceType::new_ty(&Ty::new_uuid(), woog);
-                let option = WoogOption::new(&uuid, woog);
-                let ty = GraceType::new_woog_option(&option, woog);
+                let value = typecheck_and_coerce(&ty, &var, config, woog, domain)?;
+                let hack = Hack::new(value, woog);
+                let literal = Literal::new_hack(&hack, woog);
+                let expr = Expression::new_literal(&literal, woog);
+                let field = StructExpressionField::new(
+                    referrer.referential_attribute.as_ident(),
+                    &expr,
+                    struct_expr,
+                    None,
+                    woog,
+                );
 
-                let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
-                if let Some(last) = last_field {
-                    let mut last_field = woog.exhume_field(&last).unwrap().clone();
+                if let Some(last) = last_field_uuid {
+                    let mut last_field =
+                        woog.exhume_struct_expression_field(&last).unwrap().clone();
                     last_field.next = Some(field.id);
-                    woog.inter_field(last_field);
+                    woog.inter_struct_expression_field(last_field);
                 }
-                last_field = Some(field.id);
-                let _field = StructureField::new(&field, &structure, woog);
-                fields.push(field);
-
-                // let field = StructureField::new(
-                // referrer.referential_attribute.as_ident(),
-                // &expr,
-                // &structure,
-                // None,
-                // woog,
-                // );
-                // fields.push(field);
-                // fields.push(referrer.referential_attribute.as_ident());
+                last_field_uuid = Some(field.id);
             }
             // An unconditional reference translates into a reference to the referent.
             Conditionality::Unconditional(_) => {
                 let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-                if let Some(last) = last_param {
+
+                if let Some(last) = last_param_uuid {
                     let mut last_param = woog.exhume_parameter(&last).unwrap().clone();
                     last_param.next = Some(param.id);
                     woog.inter_parameter(last_param);
                 }
-                last_param = Some(param.id);
+                last_param_uuid = Some(param.id);
+
                 let var = Variable::new_parameter(
                     referrer.referential_attribute.as_ident(),
                     &table,
                     &param,
                     woog,
                 );
-                let reference = Reference::new(&r_obj, woog);
+
+                let referent = Referent::new_object(&r_obj, woog);
+                let reference = Reference::new(&referent, woog);
                 let ty = GraceType::new_reference(&reference, woog);
                 let _ = Value::new_variable(&access, &ty, &var, woog);
-                params.push(param);
 
-                let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
-                if let Some(last) = last_field {
-                    let mut last_field = woog.exhume_field(&last).unwrap().clone();
+                let value = typecheck_and_coerce(&uuid, &var, config, woog, domain)?;
+                let hack = Hack::new(value, woog);
+                let literal = Literal::new_hack(&hack, woog);
+                let expr = Expression::new_literal(&literal, woog);
+                let field = StructExpressionField::new(
+                    referrer.referential_attribute.as_ident(),
+                    &expr,
+                    struct_expr,
+                    None,
+                    woog,
+                );
+
+                if let Some(last) = last_field_uuid {
+                    let mut last_field =
+                        woog.exhume_struct_expression_field(&last).unwrap().clone();
                     last_field.next = Some(field.id);
-                    woog.inter_field(last_field);
+                    woog.inter_struct_expression_field(last_field);
                 }
-                last_field = Some(field.id);
-                let _field = StructureField::new(&field, &structure, woog);
-                fields.push(field);
-
-                // fields.push(referrer.referential_attribute.as_ident());
+                last_field_uuid = Some(field.id);
             }
         }
     }
@@ -832,47 +975,65 @@ fn collect_attributes(
             let assoc_obj = referent.r25_object(domain.sarzak())[0];
 
             let param = Parameter::new(Uuid::new_v4(), Some(&function), None, woog);
-            if let Some(last) = last_param {
+
+            if let Some(last) = last_param_uuid {
                 let mut last_param = woog.exhume_parameter(&last).unwrap().clone();
                 last_param.next = Some(param.id);
                 woog.inter_parameter(last_param);
             }
-            last_param = Some(param.id);
+            last_param_uuid = Some(param.id);
+
             let var = Variable::new_parameter(
                 an_ass.referential_attribute.as_ident(),
                 &table,
                 &param,
                 woog,
             );
-            let reference = Reference::new(&obj, woog);
+
+            let referent = Referent::new_object(&assoc_obj, woog);
+            let reference = Reference::new(&referent, woog);
             let ty = GraceType::new_reference(&reference, woog);
             let _ = Value::new_variable(&access, &ty, &var, woog);
-            params.push(param);
 
-            let field = Field::new(an_ass.referential_attribute.as_ident(), None, &ty, woog);
-            if let Some(last) = last_field {
-                let mut last_field = woog.exhume_field(&last).unwrap().clone();
+            let value = typecheck_and_coerce(&uuid, &var, config, woog, domain)?;
+            let hack = Hack::new(value, woog);
+            let literal = Literal::new_hack(&hack, woog);
+            let expr = Expression::new_literal(&literal, woog);
+            let field = StructExpressionField::new(
+                an_ass.referential_attribute.as_ident(),
+                &expr,
+                struct_expr,
+                None,
+                woog,
+            );
+
+            if let Some(last) = last_field_uuid {
+                let mut last_field = woog.exhume_struct_expression_field(&last).unwrap().clone();
                 last_field.next = Some(field.id);
-                woog.inter_field(last_field);
+                woog.inter_struct_expression_field(last_field);
             }
-            last_field = Some(field.id);
-            let _field = StructureField::new(&field, &structure, woog);
-
-            // fields.push(field);
+            last_field_uuid = Some(field.id);
         }
     }
 
-    let sfs = structure
-        .r35_structure_field(woog)
-        .iter()
-        .map(|sf| sf.r35_field(woog))
-        .collect::<Vec<_>>();
-    dbg!(&sfs);
+    // Add on the things sent to us.
+    if let Some(tail) = tail_params {
+        if let Some(last) = last_param_uuid {
+            let mut last_param = woog.exhume_parameter(&last).unwrap().clone();
+            last_param.next = Some(tail.id);
+            woog.inter_parameter(last_param);
+        }
+    }
 
-    let ps = function.r5c_parameter(woog);
-    dbg!(&ps);
+    if let Some(tail) = tail_fields {
+        if let Some(last) = last_field_uuid {
+            let mut last_field = woog.exhume_struct_expression_field(&last).unwrap().clone();
+            last_field.next = Some(tail.id);
+            woog.inter_struct_expression_field(last_field);
+        }
+    }
 
-    (params, fields)
+    Ok(())
 }
 
 /// This function takes a type, presumably from the left-hand side of an assignment,
@@ -907,8 +1068,22 @@ fn typecheck_and_coerce(
                     let opt_ty = opt.r20_grace_type(woog)[0];
                     match &opt_ty {
                         GraceType::Reference(id) => {
-                            let reference = woog.exhume_reference(&id).unwrap().clone();
-                            let object = reference.r13_object(domain.sarzak())[0];
+                            let reference = woog.exhume_reference(&id).unwrap();
+                            let referent = reference.r13_referent(woog)[0];
+                            let object = match referent {
+                                Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                                Referent::EnumerationField(id) => {
+                                    let id = woog
+                                        .exhume_enumeration_field(&id)
+                                        .unwrap()
+                                        .r36_enumeration(woog)[0]
+                                        .r40_object(domain.sarzak())[0]
+                                        .id;
+                                    domain.sarzak().exhume_object(&id).unwrap()
+                                }
+                                _ => unimplemented!(),
+                            };
+                            dbg!(&referent, &object);
 
                             if local_object_is_enum(object, config, domain) {
                                 // `var.map(|obj| obj.id())`
@@ -947,11 +1122,12 @@ fn typecheck_and_coerce(
                                         &𝛂_param,
                                         woog,
                                     );
-                                    let 𝛂_val = Value::new_variable(&access, &rhs_ty, &𝛂_var, woog);
+                                    let _𝛂_val =
+                                        Value::new_variable(&access, &rhs_ty, &𝛂_var, woog);
 
                                     // We need to create the `id` method in order to call it.
                                     // We create it on the object from the rhs.
-                                    let id = ObjectMethod::new(object, woog);
+                                    let id = ObjectMethod::new(Uuid::new_v4(), object, woog);
                                     let id_func = Function::new_object_method(
                                         "Get the id of the enum from it's current subtype"
                                             .to_owned(),
@@ -971,7 +1147,7 @@ fn typecheck_and_coerce(
                                     // The more I think about it, the more I think that I'm going to
                                     // need a visualization to help debug. Yesterday I was designing
                                     // the Debug implementation generation in my head walking Woog.
-                                    let call = Call::new(&id_func, woog);
+                                    let _call = Call::new(&id_func, woog);
 
                                     // Ok, I've managed to generate everything inside of the map method.
                                     // Now I need to invent a map method, I suppose...
@@ -997,8 +1173,10 @@ fn typecheck_and_coerce(
                                 lhs_ty == &rhs_ty,
                                 CompilerSnafu {
                                     description: format!(
-                                        "type mismatch: found `{:?}`, expected `{:?}`",
-                                        rhs_ty, lhs_ty
+                                        "unable to coerce type from `{}: {}` to `{}`",
+                                        rhs.as_ident(),
+                                        display_type(&rhs_ty, woog, domain),
+                                        display_type(&lhs_ty, woog, domain)
                                     )
                                 }
                             );
@@ -1011,8 +1189,10 @@ fn typecheck_and_coerce(
                         lhs_ty == &rhs_ty,
                         CompilerSnafu {
                             description: format!(
-                                "type mismatch: found `{:?}`, expected `{:?}`",
-                                rhs_ty, lhs_ty
+                                "unable to coerce type from `{}: {}` to `{}`",
+                                rhs.as_ident(),
+                                display_type(&rhs_ty, woog, domain),
+                                display_type(&lhs_ty, woog, domain)
                             )
                         }
                     );
@@ -1020,7 +1200,41 @@ fn typecheck_and_coerce(
                 }
             }
         }
-        // GraceType::TimeStamp(id) => {}
+        GraceType::Reference(id) => {
+            let reference = woog.exhume_reference(&id).unwrap();
+            let referent = reference.r13_referent(woog)[0];
+            match referent {
+                // Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap().as_ident(),
+                Referent::Object(id) => "woof".to_owned(),
+                Referent::EnumerationField(id) => {
+                    let field = woog.exhume_enumeration_field(&id).unwrap();
+                    let object = match field.r36_enumeration(woog)[0].subtype {
+                        EnumerationEnum::HybridEnum(h) => woog.exhume_hybrid_enum(&h).unwrap(),
+                    };
+                    // let subtype = domain.sarzak().exhume_object(&hybrid.object).unwrap();
+                    let subtype = match field.r36_field(woog)[0].r37_grace_type(woog)[0] {
+                        GraceType::Reference(id) => {
+                            let reference = woog.exhume_reference(&id).unwrap();
+                            match reference.r13_referent(woog)[0] {
+                                Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                                _ => unimplemented!(),
+                            }
+                        }
+                        _ => unimplemented!(),
+                    };
+                    format!(
+                        "{}::{}({}.id)",
+                        object.as_type(&Ownership::new_owned(), woog, domain),
+                        subtype.as_type(&Ownership::new_owned(), woog, domain),
+                        rhs.as_ident()
+                    )
+                }
+                _ => unimplemented!(),
+            }
+
+            // dbg!(&referent, &object);
+            // dbg!(woog.exhume_hybrid_enum_field(&referent.id()));
+        }
         GraceType::Ty(id) => {
             let ty = domain.sarzak().exhume_ty(&id).unwrap();
             match ty {
@@ -1029,10 +1243,18 @@ fn typecheck_and_coerce(
                     // pull it's id.
                     match &rhs_ty {
                         GraceType::Reference(id) => {
-                            let obj = woog
-                                .exhume_reference(&id)
-                                .unwrap()
-                                .r13_object(domain.sarzak())[0];
+                            let reference = woog.exhume_reference(&id).unwrap();
+                            let referent = reference.r13_referent(woog)[0];
+                            let obj = match referent {
+                                Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                                Referent::EnumerationField(id) => woog
+                                    .exhume_enumeration_field(&id)
+                                    .unwrap()
+                                    .r36_enumeration(woog)[0]
+                                    .r40_object(domain.sarzak())[0],
+                                _ => unimplemented!(),
+                            };
+                            dbg!(&referent, &obj);
 
                             if local_object_is_enum(obj, config, domain) {
                                 format!("{}.id()", rhs.as_ident())
@@ -1045,8 +1267,10 @@ fn typecheck_and_coerce(
                                 lhs_ty == &rhs_ty,
                                 CompilerSnafu {
                                     description: format!(
-                                        "type mismatch: found `{:?}`, expected `{:?}`",
-                                        rhs_ty, lhs_ty
+                                        "unable to coerce type from `{}: {}` to `{}`",
+                                        rhs.as_ident(),
+                                        display_type(&rhs_ty, woog, domain),
+                                        display_type(&lhs_ty, woog, domain)
                                     )
                                 }
                             );
@@ -1059,8 +1283,10 @@ fn typecheck_and_coerce(
                         lhs_ty == &rhs_ty,
                         CompilerSnafu {
                             description: format!(
-                                "type mismatch: found `{:?}`, expected `{:?}`",
-                                rhs_ty, lhs_ty
+                                "unable to coerce type from `{}: {}` to `{}`",
+                                rhs.as_ident(),
+                                display_type(&rhs_ty, woog, domain),
+                                display_type(&lhs_ty, woog, domain)
                             )
                         }
                     );
@@ -1073,12 +1299,35 @@ fn typecheck_and_coerce(
                 lhs_ty == &rhs_ty,
                 CompilerSnafu {
                     description: format!(
-                        "type mismatch: found `{:?}`, expected `{:?}`",
-                        rhs_ty, lhs_ty
-                    )
+                        "unable to coerce type from `{}: {}` to `{}`",
+                        rhs.as_ident(),
+                        display_type(&rhs_ty, woog, domain),
+                        display_type(&lhs_ty, woog, domain)
+                    ),
                 }
             );
             rhs.as_ident()
         }
     })
+}
+
+fn display_type(ty: &GraceType, woog: &WoogStore, domain: &Domain) -> String {
+    match ty {
+        GraceType::Reference(id) => {
+            let reference = woog.exhume_reference(&id).unwrap();
+            let referent = reference.r13_referent(woog)[0];
+            let object = match referent {
+                Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                Referent::EnumerationField(id) => woog
+                    .exhume_enumeration_field(&id)
+                    .unwrap()
+                    .r36_enumeration(woog)[0]
+                    .r40_object(domain.sarzak())[0],
+                _ => unimplemented!(),
+            };
+            dbg!(&referent, &object);
+            format!("&{}", object.as_type(&Ownership::new_owned(), woog, domain))
+        }
+        foo => unimplemented!("display_type needs to handle type: {:?}", foo),
+    }
 }
