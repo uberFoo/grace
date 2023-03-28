@@ -112,7 +112,7 @@ macro_rules! test_target_domain {
                     false,
                 )
                 .map_err(|e| {
-                    println!("Compiler exited with: {:?}", e);
+                    println!("Compiler exited with: {}", e);
                     std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
                 })?;
 
@@ -162,7 +162,7 @@ macro_rules! test_target_application {
                     false,
                 )
                 .map_err(|e| {
-                    println!("Compiler exited with: {:?}", e);
+                    println!("Compiler exited with: {}", e);
                     std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
                 })?;
 
@@ -265,7 +265,7 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
             false,
         )
         .map_err(|e| {
-            println!("Compiler exited with: {:?}", e);
+            println!("Compiler exited with: {}", e);
             std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
         })?;
 
