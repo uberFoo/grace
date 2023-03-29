@@ -100,12 +100,12 @@ impl ObjectStore {
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
 
-        let bin_path = path.clone().join("External Entitiy.bin");
+        let bin_path = path.clone().join("External Entity.bin");
         let mut bin_file = fs::File::create(bin_path)?;
         let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
         bin_file.write_all(&encoded)?;
 
-        let path = path.join("External Entitiy.json");
+        let path = path.join("External Entity.json");
         fs::create_dir_all(&path)?;
 
         // Persist Nunchuck.
@@ -142,7 +142,7 @@ impl ObjectStore {
     /// In fact, I intend to add automaagic git integration as an option.
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
-        let path = path.join("External Entitiy.json");
+        let path = path.join("External Entity.json");
 
         let mut store = Self::new();
 

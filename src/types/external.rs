@@ -69,6 +69,7 @@ impl FileGenerator for ExternalGenerator {
 
         let object = domain.sarzak().exhume_object(&obj_id).unwrap();
         let external = config.get_external(&obj_id).unwrap();
+        let store = find_store(module, woog, domain);
 
         emit!(buffer, "//! {} External Entity", object.name);
         emit!(buffer, "//!");
@@ -89,7 +90,6 @@ impl FileGenerator for ExternalGenerator {
                     }
                 }
 
-                let store = find_store(module, woog, domain);
                 emit!(buffer, "use {} as {};", store.path, store.name);
 
                 Ok(())
@@ -123,7 +123,7 @@ impl FileGenerator for ExternalGenerator {
                 render_attributes(buffer, object, woog, domain)?;
                 render_referential_attributes(buffer, object, woog, domain)?;
                 render_associative_attributes(buffer, object, woog, domain)?;
-                emit!(buffer, "ext_value: {},", external.name);
+                emit!(buffer, "inner: {},", external.name);
 
                 emit!(buffer, "}}");
 
@@ -141,9 +141,36 @@ impl FileGenerator for ExternalGenerator {
                     object.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
+                emit!(
+                    buffer,
+                    "pub fn new(store: &mut {}) -> {} {{",
+                    store.name,
+                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+                emit!(
+                    buffer,
+                    "let inner = {}::{}();",
+                    external.name,
+                    external.ctor
+                );
+                emit!(
+                    buffer,
+                    "let id = Uuid::new_v5(&UUID_NS, format!(\"{{:?}}\", inner).as_bytes());"
+                );
+                emit!(
+                    buffer,
+                    "let new = {} {{",
+                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+                emit!(buffer, "id: id,");
+                emit!(buffer, "inner: inner,");
+                emit!(buffer, "}};");
+                emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
+                emit!(buffer, "new");
                 // Darn. So I need to insert a local here. And hybrid has similar needs.
-                render_method_new(buffer, object, config, imports, woog, domain)?;
+                // render_method_new(buffer, object, config, imports, woog, domain)?;
 
+                emit!(buffer, "}}");
                 emit!(buffer, "}}");
 
                 Ok(())
