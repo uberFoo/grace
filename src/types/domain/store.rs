@@ -363,6 +363,7 @@ impl DomainStore {
                     "pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
                 );
                 emit!(buffer, "let path = path.as_ref();");
+                emit!(buffer, "fs::create_dir_all(&path)?;");
                 emit!(buffer, "");
                 emit!(
                     buffer,

@@ -323,8 +323,7 @@ impl<'a> DomainTarget<'a> {
                 .generate()?;
 
             // Update the timestamp in woog.
-            let now = SystemTime::now();
-            let ts = TimeStamp::now(now, &mut self.woog);
+            let ts = TimeStamp::new(&mut self.woog);
             let _ = GenerationUnit::new(&obj, &ts, &mut self.woog);
         }
 
