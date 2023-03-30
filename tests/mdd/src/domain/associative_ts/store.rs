@@ -572,6 +572,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let event: (Event, SystemTime) = serde_json::from_reader(reader)?;
+                store
+                    .event_by_name
+                    .insert(event.0.name.clone(), event.clone());
                 store.event.insert(event.0.id, event);
             }
         }
@@ -600,6 +603,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let state: (State, SystemTime) = serde_json::from_reader(reader)?;
+                store
+                    .state_by_name
+                    .insert(state.0.name.clone(), state.clone());
                 store.state.insert(state.0.id, state);
             }
         }

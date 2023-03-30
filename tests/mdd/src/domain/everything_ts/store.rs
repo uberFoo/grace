@@ -259,6 +259,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let rando_object: (RandoObject, SystemTime) = serde_json::from_reader(reader)?;
+                store
+                    .rando_object_by_name
+                    .insert(rando_object.0.name.clone(), rando_object.clone());
                 store.rando_object.insert(rando_object.0.id, rando_object);
             }
         }

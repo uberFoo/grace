@@ -589,6 +589,11 @@ impl DomainStore {
                     emit!(buffer, "let path = entry.path();");
                     emit!(buffer, "let file = fs::File::open(path)?;");
                     emit!(buffer, "let reader = io::BufReader::new(file);");
+                    let id = if local_object_is_enum(obj, config, domain) {
+                        "id()"
+                    } else {
+                        "id"
+                    };
                     if timestamp {
                         emit!(
                             buffer,
@@ -596,23 +601,23 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
-                        if local_object_is_enum(obj, config, domain) {
+                        if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "store.{}.insert({}.0.id(), {});",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
-                        } else {
-                            emit!(
-                                buffer,
-                                "store.{}.insert({}.0.id, {});",
+                                "store.{}_by_name.insert({}.0.name.clone(), {}.clone());",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
                         }
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.0.{}, {});",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            id,
+                            obj.as_ident()
+                        );
                     } else {
                         emit!(
                             buffer,
@@ -620,23 +625,23 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
-                        if local_object_is_enum(obj, config, domain) {
+                        if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "store.{}.insert({}.id(), {});",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
-                        } else {
-                            emit!(
-                                buffer,
-                                "store.{}.insert({}.id, {});",
+                                "store.{}_by_name.insert({}.name.clone(), {}.clone());",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
                         }
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.{}, {});",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            id,
+                            obj.as_ident()
+                        );
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "}}");

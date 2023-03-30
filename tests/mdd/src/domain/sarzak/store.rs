@@ -1021,6 +1021,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let attribute: Attribute = serde_json::from_reader(reader)?;
+                store
+                    .attribute_by_name
+                    .insert(attribute.name.clone(), attribute.clone());
                 store.attribute.insert(attribute.id, attribute);
             }
         }
@@ -1079,6 +1082,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let event: Event = serde_json::from_reader(reader)?;
+                store
+                    .event_by_name
+                    .insert(event.name.clone(), event.clone());
                 store.event.insert(event.id, event);
             }
         }
@@ -1093,6 +1099,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let external: External = serde_json::from_reader(reader)?;
+                store
+                    .external_by_name
+                    .insert(external.name.clone(), external.clone());
                 store.external.insert(external.id, external);
             }
         }
@@ -1121,6 +1130,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let object: Object = serde_json::from_reader(reader)?;
+                store
+                    .object_by_name
+                    .insert(object.name.clone(), object.clone());
                 store.object.insert(object.id, object);
             }
         }
@@ -1177,6 +1189,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let state: State = serde_json::from_reader(reader)?;
+                store
+                    .state_by_name
+                    .insert(state.name.clone(), state.clone());
                 store.state.insert(state.id, state);
             }
         }

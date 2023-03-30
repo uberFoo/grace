@@ -295,6 +295,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let a: A = serde_json::from_reader(reader)?;
+                store.a_by_name.insert(a.name.clone(), a.clone());
                 store.a.insert(a.id, a);
             }
         }
@@ -351,6 +352,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referent: Referent = serde_json::from_reader(reader)?;
+                store
+                    .referent_by_name
+                    .insert(referent.name.clone(), referent.clone());
                 store.referent.insert(referent.id, referent);
             }
         }
