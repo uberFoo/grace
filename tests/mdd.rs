@@ -128,6 +128,127 @@ macro_rules! test_target_domain {
     };
 }
 
+macro_rules! test_target_domain_timestamps {
+    ($name:ident, $domain:literal, $path:literal) => {
+        #[test]
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                from_module: None,
+                from_path: None,
+                persist: true,
+                persist_timestamps: true,
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                )
+                .unwrap();
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}", $domain))
+                .arg("--")
+                .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+    ($name:ident, $domain:literal, $path:literal, $($imports:literal),+) => {
+        #[test]
+        /// This one handles imports
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                from_module: None,
+                from_path: None,
+                persist: true,
+                persist_timestamps: true,
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            let mut imports = Vec::new();
+            $(
+                imports.push($imports.to_string());
+            )*
+            options.imported_domains = Some(imports);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                )
+                .unwrap();
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}", $domain))
+                .arg("--")
+                .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+}
+
 macro_rules! test_target_application {
     ($name:ident, $domain:literal, $path:literal) => {
         #[test]
@@ -176,6 +297,7 @@ macro_rules! test_target_application {
 
 // This is an imported domain that we need to build, so get it done early.
 test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak.json");
+test_target_domain_timestamps!(sarzak_ts, "sarzak_ts", "../sarzak/models/sarzak.json");
 
 // Domain Target Tests
 test_target_domain!(
@@ -183,22 +305,48 @@ test_target_domain!(
     "everything",
     "tests/mdd/models/everything.json"
 );
+test_target_domain_timestamps!(
+    everything_domain_ts,
+    "everything_ts",
+    "tests/mdd/models/everything.json"
+);
+
 test_target_domain!(
     one_to_one_domain,
     "one_to_one",
     "tests/mdd/models/one_to_one.json"
 );
+test_target_domain_timestamps!(
+    one_to_one_domain_ts,
+    "one_to_one_ts",
+    "tests/mdd/models/one_to_one.json"
+);
+
 test_target_domain!(
     one_to_many_domain,
     "one_to_many",
     "tests/mdd/models/one_to_many.json"
 );
+test_target_domain_timestamps!(
+    one_to_many_domain_ts,
+    "one_to_many_ts",
+    "tests/mdd/models/one_to_many.json"
+);
+
 test_target_domain!(isa_domain, "isa", "tests/mdd/models/isa.json");
+test_target_domain_timestamps!(isa_domain_ts, "isa_ts", "tests/mdd/models/isa.json");
+
 test_target_domain!(
     associative_domain,
     "associative",
     "tests/mdd/models/associative.json"
 );
+test_target_domain_timestamps!(
+    associative_domain_ts,
+    "associative_ts",
+    "tests/mdd/models/associative.json"
+);
+
 // This one has imports
 test_target_domain!(
     imported_object_domain,
@@ -207,7 +355,16 @@ test_target_domain!(
     "domain/sarzak",
     "domain/isa"
 );
+test_target_domain_timestamps!(
+    imported_object_domain_ts,
+    "imported_object_ts",
+    "tests/mdd/models/imported_object.json",
+    "domain/sarzak",
+    "domain/isa"
+);
+
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
+test_target_domain_timestamps!(external_ts, "external_ts", "tests/mdd/models/external.json");
 
 // Application Target Tests
 test_target_application!(

@@ -5,7 +5,7 @@ use std::fmt::Write;
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::Object,
+    sarzak::types::{Object, Ty},
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
@@ -171,43 +171,86 @@ impl DomainStore {
                         obj.as_ident(),
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
-                    if local_object_is_enum(obj, config, domain) {
-                        if timestamp {
+                    let id = if local_object_is_enum(obj, config, domain) {
+                        "id()"
+                    } else {
+                        "id"
+                    };
+
+                    if timestamp {
+                        if object_has_name(obj, domain) {
+                            emit!(
+                            buffer,
+                            "if let Some({}) = self.{}.insert({}.{id}, ({}, SystemTime::now())) {{",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
                             emit!(
                                 buffer,
-                                "self.{}.insert({}.id(), ({}, SystemTime::now()));",
+                                "self.{}_by_name.insert({}.0.name.clone(), {});",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
+                            emit!(buffer, "}}");
                         } else {
                             emit!(
                                 buffer,
-                                "self.{}.insert({}.id(), {});",
+                                "self.{}.insert({}.{id}, ({}, SystemTime::now()));",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
                         }
                     } else {
-                        if timestamp {
+                        if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "self.{}.insert({}.id, ({}, SystemTime::now()));",
+                                "if let Some({}) = self.{}.insert({}.{id}, {}) {{",
+                                obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
+                            emit!(
+                                buffer,
+                                "self.{}_by_name.insert({}.name.clone(), {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                            emit!(buffer, "}}");
                         } else {
                             emit!(
                                 buffer,
-                                "self.{}.insert({}.id, {});",
+                                "self.{}.insert({}.{id}, {});",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
                         }
                     }
+                    // } else {
+                    //     if timestamp {
+                    //         emit!(
+                    //             buffer,
+                    //             "if let Some({}) = self.{}.insert({}.id, ({}, SystemTime::now())) {",
+                    //             obj.as_ident(),
+                    //             obj.as_ident(),
+                    //             obj.as_ident()
+                    //         );
+                    //     } else {
+                    //         emit!(
+                    //             buffer,
+                    //             "self.{}.insert({}.id, {});",
+                    //             obj.as_ident(),
+                    //             obj.as_ident(),
+                    //             obj.as_ident()
+                    //         );
+                    //     }
+
                     emit!(buffer, "}}");
                     emit!(buffer, "");
                     emit!(
@@ -260,6 +303,33 @@ impl DomainStore {
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
+                    if object_has_name(obj, domain) {
+                        emit!(
+                            buffer,
+                            "/// Exhume [`{}`] from the store by name.",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                        emit!(buffer, "///");
+                        emit!(
+                            buffer,
+                            "pub fn exhume_{}_by_name(&self, name: &str) -> Option<&{}> {{",
+                            obj.as_ident(),
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}_by_name.get(name).map(|{}| &{}.0)",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "self.{}_by_name.get(name)", obj.as_ident());
+                        }
+                        emit!(buffer, "}}");
+                        emit!(buffer, "");
+                    }
                     emit!(
                         buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
@@ -747,6 +817,14 @@ impl CodeWriter for DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
+                        if object_has_name(obj, domain) {
+                            emit!(
+                                buffer,
+                                "{}_by_name: HashMap<String, ({}, SystemTime)>,",
+                                obj.as_ident(),
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            );
+                        }
                     } else {
                         emit!(
                             buffer,
@@ -754,6 +832,14 @@ impl CodeWriter for DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
+                        if object_has_name(obj, domain) {
+                            emit!(
+                                buffer,
+                                "{}_by_name: HashMap<String, {}>,",
+                                obj.as_ident(),
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            );
+                        }
                     }
                 }
                 emit!(buffer, "}}");
@@ -767,6 +853,10 @@ impl CodeWriter for DomainStore {
                 }
                 for obj in &objects {
                     emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
+                    if object_has_name(obj, domain) {
+                        emit!(buffer, "{}_by_name: HashMap::default(),", obj.as_ident());
+                    }
+
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
@@ -804,4 +894,21 @@ impl CodeWriter for DomainStore {
 
         Ok(())
     }
+}
+
+fn object_has_name(obj: &Object, domain: &Domain) -> bool {
+    obj.r1_attribute(domain.sarzak())
+        .iter()
+        .find(|attr| {
+            if attr.name == "name" {
+                if let Ty::String(_) = attr.r2_ty(domain.sarzak())[0] {
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        })
+        .is_some()
 }

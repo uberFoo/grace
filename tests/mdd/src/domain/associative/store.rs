@@ -33,8 +33,10 @@ pub struct ObjectStore {
     acknowledged_event: HashMap<Uuid, AcknowledgedEvent>,
     anchor: HashMap<Uuid, Anchor>,
     event: HashMap<Uuid, Event>,
+    event_by_name: HashMap<String, Event>,
     isa_ui: HashMap<Uuid, IsaUi>,
     state: HashMap<Uuid, State>,
+    state_by_name: HashMap<String, State>,
     subtype_anchor: HashMap<Uuid, SubtypeAnchor>,
 }
 
@@ -44,8 +46,10 @@ impl ObjectStore {
             acknowledged_event: HashMap::default(),
             anchor: HashMap::default(),
             event: HashMap::default(),
+            event_by_name: HashMap::default(),
             isa_ui: HashMap::default(),
             state: HashMap::default(),
+            state_by_name: HashMap::default(),
             subtype_anchor: HashMap::default(),
         };
 
@@ -107,7 +111,9 @@ impl ObjectStore {
     /// Inter [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
-        self.event.insert(event.id, event);
+        if let Some(event) = self.event.insert(event.id, event) {
+            self.event_by_name.insert(event.name.clone(), event);
+        }
     }
 
     /// Exhume [`Event`] from the store.
@@ -120,6 +126,12 @@ impl ObjectStore {
     ///
     pub fn exhume_event_mut(&mut self, id: &Uuid) -> Option<&mut Event> {
         self.event.get_mut(id)
+    }
+
+    /// Exhume [`Event`] from the store by name.
+    ///
+    pub fn exhume_event_by_name(&self, name: &str) -> Option<&Event> {
+        self.event_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
@@ -155,7 +167,9 @@ impl ObjectStore {
     /// Inter [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
-        self.state.insert(state.id, state);
+        if let Some(state) = self.state.insert(state.id, state) {
+            self.state_by_name.insert(state.name.clone(), state);
+        }
     }
 
     /// Exhume [`State`] from the store.
@@ -168,6 +182,12 @@ impl ObjectStore {
     ///
     pub fn exhume_state_mut(&mut self, id: &Uuid) -> Option<&mut State> {
         self.state.get_mut(id)
+    }
+
+    /// Exhume [`State`] from the store by name.
+    ///
+    pub fn exhume_state_by_name(&self, name: &str) -> Option<&State> {
+        self.state_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.

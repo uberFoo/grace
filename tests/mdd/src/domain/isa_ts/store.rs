@@ -1,9 +1,9 @@
-//! domain::isa_clone Object Store
+//! domain::isa_ts Object Store
 //!
 //! The ObjectStore contains instances of objects in the domain.
 //! The instances are stored in a hash map, keyed by the object's UUID.
 //! This is used during code generation, and probably not useful elsewhere.
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-file"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_ts-object-store-file"}}}
 //!
 //! # Contents:
 //!
@@ -19,7 +19,7 @@
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
 //! * [`SuperT`]
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-definition"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_ts-object-store-definition"}}}
 use std::{
     fs,
     io::{self, prelude::*},
@@ -31,7 +31,7 @@ use fnv::FnvHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::domain::isa_clone::types::{
+use crate::domain::isa_ts::types::{
     Baz, Borrowed, Henry, NotImportant, OhBoy, Ownership, Reference, SimpleSubtypeA,
     SimpleSupertype, SubtypeA, SubtypeB, SuperT, MUTABLE, OWNED, SHARED,
 };
@@ -83,7 +83,7 @@ impl ObjectStore {
         store
     }
 
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-methods"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_ts-object-store-methods"}}}
     /// Inter [`Baz`] into the store.
     ///
     pub fn inter_baz(&mut self, baz: Baz) {
@@ -535,7 +535,7 @@ impl ObjectStore {
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_clone-object-store-persistence"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_ts-object-store-persistence"}}}
     /// Persist the store.
     ///
     /// The store is persisted as a directory of JSON files. The intention
