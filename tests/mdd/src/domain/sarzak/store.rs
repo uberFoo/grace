@@ -258,10 +258,9 @@ impl ObjectStore {
     /// Inter [`Attribute`] into the store.
     ///
     pub fn inter_attribute(&mut self, attribute: Attribute) {
-        if let Some(attribute) = self.attribute.insert(attribute.id, attribute) {
-            self.attribute_by_name
-                .insert(attribute.name.clone(), attribute);
-        }
+        self.attribute.insert(attribute.id, attribute.clone());
+        self.attribute_by_name
+            .insert(attribute.name.clone(), attribute);
     }
 
     /// Exhume [`Attribute`] from the store.
@@ -364,9 +363,8 @@ impl ObjectStore {
     /// Inter [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
-        if let Some(event) = self.event.insert(event.id, event) {
-            self.event_by_name.insert(event.name.clone(), event);
-        }
+        self.event.insert(event.id, event.clone());
+        self.event_by_name.insert(event.name.clone(), event);
     }
 
     /// Exhume [`Event`] from the store.
@@ -396,10 +394,9 @@ impl ObjectStore {
     /// Inter [`External`] into the store.
     ///
     pub fn inter_external(&mut self, external: External) {
-        if let Some(external) = self.external.insert(external.id, external) {
-            self.external_by_name
-                .insert(external.name.clone(), external);
-        }
+        self.external.insert(external.id, external.clone());
+        self.external_by_name
+            .insert(external.name.clone(), external);
     }
 
     /// Exhume [`External`] from the store.
@@ -453,9 +450,8 @@ impl ObjectStore {
     /// Inter [`Object`] into the store.
     ///
     pub fn inter_object(&mut self, object: Object) {
-        if let Some(object) = self.object.insert(object.id, object) {
-            self.object_by_name.insert(object.name.clone(), object);
-        }
+        self.object.insert(object.id, object.clone());
+        self.object_by_name.insert(object.name.clone(), object);
     }
 
     /// Exhume [`Object`] from the store.
@@ -557,9 +553,8 @@ impl ObjectStore {
     /// Inter [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
-        if let Some(state) = self.state.insert(state.id, state) {
-            self.state_by_name.insert(state.name.clone(), state);
-        }
+        self.state.insert(state.id, state.clone());
+        self.state_by_name.insert(state.name.clone(), state);
     }
 
     /// Exhume [`State`] from the store.

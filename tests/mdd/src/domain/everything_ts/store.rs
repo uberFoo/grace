@@ -83,13 +83,10 @@ impl ObjectStore {
     /// Inter [`RandoObject`] into the store.
     ///
     pub fn inter_rando_object(&mut self, rando_object: RandoObject) {
-        if let Some(rando_object) = self
-            .rando_object
-            .insert(rando_object.id, (rando_object, SystemTime::now()))
-        {
-            self.rando_object_by_name
-                .insert(rando_object.0.name.clone(), rando_object);
-        }
+        let value = (rando_object, SystemTime::now());
+        self.rando_object.insert(value.0.id, value.clone());
+        self.rando_object_by_name
+            .insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`RandoObject`] from the store.

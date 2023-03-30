@@ -230,10 +230,9 @@ impl ObjectStore {
     /// Inter [`Reference`] into the store.
     ///
     pub fn inter_reference(&mut self, reference: Reference) {
-        if let Some(reference) = self.reference.insert(reference.id, reference) {
-            self.reference_by_name
-                .insert(reference.name.clone(), reference);
-        }
+        self.reference.insert(reference.id, reference.clone());
+        self.reference_by_name
+            .insert(reference.name.clone(), reference);
     }
 
     /// Exhume [`Reference`] from the store.
@@ -313,10 +312,9 @@ impl ObjectStore {
     /// Inter [`SubtypeA`] into the store.
     ///
     pub fn inter_subtype_a(&mut self, subtype_a: SubtypeA) {
-        if let Some(subtype_a) = self.subtype_a.insert(subtype_a.id, subtype_a) {
-            self.subtype_a_by_name
-                .insert(subtype_a.name.clone(), subtype_a);
-        }
+        self.subtype_a.insert(subtype_a.id, subtype_a.clone());
+        self.subtype_a_by_name
+            .insert(subtype_a.name.clone(), subtype_a);
     }
 
     /// Exhume [`SubtypeA`] from the store.

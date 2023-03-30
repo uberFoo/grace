@@ -70,10 +70,10 @@ impl ObjectStore {
     /// Inter [`RandoObject`] into the store.
     ///
     pub fn inter_rando_object(&mut self, rando_object: RandoObject) {
-        if let Some(rando_object) = self.rando_object.insert(rando_object.id, rando_object) {
-            self.rando_object_by_name
-                .insert(rando_object.name.clone(), rando_object);
-        }
+        self.rando_object
+            .insert(rando_object.id, rando_object.clone());
+        self.rando_object_by_name
+            .insert(rando_object.name.clone(), rando_object);
     }
 
     /// Exhume [`RandoObject`] from the store.

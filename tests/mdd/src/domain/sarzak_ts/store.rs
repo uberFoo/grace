@@ -351,13 +351,9 @@ impl ObjectStore {
     /// Inter [`Attribute`] into the store.
     ///
     pub fn inter_attribute(&mut self, attribute: Attribute) {
-        if let Some(attribute) = self
-            .attribute
-            .insert(attribute.id, (attribute, SystemTime::now()))
-        {
-            self.attribute_by_name
-                .insert(attribute.0.name.clone(), attribute);
-        }
+        let value = (attribute, SystemTime::now());
+        self.attribute.insert(value.0.id, value.clone());
+        self.attribute_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`Attribute`] from the store.
@@ -507,9 +503,9 @@ impl ObjectStore {
     /// Inter [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
-        if let Some(event) = self.event.insert(event.id, (event, SystemTime::now())) {
-            self.event_by_name.insert(event.0.name.clone(), event);
-        }
+        let value = (event, SystemTime::now());
+        self.event.insert(value.0.id, value.clone());
+        self.event_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`Event`] from the store.
@@ -548,13 +544,9 @@ impl ObjectStore {
     /// Inter [`External`] into the store.
     ///
     pub fn inter_external(&mut self, external: External) {
-        if let Some(external) = self
-            .external
-            .insert(external.id, (external, SystemTime::now()))
-        {
-            self.external_by_name
-                .insert(external.0.name.clone(), external);
-        }
+        let value = (external, SystemTime::now());
+        self.external.insert(value.0.id, value.clone());
+        self.external_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`External`] from the store.
@@ -626,9 +618,9 @@ impl ObjectStore {
     /// Inter [`Object`] into the store.
     ///
     pub fn inter_object(&mut self, object: Object) {
-        if let Some(object) = self.object.insert(object.id, (object, SystemTime::now())) {
-            self.object_by_name.insert(object.0.name.clone(), object);
-        }
+        let value = (object, SystemTime::now());
+        self.object.insert(value.0.id, value.clone());
+        self.object_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`Object`] from the store.
@@ -775,9 +767,9 @@ impl ObjectStore {
     /// Inter [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
-        if let Some(state) = self.state.insert(state.id, (state, SystemTime::now())) {
-            self.state_by_name.insert(state.0.name.clone(), state);
-        }
+        let value = (state, SystemTime::now());
+        self.state.insert(value.0.id, value.clone());
+        self.state_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`State`] from the store.

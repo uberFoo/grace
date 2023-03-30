@@ -180,21 +180,20 @@ impl DomainStore {
                     if timestamp {
                         if object_has_name(obj, domain) {
                             emit!(
-                            buffer,
-                            "if let Some({}) = self.{}.insert({}.{id}, ({}, SystemTime::now())) {{",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
-                            emit!(
                                 buffer,
-                                "self.{}_by_name.insert({}.0.name.clone(), {});",
-                                obj.as_ident(),
-                                obj.as_ident(),
+                                "let value = ({}, SystemTime::now());",
                                 obj.as_ident()
                             );
-                            emit!(buffer, "}}");
+                            emit!(
+                                buffer,
+                                "self.{}.insert(value.0.{id}, value.clone());",
+                                obj.as_ident(),
+                            );
+                            emit!(
+                                buffer,
+                                "self.{}_by_name.insert(value.0.name.clone(), value);",
+                                obj.as_ident()
+                            );
                         } else {
                             emit!(
                                 buffer,
@@ -208,11 +207,10 @@ impl DomainStore {
                         if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "if let Some({}) = self.{}.insert({}.{id}, {}) {{",
+                                "self.{}.insert({}.{id}, {}.clone());",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident(),
-                                obj.as_ident()
                             );
                             emit!(
                                 buffer,
@@ -221,7 +219,6 @@ impl DomainStore {
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
-                            emit!(buffer, "}}");
                         } else {
                             emit!(
                                 buffer,
@@ -232,25 +229,6 @@ impl DomainStore {
                             );
                         }
                     }
-                    // } else {
-                    //     if timestamp {
-                    //         emit!(
-                    //             buffer,
-                    //             "if let Some({}) = self.{}.insert({}.id, ({}, SystemTime::now())) {",
-                    //             obj.as_ident(),
-                    //             obj.as_ident(),
-                    //             obj.as_ident()
-                    //         );
-                    //     } else {
-                    //         emit!(
-                    //             buffer,
-                    //             "self.{}.insert({}.id, {});",
-                    //             obj.as_ident(),
-                    //             obj.as_ident(),
-                    //             obj.as_ident()
-                    //         );
-                    //     }
-
                     emit!(buffer, "}}");
                     emit!(buffer, "");
                     emit!(
@@ -612,10 +590,9 @@ impl DomainStore {
                         }
                         emit!(
                             buffer,
-                            "store.{}.insert({}.0.{}, {});",
+                            "store.{}.insert({}.0.{id}, {});",
                             obj.as_ident(),
                             obj.as_ident(),
-                            id,
                             obj.as_ident()
                         );
                     } else {
@@ -636,10 +613,9 @@ impl DomainStore {
                         }
                         emit!(
                             buffer,
-                            "store.{}.insert({}.{}, {});",
+                            "store.{}.insert({}.{id}, {});",
                             obj.as_ident(),
                             obj.as_ident(),
-                            id,
                             obj.as_ident()
                         );
                     }

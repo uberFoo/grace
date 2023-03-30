@@ -141,9 +141,9 @@ impl ObjectStore {
     /// Inter [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
-        if let Some(event) = self.event.insert(event.id, (event, SystemTime::now())) {
-            self.event_by_name.insert(event.0.name.clone(), event);
-        }
+        let value = (event, SystemTime::now());
+        self.event.insert(value.0.id, value.clone());
+        self.event_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`Event`] from the store.
@@ -215,9 +215,9 @@ impl ObjectStore {
     /// Inter [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
-        if let Some(state) = self.state.insert(state.id, (state, SystemTime::now())) {
-            self.state_by_name.insert(state.0.name.clone(), state);
-        }
+        let value = (state, SystemTime::now());
+        self.state.insert(value.0.id, value.clone());
+        self.state_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`State`] from the store.

@@ -148,13 +148,9 @@ impl ObjectStore {
     /// Inter [`Parameter`] into the store.
     ///
     pub fn inter_parameter(&mut self, parameter: Parameter) {
-        if let Some(parameter) = self
-            .parameter
-            .insert(parameter.id, (parameter, SystemTime::now()))
-        {
-            self.parameter_by_name
-                .insert(parameter.0.name.clone(), parameter);
-        }
+        let value = (parameter, SystemTime::now());
+        self.parameter.insert(value.0.id, value.clone());
+        self.parameter_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`Parameter`] from the store.
@@ -195,13 +191,9 @@ impl ObjectStore {
     /// Inter [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
-        if let Some(referent) = self
-            .referent
-            .insert(referent.id, (referent, SystemTime::now()))
-        {
-            self.referent_by_name
-                .insert(referent.0.name.clone(), referent);
-        }
+        let value = (referent, SystemTime::now());
+        self.referent.insert(value.0.id, value.clone());
+        self.referent_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`Referent`] from the store.
