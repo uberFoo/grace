@@ -1,11 +1,11 @@
 use std::{
     fs,
     path::{Path, PathBuf},
-    time::SystemTime,
 };
 
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use heck::ToUpperCamelCase;
+use rayon::prelude::*;
 use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},
@@ -213,119 +213,127 @@ impl<'a> DomainTarget<'a> {
         //
         // We can also look for things in woog that don't show up here -- those
         // we need to delete.
-        for obj in objects {
-            if !is_object_stale(obj, &self.woog, &self.domain) {
-                log::debug!("Skipping object {}", obj.name);
-                continue;
-            }
+        // for obj in objects {
+        objects
+            .par_iter()
+            .map(|obj| {
+                // if !is_object_stale(obj, &self.woog, &self.domain) {
+                // log::debug!("Skipping object {}", obj.name);
+                // continue;
+                // }
+                let mut types = types.clone();
+                types.set_file_name(obj.as_ident());
+                types.set_extension(RS_EXT);
 
-            types.set_file_name(obj.as_ident());
-            types.set_extension(RS_EXT);
+                println!(
+                    "Generating code for: {} ... output path: {}",
+                    obj.name,
+                    types.display(),
+                );
 
-            println!(
-                "Generating code for: {} ... output path: {}",
-                obj.name,
-                types.display(),
-            );
+                // Test if the object is a supertype. For those we generate as enums.
+                let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
+                    // Unless it's got referential attributes. Then we generate what
+                    // I now dub, a _hybrid_. What about regular attributes you ask?
+                    // Well, I don't have a use case for that at the moment, so they
+                    // will be done in due time.
+                    if local_object_is_hybrid(obj, &self.config, &self.domain) {
+                        DefaultStructBuilder::new()
+                            .definition(Hybrid::new())
+                            .implementation(
+                                DomainImplBuilder::new()
+                                    .method(HybridNewImpl::new())
+                                    // The struct implementation suffices -- thankfully. Reuse FTW!
+                                    .method(StructRelNavImpl::new())
+                                    .build(),
+                            )
+                            .build()?
+                    } else {
+                        DefaultStructBuilder::new()
+                            .definition(Enum::new())
+                            .implementation(
+                                DomainImplBuilder::new()
+                                    .method(EnumNewImpl::new())
+                                    .method(EnumGetIdImpl::new())
+                                    .method(EnumRelNavImpl::new())
+                                    .build(),
+                            )
+                            .build()?
+                    }
+                } else if self.config.is_imported(&obj.id) {
+                    // If the object is imported, we don't generate anything...here.
+                    // I'd like to amend this position. Wouldn't it be cool if we could
+                    // generate relationship navigation methods for imported objects?
+                    // I think we can.
+                    // We can create an implementation of the relationship navigation
+                    // methods. We'd need to make sure that the names don't collide.
+                    // They won't because the store would be different.
+                    // DefaultStructBuilder::new()
+                    //     .imports(Imports::new())
+                    //     .implementation(
+                    //         DomainImplBuilder::new()
+                    //             .method(StructRelNavImpl::new())
+                    //             .build(),
+                    //     )
+                    //     .build()?
+                    NullGenerator::new()
+                } else if self.config.is_external(&obj.id) {
+                    // If the object is external, we create a newtype to wrap it.
 
-            // Test if the object is a supertype. For those we generate as enums.
-            let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
-                // Unless it's got referential attributes. Then we generate what
-                // I now dub, a _hybrid_. What about regular attributes you ask?
-                // Well, I don't have a use case for that at the moment, so they
-                // will be done in due time.
-                if local_object_is_hybrid(obj, &self.config, &self.domain) {
+                    ExternalGenerator::new()
+                } else if local_object_is_singleton(obj, &self.config, &self.domain) {
+                    // Look for naked objects, and generate a singleton for them.
+
+                    log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
-                        .definition(Hybrid::new())
-                        .implementation(
-                            DomainImplBuilder::new()
-                                .method(HybridNewImpl::new())
-                                // The struct implementation suffices -- thankfully. Reuse FTW!
-                                .method(StructRelNavImpl::new())
-                                .build(),
-                        )
+                        .definition(DomainConst::new())
                         .build()?
                 } else {
                     DefaultStructBuilder::new()
-                        .definition(Enum::new())
+                        .imports(Imports::new())
+                        // Definition type
+                        .definition(Struct::new())
                         .implementation(
                             DomainImplBuilder::new()
-                                .method(EnumNewImpl::new())
-                                .method(EnumGetIdImpl::new())
-                                .method(EnumRelNavImpl::new())
+                                // New implementation
+                                .method(StructNewImpl::new())
+                                // Relationship navigation implementations
+                                .method(StructRelNavImpl::new())
                                 .build(),
                         )
+                        // Go!
                         .build()?
-                }
-            } else if self.config.is_imported(&obj.id) {
-                // If the object is imported, we don't generate anything...here.
-                // I'd like to amend this position. Wouldn't it be cool if we could
-                // generate relationship navigation methods for imported objects?
-                // I think we can.
-                // We can create an implementation of the relationship navigation
-                // methods. We'd need to make sure that the names don't collide.
-                // They won't because the store would be different.
-                // DefaultStructBuilder::new()
-                //     .imports(Imports::new())
-                //     .implementation(
-                //         DomainImplBuilder::new()
-                //             .method(StructRelNavImpl::new())
-                //             .build(),
-                //     )
-                //     .build()?
-                NullGenerator::new()
-            } else if self.config.is_external(&obj.id) {
-                // If the object is external, we create a newtype to wrap it.
+                };
 
-                ExternalGenerator::new()
-            } else if local_object_is_singleton(obj, &self.config, &self.domain) {
-                // Look for naked objects, and generate a singleton for them.
+                let mut woog = self.woog.clone();
 
-                log::debug!("Generating singleton for {}", obj.name);
-                DefaultStructBuilder::new()
-                    .definition(DomainConst::new())
-                    .build()?
-            } else {
-                DefaultStructBuilder::new()
-                    .imports(Imports::new())
-                    // Definition type
-                    .definition(Struct::new())
-                    .implementation(
-                        DomainImplBuilder::new()
-                            // New implementation
-                            .method(StructNewImpl::new())
-                            // Relationship navigation implementations
-                            .method(StructRelNavImpl::new())
-                            .build(),
-                    )
+                // Here's the generation.
+                GeneratorBuilder::new()
+                    .package(&self.package)
+                    .config(&self.config)
+                    // Where to write
+                    .path(&types)?
+                    // Domain/Store
+                    .domain(&self.domain)
+                    // Compiler Domain
+                    .compiler_domain(&mut woog)
+                    // Imported domains
+                    .imports(&self.imports)
+                    // Module name
+                    .module(self.module)
+                    .obj_id(&obj.id)
+                    // What to write
+                    .generator(generator)
                     // Go!
-                    .build()?
-            };
+                    .generate()?;
 
-            // Here's the generation.
-            GeneratorBuilder::new()
-                .package(&self.package)
-                .config(&self.config)
-                // Where to write
-                .path(&types)?
-                // Domain/Store
-                .domain(&self.domain)
-                // Compiler Domain
-                .compiler_domain(&mut self.woog)
-                // Imported domains
-                .imports(&self.imports)
-                // Module name
-                .module(self.module)
-                .obj_id(&obj.id)
-                // What to write
-                .generator(generator)
-                // Go!
-                .generate()?;
+                // Update the timestamp in woog.
+                let ts = TimeStamp::new(&mut woog);
+                let _ = GenerationUnit::new(&obj, &ts, &mut woog);
 
-            // Update the timestamp in woog.
-            let ts = TimeStamp::new(&mut self.woog);
-            let _ = GenerationUnit::new(&obj, &ts, &mut self.woog);
-        }
+                Ok(())
+            })
+            .collect::<Result<Vec<_>, ModelCompilerError>>()?;
 
         Ok(())
     }
