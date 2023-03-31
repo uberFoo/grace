@@ -377,262 +377,6 @@ impl DomainStore {
 
         Ok(())
     }
-
-    fn generate_store_persistence(
-        &self,
-        buffer: &mut Buffer,
-        objects: &Vec<&&Object>,
-        timestamp: bool,
-        module: &str,
-        config: &GraceConfig,
-        woog: &WoogStore,
-        domain: &Domain,
-    ) -> Result<()> {
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-object-store-persistence", module),
-            |buffer| {
-                emit!(buffer, "/// Persist the store.");
-                emit!(buffer, "///");
-                emit!(
-                    buffer,
-                    "/// The store is persisted as a directory of JSON files. The intention"
-                );
-                emit!(
-                    buffer,
-                    "/// is that this directory can be checked into version control."
-                );
-                emit!(
-                    buffer,
-                    "/// In fact, I intend to add automaagic git integration as an option."
-                );
-                emit!(
-                    buffer,
-                    "pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
-                );
-                emit!(buffer, "let path = path.as_ref();");
-                emit!(buffer, "fs::create_dir_all(&path)?;");
-                emit!(buffer, "");
-                emit!(
-                    buffer,
-                    "let bin_path = path.clone().join(\"{}.bin\");",
-                    domain.name()
-                );
-                emit!(buffer, "let mut bin_file = fs::File::create(bin_path)?;");
-                emit!(
-                    buffer,
-                    "let encoded: Vec<u8> = bincode::serialize(&self).unwrap();"
-                );
-                emit!(buffer, "bin_file.write_all(&encoded)?;");
-                emit!(buffer, "");
-                // This is such a great joke! 🤣
-                emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
-                emit!(buffer, "fs::create_dir_all(&path)?;");
-                emit!(buffer, "");
-                for obj in objects {
-                    emit!(buffer, "// Persist {}.", obj.name);
-                    emit!(buffer, "{{");
-                    emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
-                    emit!(buffer, "fs::create_dir_all(&path)?;");
-                    if timestamp {
-                        emit!(
-                            buffer,
-                            "for {}_tuple in self.{}.values() {{",
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
-                        if local_object_is_enum(obj, config, domain) {
-                            emit!(
-                                buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id()));",
-                                obj.as_ident()
-                            );
-                        } else {
-                            emit!(
-                                buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id));",
-                                obj.as_ident()
-                            );
-                        }
-                        emit!(buffer, "if path.exists() {{");
-                        emit!(buffer, "let file = fs::File::open(&path)?;");
-                        emit!(buffer, "let reader = io::BufReader::new(file);");
-                        emit!(
-                            buffer,
-                            "let on_disk: ({}, SystemTime) = serde_json::from_reader(reader)?;",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
-                        emit!(buffer, "if on_disk.0 != {}_tuple.0 {{", obj.as_ident());
-                        emit!(buffer, "let file = fs::File::create(path)?;");
-                        emit!(buffer, "let mut writer = io::BufWriter::new(file);");
-                        emit!(
-                            buffer,
-                            "serde_json::to_writer_pretty(&mut writer, &{}_tuple)?;",
-                            obj.as_ident()
-                        );
-                        emit!(buffer, "}}");
-                        emit!(buffer, "}} else {{");
-                        emit!(buffer, "let file = fs::File::create(&path)?;");
-                        emit!(buffer, "let mut writer = io::BufWriter::new(file);");
-                        emit!(
-                            buffer,
-                            "serde_json::to_writer_pretty(&mut writer, &{}_tuple)?;",
-                            obj.as_ident()
-                        );
-                        emit!(buffer, "}}");
-                        emit!(buffer, "}}");
-                        // Now we need to delete any files that correspond to something
-                        // in the store that went away.
-                        emit!(buffer, "for file in fs::read_dir(&path)? {{");
-                        emit!(buffer, "let file = file?;");
-                        emit!(buffer, "let path = file.path();");
-                        emit!(
-                            buffer,
-                            "let file_name = path.file_name().unwrap().to_str().unwrap();"
-                        );
-                        emit!(buffer, "let id = file_name.split(\".\").next().unwrap();");
-                        emit!(buffer, "if let Ok(id) = Uuid::parse_str(id) {{");
-                        emit!(buffer, "if !self.{}.contains_key(&id) {{", obj.as_ident());
-                        emit!(buffer, "fs::remove_file(path)?;");
-                        emit!(buffer, "}}");
-                        emit!(buffer, "}}");
-                        emit!(buffer, "}}");
-                        emit!(buffer, "}}");
-                    } else {
-                        emit!(
-                            buffer,
-                            "for {} in self.{}.values() {{",
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
-                        if local_object_is_enum(obj, config, domain) {
-                            emit!(
-                                buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {}.id()));",
-                                obj.as_ident()
-                            );
-                        } else {
-                            emit!(
-                                buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {}.id));",
-                                obj.as_ident()
-                            );
-                        }
-                        emit!(buffer, "let file = fs::File::create(path)?;");
-                        emit!(buffer, "let mut writer = io::BufWriter::new(file);");
-                        emit!(
-                            buffer,
-                            "serde_json::to_writer_pretty(&mut writer, &{})?;",
-                            obj.as_ident()
-                        );
-                        emit!(buffer, "}}");
-                        emit!(buffer, "}}");
-                    }
-                    emit!(buffer, "");
-                }
-                emit!(buffer, "Ok(())");
-                emit!(buffer, "}}");
-                emit!(buffer, "");
-
-                emit!(buffer, "/// Load the store.");
-                emit!(buffer, "///");
-                emit!(
-                    buffer,
-                    "/// The store is persisted as a directory of JSON files. The intention"
-                );
-                emit!(
-                    buffer,
-                    "/// is that this directory can be checked into version control."
-                );
-                emit!(
-                    buffer,
-                    "/// In fact, I intend to add automaagic git integration as an option."
-                );
-                emit!(
-                    buffer,
-                    "pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {{"
-                );
-                emit!(buffer, "let path = path.as_ref();");
-                emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
-                emit!(buffer, "");
-                emit!(buffer, "let mut store = Self::new();");
-                emit!(buffer, "");
-                for obj in objects {
-                    emit!(buffer, "// Load {}.", obj.name);
-                    emit!(buffer, "{{");
-                    emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
-                    emit!(buffer, "let mut entries = fs::read_dir(path)?;");
-                    emit!(buffer, "while let Some(entry) = entries.next() {{");
-                    emit!(buffer, "let entry = entry?;");
-                    emit!(buffer, "let path = entry.path();");
-                    emit!(buffer, "let file = fs::File::open(path)?;");
-                    emit!(buffer, "let reader = io::BufReader::new(file);");
-                    let id = if local_object_is_enum(obj, config, domain) {
-                        "id()"
-                    } else {
-                        "id"
-                    };
-                    if timestamp {
-                        emit!(
-                            buffer,
-                            "let {}: ({}, SystemTime) = serde_json::from_reader(reader)?;",
-                            obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
-                        if object_has_name(obj, domain) {
-                            emit!(
-                                buffer,
-                                "store.{}_by_name.insert({}.0.name.clone(), {}.clone());",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
-                        }
-                        emit!(
-                            buffer,
-                            "store.{}.insert({}.0.{id}, {});",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
-                    } else {
-                        emit!(
-                            buffer,
-                            "let {}: {} = serde_json::from_reader(reader)?;",
-                            obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
-                        if object_has_name(obj, domain) {
-                            emit!(
-                                buffer,
-                                "store.{}_by_name.insert({}.name.clone(), {}.clone());",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
-                        }
-                        emit!(
-                            buffer,
-                            "store.{}.insert({}.{id}, {});",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
-                    }
-                    emit!(buffer, "}}");
-                    emit!(buffer, "}}");
-                    emit!(buffer, "");
-                }
-                emit!(buffer, "");
-                emit!(buffer, "Ok(store)");
-                emit!(buffer, "}}");
-
-                Ok(())
-            },
-        )?;
-
-        Ok(())
-    }
 }
 
 impl ObjectStoreDefinition for DomainStore {}
@@ -811,6 +555,9 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
+                if config.is_meta_model() && !config.is_sarzak() {
+                    emit!(buffer, "use crate::sarzak::types::Object as SarzakObject;");
+                }
                 emit!(buffer, "");
                 emit!(buffer, "use crate::{}::types::{{", module);
 
@@ -894,24 +641,80 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "store");
                 emit!(buffer, "}}");
                 emit!(buffer, "");
+                // End of new
 
                 self.generate_store(buffer, &objects, timestamp, module, config, woog, domain)?;
 
                 emit!(buffer, "");
 
                 if persist {
-                    self.generate_store_persistence(
+                    generate_store_persistence(
                         buffer, &objects, timestamp, module, config, woog, domain,
                     )?;
                 }
 
                 emit!(buffer, "}}");
+
+                if config.is_meta_model() && !config.is_sarzak() {
+                    // This is outside the impl block
+                    emit!(buffer, "");
+                    generate_objects(buffer, &objects, module, config)?;
+                }
+
                 Ok(())
             },
         )?;
 
         Ok(())
     }
+}
+
+fn generate_objects(
+    buffer: &mut Buffer,
+    objects: &[&&Object],
+    module: &str,
+    config: &GraceConfig,
+) -> Result<()> {
+    buffer.block(
+        DirectiveKind::IgnoreOrig,
+        format!("{}-object-definitions", module),
+        |buffer| {
+            emit!(
+                buffer,
+                "// I don't think that this actually belongs here. Maybe when we are generating"
+            );
+            emit!(
+                buffer,
+                "// a module file, it could go in there? Or it's own file. I'm just too lazy and"
+            );
+            emit!(
+                buffer,
+                "// impatient, and I don't want to deal with it right now."
+            );
+            emit!(
+                buffer,
+                "pub fn populate_sarzak(mut store: &mut crate::sarzak::store::ObjectStore) {{",
+            );
+
+            for obj in objects {
+                if !config.is_imported(&obj.id) {
+                    let imported = format!("\n\n🐶 {{ \"imported_object\": {{ \"domain\": \"domain::isa\", \"model_file\": \"tests/mdd/models/isa.json\", \"id\": \"6339b18b-3929-51ae-ad1a-f0cb4dc73362\" }}}}");
+                    emit!(
+                        buffer,
+                        "SarzakObject::new(r#\"{}\"#.to_owned(), r#\"{}\"#.to_owned(), r#\"{}\"#.to_owned(), &mut store);",
+                        obj.description,
+                        obj.key_letters,
+                        obj.name
+                    );
+                }
+            }
+
+            emit!(buffer, "}}");
+
+            Ok(())
+        },
+    )?;
+    Ok(())
 }
 
 fn object_has_name(obj: &Object, domain: &Domain) -> bool {
@@ -929,4 +732,259 @@ fn object_has_name(obj: &Object, domain: &Domain) -> bool {
             }
         })
         .is_some()
+}
+
+fn generate_store_persistence(
+    buffer: &mut Buffer,
+    objects: &[&&Object],
+    timestamp: bool,
+    module: &str,
+    config: &GraceConfig,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
+    buffer.block(
+        DirectiveKind::IgnoreOrig,
+        format!("{}-object-store-persistence", module),
+        |buffer| {
+            emit!(buffer, "/// Persist the store.");
+            emit!(buffer, "///");
+            emit!(
+                buffer,
+                "/// The store is persisted as a directory of JSON files. The intention"
+            );
+            emit!(
+                buffer,
+                "/// is that this directory can be checked into version control."
+            );
+            emit!(
+                buffer,
+                "/// In fact, I intend to add automaagic git integration as an option."
+            );
+            emit!(
+                buffer,
+                "pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
+            );
+            emit!(buffer, "let path = path.as_ref();");
+            emit!(buffer, "fs::create_dir_all(&path)?;");
+            emit!(buffer, "");
+            emit!(
+                buffer,
+                "let bin_path = path.clone().join(\"{}.bin\");",
+                domain.name()
+            );
+            emit!(buffer, "let mut bin_file = fs::File::create(bin_path)?;");
+            emit!(
+                buffer,
+                "let encoded: Vec<u8> = bincode::serialize(&self).unwrap();"
+            );
+            emit!(buffer, "bin_file.write_all(&encoded)?;");
+            emit!(buffer, "");
+            // This is such a great joke! 🤣
+            emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
+            emit!(buffer, "fs::create_dir_all(&path)?;");
+            emit!(buffer, "");
+            for obj in objects {
+                emit!(buffer, "// Persist {}.", obj.name);
+                emit!(buffer, "{{");
+                emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
+                emit!(buffer, "fs::create_dir_all(&path)?;");
+                if timestamp {
+                    emit!(
+                        buffer,
+                        "for {}_tuple in self.{}.values() {{",
+                        obj.as_ident(),
+                        obj.as_ident()
+                    );
+                    if local_object_is_enum(obj, config, domain) {
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id()));",
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id));",
+                            obj.as_ident()
+                        );
+                    }
+                    emit!(buffer, "if path.exists() {{");
+                    emit!(buffer, "let file = fs::File::open(&path)?;");
+                    emit!(buffer, "let reader = io::BufReader::new(file);");
+                    emit!(
+                        buffer,
+                        "let on_disk: ({}, SystemTime) = serde_json::from_reader(reader)?;",
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
+                    emit!(buffer, "if on_disk.0 != {}_tuple.0 {{", obj.as_ident());
+                    emit!(buffer, "let file = fs::File::create(path)?;");
+                    emit!(buffer, "let mut writer = io::BufWriter::new(file);");
+                    emit!(
+                        buffer,
+                        "serde_json::to_writer_pretty(&mut writer, &{}_tuple)?;",
+                        obj.as_ident()
+                    );
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}} else {{");
+                    emit!(buffer, "let file = fs::File::create(&path)?;");
+                    emit!(buffer, "let mut writer = io::BufWriter::new(file);");
+                    emit!(
+                        buffer,
+                        "serde_json::to_writer_pretty(&mut writer, &{}_tuple)?;",
+                        obj.as_ident()
+                    );
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}}");
+                    // Now we need to delete any files that correspond to something
+                    // in the store that went away.
+                    emit!(buffer, "for file in fs::read_dir(&path)? {{");
+                    emit!(buffer, "let file = file?;");
+                    emit!(buffer, "let path = file.path();");
+                    emit!(
+                        buffer,
+                        "let file_name = path.file_name().unwrap().to_str().unwrap();"
+                    );
+                    emit!(buffer, "let id = file_name.split(\".\").next().unwrap();");
+                    emit!(buffer, "if let Ok(id) = Uuid::parse_str(id) {{");
+                    emit!(buffer, "if !self.{}.contains_key(&id) {{", obj.as_ident());
+                    emit!(buffer, "fs::remove_file(path)?;");
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}}");
+                } else {
+                    emit!(
+                        buffer,
+                        "for {} in self.{}.values() {{",
+                        obj.as_ident(),
+                        obj.as_ident()
+                    );
+                    if local_object_is_enum(obj, config, domain) {
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {}.id()));",
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {}.id));",
+                            obj.as_ident()
+                        );
+                    }
+                    emit!(buffer, "let file = fs::File::create(path)?;");
+                    emit!(buffer, "let mut writer = io::BufWriter::new(file);");
+                    emit!(
+                        buffer,
+                        "serde_json::to_writer_pretty(&mut writer, &{})?;",
+                        obj.as_ident()
+                    );
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}}");
+                }
+                emit!(buffer, "");
+            }
+            emit!(buffer, "Ok(())");
+            emit!(buffer, "}}");
+            emit!(buffer, "");
+
+            emit!(buffer, "/// Load the store.");
+            emit!(buffer, "///");
+            emit!(
+                buffer,
+                "/// The store is persisted as a directory of JSON files. The intention"
+            );
+            emit!(
+                buffer,
+                "/// is that this directory can be checked into version control."
+            );
+            emit!(
+                buffer,
+                "/// In fact, I intend to add automaagic git integration as an option."
+            );
+            emit!(
+                buffer,
+                "pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {{"
+            );
+            emit!(buffer, "let path = path.as_ref();");
+            emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
+            emit!(buffer, "");
+            emit!(buffer, "let mut store = Self::new();");
+            emit!(buffer, "");
+            for obj in objects {
+                emit!(buffer, "// Load {}.", obj.name);
+                emit!(buffer, "{{");
+                emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
+                emit!(buffer, "let mut entries = fs::read_dir(path)?;");
+                emit!(buffer, "while let Some(entry) = entries.next() {{");
+                emit!(buffer, "let entry = entry?;");
+                emit!(buffer, "let path = entry.path();");
+                emit!(buffer, "let file = fs::File::open(path)?;");
+                emit!(buffer, "let reader = io::BufReader::new(file);");
+                let id = if local_object_is_enum(obj, config, domain) {
+                    "id()"
+                } else {
+                    "id"
+                };
+                if timestamp {
+                    emit!(
+                        buffer,
+                        "let {}: ({}, SystemTime) = serde_json::from_reader(reader)?;",
+                        obj.as_ident(),
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
+                    if object_has_name(obj, domain) {
+                        emit!(
+                            buffer,
+                            "store.{}_by_name.insert({}.0.name.clone(), {}.clone());",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    }
+                    emit!(
+                        buffer,
+                        "store.{}.insert({}.0.{id}, {});",
+                        obj.as_ident(),
+                        obj.as_ident(),
+                        obj.as_ident()
+                    );
+                } else {
+                    emit!(
+                        buffer,
+                        "let {}: {} = serde_json::from_reader(reader)?;",
+                        obj.as_ident(),
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
+                    if object_has_name(obj, domain) {
+                        emit!(
+                            buffer,
+                            "store.{}_by_name.insert({}.name.clone(), {}.clone());",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    }
+                    emit!(
+                        buffer,
+                        "store.{}.insert({}.{id}, {});",
+                        obj.as_ident(),
+                        obj.as_ident(),
+                        obj.as_ident()
+                    );
+                }
+                emit!(buffer, "}}");
+                emit!(buffer, "}}");
+                emit!(buffer, "");
+            }
+            emit!(buffer, "");
+            emit!(buffer, "Ok(store)");
+            emit!(buffer, "}}");
+
+            Ok(())
+        },
+    )?;
+
+    Ok(())
 }

@@ -85,12 +85,26 @@ pub struct DomainConfig {
     /// changed.
     #[arg(long, short = 't', action=ArgAction::SetTrue, requires = "persist")]
     pub persist_timestamps: bool,
+    /// This Domain is Sarzak
+    ///
+    /// There can be only one! 💥😱🤣
+    #[arg(long, action=ArgAction::SetFalse)]
+    pub is_sarzak: bool,
+    /// This Domain is a Meta Model
+    ///
+    /// With capital letters.
+    ///
+    /// Don't use this unless you mean it.
+    #[arg(long, action=ArgAction::SetFalse)]
+    pub is_meta_model: bool,
 }
 
 const DOMAIN_FROM_MODULE: Option<String> = None;
 const DOMAIN_FROM_PATH: Option<PathBuf> = None;
 const DOMAIN_PERSIST: bool = false;
 const DOMAIN_PERSIST_TIMESTAMPS: bool = false;
+const DOMAIN_IS_SARZAK: bool = false;
+const DOMAIN_IS_META_MODEL: bool = false;
 
 /// Default implementation for DomainConfig
 ///
@@ -104,6 +118,8 @@ impl Default for DomainConfig {
             from_path: DOMAIN_FROM_PATH,
             persist: DOMAIN_PERSIST,
             persist_timestamps: DOMAIN_PERSIST_TIMESTAMPS,
+            is_sarzak: DOMAIN_IS_SARZAK,
+            is_meta_model: DOMAIN_IS_META_MODEL,
         }
     }
 }
@@ -278,6 +294,20 @@ impl GraceConfig {
         match self.get_target() {
             Target::Domain(config) => Some(config.persist_timestamps),
             _ => None,
+        }
+    }
+
+    pub(crate) fn is_sarzak(&self) -> bool {
+        match self.get_target() {
+            Target::Domain(config) => config.is_sarzak,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn is_meta_model(&self) -> bool {
+        match self.get_target() {
+            Target::Domain(config) => config.is_meta_model,
+            _ => false,
         }
     }
 
@@ -462,8 +492,26 @@ pub(crate) struct FromDomain {
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct ImportedObject {
+    /// The source domain
+    ///
+    /// This is actually a path. The path separator is a rust `::`. I don't think
+    /// that it's actually used for anything at all, besides pulling off the last
+    /// bit and using it to get the name of the ObjectStore to use. Maybe it's
+    /// cruft. No, it's used someplace, because we output a path to the domain,
+    /// relative to the crate.
+    ///
+    ///  However...
+    ///
+    /// You can also use a `/` as a path separator in case you are doing
+    /// things with the module system, like the `sarzak.toml` in sarzak does.
     pub domain: String,
+    /// A path to the model file
+    ///
+    /// This is a file system path to the json "file" that contains the model.
     pub model_file: PathBuf,
+    /// The UUID of the object in the domain.
+    ///
+    /// This isn't used, but it is checked. Pretty stupid.
     pub id: Uuid,
 }
 
