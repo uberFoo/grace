@@ -555,9 +555,6 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
-                if config.is_meta_model() && !config.is_sarzak() {
-                    emit!(buffer, "use crate::sarzak::types::Object as SarzakObject;");
-                }
                 emit!(buffer, "");
                 emit!(buffer, "use crate::{}::types::{{", module);
 
@@ -655,66 +652,12 @@ impl CodeWriter for DomainStore {
 
                 emit!(buffer, "}}");
 
-                if config.is_meta_model() && !config.is_sarzak() {
-                    // This is outside the impl block
-                    emit!(buffer, "");
-                    generate_objects(buffer, &objects, module, config)?;
-                }
-
                 Ok(())
             },
         )?;
 
         Ok(())
     }
-}
-
-fn generate_objects(
-    buffer: &mut Buffer,
-    objects: &[&&Object],
-    module: &str,
-    config: &GraceConfig,
-) -> Result<()> {
-    buffer.block(
-        DirectiveKind::IgnoreOrig,
-        format!("{}-object-definitions", module),
-        |buffer| {
-            emit!(
-                buffer,
-                "// I don't think that this actually belongs here. Maybe when we are generating"
-            );
-            emit!(
-                buffer,
-                "// a module file, it could go in there? Or it's own file. I'm just too lazy and"
-            );
-            emit!(
-                buffer,
-                "// impatient, and I don't want to deal with it right now."
-            );
-            emit!(
-                buffer,
-                "pub fn populate_sarzak(mut store: &mut crate::sarzak::store::ObjectStore) {{",
-            );
-
-            for obj in objects {
-                if !config.is_imported(&obj.id) {
-                    let imported = format!("\n\n🐶 {{ \"imported_object\": {{ \"domain\": \"domain::isa\", \"model_file\": \"tests/mdd/models/isa.json\", \"id\": \"6339b18b-3929-51ae-ad1a-f0cb4dc73362\" }}}}");
-                    emit!(
-                        buffer,
-                        "SarzakObject::new(r#\"{}\"#.to_owned(), r#\"{}\"#.to_owned(), r#\"{}\"#.to_owned(), &mut store);",
-                        obj.description,
-                        obj.key_letters,
-                        obj.name
-                    );
-                }
-            }
-
-            emit!(buffer, "}}");
-
-            Ok(())
-        },
-    )?;
-    Ok(())
 }
 
 fn object_has_name(obj: &Object, domain: &Domain) -> bool {

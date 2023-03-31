@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa::types::alpha::Alpha;
-use crate::domain::isa::types::beta::Beta;
 use crate::domain::isa::types::super_bar::SuperBar;
 use crate::domain::isa::types::super_foo::SuperFoo;
 use crate::domain::isa::UUID_NS;
@@ -50,14 +49,10 @@ impl Gamma {
     // Navigate to [`SuperBar`] across R12(isa)
     pub fn r12_super_bar<'a>(&'a self, store: &'a IsaStore) -> Vec<&SuperBar> {
         vec![store.exhume_super_bar(&self.id).unwrap()]
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-    // Navigate to [`Beta`] across R11(isa)
-    pub fn r11_beta<'a>(&'a self, store: &'a IsaStore) -> Vec<&Beta> {
-        vec![store.exhume_beta(&self.id).unwrap()]
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

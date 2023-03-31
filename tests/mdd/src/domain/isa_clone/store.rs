@@ -48,6 +48,7 @@ pub struct ObjectStore {
     alpha_by_name: HashMap<String, (Alpha, SystemTime)>,
     baz: HashMap<Uuid, (Baz, SystemTime)>,
     beta: HashMap<Uuid, (Beta, SystemTime)>,
+    beta_by_name: HashMap<String, (Beta, SystemTime)>,
     borrowed: HashMap<Uuid, (Borrowed, SystemTime)>,
     gamma: HashMap<Uuid, (Gamma, SystemTime)>,
     henry: HashMap<Uuid, (Henry, SystemTime)>,
@@ -73,6 +74,7 @@ impl ObjectStore {
             alpha_by_name: HashMap::default(),
             baz: HashMap::default(),
             beta: HashMap::default(),
+            beta_by_name: HashMap::default(),
             borrowed: HashMap::default(),
             gamma: HashMap::default(),
             henry: HashMap::default(),
@@ -179,7 +181,9 @@ impl ObjectStore {
     /// Inter [`Beta`] into the store.
     ///
     pub fn inter_beta(&mut self, beta: Beta) {
-        self.beta.insert(beta.id(), (beta, SystemTime::now()));
+        let value = (beta, SystemTime::now());
+        self.beta.insert(value.0.id, value.clone());
+        self.beta_by_name.insert(value.0.name.clone(), value);
     }
 
     /// Exhume [`Beta`] from the store.
@@ -194,6 +198,12 @@ impl ObjectStore {
         self.beta.get_mut(id).map(|beta| &mut beta.0)
     }
 
+    /// Exhume [`Beta`] from the store by name.
+    ///
+    pub fn exhume_beta_by_name(&self, name: &str) -> Option<&Beta> {
+        self.beta_by_name.get(name).map(|beta| &beta.0)
+    }
+
     /// Get an iterator over the internal `HashMap<&Uuid, Beta>`.
     ///
     pub fn iter_beta(&self) -> impl Iterator<Item = &Beta> {
@@ -204,7 +214,7 @@ impl ObjectStore {
     ///
     pub fn beta_timestamp(&self, beta: &Beta) -> SystemTime {
         self.beta
-            .get(&beta.id())
+            .get(&beta.id)
             .map(|beta| beta.1)
             .unwrap_or(SystemTime::now())
     }
@@ -811,7 +821,7 @@ impl ObjectStore {
             let path = path.join("beta");
             fs::create_dir_all(&path)?;
             for beta_tuple in self.beta.values() {
-                let path = path.join(format!("{}.json", beta_tuple.0.id()));
+                let path = path.join(format!("{}.json", beta_tuple.0.id));
                 if path.exists() {
                     let file = fs::File::open(&path)?;
                     let reader = io::BufReader::new(file);
@@ -1371,7 +1381,8 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let beta: (Beta, SystemTime) = serde_json::from_reader(reader)?;
-                store.beta.insert(beta.0.id(), beta);
+                store.beta_by_name.insert(beta.0.name.clone(), beta.clone());
+                store.beta.insert(beta.0.id, beta);
             }
         }
 

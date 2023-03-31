@@ -430,7 +430,7 @@ impl<'a> Target for DomainTarget<'a> {
             self.generate_from_module(&domain)?;
         }
 
-        persist_woog(&self.woog, self.src_path, &self.domain)?;
+        // persist_woog(&self.woog, self.src_path, &self.domain)?;
 
         Ok(())
     }

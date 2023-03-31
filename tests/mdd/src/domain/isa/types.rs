@@ -27,6 +27,7 @@ pub use crate::domain::isa::alpha::Alpha;
 pub use crate::domain::isa::alpha::AlphaEnum;
 pub use crate::domain::isa::baz::Baz;
 pub use crate::domain::isa::beta::Beta;
+pub use crate::domain::isa::beta::BetaEnum;
 pub use crate::domain::isa::borrowed::Borrowed;
 pub use crate::domain::isa::gamma::Gamma;
 pub use crate::domain::isa::henry::Henry;

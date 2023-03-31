@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa_ts::types::alpha::Alpha;
-use crate::domain::isa_ts::types::beta::Beta;
 use crate::domain::isa_ts::types::super_bar::SuperBar;
 use crate::domain::isa_ts::types::super_foo::SuperFoo;
 use crate::domain::isa_ts::UUID_NS;
@@ -62,12 +61,8 @@ impl Gamma {
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-    // Navigate to [`Beta`] across R11(isa)
-    pub fn r11_beta<'a>(&'a self, store: &'a IsaTsStore) -> Vec<&Beta> {
-        vec![store.exhume_beta(&self.id).unwrap()]
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

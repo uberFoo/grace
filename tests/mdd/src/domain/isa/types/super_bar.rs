@@ -1,6 +1,7 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"super_bar-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-use-statements"}}}
 use crate::domain::isa::store::ObjectStore as IsaStore;
+use crate::domain::isa::types::beta::Beta;
 use crate::domain::isa::types::gamma::Gamma;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -28,6 +29,12 @@ impl SuperBar {
         match self {
             SuperBar::Gamma(id) => *id,
         }
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-impl-nav-subtype-to-supertype-beta"}}}
+    // Navigate to [`Beta`] across R11(isa)
+    pub fn r11_beta<'a>(&'a self, store: &'a IsaStore) -> Vec<&Beta> {
+        vec![store.exhume_beta(&self.id()).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

@@ -47,6 +47,7 @@ pub struct ObjectStore {
     alpha_by_name: HashMap<String, Alpha>,
     baz: HashMap<Uuid, Baz>,
     beta: HashMap<Uuid, Beta>,
+    beta_by_name: HashMap<String, Beta>,
     borrowed: HashMap<Uuid, Borrowed>,
     gamma: HashMap<Uuid, Gamma>,
     henry: HashMap<Uuid, Henry>,
@@ -72,6 +73,7 @@ impl ObjectStore {
             alpha_by_name: HashMap::default(),
             baz: HashMap::default(),
             beta: HashMap::default(),
+            beta_by_name: HashMap::default(),
             borrowed: HashMap::default(),
             gamma: HashMap::default(),
             henry: HashMap::default(),
@@ -159,7 +161,8 @@ impl ObjectStore {
     /// Inter [`Beta`] into the store.
     ///
     pub fn inter_beta(&mut self, beta: Beta) {
-        self.beta.insert(beta.id(), beta);
+        self.beta.insert(beta.id, beta.clone());
+        self.beta_by_name.insert(beta.name.clone(), beta);
     }
 
     /// Exhume [`Beta`] from the store.
@@ -172,6 +175,12 @@ impl ObjectStore {
     ///
     pub fn exhume_beta_mut(&mut self, id: &Uuid) -> Option<&mut Beta> {
         self.beta.get_mut(id)
+    }
+
+    /// Exhume [`Beta`] from the store by name.
+    ///
+    pub fn exhume_beta_by_name(&self, name: &str) -> Option<&Beta> {
+        self.beta_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Beta>`.
@@ -583,7 +592,7 @@ impl ObjectStore {
             let path = path.join("beta");
             fs::create_dir_all(&path)?;
             for beta in self.beta.values() {
-                let path = path.join(format!("{}.json", beta.id()));
+                let path = path.join(format!("{}.json", beta.id));
                 let file = fs::File::create(path)?;
                 let mut writer = io::BufWriter::new(file);
                 serde_json::to_writer_pretty(&mut writer, &beta)?;
@@ -813,7 +822,8 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let beta: Beta = serde_json::from_reader(reader)?;
-                store.beta.insert(beta.id(), beta);
+                store.beta_by_name.insert(beta.name.clone(), beta.clone());
+                store.beta.insert(beta.id, beta);
             }
         }
 

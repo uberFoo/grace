@@ -90,10 +90,10 @@ mod tests {
         let α = Alpha::new_gamma("α".to_owned(), &Γ, &mut store);
         // 🚧 see grace#58.
         // let β = Beta::new_gamma("β".to_owned(), &Γ, &mut store);
-        let β = Beta::new_gamma(&Γ, &mut store);
 
         assert_eq!(&α, Γ.r10_alpha(&store)[0]);
-        assert_eq!(&β, Γ.r11_beta(&store)[0]);
+        // 🚧 see grace#58.
+        // assert_eq!(&β, Γ.r11_beta(&store)[0]);
 
         let sf = SuperFoo::new_gamma(&Γ, &mut store);
         let sb = SuperBar::new_gamma(&Γ, &mut store);

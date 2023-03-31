@@ -1,15 +1,19 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"beta-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-use-statements"}}}
-use crate::domain::isa::store::ObjectStore as IsaStore;
-use crate::domain::isa::types::gamma::Gamma;
-use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::domain::isa::types::super_bar::SuperBar;
+use serde::{Deserialize, Serialize};
+
+use crate::domain::isa::store::ObjectStore as IsaStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-enum-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-hybrid-documentation"}}}
 /// This test is not complete.
 ///
-/// To complete this test add an attribute to this object.
+/// To complete this test add Gamma to R11. The relationship to "Super Bar" is just so that
+/// we can create an instance of Beta to soothe the compiler.
 ///
 /// See grace#58.
 ///
@@ -17,10 +21,16 @@ use uuid::Uuid;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-enum-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-hybrid-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct Beta {
+    pub subtype: BetaEnum,
+    pub id: Uuid,
+    pub name: String,
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-hybrid-enum-definition"}}}
-pub enum Beta {
-    Gamma(Uuid),
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub enum BetaEnum {
+    SuperBar(Uuid),
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-implementation"}}}
@@ -29,19 +39,20 @@ impl Beta {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-get-id-impl"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-struct-impl-new"}}}
-    /// Create a new instance of Beta::Gamma
-    pub fn new_gamma(gamma: &Gamma, store: &mut IsaStore) -> Self {
-        let new = Self::Gamma(gamma.id);
+    /// Inter a new Beta in the store, and return it's `id`.
+    pub fn new_super_bar(name: String, subtype: &SuperBar, store: &mut IsaStore) -> Beta {
+        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
+        // about this local. This should be fixed in the near future.
+        let id = subtype.id();
+        let new = Beta {
+            name: name,
+            subtype: BetaEnum::SuperBar(subtype.id()),
+            id,
+        };
         store.inter_beta(new.clone());
         new
-    }
-
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-get-id-impl"}}}
-    pub fn id(&self) -> Uuid {
-        match self {
-            Beta::Gamma(id) => *id,
-        }
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-get-id-impl"}}}
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

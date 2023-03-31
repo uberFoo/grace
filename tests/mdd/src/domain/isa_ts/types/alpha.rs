@@ -36,7 +36,7 @@ impl Alpha {
         let id = subtype.id;
         let new = Alpha {
             name: name,
-            subtype: subtype,
+            subtype: AlphaEnum::Gamma(subtype.id),
             id,
         };
         store.inter_alpha(new.clone());

@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::alpha::Alpha;
-use crate::domain::isa_clone::types::beta::Beta;
 use crate::domain::isa_clone::types::super_bar::SuperBar;
 use crate::domain::isa_clone::types::super_foo::SuperFoo;
 use crate::domain::isa_clone::UUID_NS;
@@ -50,10 +49,6 @@ impl Gamma {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-    // Navigate to [`Beta`] across R11(isa)
-    pub fn r11_beta<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Beta> {
-        vec![store.exhume_beta(&self.id).unwrap()]
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
     // Navigate to [`Alpha`] across R10(isa)
