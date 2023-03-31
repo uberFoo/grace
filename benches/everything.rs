@@ -6,10 +6,8 @@ use sarzak::domain::DomainBuilder;
 fn generate_everything() {
     let mut options = GraceCompilerOptions::default();
     options.target = Target::Domain(DomainConfig {
-        from_module: None,
-        from_path: None,
         persist: true,
-        persist_timestamps: false,
+        ..Default::default()
     });
     if let Some(ref mut derive) = options.derive {
         derive.push("Clone".to_string());

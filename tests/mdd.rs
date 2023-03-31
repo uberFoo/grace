@@ -15,10 +15,8 @@ macro_rules! test_target_domain {
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
-                from_module: None,
-                from_path: None,
                 persist: true,
-                persist_timestamps: false,
+                ..Default::default()
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
@@ -72,10 +70,8 @@ macro_rules! test_target_domain {
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
-                from_module: None,
-                from_path: None,
                 persist: true,
-                persist_timestamps: false,
+                ..Default::default()
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
@@ -136,10 +132,9 @@ macro_rules! test_target_domain_timestamps {
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
-                from_module: None,
-                from_path: None,
                 persist: true,
                 persist_timestamps: true,
+                ..Default::default()
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
@@ -193,10 +188,9 @@ macro_rules! test_target_domain_timestamps {
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
-                from_module: None,
-                from_path: None,
                 persist: true,
                 persist_timestamps: true,
+                ..Default::default()
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
@@ -384,6 +378,7 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
         persist: true,
         // Get some cheap code coverage this way, I think.
         persist_timestamps: true,
+        ..Default::default()
     });
     if let Some(ref mut derive) = options.derive {
         derive.push("Clone".to_string());
