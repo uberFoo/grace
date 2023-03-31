@@ -559,7 +559,10 @@ pub(crate) fn render_new_instance(
                 let obj = domain.sarzak().exhume_object(&obj).unwrap();
                 // If this is a subtype, grab the supertype object and if it's a hybrid, we need to
                 // handle the inner enum specially.
-                if let Some(sub) = obj.r15c_subtype(domain.sarzak()).pop() {
+                // 🚧: There are now multiple subtypes per object, and we don't know which one
+                // to grab. So if there are multiple hybrid supertypes, then we don't output
+                // the correct `{}Enum`. See grace#58.
+                if let Some(sub) = obj.r15_subtype(domain.sarzak()).pop() {
                     let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
                         .r14_object(domain.sarzak())[0];
                     if local_object_is_hybrid(s_obj, config, domain) {
@@ -1173,7 +1176,7 @@ pub(crate) fn local_object_is_subtype(
     _config: &GraceConfig,
     domain: &Domain,
 ) -> bool {
-    let is_sub = object.r15c_subtype(domain.sarzak());
+    let is_sub = object.r15_subtype(domain.sarzak());
     log::debug!("is_sub: {:?}", is_sub);
 
     is_sub.len() > 0
@@ -1330,7 +1333,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
         }
     }
 
-    for subtype in object.r15c_subtype(domain.sarzak()) {
+    for subtype in object.r15_subtype(domain.sarzak()) {
         if domain.sarzak().subtype_timestamp(subtype) > last_time {
             return true;
         }

@@ -80,4 +80,25 @@ mod tests {
         store.exhume_ownership(&mutable.id()).unwrap();
         store.exhume_ownership(&shared.id()).unwrap();
     }
+
+    #[test]
+    fn test_multi_super_sub() {
+        let mut store = ObjectStore::new();
+
+        #[allow(non_snake_case)]
+        let Γ = Gamma::new(3.14, &mut store);
+        let α = Alpha::new_gamma("α".to_owned(), &Γ, &mut store);
+        // 🚧 see grace#58.
+        // let β = Beta::new_gamma("β".to_owned(), &Γ, &mut store);
+        let β = Beta::new_gamma(&Γ, &mut store);
+
+        assert_eq!(&α, Γ.r10_alpha(&store)[0]);
+        assert_eq!(&β, Γ.r11_beta(&store)[0]);
+
+        let sf = SuperFoo::new_gamma(&Γ, &mut store);
+        let sb = SuperBar::new_gamma(&Γ, &mut store);
+
+        assert_eq!(&sf, Γ.r13_super_foo(&store)[0]);
+        assert_eq!(&sb, Γ.r12_super_bar(&store)[0]);
+    }
 }

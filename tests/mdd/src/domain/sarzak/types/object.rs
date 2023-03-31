@@ -177,15 +177,19 @@ impl Object {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-cond-to-subtype"}}}
-    /// Navigate to [`Subtype`] across R15(1-1c)
-    pub fn r15c_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
-        let subtype = store
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-subtype"}}}
+    /// Navigate to [`Subtype`] across R15(1-M)
+    pub fn r15_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
+        store
             .iter_subtype()
-            .find(|subtype| subtype.obj_id == self.id);
-        match subtype {
-            Some(ref subtype) => vec![subtype],
-            None => Vec::new(),
-        }
+            .filter_map(|subtype| {
+                if subtype.obj_id == self.id {
+                    Some(subtype)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-supertype"}}}

@@ -7,8 +7,11 @@
 //!
 //! # Contents:
 //!
+//! * [`Alpha`]
 //! * [`Baz`]
+//! * [`Beta`]
 //! * [`Borrowed`]
+//! * [`Gamma`]
 //! * [`Henry`]
 //! * [`NotImportant`]
 //! * [`OhBoy`]
@@ -18,6 +21,8 @@
 //! * [`SimpleSupertype`]
 //! * [`SubtypeA`]
 //! * [`SubtypeB`]
+//! * [`SuperBar`]
+//! * [`SuperFoo`]
 //! * [`SuperT`]
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_ts-object-store-definition"}}}
 use std::{
@@ -32,14 +37,19 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa_ts::types::{
-    Baz, Borrowed, Henry, NotImportant, OhBoy, Ownership, Reference, SimpleSubtypeA,
-    SimpleSupertype, SubtypeA, SubtypeB, SuperT, MUTABLE, OWNED, SHARED,
+    Alpha, Baz, Beta, Borrowed, Gamma, Henry, NotImportant, OhBoy, Ownership, Reference,
+    SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB, SuperBar, SuperFoo, SuperT, MUTABLE,
+    OWNED, SHARED,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
+    alpha: HashMap<Uuid, (Alpha, SystemTime)>,
+    alpha_by_name: HashMap<String, (Alpha, SystemTime)>,
     baz: HashMap<Uuid, (Baz, SystemTime)>,
+    beta: HashMap<Uuid, (Beta, SystemTime)>,
     borrowed: HashMap<Uuid, (Borrowed, SystemTime)>,
+    gamma: HashMap<Uuid, (Gamma, SystemTime)>,
     henry: HashMap<Uuid, (Henry, SystemTime)>,
     not_important: HashMap<Uuid, (NotImportant, SystemTime)>,
     oh_boy: HashMap<Uuid, (OhBoy, SystemTime)>,
@@ -51,14 +61,20 @@ pub struct ObjectStore {
     subtype_a: HashMap<Uuid, (SubtypeA, SystemTime)>,
     subtype_a_by_name: HashMap<String, (SubtypeA, SystemTime)>,
     subtype_b: HashMap<Uuid, (SubtypeB, SystemTime)>,
+    super_bar: HashMap<Uuid, (SuperBar, SystemTime)>,
+    super_foo: HashMap<Uuid, (SuperFoo, SystemTime)>,
     super_t: HashMap<Uuid, (SuperT, SystemTime)>,
 }
 
 impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
+            alpha: HashMap::default(),
+            alpha_by_name: HashMap::default(),
             baz: HashMap::default(),
+            beta: HashMap::default(),
             borrowed: HashMap::default(),
+            gamma: HashMap::default(),
             henry: HashMap::default(),
             not_important: HashMap::default(),
             oh_boy: HashMap::default(),
@@ -70,6 +86,8 @@ impl ObjectStore {
             subtype_a: HashMap::default(),
             subtype_a_by_name: HashMap::default(),
             subtype_b: HashMap::default(),
+            super_bar: HashMap::default(),
+            super_foo: HashMap::default(),
             super_t: HashMap::default(),
         };
 
@@ -84,6 +102,47 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_ts-object-store-methods"}}}
+    /// Inter [`Alpha`] into the store.
+    ///
+    pub fn inter_alpha(&mut self, alpha: Alpha) {
+        let value = (alpha, SystemTime::now());
+        self.alpha.insert(value.0.id, value.clone());
+        self.alpha_by_name.insert(value.0.name.clone(), value);
+    }
+
+    /// Exhume [`Alpha`] from the store.
+    ///
+    pub fn exhume_alpha(&self, id: &Uuid) -> Option<&Alpha> {
+        self.alpha.get(id).map(|alpha| &alpha.0)
+    }
+
+    /// Exhume [`Alpha`] from the store — mutably.
+    ///
+    pub fn exhume_alpha_mut(&mut self, id: &Uuid) -> Option<&mut Alpha> {
+        self.alpha.get_mut(id).map(|alpha| &mut alpha.0)
+    }
+
+    /// Exhume [`Alpha`] from the store by name.
+    ///
+    pub fn exhume_alpha_by_name(&self, name: &str) -> Option<&Alpha> {
+        self.alpha_by_name.get(name).map(|alpha| &alpha.0)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Alpha>`.
+    ///
+    pub fn iter_alpha(&self) -> impl Iterator<Item = &Alpha> {
+        self.alpha.values().map(|alpha| &alpha.0)
+    }
+
+    /// Get the timestamp for Alpha.
+    ///
+    pub fn alpha_timestamp(&self, alpha: &Alpha) -> SystemTime {
+        self.alpha
+            .get(&alpha.id)
+            .map(|alpha| alpha.1)
+            .unwrap_or(SystemTime::now())
+    }
+
     /// Inter [`Baz`] into the store.
     ///
     pub fn inter_baz(&mut self, baz: Baz) {
@@ -114,6 +173,39 @@ impl ObjectStore {
         self.baz
             .get(&baz.id)
             .map(|baz| baz.1)
+            .unwrap_or(SystemTime::now())
+    }
+
+    /// Inter [`Beta`] into the store.
+    ///
+    pub fn inter_beta(&mut self, beta: Beta) {
+        self.beta.insert(beta.id(), (beta, SystemTime::now()));
+    }
+
+    /// Exhume [`Beta`] from the store.
+    ///
+    pub fn exhume_beta(&self, id: &Uuid) -> Option<&Beta> {
+        self.beta.get(id).map(|beta| &beta.0)
+    }
+
+    /// Exhume [`Beta`] from the store — mutably.
+    ///
+    pub fn exhume_beta_mut(&mut self, id: &Uuid) -> Option<&mut Beta> {
+        self.beta.get_mut(id).map(|beta| &mut beta.0)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Beta>`.
+    ///
+    pub fn iter_beta(&self) -> impl Iterator<Item = &Beta> {
+        self.beta.values().map(|beta| &beta.0)
+    }
+
+    /// Get the timestamp for Beta.
+    ///
+    pub fn beta_timestamp(&self, beta: &Beta) -> SystemTime {
+        self.beta
+            .get(&beta.id())
+            .map(|beta| beta.1)
             .unwrap_or(SystemTime::now())
     }
 
@@ -148,6 +240,39 @@ impl ObjectStore {
         self.borrowed
             .get(&borrowed.id())
             .map(|borrowed| borrowed.1)
+            .unwrap_or(SystemTime::now())
+    }
+
+    /// Inter [`Gamma`] into the store.
+    ///
+    pub fn inter_gamma(&mut self, gamma: Gamma) {
+        self.gamma.insert(gamma.id, (gamma, SystemTime::now()));
+    }
+
+    /// Exhume [`Gamma`] from the store.
+    ///
+    pub fn exhume_gamma(&self, id: &Uuid) -> Option<&Gamma> {
+        self.gamma.get(id).map(|gamma| &gamma.0)
+    }
+
+    /// Exhume [`Gamma`] from the store — mutably.
+    ///
+    pub fn exhume_gamma_mut(&mut self, id: &Uuid) -> Option<&mut Gamma> {
+        self.gamma.get_mut(id).map(|gamma| &mut gamma.0)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, Gamma>`.
+    ///
+    pub fn iter_gamma(&self) -> impl Iterator<Item = &Gamma> {
+        self.gamma.values().map(|gamma| &gamma.0)
+    }
+
+    /// Get the timestamp for Gamma.
+    ///
+    pub fn gamma_timestamp(&self, gamma: &Gamma) -> SystemTime {
+        self.gamma
+            .get(&gamma.id)
+            .map(|gamma| gamma.1)
             .unwrap_or(SystemTime::now())
     }
 
@@ -491,6 +616,74 @@ impl ObjectStore {
             .unwrap_or(SystemTime::now())
     }
 
+    /// Inter [`SuperBar`] into the store.
+    ///
+    pub fn inter_super_bar(&mut self, super_bar: SuperBar) {
+        self.super_bar
+            .insert(super_bar.id(), (super_bar, SystemTime::now()));
+    }
+
+    /// Exhume [`SuperBar`] from the store.
+    ///
+    pub fn exhume_super_bar(&self, id: &Uuid) -> Option<&SuperBar> {
+        self.super_bar.get(id).map(|super_bar| &super_bar.0)
+    }
+
+    /// Exhume [`SuperBar`] from the store — mutably.
+    ///
+    pub fn exhume_super_bar_mut(&mut self, id: &Uuid) -> Option<&mut SuperBar> {
+        self.super_bar.get_mut(id).map(|super_bar| &mut super_bar.0)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, SuperBar>`.
+    ///
+    pub fn iter_super_bar(&self) -> impl Iterator<Item = &SuperBar> {
+        self.super_bar.values().map(|super_bar| &super_bar.0)
+    }
+
+    /// Get the timestamp for SuperBar.
+    ///
+    pub fn super_bar_timestamp(&self, super_bar: &SuperBar) -> SystemTime {
+        self.super_bar
+            .get(&super_bar.id())
+            .map(|super_bar| super_bar.1)
+            .unwrap_or(SystemTime::now())
+    }
+
+    /// Inter [`SuperFoo`] into the store.
+    ///
+    pub fn inter_super_foo(&mut self, super_foo: SuperFoo) {
+        self.super_foo
+            .insert(super_foo.id(), (super_foo, SystemTime::now()));
+    }
+
+    /// Exhume [`SuperFoo`] from the store.
+    ///
+    pub fn exhume_super_foo(&self, id: &Uuid) -> Option<&SuperFoo> {
+        self.super_foo.get(id).map(|super_foo| &super_foo.0)
+    }
+
+    /// Exhume [`SuperFoo`] from the store — mutably.
+    ///
+    pub fn exhume_super_foo_mut(&mut self, id: &Uuid) -> Option<&mut SuperFoo> {
+        self.super_foo.get_mut(id).map(|super_foo| &mut super_foo.0)
+    }
+
+    /// Get an iterator over the internal `HashMap<&Uuid, SuperFoo>`.
+    ///
+    pub fn iter_super_foo(&self) -> impl Iterator<Item = &SuperFoo> {
+        self.super_foo.values().map(|super_foo| &super_foo.0)
+    }
+
+    /// Get the timestamp for SuperFoo.
+    ///
+    pub fn super_foo_timestamp(&self, super_foo: &SuperFoo) -> SystemTime {
+        self.super_foo
+            .get(&super_foo.id())
+            .map(|super_foo| super_foo.1)
+            .unwrap_or(SystemTime::now())
+    }
+
     /// Inter [`SuperT`] into the store.
     ///
     pub fn inter_super_t(&mut self, super_t: SuperT) {
@@ -545,6 +738,40 @@ impl ObjectStore {
         let path = path.join("Isa Relationship.json");
         fs::create_dir_all(&path)?;
 
+        // Persist Alpha.
+        {
+            let path = path.join("alpha");
+            fs::create_dir_all(&path)?;
+            for alpha_tuple in self.alpha.values() {
+                let path = path.join(format!("{}.json", alpha_tuple.0.id));
+                if path.exists() {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    let on_disk: (Alpha, SystemTime) = serde_json::from_reader(reader)?;
+                    if on_disk.0 != alpha_tuple.0 {
+                        let file = fs::File::create(path)?;
+                        let mut writer = io::BufWriter::new(file);
+                        serde_json::to_writer_pretty(&mut writer, &alpha_tuple)?;
+                    }
+                } else {
+                    let file = fs::File::create(&path)?;
+                    let mut writer = io::BufWriter::new(file);
+                    serde_json::to_writer_pretty(&mut writer, &alpha_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.alpha.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+
         // Persist Baz.
         {
             let path = path.join("baz");
@@ -579,6 +806,40 @@ impl ObjectStore {
             }
         }
 
+        // Persist Beta.
+        {
+            let path = path.join("beta");
+            fs::create_dir_all(&path)?;
+            for beta_tuple in self.beta.values() {
+                let path = path.join(format!("{}.json", beta_tuple.0.id()));
+                if path.exists() {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    let on_disk: (Beta, SystemTime) = serde_json::from_reader(reader)?;
+                    if on_disk.0 != beta_tuple.0 {
+                        let file = fs::File::create(path)?;
+                        let mut writer = io::BufWriter::new(file);
+                        serde_json::to_writer_pretty(&mut writer, &beta_tuple)?;
+                    }
+                } else {
+                    let file = fs::File::create(&path)?;
+                    let mut writer = io::BufWriter::new(file);
+                    serde_json::to_writer_pretty(&mut writer, &beta_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.beta.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+
         // Persist Borrowed.
         {
             let path = path.join("borrowed");
@@ -607,6 +868,40 @@ impl ObjectStore {
                 let id = file_name.split(".").next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.borrowed.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+
+        // Persist Gamma.
+        {
+            let path = path.join("gamma");
+            fs::create_dir_all(&path)?;
+            for gamma_tuple in self.gamma.values() {
+                let path = path.join(format!("{}.json", gamma_tuple.0.id));
+                if path.exists() {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    let on_disk: (Gamma, SystemTime) = serde_json::from_reader(reader)?;
+                    if on_disk.0 != gamma_tuple.0 {
+                        let file = fs::File::create(path)?;
+                        let mut writer = io::BufWriter::new(file);
+                        serde_json::to_writer_pretty(&mut writer, &gamma_tuple)?;
+                    }
+                } else {
+                    let file = fs::File::create(&path)?;
+                    let mut writer = io::BufWriter::new(file);
+                    serde_json::to_writer_pretty(&mut writer, &gamma_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.gamma.contains_key(&id) {
                         fs::remove_file(path)?;
                     }
                 }
@@ -919,6 +1214,74 @@ impl ObjectStore {
             }
         }
 
+        // Persist Super Bar.
+        {
+            let path = path.join("super_bar");
+            fs::create_dir_all(&path)?;
+            for super_bar_tuple in self.super_bar.values() {
+                let path = path.join(format!("{}.json", super_bar_tuple.0.id()));
+                if path.exists() {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    let on_disk: (SuperBar, SystemTime) = serde_json::from_reader(reader)?;
+                    if on_disk.0 != super_bar_tuple.0 {
+                        let file = fs::File::create(path)?;
+                        let mut writer = io::BufWriter::new(file);
+                        serde_json::to_writer_pretty(&mut writer, &super_bar_tuple)?;
+                    }
+                } else {
+                    let file = fs::File::create(&path)?;
+                    let mut writer = io::BufWriter::new(file);
+                    serde_json::to_writer_pretty(&mut writer, &super_bar_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.super_bar.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+
+        // Persist Super Foo.
+        {
+            let path = path.join("super_foo");
+            fs::create_dir_all(&path)?;
+            for super_foo_tuple in self.super_foo.values() {
+                let path = path.join(format!("{}.json", super_foo_tuple.0.id()));
+                if path.exists() {
+                    let file = fs::File::open(&path)?;
+                    let reader = io::BufReader::new(file);
+                    let on_disk: (SuperFoo, SystemTime) = serde_json::from_reader(reader)?;
+                    if on_disk.0 != super_foo_tuple.0 {
+                        let file = fs::File::create(path)?;
+                        let mut writer = io::BufWriter::new(file);
+                        serde_json::to_writer_pretty(&mut writer, &super_foo_tuple)?;
+                    }
+                } else {
+                    let file = fs::File::create(&path)?;
+                    let mut writer = io::BufWriter::new(file);
+                    serde_json::to_writer_pretty(&mut writer, &super_foo_tuple)?;
+                }
+            }
+            for file in fs::read_dir(&path)? {
+                let file = file?;
+                let path = file.path();
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let id = file_name.split(".").next().unwrap();
+                if let Ok(id) = Uuid::parse_str(id) {
+                    if !self.super_foo.contains_key(&id) {
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+        }
+
         // Persist Super T.
         {
             let path = path.join("super_t");
@@ -967,6 +1330,23 @@ impl ObjectStore {
 
         let mut store = Self::new();
 
+        // Load Alpha.
+        {
+            let path = path.join("alpha");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let alpha: (Alpha, SystemTime) = serde_json::from_reader(reader)?;
+                store
+                    .alpha_by_name
+                    .insert(alpha.0.name.clone(), alpha.clone());
+                store.alpha.insert(alpha.0.id, alpha);
+            }
+        }
+
         // Load Baz.
         {
             let path = path.join("baz");
@@ -981,6 +1361,20 @@ impl ObjectStore {
             }
         }
 
+        // Load Beta.
+        {
+            let path = path.join("beta");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let beta: (Beta, SystemTime) = serde_json::from_reader(reader)?;
+                store.beta.insert(beta.0.id(), beta);
+            }
+        }
+
         // Load Borrowed.
         {
             let path = path.join("borrowed");
@@ -992,6 +1386,20 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let borrowed: (Borrowed, SystemTime) = serde_json::from_reader(reader)?;
                 store.borrowed.insert(borrowed.0.id(), borrowed);
+            }
+        }
+
+        // Load Gamma.
+        {
+            let path = path.join("gamma");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let gamma: (Gamma, SystemTime) = serde_json::from_reader(reader)?;
+                store.gamma.insert(gamma.0.id, gamma);
             }
         }
 
@@ -1132,6 +1540,34 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let subtype_b: (SubtypeB, SystemTime) = serde_json::from_reader(reader)?;
                 store.subtype_b.insert(subtype_b.0.id, subtype_b);
+            }
+        }
+
+        // Load Super Bar.
+        {
+            let path = path.join("super_bar");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let super_bar: (SuperBar, SystemTime) = serde_json::from_reader(reader)?;
+                store.super_bar.insert(super_bar.0.id(), super_bar);
+            }
+        }
+
+        // Load Super Foo.
+        {
+            let path = path.join("super_foo");
+            let mut entries = fs::read_dir(path)?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                let path = entry.path();
+                let file = fs::File::open(path)?;
+                let reader = io::BufReader::new(file);
+                let super_foo: (SuperFoo, SystemTime) = serde_json::from_reader(reader)?;
+                store.super_foo.insert(super_foo.0.id(), super_foo);
             }
         }
 

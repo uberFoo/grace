@@ -2,7 +2,7 @@
 //!
 use std::fmt::Write;
 
-use fnv::FnvHashMap as HashMap;
+use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
@@ -658,13 +658,50 @@ impl CodeWriter for DomainStore {
         let woog = woog.as_ref().unwrap();
 
         fn emit_singleton_subtype_uses(
-            sup: &Object,
+            supertypes: &[&&Object],
             config: &GraceConfig,
             domain: &Domain,
             woog: &WoogStore,
             buffer: &mut Buffer,
         ) -> Result<bool> {
-            let mut result = false;
+            let mut includes = HashSet::default();
+
+            for sup in supertypes {
+                for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
+                    let s_obj = subtype.r15_object(domain.sarzak())[0];
+                    if !config.is_imported(&s_obj.id) {
+                        if local_object_is_supertype(s_obj, config, domain)
+                            && !local_object_is_subtype(s_obj, config, domain)
+                        {
+                            // Ooooh. Look here — recursion.
+                            includes.extend(emit_singleton_subtype_uses_inner(
+                                s_obj, config, domain, woog,
+                            )?);
+                        } else if local_object_is_singleton(s_obj, config, domain) {
+                            includes.insert(s_obj.as_const());
+                        }
+                    }
+                }
+            }
+
+            if includes.is_empty() {
+                return Ok(false);
+            } else {
+                for include in includes {
+                    emit!(buffer, "{},", include);
+                }
+
+                return Ok(true);
+            }
+        }
+
+        fn emit_singleton_subtype_uses_inner(
+            sup: &Object,
+            config: &GraceConfig,
+            domain: &Domain,
+            woog: &WoogStore,
+        ) -> Result<HashSet<String>> {
+            let mut includes = HashSet::default();
 
             for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
@@ -672,15 +709,17 @@ impl CodeWriter for DomainStore {
                     if local_object_is_supertype(s_obj, config, domain)
                         && !local_object_is_subtype(s_obj, config, domain)
                     {
-                        result |= emit_singleton_subtype_uses(s_obj, config, domain, woog, buffer)?;
+                        // Ooooh. Look here — recursion.
+                        includes.extend(emit_singleton_subtype_uses_inner(
+                            s_obj, config, domain, woog,
+                        )?);
                     } else if local_object_is_singleton(s_obj, config, domain) {
-                        result = true;
-                        emit!(buffer, "{},", s_obj.as_const());
+                        includes.insert(s_obj.as_const());
                     }
                 }
             }
 
-            Ok(result)
+            Ok(includes)
         }
 
         /// We are emitting a list of inter statements.
@@ -782,10 +821,8 @@ impl CodeWriter for DomainStore {
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
-                for obj in &supertypes {
-                    singleton_subs |=
-                        emit_singleton_subtype_uses(obj, config, domain, woog, buffer)?;
-                }
+                    singleton_subs =
+                        emit_singleton_subtype_uses(&supertypes, config, domain, woog, buffer)?;
                 emit!(buffer, "}};");
                 emit!(buffer, "");
                 emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");

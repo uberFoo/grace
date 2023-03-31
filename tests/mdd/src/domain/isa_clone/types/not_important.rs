@@ -74,7 +74,6 @@ impl NotImportant {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-cond-to-x_ref"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-to-x_ref"}}}
     /// Navigate to [`SuperT`] across R888(1-*)
     pub fn r888_super_t<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SuperT> {
