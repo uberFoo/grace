@@ -382,7 +382,7 @@ impl CodeWriter for HybridNewImpl {
             // list of parameters.
             if attr.name != "id" {
                 let ty = attr.r2_ty(domain.sarzak())[0];
-                fields.push(LValue::new(attr.name.as_ident(), ty.into()));
+                fields.push(LValue::new(attr.name.as_ident(), ty.into(), None));
                 params.push(Parameter::new(
                     BORROWED,
                     None,
@@ -408,6 +408,7 @@ impl CodeWriter for HybridNewImpl {
                     fields.push(LValue::new(
                         referrer.referential_attribute.as_ident(),
                         GType::Option(Box::new(GType::Uuid)),
+                        None,
                     ));
                     params.push(Parameter::new(
                         BORROWED,
@@ -421,6 +422,7 @@ impl CodeWriter for HybridNewImpl {
                     fields.push(LValue::new(
                         referrer.referential_attribute.as_ident(),
                         GType::Uuid,
+                        None,
                     ));
                     params.push(Parameter::new(
                         BORROWED,
@@ -451,6 +453,7 @@ impl CodeWriter for HybridNewImpl {
                 fields.push(LValue::new(
                     an_ass.referential_attribute.as_ident(),
                     GType::Uuid,
+                    None,
                 ));
                 params.push(Parameter::new(
                     BORROWED,
@@ -481,6 +484,7 @@ impl CodeWriter for HybridNewImpl {
             fields_.push(LValue::new(
                 SUBTYPE_ATTR.to_owned(),
                 GType::Object(s_obj.id),
+                Some(GType::Object(obj.id)),
             ));
             // if object_is_singleton(&s_obj, domain) && !object_is_supertype(s_obj, domain) {
             // params_.push(Parameter::new(
@@ -618,7 +622,7 @@ impl CodeWriter for HybridNewImpl {
                     }
 
                     // Output code to create the instance
-                    let new = LValue::new("new", GType::Reference(obj.id));
+                    let new = LValue::new("new", GType::Reference(obj.id), None);
                     render_new_instance(
                         buffer,
                         obj,

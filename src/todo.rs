@@ -53,13 +53,15 @@ pub(crate) struct LValue {
     /// It's assumed that it's already been sanitized. Really?
     pub name: String,
     pub ty: GType,
+    pub hack: Option<GType>,
 }
 
 impl LValue {
-    pub(crate) fn new<S: AsRef<str>>(name: S, ty: GType) -> Self {
+    pub(crate) fn new<S: AsRef<str>>(name: S, ty: GType, hack: Option<GType>) -> Self {
         Self {
             name: name.as_ref().to_string(),
             ty,
+            hack,
         }
     }
 }

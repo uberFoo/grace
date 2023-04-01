@@ -461,7 +461,7 @@ impl CodeWriter for DefaultNewImpl {
             // list of parameters.
             if attr.name != "id" {
                 let ty = attr.r2_ty(domain.sarzak())[0];
-                fields.push(LValue::new(attr.name.as_ident(), ty.into()));
+                fields.push(LValue::new(attr.name.as_ident(), ty.into(), None));
                 params.push(Parameter::new(
                     BORROWED,
                     None,
@@ -484,6 +484,7 @@ impl CodeWriter for DefaultNewImpl {
             fields.push(LValue::new(
                 referrer.referential_attribute.as_ident(),
                 GType::Reference(r_obj.id),
+                None,
             ));
             params.push(Parameter::new(
                 BORROWED,
@@ -566,7 +567,7 @@ impl CodeWriter for DefaultNewImpl {
                 render_method_definition(buffer, &method, woog, domain)?;
 
                 // Output the code to create the `id`.
-                let id = LValue::new("id", GType::Uuid);
+                let id = LValue::new("id", GType::Uuid, None);
                 render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance

@@ -563,16 +563,24 @@ pub(crate) fn render_new_instance(
                 // to grab. So if there are multiple hybrid supertypes, then we don't output
                 // the correct `{}Enum`. See grace#58.
                 if let Some(sub) = obj.r15_subtype(domain.sarzak()).pop() {
-                    let s_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())[0]
-                        .r14_object(domain.sarzak())[0];
-                    if local_object_is_hybrid(s_obj, config, domain) {
+                    let super_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())
+                        [0]
+                    .r14_object(domain.sarzak())[0];
+
+                    let foo_super_obj = if let Some(GType::Object(id)) = field.hack {
+                        Some(domain.sarzak().exhume_object(&id).unwrap())
+                    } else {
+                        None
+                    };
+
+                    if local_object_is_hybrid(super_obj, config, domain) {
                         match rval.ty {
                             GType::Uuid => {
                                 emit!(
                                     buffer,
                                     "{}: {}Enum::{}({}),",
                                     field.name,
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     rval.name
                                 )
@@ -584,7 +592,7 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id()),",
                                         field.name,
-                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         rval.name
                                     )
@@ -593,8 +601,12 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.id),",
                                         field.name,
-                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        foo_super_obj.unwrap().as_type(
+                                            &Ownership::new_borrowed(),
+                                            woog,
+                                            domain
+                                        ),
+                                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         rval.name
                                     )
                                 }
@@ -604,7 +616,7 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}.id),",
                                     field.name,
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     rval.name
                                 )
