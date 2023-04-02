@@ -1125,10 +1125,6 @@ macro_rules! test_local_and_imports {
 
                 ensure!(
                     // This is not the domain you were passed.
-                    // Note that we are testing for the id of the imported object.
-                    // Oddly this test worked before, and now it's broken. More
-                    // interesting perhaps is that we don't actually use this id
-                    // anyplace else...
                     domain.sarzak().exhume_object(&imported.id).is_some(),
                     CompilerSnafu {
                         description: format!(
@@ -1138,7 +1134,9 @@ macro_rules! test_local_and_imports {
                     }
                 );
 
-                Ok($func(object, config, domain))
+                let mut object = object.clone();
+                object.id = imported.id;
+                Ok($func(&object, config, domain))
             } else {
                 Ok($func(object, config, domain))
             }
