@@ -567,13 +567,17 @@ pub(crate) fn render_new_instance(
                         [0]
                     .r14_object(domain.sarzak())[0];
 
-                    let foo_super_obj = if let Some(GType::Object(id)) = field.hack {
-                        Some(domain.sarzak().exhume_object(&id).unwrap())
+                    // This is just an ugly-ass mess. I'm not even sure why this works.
+                    let (is_hybrid, foo_super_obj) = if let Some(GType::Object(id)) = field.hack {
+                        let obj = domain.sarzak().exhume_object(&id).unwrap();
+                        let is_hybrid = local_object_is_hybrid(obj, config, domain);
+                        (is_hybrid, Some(obj))
                     } else {
-                        None
+                        (local_object_is_hybrid(super_obj, config, domain), None)
                     };
 
-                    if local_object_is_hybrid(super_obj, config, domain) {
+                    // if local_object_is_hybrid(super_obj, config, domain) {
+                    if is_hybrid {
                         match rval.ty {
                             GType::Uuid => {
                                 emit!(

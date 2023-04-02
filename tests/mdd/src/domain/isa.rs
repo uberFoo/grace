@@ -75,7 +75,7 @@ mod tests {
         let mutable = Borrowed::new_mutable();
         let shared = Borrowed::new_shared();
 
-        // Just making sure that they exist in the store. Thsi will panic if they
+        // Just making sure that they exist in the store. This will panic if they
         // do not.
         store.exhume_ownership(&mutable.id()).unwrap();
         store.exhume_ownership(&shared.id()).unwrap();

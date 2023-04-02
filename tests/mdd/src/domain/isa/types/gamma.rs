@@ -41,6 +41,10 @@ impl Gamma {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // Navigate to [`Beta`] across R11(isa)
+    pub fn r11_beta<'a>(&'a self, store: &'a IsaStore) -> Vec<&Beta> {
+        vec![store.exhume_beta(&self.id).unwrap()]
+    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
     // Navigate to [`SuperFoo`] across R13(isa)
@@ -75,10 +79,6 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-    // Navigate to [`Beta`] across R11(isa)
-    pub fn r11_beta<'a>(&'a self, store: &'a IsaStore) -> Vec<&Beta> {
-        vec![store.exhume_beta(&self.id).unwrap()]
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
     // Navigate to [`Alpha`] across R10(isa)
