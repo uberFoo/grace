@@ -31,10 +31,7 @@ impl AnAssociativeReferent {
         referent: &AssociativeReferent,
         store: &mut SarzakStore,
     ) -> AnAssociativeReferent {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{}:{:?}:{:?}", referential_attribute, associative, referent).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = AnAssociativeReferent {
             id: id,
             referential_attribute: referential_attribute,

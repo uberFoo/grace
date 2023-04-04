@@ -30,7 +30,7 @@ impl Parameter {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-new"}}}
     /// Inter a new 'Parameter' in the store, and return it's `id`.
     pub fn new(name: String, next: Option<&Parameter>, store: &mut OneToOneStore) -> Parameter {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, next).as_bytes());
+        let id = Uuid::new_v4();
         let new = Parameter {
             id: id,
             name: name,

@@ -23,7 +23,7 @@ impl Baz {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"baz-struct-impl-new"}}}
     /// Inter a new 'Baz' in the store, and return it's `id`.
     pub fn new(insanity: f64, fugue: &SimpleSupertype, store: &mut IsaStore) -> Baz {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", insanity, fugue).as_bytes());
+        let id = Uuid::new_v4();
         let new = Baz {
             id: id,
             insanity: insanity,

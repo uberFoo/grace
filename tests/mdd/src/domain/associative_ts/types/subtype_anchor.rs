@@ -36,10 +36,7 @@ impl SubtypeAnchor {
         isaui_id: &IsaUi,
         store: &mut AssociativeTsStore,
     ) -> SubtypeAnchor {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{:?}:{:?}", anchor_id, isaui_id).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = SubtypeAnchor {
             id: id,
             anchor_id: anchor_id.id,

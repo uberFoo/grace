@@ -39,7 +39,7 @@ impl AnotherObject {
         edge: &SimpleSupertype,
         store: &mut ImportedObjectStore,
     ) -> AnotherObject {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", ptr, edge).as_bytes());
+        let id = Uuid::new_v4();
         let new = AnotherObject {
             id: id,
             ptr: ptr.id,

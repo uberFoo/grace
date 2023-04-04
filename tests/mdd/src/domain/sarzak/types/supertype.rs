@@ -28,7 +28,7 @@ impl Supertype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"supertype-struct-impl-new"}}}
     /// Inter a new 'Supertype' in the store, and return it's `id`.
     pub fn new(obj_id: &Object, store: &mut SarzakStore) -> Supertype {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}", obj_id).as_bytes());
+        let id = Uuid::new_v4();
         let new = Supertype {
             id: id,
             obj_id: obj_id.id,

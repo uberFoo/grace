@@ -35,10 +35,7 @@ impl AcknowledgedEvent {
         state_id: &State,
         store: &mut AssociativeStore,
     ) -> AcknowledgedEvent {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{:?}:{:?}", event_id, state_id).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = AcknowledgedEvent {
             id: id,
             event_id: event_id.id,

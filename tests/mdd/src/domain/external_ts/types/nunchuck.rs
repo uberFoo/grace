@@ -26,7 +26,7 @@ impl Nunchuck {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-struct-impl-new"}}}
     /// Inter a new 'Nunchuck' in the store, and return it's `id`.
     pub fn new(time: &Timestamp, store: &mut ExternalTsStore) -> Nunchuck {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}", time).as_bytes());
+        let id = Uuid::new_v4();
         let new = Nunchuck {
             id: id,
             time: time.id,

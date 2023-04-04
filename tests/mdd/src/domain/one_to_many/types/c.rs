@@ -27,7 +27,7 @@ impl C {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new"}}}
     /// Inter a new 'C' in the store, and return it's `id`.
     pub fn new(jackpot: f64, ptr: &Referent, store: &mut OneToManyStore) -> C {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", jackpot, ptr).as_bytes());
+        let id = Uuid::new_v4();
         let new = C {
             id: id,
             jackpot: jackpot,

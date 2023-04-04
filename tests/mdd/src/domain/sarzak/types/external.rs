@@ -44,7 +44,7 @@ impl External {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-struct-impl-new"}}}
     /// Inter a new 'External' in the store, and return it's `id`.
     pub fn new(ctor: String, name: String, path: String, store: &mut SarzakStore) -> External {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{}:{}", ctor, name, path).as_bytes());
+        let id = Uuid::new_v4();
         let new = External {
             ctor: ctor,
             id: id,

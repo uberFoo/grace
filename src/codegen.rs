@@ -378,13 +378,15 @@ pub(crate) fn render_make_uuid(
     // And the trailining ","
     args.pop();
 
-    emit!(
-        buffer,
-        "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
-        lval.name,
-        format_string,
-        args
-    );
+    // emit!(
+    //     buffer,
+    //     "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
+    //     lval.name,
+    //     format_string,
+    //     args
+    // );
+
+    emit!(buffer, "let {} = Uuid::new_v4();", lval.name);
 
     Ok(())
 }
@@ -511,12 +513,18 @@ pub(crate) fn render_make_uuid_new(
     // And the trailining ","
     args.pop();
 
+    // emit!(
+    //     buffer,
+    //     "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
+    //     var.r8_variable(woog)[0].name,
+    //     format_string,
+    //     args
+    // );
+
     emit!(
         buffer,
-        "let {} = Uuid::new_v5(&UUID_NS, format!(\"{}\", {}).as_bytes());",
-        var.r8_variable(woog)[0].name,
-        format_string,
-        args
+        "let {} = Uuid::new_v4();",
+        var.r8_variable(woog)[0].name
     );
 
     Ok(())

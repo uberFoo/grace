@@ -37,10 +37,7 @@ impl AssociativeReferrer {
         obj_id: &Object,
         store: &mut SarzakStore,
     ) -> AssociativeReferrer {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{:?}:{:?}", cardinality, obj_id).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = AssociativeReferrer {
             id: id,
             cardinality: cardinality.id(),

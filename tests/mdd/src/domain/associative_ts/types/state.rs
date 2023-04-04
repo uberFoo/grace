@@ -25,7 +25,7 @@ impl State {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new"}}}
     /// Inter a new 'State' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut AssociativeTsStore) -> State {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
+        let id = Uuid::new_v4();
         let new = State { id: id, name: name };
         store.inter_state(new.clone());
         new

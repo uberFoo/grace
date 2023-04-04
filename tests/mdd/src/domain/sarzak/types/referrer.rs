@@ -43,14 +43,7 @@ impl Referrer {
         obj_id: &Object,
         store: &mut SarzakStore,
     ) -> Referrer {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!(
-                "{}:{}:{:?}:{:?}:{:?}",
-                description, referential_attribute, cardinality, conditionality, obj_id
-            )
-            .as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = Referrer {
             description: description,
             id: id,

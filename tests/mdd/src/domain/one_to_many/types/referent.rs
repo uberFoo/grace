@@ -30,7 +30,7 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
     /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToManyStore) -> Referent {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
+        let id = Uuid::new_v4();
         let new = Referent { id: id, name: name };
         store.inter_referent(new.clone());
         new

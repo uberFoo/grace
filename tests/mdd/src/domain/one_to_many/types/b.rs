@@ -29,7 +29,7 @@ impl B {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
     /// Inter a new 'B' in the store, and return it's `id`.
     pub fn new(baz: String, ptr: Option<&Referent>, store: &mut OneToManyStore) -> B {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", baz, ptr).as_bytes());
+        let id = Uuid::new_v4();
         let new = B {
             baz: baz,
             id: id,

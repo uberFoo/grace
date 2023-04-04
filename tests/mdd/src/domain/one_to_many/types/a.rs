@@ -27,7 +27,7 @@ impl A {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
     /// Inter a new 'A' in the store, and return it's `id`.
     pub fn new(name: String, ptr: &Referent, store: &mut OneToManyStore) -> A {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, ptr).as_bytes());
+        let id = Uuid::new_v4();
         let new = A {
             id: id,
             name: name,

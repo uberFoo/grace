@@ -25,7 +25,7 @@ impl Associative {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
     /// Inter a new 'Associative' in the store, and return it's `id`.
     pub fn new(number: i64, from: &AssociativeReferrer, store: &mut SarzakStore) -> Associative {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, from).as_bytes());
+        let id = Uuid::new_v4();
         let new = Associative {
             id: id,
             number: number,

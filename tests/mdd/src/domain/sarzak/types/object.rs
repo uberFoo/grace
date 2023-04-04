@@ -51,10 +51,7 @@ impl Object {
         name: String,
         store: &mut SarzakStore,
     ) -> Object {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{}:{}:{}", description, key_letters, name).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = Object {
             description: description,
             id: id,

@@ -29,7 +29,7 @@ impl C {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new"}}}
     /// Inter a new 'C' in the store, and return it's `id`.
     pub fn new(like_water: f64, ptr: Option<&Referent>, store: &mut OneToOneTsStore) -> C {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", like_water, ptr).as_bytes());
+        let id = Uuid::new_v4();
         let new = C {
             id: id,
             like_water: like_water,

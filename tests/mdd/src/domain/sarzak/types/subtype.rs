@@ -29,7 +29,7 @@ impl Subtype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-new"}}}
     /// Inter a new 'Subtype' in the store, and return it's `id`.
     pub fn new(isa: &Isa, obj_id: &Object, store: &mut SarzakStore) -> Subtype {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", isa, obj_id).as_bytes());
+        let id = Uuid::new_v4();
         let new = Subtype {
             id: id,
             isa: isa.id,

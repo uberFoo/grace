@@ -40,14 +40,7 @@ impl Referent {
         obj_id: &Object,
         store: &mut SarzakStore,
     ) -> Referent {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!(
-                "{}:{:?}:{:?}:{:?}",
-                description, cardinality, conditionality, obj_id
-            )
-            .as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = Referent {
             description: description,
             id: id,

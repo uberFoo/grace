@@ -37,10 +37,7 @@ impl Everything {
         rando: &RandoObject,
         store: &mut EverythingTsStore,
     ) -> Everything {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = Everything {
             bool: bool,
             float: float,
