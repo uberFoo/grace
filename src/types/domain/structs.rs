@@ -26,7 +26,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_method,
+        render_methods,
     },
     options::GraceConfig,
     types::{
@@ -118,9 +118,6 @@ impl CodeWriter for Struct {
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
 
-                // We need this to create id's.
-                emit!(buffer, "use crate::{}::UUID_NS;", module);
-
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
@@ -178,7 +175,7 @@ impl CodeWriter for Struct {
                 }
 
                 // Ad use statements for supertypes.
-                for subtype in obj.r15c_subtype(domain.sarzak()) {
+                for subtype in obj.r15_subtype(domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
@@ -448,7 +445,7 @@ impl CodeWriter for StructNewImpl {
         //     )?;
         // }
 
-        render_method(buffer, obj, config, imports, woog, domain)
+        render_methods(buffer, obj, config, imports, woog, domain)
     }
 }
 

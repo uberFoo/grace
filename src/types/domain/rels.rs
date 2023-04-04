@@ -247,7 +247,7 @@ pub(crate) fn generate_subtype_rels(
 ) -> Result<()> {
     // Generate navigation methods for subtype to supertype navigation.
     // There should only be one of these, if any.
-    for subtype in obj.r15c_subtype(domain.sarzak()) {
+    for subtype in obj.r15_subtype(domain.sarzak()) {
         let isa = subtype.r27_isa(domain.sarzak())[0];
         let supertype = isa.r13_supertype(domain.sarzak())[0];
         let s_obj = supertype.r14_object(domain.sarzak())[0];

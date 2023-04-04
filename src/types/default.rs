@@ -23,7 +23,7 @@ use crate::{
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_binary_referrers_sorted, object_is_hybrid, object_is_singleton, object_is_supertype,
         render::{render_attributes, RenderConst, RenderIdent, RenderType},
-        render_method,
+        render_methods,
     },
     options::GraceConfig,
     types::{MethodImplementation, ModuleDefinition, TypeDefinition, TypeImplementation},
@@ -526,7 +526,7 @@ impl CodeWriter for DefaultNewImpl {
         //     )?;
         // }
 
-        render_method(buffer, obj, config, imports, woog, domain)
+        render_methods(buffer, obj, config, imports, woog, domain)
     }
 }
 

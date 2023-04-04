@@ -19,8 +19,7 @@ use crate::{
         emit_object_comments, find_store, get_assoc_referrer_obj_from_obj_via_assoc_referent,
         get_binary_referents_sorted, get_binary_referrers_sorted,
         get_objs_for_assoc_referrers_sorted, get_objs_for_binary_referents_sorted,
-        get_objs_for_binary_referrers_sorted, get_subtypes_sorted, object_is_enum,
-        object_is_singleton, object_is_supertype,
+        get_objs_for_binary_referrers_sorted, get_subtypes_sorted, object_is_const, object_is_enum,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -175,7 +174,7 @@ impl CodeWriter for Enum {
                 }
 
                 // Add use statements for supertypes.
-                for subtype in obj.r15c_subtype(domain.sarzak()) {
+                for subtype in obj.r15_subtype(domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
@@ -200,12 +199,9 @@ impl CodeWriter for Enum {
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
 
-                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
-                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
-
                     if config.is_imported(&s_obj.id) {
                         let imported_object = config.get_imported(&s_obj.id).unwrap();
-                        if is_singleton && !is_supertype {
+                        if object_is_const(s_obj, config, imports, domain)? {
                             uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
                                 imported_object.domain,
@@ -230,7 +226,7 @@ impl CodeWriter for Enum {
                             ));
                         }
                     } else {
-                        if is_singleton && !is_supertype {
+                        if object_is_const(s_obj, config, imports, domain)? {
                             uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
                                 module,
@@ -505,8 +501,6 @@ impl CodeWriter for EnumNewImpl {
             |buffer| {
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
-                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
 
                     emit!(
                         buffer,
@@ -527,8 +521,7 @@ impl CodeWriter for EnumNewImpl {
                         )
                     );
 
-                    // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
-                    if is_singleton && !is_supertype {
+                    if object_is_const(s_obj, config, imports, domain)? {
                         emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
                         emit!(
                             buffer,

@@ -14,7 +14,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore, Borrowed, Field, Function, GraceType, HybridEnum,
-        Ownership, Referent, Variable, SHARED,
+        Ownership, ReferenceType, Variable, SHARED,GraceTypeEnum
     },
 };
 use snafu::prelude::*;
@@ -207,32 +207,32 @@ impl RenderType for Ty {
 
 impl RenderType for GraceType {
     fn as_type(&self, mutability: &Ownership, woog: &WoogStore, domain: &Domain) -> String {
-        match self {
-            Self::Ty(t) => {
+        match self.subtype {
+            GraceTypeEnum::Ty(t) => {
                 let ty = domain.sarzak().exhume_ty(&t).unwrap();
                 ty.as_type(mutability, woog, domain)
             }
-            Self::WoogOption(o) => {
+            GraceTypeEnum::WoogOption(o) => {
                 let o = woog.exhume_woog_option(&o).unwrap();
                 let inner = o.r20_grace_type(woog)[0];
                 format!("Option<{}>", inner.as_type(mutability, woog, domain))
             }
-            Self::Reference(r) => {
+            GraceTypeEnum::Reference(r) => {
                 let reference = woog.exhume_reference(&r).unwrap();
-                let referent = reference.r13_referent(woog)[0];
+                let referent = reference.r13_reference_type(woog)[0];
                 let object = match referent {
-                    Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
-                    Referent::EnumerationField(id) => woog
+                    ReferenceType::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                    ReferenceType::EnumerationField(id) => woog
                         .exhume_enumeration_field(&id)
                         .unwrap()
                         .r36_enumeration(woog)[0]
                         .r40_object(domain.sarzak())[0],
-                    _ => unimplemented!(),
+                    道 => todo!("Apparently you need to deal with {:?}", 道),
                 };
                 format!("&{}", object.as_type(mutability, woog, domain))
             }
-            Self::TimeStamp(_) => "SystemTime".to_owned(),
-            Self::Function(_) => unimplemented!(), // Now this is going to be neat.
+            GraceTypeEnum::TimeStamp(_) => "SystemTime".to_owned(),
+            GraceTypeEnum::Function(_) => todo!(), // Now this is going to be neat.
         }
     }
 }

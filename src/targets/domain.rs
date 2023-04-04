@@ -64,11 +64,11 @@ impl<'a> DomainTarget<'a> {
         mut domain: Domain,
         _test: bool,
     ) -> Result<Box<dyn Target + 'a>> {
-        // Add EEs to the store
-        insert_external_entities(options, module, &mut domain);
-
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
+
+        // Add EEs to the store
+        insert_external_entities(&config, module, &mut domain);
 
         let mut woog = init_woog(src_path, &config, &domain);
 
@@ -267,8 +267,7 @@ impl<'a> DomainTarget<'a> {
                 .generate()?;
 
             // Update the timestamp in woog.
-            let now = SystemTime::now();
-            let ts = TimeStamp::now(now, &mut self.woog);
+            let ts = TimeStamp::new(&mut self.woog);
             let _ = GenerationUnit::new(&obj, &ts, &mut self.woog);
         }
 
@@ -377,26 +376,43 @@ impl<'a> Target for DomainTarget<'a> {
     }
 }
 
-fn insert_external_entities(options: &GraceCompilerOptions, module: &str, domain: &mut Domain) {
+fn insert_external_entities(config: &GraceConfig, module: &str, domain: &mut Domain) {
     // This creates an external entity of the ObjectStore so that
     // we can use it from within the domain. Remember that the ObjectStore is a
     // generated construct, and appears as if it was an external library to the
     // domain. Now, if it were modeled, we'd probably include some aspect of it's
     // model as an imported object, and we wouldn't need this. We'd probably need
     // something else...
-    let mut external = HashSet::default();
+    let mut external_stores = HashSet::default();
 
     // This is the object store for _this_ domain.
-    external.insert(module.replace("/", "::"));
+    external_stores.insert(module.replace("/", "::"));
 
-    // Here we are adding external entities for any objects colored as such.
-    if let Some(domains) = options.imported_domains.as_ref() {
-        for domain in domains {
-            external.insert(domain.replace("/", "::"));
+    // Here we are adding external entities for any imported objects.
+    // if let Some(domains) = options.imported_domains.as_ref() {
+    // for domain in domains {
+    // external_stores.insert(domain.replace("/", "::"));
+    // }
+    // }
+
+    let objs = domain.sarzak().iter_object().cloned().collect::<Vec<_>>();
+    for obj in objs {
+        if config.is_imported(&obj.id) {
+            let io = config.get_imported(&obj.id).unwrap();
+            external_stores.insert(io.domain.replace("/", "::"));
+        } else if config.is_external(&obj.id) {
+            let ee = config.get_external(&obj.id).unwrap().clone();
+            let ext = External::new(
+                ee.ctor.clone(),
+                ee.name.clone(),
+                ee.path.clone(),
+                domain.sarzak_mut(),
+            );
+            Ty::new_external(&ext, domain.sarzak_mut());
         }
     }
 
-    for store in external {
+    for store in external_stores {
         // Store is a rust path at this point. That's fine for the path,
         // but not so good for the name.
         let name = store
@@ -426,6 +442,15 @@ fn insert_external_entities(options: &GraceCompilerOptions, module: &str, domain
 
         Ty::new_external(&external, domain.sarzak_mut());
     }
+
+    // This is needed by all of the domains.
+    let uuid = External::new(
+        "new_v4".to_owned(),
+        "Uuid".to_owned(),
+        "uuid::Uuid".to_owned(),
+        domain.sarzak_mut(),
+    );
+    Ty::new_external(&uuid, domain.sarzak_mut());
 }
 
 /// Insert a new enum for each object that has a hybrid subtype.

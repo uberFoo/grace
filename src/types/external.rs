@@ -20,7 +20,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_method,
+        render_methods,
     },
     options::GraceConfig,
 };
@@ -80,7 +80,6 @@ impl FileGenerator for ExternalGenerator {
             |buffer| {
                 emit!(buffer, "use {}::{};", external.path, external.name);
                 emit!(buffer, "use uuid::Uuid;");
-                emit!(buffer, "use crate::{}::UUID_NS;", module);
 
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&object.id) {
@@ -129,7 +128,7 @@ impl FileGenerator for ExternalGenerator {
                 render_attributes(buffer, object, woog, domain)?;
                 render_referential_attributes(buffer, object, woog, domain)?;
                 render_associative_attributes(buffer, object, woog, domain)?;
-                emit!(buffer, "ext_value: {},", external.name);
+                emit!(buffer, "inner: {},", external.name);
 
                 emit!(buffer, "}}");
 
@@ -154,7 +153,7 @@ impl FileGenerator for ExternalGenerator {
                 );
 
                 // Darn. So I need to insert a local here. And hybrid has similar needs.
-                render_method(buffer, object, config, imports, woog, domain)?;
+                render_methods(buffer, object, config, imports, woog, domain)?;
 
                 emit!(buffer, "}}");
 

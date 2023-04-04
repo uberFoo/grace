@@ -16,8 +16,9 @@ use sarzak::{
     woog::{
         store::ObjectStore as WoogStore,
         types::{
-            Expression, GraceType, Literal, Local, ObjectMethod as WoogObjectMethod, Ownership,
-            Referent, StatementEnum, StructExpression, Variable, VariableEnum, OWNED, SHARED,
+            Expression, FunctionEnum, GraceType, GraceTypeEnum, Literal, Local, ObjectMethod,
+            Ownership, ReferenceType, Statement, StatementEnum, StructExpression, Variable,
+            VariableEnum, OWNED, SHARED,
         },
     },
 };
@@ -31,6 +32,7 @@ use crate::{
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
+    woog::typecheck_and_coerce,
 };
 
 macro_rules! get_subtypes_sorted {
@@ -188,7 +190,7 @@ pub(crate) use get_binary_referents_sorted;
 
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
-    method: &WoogObjectMethod,
+    method: &ObjectMethod,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -279,7 +281,7 @@ pub(crate) fn render_method_definition(
 pub(crate) fn render_make_uuid(
     buffer: &mut Buffer,
     var: &Local,
-    method: &WoogObjectMethod,
+    method: &ObjectMethod,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -293,9 +295,9 @@ pub(crate) fn render_make_uuid(
         .r3_grace_type(woog)[0];
 
     ensure!(
-        match ty {
-            GraceType::Ty(id) => {
-                let sty = domain.sarzak().exhume_ty(id).unwrap();
+        match ty.subtype {
+            GraceTypeEnum::Ty(id) => {
+                let sty = domain.sarzak().exhume_ty(&id).unwrap();
                 match sty {
                     Ty::Uuid(_) => true,
                     _ => false,
@@ -347,17 +349,17 @@ pub(crate) fn render_make_uuid(
             .unwrap();
         let ty = value.r3_grace_type(woog)[0];
 
-        match &ty {
-            GraceType::Reference(_) => {
+        match ty.subtype {
+            GraceTypeEnum::Reference(_) => {
                 format_string.extend(["{:?}:"]);
                 args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
             }
-            GraceType::WoogOption(_) => {
+            GraceTypeEnum::WoogOption(_) => {
                 format_string.extend(["{:?}:"]);
                 args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
             }
-            GraceType::Ty(id) => {
-                let ty = domain.sarzak().exhume_ty(id).unwrap();
+            GraceTypeEnum::Ty(id) => {
+                let ty = domain.sarzak().exhume_ty(&id).unwrap();
                 match &ty {
                     // This is really about the store, and we don't want to include that.
                     // However, I don't think we'd want to try printing anything external,
@@ -425,18 +427,18 @@ pub(crate) fn render_new_instance(
     // 🚧 These errors are terrible. You get a uuid that may not even be possible
     // to look up. It should print the generated type. That would be fucking slick.
     ensure!(
-        match ty {
-            GraceType::Reference(id) => {
+        match ty.subtype {
+            GraceTypeEnum::Reference(id) => {
                 let reference = woog.exhume_reference(&id).unwrap();
-                let referent = reference.r13_referent(woog)[0];
+                let referent = reference.r13_reference_type(woog)[0];
                 let ref_obj = match referent {
-                    Referent::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
-                    Referent::EnumerationField(id) => woog
+                    ReferenceType::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                    ReferenceType::EnumerationField(id) => woog
                         .exhume_enumeration_field(&id)
                         .unwrap()
                         .r36_enumeration(woog)[0]
                         .r40_object(domain.sarzak())[0],
-                    _ => unimplemented!(),
+                    道 => todo!("Apparently you need to deal with {:?}", 道),
                 };
                 ensure!(ref_obj.id == object.id, {
                     CompilerSnafu {
@@ -512,7 +514,6 @@ pub(crate) fn render_new_instance(
     );
 
     for field in fields {
-        dbg!(&field);
         let expr = woog.exhume_expression(&field.expr).unwrap();
         let rhs = match expr {
             Expression::Literal(id) => {
@@ -520,13 +521,12 @@ pub(crate) fn render_new_instance(
                 match literal {
                     Literal::Hack(id) => {
                         let hack = woog.exhume_hack(id).unwrap();
-                        dbg!(&hack);
                         &hack.value
                     }
-                    _ => unimplemented!(),
+                    道 => todo!("Apparently you need to deal with {:?}", 道),
                 }
             }
-            _ => unimplemented!(),
+            道 => todo!("Apparently you need to deal with {:?}", 道),
         };
         emit!(buffer, "{}: {},", field.name.as_ident(), rhs);
     }
@@ -536,22 +536,409 @@ pub(crate) fn render_new_instance(
     Ok(())
 }
 
+/// Perform type checking
+///
+/// I'm going to add to this piecemeal as I go.
+pub(crate) fn xlet_type_check(
+    var: &Variable,
+    expr: &Expression,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
+    dbg!(&var, &expr);
+    let lval_ty = var.r7_value(woog)[0].r3_grace_type(woog)[0];
+    let rval_ty = expr.r7_value(woog)[0].r3_grace_type(woog)[0];
+
+    match &lval_ty.subtype {
+        GraceTypeEnum::Reference(id) => {
+            // De-reference the variable and check that it matches the type of the
+            // expression.
+            let reference = woog.exhume_reference(&id).unwrap();
+            let referent = reference.r13_reference_type(woog)[0];
+            let ref_obj = match referent {
+                ReferenceType::Object(id) => domain.sarzak().exhume_object(&id).unwrap(),
+                道 => todo!("Apparently you need to deal with {:?}", 道),
+            };
+
+            // Note we are checking the rval here.
+            match &rval_ty.subtype {
+                GraceTypeEnum::Ty(id) => {
+                    let ty = domain.sarzak().exhume_ty(&id).unwrap();
+                    match ty {
+                        // Object on object action...
+                        Ty::Object(id) => {
+                            ensure!(
+                                ref_obj.id == *id,
+                                CompilerSnafu {
+                                    description: format!(
+                                        "type mismatch: found `{}`, expected `{}`",
+                                        print_type(&rval_ty, woog, domain),
+                                        print_type(&lval_ty, woog, domain)
+                                    )
+                                }
+                            );
+                        }
+                        道 => todo!("Apparently you need to deal with {:?}", 道),
+                    }
+                }
+                道 => todo!(
+                    "Apparently you need to deal with `{}`: {:?}",
+                    print_type(&rval_ty, woog, domain),
+                    道
+                ),
+            }
+        }
+        GraceTypeEnum::Ty(id) => {
+            let ty = domain.sarzak().exhume_ty(&id).unwrap();
+            match ty {
+                Ty::Uuid(_) => match &rval_ty.subtype {
+                    GraceTypeEnum::Ty(id) => {
+                        let ty = domain.sarzak().exhume_ty(&id).unwrap();
+                        match ty {
+                            Ty::Uuid(_) => {}
+                            _ => ensure!(
+                                false,
+                                CompilerSnafu {
+                                    description: format!(
+                                        "type mismatch: found `{}`, expected `{}`",
+                                        print_type(&rval_ty, woog, domain),
+                                        print_type(&lval_ty, woog, domain)
+                                    )
+                                }
+                            ),
+                        }
+                    }
+                    GraceTypeEnum::Function(id) => {
+                        let fun = woog.exhume_function(&id).unwrap();
+                        let ty = fun.r47_grace_type(woog)[0];
+                        match &ty.subtype {
+                            GraceTypeEnum::Ty(id) => {
+                                let ty = domain.sarzak().exhume_ty(&id).unwrap();
+                                match ty {
+                                    Ty::Uuid(_) => {}
+                                    _ => ensure!(
+                                        false,
+                                        CompilerSnafu {
+                                            description: format!(
+                                                "type mismatch: found `{}`, expected `{}`",
+                                                print_type(&rval_ty, woog, domain),
+                                                print_type(&lval_ty, woog, domain)
+                                            )
+                                        }
+                                    ),
+                                }
+                            }
+                            GraceTypeEnum::Reference(id) => {
+                                let reference = woog.exhume_reference(&id).unwrap();
+                                let referent = reference.r13_reference_type(woog)[0];
+                                dbg!(print_type(&lval_ty, woog, domain), &referent);
+                                match referent {
+                                    ReferenceType::External(id) => {
+                                        let ext = domain.sarzak().exhume_external(&id).unwrap();
+                                        let obj = domain
+                                            .sarzak()
+                                            .exhume_object_by_name(&ext.name)
+                                            .unwrap();
+                                        ensure!(
+                                            false,
+                                            CompilerSnafu {
+                                                description: "duh!".to_string()
+                                            }
+                                        );
+                                    }
+                                    道 => todo!("Apparently you need to deal with {:?}", 道),
+                                }
+                                ensure!(
+                                    false,
+                                    CompilerSnafu {
+                                        description: "Unimplemented".to_string()
+                                    }
+                                );
+                            }
+                            道 => todo!(
+                                "Apparently you need to deal with `{}`: {:?}",
+                                print_type(&rval_ty, woog, domain),
+                                道
+                            ),
+                        }
+                    }
+                    道 => todo!(
+                        "Apparently you need to deal with `{}`: {:?}",
+                        print_type(&rval_ty, woog, domain),
+                        道
+                    ),
+                },
+                Ty::External(id) => {
+                    // You are here because the lval_ty is GraceTypeEnum::Ty::External.
+                    let ext = domain.sarzak().exhume_external(id).unwrap();
+                    dbg!(&lval_ty, &rval_ty);
+                    dbg!(
+                        print_type(&lval_ty, woog, domain),
+                        print_type(&rval_ty, woog, domain)
+                    );
+                    match &rval_ty.subtype {
+                        GraceTypeEnum::Ty(id) => {
+                            let ty = domain.sarzak().exhume_ty(&id).unwrap();
+                            match ty {
+                                Ty::External(id) => {
+                                    let ext2 = domain.sarzak().exhume_external(id).unwrap();
+                                    ensure!(
+                                        ext.name == ext2.name,
+                                        CompilerSnafu {
+                                            description: format!(
+                                                "type mismatch: found `{}`, expected `{}`",
+                                                print_type(&rval_ty, woog, domain),
+                                                print_type(&lval_ty, woog, domain)
+                                            )
+                                        }
+                                    );
+                                }
+                                _ => ensure!(
+                                    false,
+                                    CompilerSnafu {
+                                        description: format!(
+                                            "type mismatch: found `{}`, expected `{}`",
+                                            print_type(&rval_ty, woog, domain),
+                                            print_type(&lval_ty, woog, domain)
+                                        )
+                                    }
+                                ),
+                            }
+                        }
+                        道 => ensure!(
+                            {
+                                dbg!(print_type(&rval_ty, woog, domain));
+                                false
+                            },
+                            CompilerSnafu {
+                                description: format!(
+                                    "type mismatch: found `{}`, expected `{}`",
+                                    print_type(&rval_ty, woog, domain),
+                                    print_type(&lval_ty, woog, domain)
+                                )
+                            }
+                        ),
+                    }
+                }
+                道 => todo!("Apparently you need to deal with {:?}", 道),
+            }
+        }
+        道 => todo!(
+            "Apparently you need to deal with `{}`: {:?}",
+            print_type(&lval_ty, woog, domain),
+            道
+        ),
+    }
+
+    Ok(())
+}
+
+pub(crate) fn print_type(ty: &GraceType, woog: &WoogStore, domain: &Domain) -> String {
+    dbg!("GraceType", &ty);
+    match &ty.subtype {
+        GraceTypeEnum::Reference(id) => {
+            let reference = woog.exhume_reference(&id).unwrap();
+            let referent = reference.r13_reference_type(woog)[0];
+            match referent {
+                ReferenceType::Object(id) => {
+                    let ref_obj = domain.sarzak().exhume_object(&id).unwrap();
+                    format!(
+                        "&{}",
+                        ref_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
+                    )
+                }
+                ReferenceType::EnumerationField(id) => {
+                    let ref_obj = woog
+                        .exhume_enumeration_field(&id)
+                        .unwrap()
+                        .r36_enumeration(woog)[0]
+                        .r40_object(domain.sarzak())[0];
+                    format!(
+                        "&{}",
+                        ref_obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain
+                        )
+                    )
+                }
+                ReferenceType::External(id) => {
+                    let ext = domain.sarzak().exhume_external(&id).unwrap();
+                    format!("&{}", ext.name)
+                }
+                道 => todo!("Apparently you need to deal with {:?}", 道),
+            }
+        }
+        GraceTypeEnum::Ty(id) => {
+            let ty = domain.sarzak().exhume_ty(&id).unwrap();
+            dbg!("GraceTypeEnum::Ty", &ty);
+            match ty {
+                Ty::Object(id) => domain.sarzak().exhume_object(&id).unwrap().as_type(
+                    &woog
+                        .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                        .unwrap(),
+                    woog,
+                    domain,
+                ),
+                Ty::Uuid(_) => "Uuid".to_owned(),
+                Ty::External(id) => {
+                    let ext = domain.sarzak().exhume_external(&id).unwrap();
+                    ext.name.clone()
+                }
+                道 => todo!("Apparently you need to deal with {:?}", 道),
+            }
+        }
+        GraceTypeEnum::Function(id) => {
+            let function = woog.exhume_function(&id).unwrap();
+            match function.subtype {
+                FunctionEnum::ObjectMethod(id) => {
+                    let obj = woog
+                        .exhume_object_method(&id)
+                        .unwrap()
+                        .r4_object(domain.sarzak())[0];
+                    format!(
+                        "{}::{}(...)",
+                        obj.as_type(
+                            &woog
+                                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                                .unwrap(),
+                            woog,
+                            domain,
+                        ),
+                        function.name,
+                    )
+                }
+                FunctionEnum::PlainOldFunction(_) => format!("{}(...)", function.name),
+                FunctionEnum::Closure(_) => format!("{{{}}}(...)", function.name),
+            }
+        }
+        道 => todo!(
+            "Apparently you need to deal with `{}`: {:?}",
+            print_type(&ty, woog, domain),
+            道
+        ),
+    }
+}
+
+pub(crate) fn render_struct_expression(
+    struct_expression: &StructExpression,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<String> {
+    let mut result = String::new();
+
+    let object = if let GraceTypeEnum::Ty(id) =
+        struct_expression.r10_expression(woog)[0].r7_value(woog)[0].r3_grace_type(woog)[0].subtype
+    {
+        // This is cheating a little bit.Ty(id) actually maps to
+        // Ty::Object(id), but the id is the same in both cases.
+        // So, cheating.
+        domain.sarzak().exhume_object(&id).unwrap()
+    } else {
+        ensure!(
+            false,
+            CompilerSnafu {
+                description: "Expected Struct Expression to be an `Object`.".to_string()
+            }
+        );
+        panic!()
+    };
+
+    // Get the fields for the struct, in the order in which god intended. It's a pain
+    // in the ass. I do this elsewhere, and it's a pain in the ass there too. I would
+    // think a macro possible...
+    // The elsewhere is functions and parameters. From a modeling perspective this is
+    // probably appropriate. I could add a relationship to the first field/param I
+    // suppose...
+    let mut first = struct_expression
+        .r27_struct_expression_field(woog)
+        .iter()
+        .find(|&&field| field.r30c_struct_expression_field(woog).len() == 0)
+        .unwrap()
+        .clone();
+
+    // Why do I collect these into a vec? I could do a loop...
+    let mut fields = vec![first];
+    loop {
+        if let Some(next) = first.r30_struct_expression_field(woog).pop() {
+            fields.push(next);
+            first = next;
+        } else {
+            break;
+        }
+    }
+
+    emit!(
+        result,
+        "{} {{",
+        object.as_type(
+            &woog
+                .exhume_ownership(&woog.exhume_borrowed(&SHARED).unwrap().id())
+                .unwrap(),
+            woog,
+            domain
+        )
+    );
+
+    for field in fields {
+        let expr = woog.exhume_expression(&field.expr).unwrap();
+        let rhs = match expr {
+            Expression::Literal(id) => {
+                let literal = woog.exhume_literal(id).unwrap();
+                match literal {
+                    Literal::Hack(id) => {
+                        let hack = woog.exhume_hack(id).unwrap();
+                        hack.value.clone()
+                    }
+                    道 => todo!("Apparently you need to deal with {:?}", 道),
+                }
+            }
+            Expression::Variable(id) => {
+                let variable = woog.exhume_variable(&id).unwrap();
+                variable.name.as_ident()
+            }
+            道 => todo!("Apparently you need to deal with {:?}", 道),
+        };
+        emit!(result, "{}: {},", field.name.as_ident(), rhs);
+    }
+
+    emit!(result, "}};");
+
+    Ok(result)
+}
+
 /// 🚧 This renders the only method it can find, and the name of the local that
 /// it's assigned to is hard-coded. This is a problem.
-pub(crate) fn render_method(
+pub(crate) fn render_methods(
     buffer: &mut Buffer,
     obj: &Object,
-    _config: &GraceConfig,
+    config: &GraceConfig,
     _imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    for method in woog.iter_object_method() {
+    let mut methods: Vec<&ObjectMethod> = woog.iter_object_method().collect();
+    methods.sort_by(|a, b| {
+        a.r25_function(woog)[0]
+            .name
+            .cmp(&b.r25_function(woog)[0].name)
+    });
+
+    for method in methods {
         if method.object == obj.id {
             buffer.block(
                 DirectiveKind::IgnoreOrig,
                 format!("{}-struct-impl-new", obj.as_ident()),
                 |buffer| {
+                    dbg!(&method.r25_function(woog)[0].name);
                     // Output a docstring
                     emit!(
                         buffer,
@@ -564,8 +951,33 @@ pub(crate) fn render_method(
                     render_method_definition(buffer, &method, woog, domain)?;
 
                     // Find the properly scoped variable named `id`.
-                    let table =
-                        method.r25_function(woog)[0].r23_block(woog)[0].r24_symbol_table(woog)[0];
+                    let block = method.r25_function(woog)[0].r23_block(woog)[0];
+                    let table = block.r24_symbol_table(woog)[0];
+
+                    // Iterate over the statements in the block, generating code
+                    // for each.
+                    dbg!(block.r12_statement(woog).len());
+                    for stmt in block.r12_statement(woog) {
+                        dbg!(&stmt);
+                    }
+                    if let Some(mut statement) = block
+                        .r12_statement(woog)
+                        .iter()
+                        .cloned()
+                        .find(|&s| s.r31c_statement(woog).len() == 0)
+                    {
+                        loop {
+                            render_statement(buffer, statement, config, woog, domain)?;
+
+                            let mut next = statement.r31_statement(woog);
+                            statement = if let Some(next) = next.pop() {
+                                next
+                            } else {
+                                break;
+                            };
+                        }
+                    }
+
                     let var = &table
                         .r29_variable(woog)
                         .iter()
@@ -579,44 +991,44 @@ pub(crate) fn render_method(
                         _ => panic!("This should never happen"),
                     };
 
-                    // This renders a let statement, assigning a new uuid to the id variable.
-                    // This is where the work lies. I think that what I really want to do is
-                    // create (let) statements in the block whilst populating woog. Then
-                    // someplace else, maybe here, we iterate over the statements and generate
-                    // code. Maybe an as_statement trait, or something?
-                    render_make_uuid(buffer, &id, &method, woog, domain)?;
+                    // // This renders a let statement, assigning a new uuid to the id variable.
+                    // // This is where the work lies. I think that what I really want to do is
+                    // // create (let) statements in the block whilst populating woog. Then
+                    // // someplace else, maybe here, we iterate over the statements and generate
+                    // // code. Maybe an as_statement trait, or something?
+                    // render_make_uuid(buffer, &id, &method, woog, domain)?;
 
-                    // Now this is interesting. This is good. It's getting close to what I
-                    // was talking about above. In the woog population code, the function
-                    // for populating a new method I created a statement: a struct item.
-                    // It's the struct for Self. I pull that out here, and then use it when
-                    // I call the renderer.
-                    // 💥 put this back once things are sorted
-                    let let_stmt = match &method.r25_function(woog)[0]
-                        .r23_block(woog)
-                        .pop()
-                        .unwrap()
-                        .r12_statement(woog)
-                        .pop()
-                        .unwrap()
-                        .subtype
-                    {
-                        StatementEnum::XLet(id) => woog.exhume_x_let(id).unwrap(),
-                        _ => unimplemented!(),
-                    };
+                    // // Now this is interesting. This is good. It's getting close to what I
+                    // // was talking about above. In the woog population code, the function
+                    // // for populating a new method I created a statement: a struct item.
+                    // // It's the struct for Self. I pull that out here, and then use it when
+                    // // I call the renderer.
+                    // // 💥 put this back once things are sorted
+                    // let let_stmt = match &method.r25_function(woog)[0]
+                    //     .r23_block(woog)
+                    //     .pop()
+                    //     .unwrap()
+                    //     .r12_statement(woog)
+                    //     .pop()
+                    //     .unwrap()
+                    //     .subtype
+                    // {
+                    //     StatementEnum::XLet(id) => woog.exhume_x_let(id).unwrap(),
+                    //     道 => todo!("Apparently you need to deal with `{}`: {:?}", print_type(&道, woog, domain), 道),
+                    // };
 
-                    let var = let_stmt.r17_variable(woog)[0];
-                    let struct_expr = match &let_stmt.r18_expression(woog)[0] {
-                        Expression::StructExpression(id) => {
-                            woog.exhume_struct_expression(id).unwrap()
-                        }
-                        _ => unimplemented!(),
-                    };
+                    // let var = let_stmt.r17_variable(woog)[0];
+                    // let struct_expr = match &let_stmt.r18_expression(woog)[0] {
+                    //     Expression::StructExpression(id) => {
+                    //         woog.exhume_struct_expression(id).unwrap()
+                    //     }
+                    //     道 => todo!("Apparently you need to deal with `{}`: {:?}", print_type(&道, woog, domain), 道),
+                    // };
 
-                    // I wrote this this morning, and already I'can't say how it works
-                    // exactly. It takes a structure, and not a statement, so it's
-                    // pretty low level. It's also assigning the let. Refactor time.
-                    render_new_instance(buffer, obj, &var, &struct_expr, woog, domain)?;
+                    // // I wrote this this morning, and already I'can't say how it works
+                    // // exactly. It takes a structure, and not a statement, so it's
+                    // // pretty low level. It's also assigning the let. Refactor time.
+                    // render_new_instance(buffer, obj, &var, &struct_expr, woog, domain)?;
 
                     emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                     emit!(buffer, "new");
@@ -666,11 +1078,6 @@ macro_rules! test_local_and_imports {
                 let domain = domain.unwrap();
 
                 ensure!(
-                    // This is not the domain you were passed.
-                    // Note that we are testing for the id of the imported object.
-                    // Oddly this test worked before, and now it's broken. More
-                    // interesting perhaps is that we don't actually use this id
-                    // anyplace else...
                     domain.sarzak().exhume_object(&imported.id).is_some(),
                     CompilerSnafu {
                         description: format!(
@@ -680,12 +1087,24 @@ macro_rules! test_local_and_imports {
                     }
                 );
 
-                Ok($func(object, config, domain))
+                let mut object = object.clone();
+                object.id = imported.id;
+                Ok($func(&object, config, domain))
             } else {
                 Ok($func(object, config, domain))
             }
         }
     };
+}
+
+test_local_and_imports!(object_is_const, local_object_is_const);
+pub(crate) fn local_object_is_const(
+    object: &Object,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> bool {
+    local_object_is_singleton(object, config, domain)
+        && !local_object_is_supertype(object, config, domain)
 }
 
 pub(crate) fn local_object_is_struct(
@@ -734,7 +1153,7 @@ pub(crate) fn local_object_is_subtype(
     _config: &GraceConfig,
     domain: &Domain,
 ) -> bool {
-    let is_sub = object.r15c_subtype(domain.sarzak());
+    let is_sub = object.r15_subtype(domain.sarzak());
     log::debug!("is_sub: {:?}", is_sub);
 
     is_sub.len() > 0
@@ -843,22 +1262,7 @@ pub(crate) fn find_store<'a>(name: &str, woog: &WoogStore, domain: &'a Domain) -
         )
     );
 
-    let mut iter = domain.sarzak().iter_ty();
-    loop {
-        let ty = iter.next();
-        match ty {
-            Some(ty) => match ty {
-                Ty::External(e) => {
-                    let ext = domain.sarzak().exhume_external(&e).unwrap();
-                    if ext.name == name {
-                        break ext;
-                    }
-                }
-                _ => continue,
-            },
-            None => panic!("Could not find store type for {}", name),
-        }
-    }
+    domain.sarzak().exhume_external_by_name(&name).unwrap()
 }
 
 const BUILD_TIME: &str = include!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
@@ -897,7 +1301,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
         }
     }
 
-    for subtype in object.r15c_subtype(domain.sarzak()) {
+    for subtype in object.r15_subtype(domain.sarzak()) {
         if domain.sarzak().subtype_timestamp(subtype) > last_time {
             return true;
         }
@@ -948,4 +1352,86 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
     }
 
     return false;
+}
+
+fn render_statement(
+    buffer: &mut Buffer,
+    statement: &Statement,
+    config: &GraceConfig,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> Result<()> {
+    match &statement.subtype {
+        StatementEnum::XLet(id) => {
+            let xlet = woog.exhume_x_let(&id).unwrap();
+            let var = xlet.r17_variable(woog)[0];
+            let expr = xlet.r18_expression(woog)[0];
+
+            log::trace!("render_statement: let {} = {:?}", var.name, expr);
+
+            // Type check the let statement
+            xlet_type_check(&var, &expr, woog, domain).map_err(|e| {
+                let ty = expr.r7_value(woog)[0].r3_grace_type(woog)[0];
+                eprintln!(
+                    "let {} = {};",
+                    var.name.as_ident(),
+                    print_type(ty, woog, domain)
+                );
+                e
+            })?;
+
+            let expr = match &expr {
+                Expression::Literal(id) => {
+                    let literal = woog.exhume_literal(&id).unwrap();
+                    match literal {
+                        Literal::Hack(id) => {
+                            let hack = woog.exhume_hack(&id).unwrap();
+                            log::trace!("literal_hack: {}", hack.value);
+                            hack.value.clone()
+                        }
+                        道 => todo!("Apparently you need to deal with {:?}", 道),
+                    }
+                }
+                Expression::StructExpression(id) => {
+                    log::trace!("literal_struct_expression: {}", id);
+                    let struct_expression = woog.exhume_struct_expression(&id).unwrap();
+                    render_struct_expression(struct_expression, woog, domain)?
+                }
+                Expression::Variable(id) => {
+                    let variable = woog.exhume_variable(&id).unwrap();
+                    log::trace!("literal_variable: {}", variable.name);
+                    let value = variable.r7_value(woog)[0];
+                    let ty = var.r7_value(woog)[0].r3_grace_type(woog)[0];
+                    // What's the difference between this and
+                    // type_check above? Besides operating on
+                    // different parameters? Here we are using the string output
+                    // and above we are just testing.
+                    // Above is a test is specialized to `let`: it checks a var
+                    // against an expression. Below is more general, it tests
+                    // takes an expression and a type, and squirts out some
+                    // text to make it work.
+                    typecheck_and_coerce(&ty, &value, config, woog, domain)?
+                }
+                Expression::Call(id) => {
+                    let call = woog.exhume_call(&id).unwrap();
+                    log::trace!("literal_call: {}", {
+                        let function = call.r19_function(woog)[0];
+                        &function.name
+                    });
+                    let value = call.r10_expression(woog)[0].r7_value(woog)[0];
+                    let ty = var.r7_value(woog)[0].r3_grace_type(woog)[0];
+
+                    typecheck_and_coerce(&ty, &value, config, woog, domain)?
+                }
+                道 => {
+                    todo!("Apparently you need to deal with {:?}", 道)
+                }
+            };
+
+            emit!(buffer, "let {} = {};", var.name.as_ident(), expr);
+        }
+        道 => todo!("Apparently you need to deal with {:?}", 道),
+    }
+
+    Ok(())
 }

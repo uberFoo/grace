@@ -25,7 +25,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
         },
-        render_method,
+        render_methods,
     },
     options::GraceConfig,
     types::{CodeWriter, MethodImplementation, TypeDefinition},
@@ -111,8 +111,6 @@ impl CodeWriter for Hybrid {
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
-
-                // emit!(buffer, "use crate::{}::UUID_NS;", module);
 
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&obj.id) {
@@ -229,7 +227,7 @@ impl CodeWriter for Hybrid {
                 }
 
                 // Ad use statements for supertypes.
-                for subtype in obj.r15c_subtype(domain.sarzak()) {
+                for subtype in obj.r15_subtype(domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
@@ -422,7 +420,7 @@ impl CodeWriter for HybridNewImpl {
         // let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
 
         // for subtype in subtypes {
-        render_method(buffer, obj, config, imports, woog, domain)?;
+        render_methods(buffer, obj, config, imports, woog, domain)?;
         // }
         Ok(())
     }
