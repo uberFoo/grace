@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa::types::simple_subtype_a::SimpleSubtypeA;
-use crate::domain::isa::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa::store::ObjectStore as IsaStore;
@@ -23,7 +22,7 @@ impl Henry {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-struct-impl-new"}}}
     /// Inter a new 'Henry' in the store, and return it's `id`.
     pub fn new(last_name: String, bar: &SimpleSubtypeA, store: &mut IsaStore) -> Henry {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", last_name, bar).as_bytes());
+        let id = Uuid::new_v4();
         let new = Henry {
             id: id,
             last_name: last_name,

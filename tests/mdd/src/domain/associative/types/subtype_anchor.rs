@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::associative::types::anchor::Anchor;
 use crate::domain::associative::types::isa_ui::IsaUi;
-use crate::domain::associative::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::associative::store::ObjectStore as AssociativeStore;
@@ -36,10 +35,7 @@ impl SubtypeAnchor {
         isaui_id: &IsaUi,
         store: &mut AssociativeStore,
     ) -> SubtypeAnchor {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{:?}:{:?}", anchor_id, isaui_id).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = SubtypeAnchor {
             id: id,
             anchor_id: anchor_id.id,

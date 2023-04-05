@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::one_to_many::types::referent::Referent;
-use crate::domain::one_to_many::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_many::store::ObjectStore as OneToManyStore;
@@ -27,7 +26,7 @@ impl D {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new"}}}
     /// Inter a new 'D' in the store, and return it's `id`.
     pub fn new(appellation: String, ptr: Option<&Referent>, store: &mut OneToManyStore) -> D {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", appellation, ptr).as_bytes());
+        let id = Uuid::new_v4();
         let new = D {
             appellation: appellation,
             id: id,

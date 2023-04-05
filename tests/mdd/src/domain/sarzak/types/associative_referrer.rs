@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::associative::Associative;
 use crate::domain::sarzak::types::cardinality::Cardinality;
 use crate::domain::sarzak::types::object::Object;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -37,10 +36,7 @@ impl AssociativeReferrer {
         obj_id: &Object,
         store: &mut SarzakStore,
     ) -> AssociativeReferrer {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{:?}:{:?}", cardinality, obj_id).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = AssociativeReferrer {
             id: id,
             cardinality: cardinality.id(),

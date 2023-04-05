@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::sarzak::types::acknowledged_event::AcknowledgedEvent;
 use crate::domain::sarzak::types::object::Object;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -28,7 +27,7 @@ impl State {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new"}}}
     /// Inter a new 'State' in the store, and return it's `id`.
     pub fn new(name: String, obj_id: &Object, store: &mut SarzakStore) -> State {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, obj_id).as_bytes());
+        let id = Uuid::new_v4();
         let new = State {
             id: id,
             name: name,

@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::simple_subtype_a::SimpleSubtypeA;
-use crate::domain::isa_clone::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
@@ -35,7 +34,7 @@ impl OhBoy {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}
     /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
     pub fn new(attribution: String, store: &mut IsaCloneStore) -> OhBoy {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}", attribution).as_bytes());
+        let id = Uuid::new_v4();
         let new = OhBoy {
             attribution: attribution,
             id: id,

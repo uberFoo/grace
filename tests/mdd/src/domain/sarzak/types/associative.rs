@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::an_associative_referent::AnAssociativeReferent;
 use crate::domain::sarzak::types::associative_referrer::AssociativeReferrer;
 use crate::domain::sarzak::types::relationship::Relationship;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -25,7 +24,7 @@ impl Associative {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
     /// Inter a new 'Associative' in the store, and return it's `id`.
     pub fn new(number: i64, from: &AssociativeReferrer, store: &mut SarzakStore) -> Associative {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, from).as_bytes());
+        let id = Uuid::new_v4();
         let new = Associative {
             id: id,
             number: number,

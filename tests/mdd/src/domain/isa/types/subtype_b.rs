@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa::types::super_t::SuperT;
-use crate::domain::isa::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa::store::ObjectStore as IsaStore;
@@ -27,7 +26,7 @@ impl SubtypeB {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new"}}}
     /// Inter a new 'Subtype B' in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut IsaStore) -> SubtypeB {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}", number).as_bytes());
+        let id = Uuid::new_v4();
         let new = SubtypeB {
             id: id,
             number: number,

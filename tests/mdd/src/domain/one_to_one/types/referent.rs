@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::domain::one_to_one::types::a::A;
 use crate::domain::one_to_one::types::b::B;
 use crate::domain::one_to_one::types::c::C;
-use crate::domain::one_to_one::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;
@@ -30,7 +29,7 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
     /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToOneStore) -> Referent {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
+        let id = Uuid::new_v4();
         let new = Referent { id: id, name: name };
         store.inter_referent(new.clone());
         new

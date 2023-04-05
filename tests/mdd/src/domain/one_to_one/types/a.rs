@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::one_to_one::types::referent::Referent;
-use crate::domain::one_to_one::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;
@@ -32,7 +31,7 @@ impl A {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
     /// Inter a new 'A' in the store, and return it's `id`.
     pub fn new(number: i64, ptr: &Referent, store: &mut OneToOneStore) -> A {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, ptr).as_bytes());
+        let id = Uuid::new_v4();
         let new = A {
             id: id,
             number: number,

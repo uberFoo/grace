@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::super_t::SuperT;
-use crate::domain::isa_clone::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
@@ -64,7 +63,7 @@ impl NotImportant {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new"}}}
     /// Inter a new 'Not Important' in the store, and return it's `id`.
     pub fn new(name: Uuid, x_ref: &SuperT, store: &mut IsaCloneStore) -> NotImportant {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", name, x_ref).as_bytes());
+        let id = Uuid::new_v4();
         let new = NotImportant {
             id: id,
             name: name,

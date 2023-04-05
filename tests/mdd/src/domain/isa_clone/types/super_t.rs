@@ -42,38 +42,34 @@ pub enum SuperTEnum {
 impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-new-impl"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
-    /// Inter a new SuperT in the store, and return it's `id`.
+    /// Inter a new `Subtype A' in the store, and return it's `id`.
     pub fn new_subtype_a(
         pointer: &Reference,
         subtype: &SubtypeA,
         store: &mut IsaCloneStore,
     ) -> SuperT {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
         let id = subtype.id;
         let new = SuperT {
+            id: id,
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeA(subtype.id),
-            id,
         };
         store.inter_super_t(new.clone());
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
-    /// Inter a new SuperT in the store, and return it's `id`.
+    /// Inter a new `Subtype B' in the store, and return it's `id`.
     pub fn new_subtype_b(
         pointer: &Reference,
         subtype: &SubtypeB,
         store: &mut IsaCloneStore,
     ) -> SuperT {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
         let id = subtype.id;
         let new = SuperT {
+            id: id,
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeB(subtype.id),
-            id,
         };
         store.inter_super_t(new.clone());
         new

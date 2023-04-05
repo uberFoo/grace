@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::everything::types::rando_object::RandoObject;
-use crate::domain::everything::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::everything::store::ObjectStore as EverythingStore;
@@ -37,10 +36,7 @@ impl Everything {
         rando: &RandoObject,
         store: &mut EverythingStore,
     ) -> Everything {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{}:{}:{}:{}:{:?}", bool, float, int, string, rando).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = Everything {
             bool: bool,
             float: float,

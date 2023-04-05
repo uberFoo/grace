@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::associative::types::event::Event;
 use crate::domain::associative::types::state::State;
-use crate::domain::associative::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::associative::store::ObjectStore as AssociativeStore;
@@ -35,10 +34,7 @@ impl AcknowledgedEvent {
         state_id: &State,
         store: &mut AssociativeStore,
     ) -> AcknowledgedEvent {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{:?}:{:?}", event_id, state_id).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = AcknowledgedEvent {
             id: id,
             event_id: event_id.id,

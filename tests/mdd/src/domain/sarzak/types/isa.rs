@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::relationship::Relationship;
 use crate::domain::sarzak::types::subtype::Subtype;
 use crate::domain::sarzak::types::supertype::Supertype;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -25,7 +24,7 @@ impl Isa {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new"}}}
     /// Inter a new 'Isa' in the store, and return it's `id`.
     pub fn new(number: i64, supertype: &Supertype, store: &mut SarzakStore) -> Isa {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", number, supertype).as_bytes());
+        let id = Uuid::new_v4();
         let new = Isa {
             id: id,
             number: number,

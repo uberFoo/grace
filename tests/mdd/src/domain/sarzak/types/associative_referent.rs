@@ -6,7 +6,6 @@ use crate::domain::sarzak::types::an_associative_referent::AnAssociativeReferent
 use crate::domain::sarzak::types::cardinality::Cardinality;
 use crate::domain::sarzak::types::conditionality::Conditionality;
 use crate::domain::sarzak::types::object::Object;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -43,14 +42,7 @@ impl AssociativeReferent {
         obj_id: &Object,
         store: &mut SarzakStore,
     ) -> AssociativeReferent {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!(
-                "{}:{:?}:{:?}:{:?}",
-                description, cardinality, conditionality, obj_id
-            )
-            .as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = AssociativeReferent {
             description: description,
             id: id,

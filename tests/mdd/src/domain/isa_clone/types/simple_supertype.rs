@@ -49,19 +49,17 @@ pub enum SimpleSupertypeEnum {
 impl SimpleSupertype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-new-impl"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new"}}}
-    /// Inter a new SimpleSupertype in the store, and return it's `id`.
+    /// Inter a new `Simple Subtype A' in the store, and return it's `id`.
     pub fn new_simple_subtype_a(
         state: bool,
         subtype: &SimpleSubtypeA,
         store: &mut IsaCloneStore,
     ) -> SimpleSupertype {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
         let id = subtype.id();
         let new = SimpleSupertype {
+            id: id,
             state: state,
             subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.id()),
-            id,
         };
         store.inter_simple_supertype(new.clone());
         new
@@ -69,15 +67,13 @@ impl SimpleSupertype {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-get-id-impl"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new"}}}
-    /// Inter a new SimpleSupertype in the store, and return it's `id`.
+    /// Inter a new `Simple Subtype B' in the store, and return it's `id`.
     pub fn new_simple_subtype_b(state: bool, store: &mut IsaCloneStore) -> SimpleSupertype {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
         let id = SIMPLE_SUBTYPE_B;
         let new = SimpleSupertype {
+            id: id,
             state: state,
             subtype: SimpleSupertypeEnum::SimpleSubtypeB(SIMPLE_SUBTYPE_B),
-            id,
         };
         store.inter_simple_supertype(new.clone());
         new

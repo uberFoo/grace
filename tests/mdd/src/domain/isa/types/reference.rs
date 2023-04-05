@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa::types::super_t::SuperT;
-use crate::domain::isa::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa::store::ObjectStore as IsaStore;
@@ -27,7 +26,7 @@ impl Reference {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new"}}}
     /// Inter a new 'Reference' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut IsaStore) -> Reference {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
+        let id = Uuid::new_v4();
         let new = Reference { id: id, name: name };
         store.inter_reference(new.clone());
         new

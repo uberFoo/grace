@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::sarzak::types::associative::Associative;
 use crate::domain::sarzak::types::associative_referent::AssociativeReferent;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -31,10 +30,7 @@ impl AnAssociativeReferent {
         referent: &AssociativeReferent,
         store: &mut SarzakStore,
     ) -> AnAssociativeReferent {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{}:{:?}:{:?}", referential_attribute, associative, referent).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = AnAssociativeReferent {
             id: id,
             referential_attribute: referential_attribute,

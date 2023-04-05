@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-use-statements"}}}
 use uuid::Uuid;
 
-use crate::domain::imported_object::UUID_NS;
 use crate::domain::isa::types::simple_supertype::SimpleSupertype;
 use crate::domain::sarzak::types::object::Object;
 use serde::{Deserialize, Serialize};
@@ -39,7 +38,7 @@ impl AnotherObject {
         edge: &SimpleSupertype,
         store: &mut ImportedObjectStore,
     ) -> AnotherObject {
-        let id = Uuid::new_v5(&UUID_NS, format!("{:?}:{:?}", ptr, edge).as_bytes());
+        let id = Uuid::new_v4();
         let new = AnotherObject {
             id: id,
             ptr: ptr.id,

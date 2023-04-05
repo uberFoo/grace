@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::simple_supertype::SimpleSupertype;
-use crate::domain::isa_clone::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
@@ -23,7 +22,7 @@ impl Baz {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"baz-struct-impl-new"}}}
     /// Inter a new 'Baz' in the store, and return it's `id`.
     pub fn new(insanity: f64, fugue: &SimpleSupertype, store: &mut IsaCloneStore) -> Baz {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}:{:?}", insanity, fugue).as_bytes());
+        let id = Uuid::new_v4();
         let new = Baz {
             id: id,
             insanity: insanity,

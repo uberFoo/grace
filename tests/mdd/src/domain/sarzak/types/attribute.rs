@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::sarzak::types::object::Object;
 use crate::domain::sarzak::types::ty::Ty;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -37,10 +36,7 @@ impl Attribute {
         ty: &Ty,
         store: &mut SarzakStore,
     ) -> Attribute {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{}:{:?}:{:?}", name, obj_id, ty).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = Attribute {
             id: id,
             name: name,

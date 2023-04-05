@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::everything::types::everything::Everything;
-use crate::domain::everything::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::everything::store::ObjectStore as EverythingStore;
@@ -27,7 +26,7 @@ impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-new"}}}
     /// Inter a new 'Rando Object' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut EverythingStore) -> RandoObject {
-        let id = Uuid::new_v5(&UUID_NS, format!("{}", name).as_bytes());
+        let id = Uuid::new_v4();
         let new = RandoObject { id: id, name: name };
         store.inter_rando_object(new.clone());
         new

@@ -12,7 +12,6 @@ use crate::domain::sarzak::types::state::State;
 use crate::domain::sarzak::types::subtype::Subtype;
 use crate::domain::sarzak::types::supertype::Supertype;
 use crate::domain::sarzak::types::ty::Ty;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;
@@ -51,10 +50,7 @@ impl Object {
         name: String,
         store: &mut SarzakStore,
     ) -> Object {
-        let id = Uuid::new_v5(
-            &UUID_NS,
-            format!("{}:{}:{}", description, key_letters, name).as_bytes(),
-        );
+        let id = Uuid::new_v4();
         let new = Object {
             description: description,
             id: id,
@@ -178,15 +174,18 @@ impl Object {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-subtype"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-cond-to-subtype"}}}
-    /// Navigate to [`Subtype`] across R15(1-1c)
-    pub fn r15c_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
-        let subtype = store
+    /// Navigate to [`Subtype`] across R15(1-M)
+    pub fn r15_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
+        store
             .iter_subtype()
-            .find(|subtype| subtype.obj_id == self.id);
-        match subtype {
-            Some(ref subtype) => vec![subtype],
-            None => Vec::new(),
-        }
+            .filter_map(|subtype| {
+                if subtype.obj_id == self.id {
+                    Some(subtype)
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-supertype"}}}

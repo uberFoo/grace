@@ -743,50 +743,51 @@ fn inter_external_method_new(
     let stmt = Statement::new_x_let(&block, None, &xlet, woog);
     last_stmt_uuid = link_statement!(last_stmt_uuid, stmt, woog);
 
+    // Never could get this working...ß
     //
     // `let inner = External::new(id)`
     //
     // inner indicates that the var is a local variable. It's like an enum variant.
-    let inner = Local::new(Uuid::new_v4(), woog);
-    // this is the variable
-    let inner_var = Variable::new_local(VALUE_FIELD.to_owned(), &table, &inner, woog);
-    let ext = domain
-        .sarzak()
-        .exhume_external_by_name(&external.name)
-        .unwrap();
-    let ext_type = domain.sarzak().exhume_ty(&ext.id).unwrap();
-    let ext_type = GraceType::new_ty(Uuid::new_v4(), &ext_type, woog);
-    dbg!(&ext, &ext_type);
-    // A Value is actually how a variable get's a type
-    let _inner_var_value = Value::new_variable(&access, &ext_type, &inner_var, woog);
+    // let inner = Local::new(Uuid::new_v4(), woog);
+    // // this is the variable
+    // let inner_var = Variable::new_local(VALUE_FIELD.to_owned(), &table, &inner, woog);
+    // let ext = domain
+    //     .sarzak()
+    //     .exhume_external_by_name(&external.name)
+    //     .unwrap();
+    // let ext_type = domain.sarzak().exhume_ty(&ext.id).unwrap();
+    // let ext_type = GraceType::new_ty(Uuid::new_v4(), &ext_type, woog);
+    // dbg!(&ext, &ext_type);
+    // // A Value is actually how a variable get's a type
+    // let _inner_var_value = Value::new_variable(&access, &ext_type, &inner_var, woog);
 
-    let fun_block = Block::new(Uuid::new_v4(), woog);
-    let _fun_table = SymbolTable::new(&fun_block, woog);
-    let fun = Function::new_plain_old_function(
-        format!(
-            "Create a new instance of the external entity, '{}'.",
-            external.name
-        ),
-        format!("{}::{}", external.name, external.ctor.clone()),
-        Uuid::new_v4(),
-        &fun_block,
-        &ext_type,
-        woog,
-    );
-    dbg!(&fun);
+    // let fun_block = Block::new(Uuid::new_v4(), woog);
+    // let _fun_table = SymbolTable::new(&fun_block, woog);
+    // let fun = Function::new_plain_old_function(
+    //     format!(
+    //         "Create a new instance of the external entity, '{}'.",
+    //         external.name
+    //     ),
+    //     format!("{}::{}", external.name, external.ctor.clone()),
+    //     Uuid::new_v4(),
+    //     &fun_block,
+    //     &ext_type,
+    //     woog,
+    // );
+    // dbg!(&fun);
     // let fun_ty = GraceType::new_function(Uuid::new_v4(), &fun, woog);
     // let call = Call::new(&fun, woog);
     // let expr = Expression::new_call(&call, woog);
-    // let _value = Value::new_expression(&access, &fun_ty, &expr, woog);
+    // let _expr_value = Value::new_expression(&access, &fun_ty, &expr, woog);
 
-    let bar = Hack::new("bar".to_owned(), woog);
-    let baz = Literal::new_hack(&bar, woog);
-    let expr = Expression::new_literal(&baz, woog);
-    let _expr_value = Value::new_expression(&access, &ext_type, &expr, woog);
+    // let bar = Hack::new("bar".to_owned(), woog);
+    // let baz = Literal::new_hack(&bar, woog);
+    // let expr = Expression::new_literal(&baz, woog);
+    // let _expr_value = Value::new_expression(&access, &ext_type, &expr, woog);
 
-    let xlet = XLet::new(&expr, &inner_var, woog);
-    let stmt = Statement::new_x_let(&block, None, &xlet, woog);
-    last_stmt_uuid = link_statement!(last_stmt_uuid, stmt, woog);
+    // let xlet = XLet::new(&expr, &inner_var, woog);
+    // let stmt = Statement::new_x_let(&block, None, &xlet, woog);
+    // last_stmt_uuid = link_statement!(last_stmt_uuid, stmt, woog);
 
     //
     // `let new = Struct {...}`
