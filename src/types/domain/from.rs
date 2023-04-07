@@ -17,8 +17,9 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted, get_subtypes_sorted,
-        local_object_is_singleton, local_object_is_supertype, object_is_supertype,
+        get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
+        get_subtypes_sorted_from_super_obj, local_object_is_singleton, local_object_is_supertype,
+        object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::{FromDomain, GraceConfig},
@@ -326,7 +327,7 @@ impl CodeWriter for DomainFromImpl {
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         emit!(buffer, "match src {{");
-                        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+                        let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
                         for subtype in subtypes {
                             let s_obj = subtype.r15_object(domain.sarzak())[0];
                             emit!(
@@ -394,7 +395,6 @@ impl CodeWriter for DomainFromImpl {
                             );
                         }
                         for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-                            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
                             let referents = get_assoc_referent_from_referrer_sorted!(
                                 assoc_referrer,
                                 domain.sarzak()
@@ -403,7 +403,6 @@ impl CodeWriter for DomainFromImpl {
                             for referent in referents {
                                 let an_ass =
                                     referent.r22_an_associative_referent(domain.sarzak())[0];
-                                let assoc_obj = referent.r25_object(domain.sarzak())[0];
 
                                 emit!(
                                     buffer,

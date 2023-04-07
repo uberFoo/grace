@@ -20,7 +20,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_subtypes_sorted, local_object_is_enum, local_object_is_hybrid,
+        get_subtypes_sorted_from_super_obj, local_object_is_enum, local_object_is_hybrid,
         local_object_is_singleton, local_object_is_subtype, local_object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
@@ -411,7 +411,7 @@ impl CodeWriter for DomainStore {
             let mut includes = HashSet::default();
 
             for sup in supertypes {
-                for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
+                for subtype in get_subtypes_sorted_from_super_obj!(sup, domain.sarzak()) {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     if !config.is_imported(&s_obj.id) {
                         if local_object_is_supertype(s_obj, config, domain)
@@ -447,7 +447,7 @@ impl CodeWriter for DomainStore {
         ) -> Result<HashSet<String>> {
             let mut includes = HashSet::default();
 
-            for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
+            for subtype in get_subtypes_sorted_from_super_obj!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
                 if !config.is_imported(&s_obj.id) {
                     if local_object_is_supertype(s_obj, config, domain)
@@ -480,7 +480,7 @@ impl CodeWriter for DomainStore {
             woog: &WoogStore,
             buffer: &mut Buffer,
         ) -> Result<()> {
-            for subtype in get_subtypes_sorted!(sup, domain.sarzak()) {
+            for subtype in get_subtypes_sorted_from_super_obj!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
 
                 if local_object_is_hybrid(sup, config, domain) {
@@ -541,7 +541,6 @@ impl CodeWriter for DomainStore {
                 } else {
                     false
                 };
-                let mut singleton_subs = false;
 
                 if persist {
                     if timestamp {
@@ -565,8 +564,9 @@ impl CodeWriter for DomainStore {
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                 }
-                    singleton_subs =
-                        emit_singleton_subtype_uses(&supertypes, config, domain, woog, buffer)?;
+                let singleton_subs =
+                    emit_singleton_subtype_uses(&supertypes, config, domain, woog, buffer)?;
+
                 emit!(buffer, "}};");
                 emit!(buffer, "");
                 emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");

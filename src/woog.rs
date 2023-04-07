@@ -24,8 +24,8 @@ use uuid::Uuid;
 use crate::{
     codegen::{
         find_store, get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
-        get_subtypes_sorted, is_object_stale, local_object_is_hybrid, local_object_is_struct,
-        object_is_singleton, object_is_supertype,
+        get_subtypes_sorted_from_super_obj, is_object_stale, local_object_is_hybrid,
+        local_object_is_struct, object_is_singleton, object_is_supertype,
         render::{RenderIdent, RenderType},
     },
     options::{ExternalEntity, GraceConfig, Target},
@@ -82,7 +82,7 @@ pub(crate) fn persist_woog<P: AsRef<Path>>(
 pub(crate) fn populate_woog(
     module: &str,
     config: &GraceConfig,
-    imports: &HashMap<String, Domain>,
+    _imports: &HashMap<String, Domain>,
     mut woog: &mut WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -219,7 +219,7 @@ fn inter_hybrid_method_new(
     let mutable = Ownership::new_mutable();
     let mut_access = Access::new(&mutable, &public, woog);
 
-    let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+    let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
     for subtype in subtypes {
         let s_obj = subtype.r15_object(domain.sarzak())[0];
@@ -433,8 +433,8 @@ fn collect_params_and_fields(
     structure: &Structure,
     function: &Function,
     table: &SymbolTable,
-    module: &str,
-    config: &GraceConfig,
+    _module: &str,
+    _config: &GraceConfig,
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> (Vec<Parameter>, Vec<StructureField>) {

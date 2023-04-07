@@ -22,6 +22,7 @@ use crate::{
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
+        get_subtypes_sorted,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
@@ -152,8 +153,8 @@ impl CodeWriter for Imports {
                     ));
                 }
 
-                // Ad use statements for supertypes.
-                for subtype in obj.r15_subtype(domain.sarzak()) {
+                // Add use statements for supertypes.
+                for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
@@ -210,7 +211,7 @@ impl CodeWriter for Struct {
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
-        module: &str,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {
@@ -385,7 +386,7 @@ impl CodeWriter for StructNewImpl {
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
-        module: &str,
+        _module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {

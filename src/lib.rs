@@ -44,10 +44,10 @@ impl SarzakModelCompiler for ModelCompiler {
 
         let mut target = match options.target {
             Target::Domain(_) => {
-                DomainTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+                DomainTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
             Target::Application => {
-                ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)
+                ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
         };
 

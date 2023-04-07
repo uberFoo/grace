@@ -24,7 +24,8 @@ use crate::{
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
-        get_subtypes_sorted, object_is_enum, object_is_singleton, object_is_supertype,
+        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_enum,
+        object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderConst, RenderIdent, RenderType,
@@ -78,7 +79,7 @@ impl CodeWriter for Hybrid {
         );
         let woog = woog.as_ref().unwrap();
 
-        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+        let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
         // These need to be sorted, as they are output as attributes and we require
         // stable output.
@@ -198,7 +199,7 @@ impl CodeWriter for Hybrid {
                 }
 
                 // Ad use statements for supertypes.
-                for subtype in obj.r15_subtype(domain.sarzak()) {
+                for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
@@ -358,7 +359,7 @@ impl CodeWriter for HybridNewImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+        let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
         // These are more attributes on our object, and they should be sorted.
         let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());

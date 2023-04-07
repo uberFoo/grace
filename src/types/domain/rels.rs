@@ -15,7 +15,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         find_store, get_assoc_referent_from_referrer_sorted, get_binary_referents_sorted,
-        get_binary_referrers_sorted, local_object_is_enum,
+        get_binary_referrers_sorted, get_subtypes_sorted, local_object_is_enum,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -246,7 +246,7 @@ pub(crate) fn generate_subtype_rels(
     domain: &Domain,
 ) -> Result<()> {
     // Generate navigation methods for subtype to supertype navigation.
-    for subtype in obj.r15_subtype(domain.sarzak()) {
+    for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
         let isa = subtype.r27_isa(domain.sarzak())[0];
         let supertype = isa.r13_supertype(domain.sarzak())[0];
         let s_obj = supertype.r14_object(domain.sarzak())[0];

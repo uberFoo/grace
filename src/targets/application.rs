@@ -39,7 +39,7 @@ impl<'a> ApplicationTarget<'a> {
         src_path: &'a Path,
         domain: sarzak::v2::domain::Domain,
         _test: bool,
-    ) -> Box<dyn Target + 'a> {
+    ) -> Result<Box<dyn Target + 'a>> {
         let config: GraceConfig = (options, &domain).into();
 
         // let imports: HashMap<String, sarzak::v2::domain::Domain> = HashMap::new();
@@ -48,7 +48,7 @@ impl<'a> ApplicationTarget<'a> {
         // let woog = init_woog(src_path.as_ref(), module, &config, &imports, &domain);
         let woog = WoogStore::new();
 
-        Box::new(Self {
+        Ok(Box::new(Self {
             config,
             package,
             module,
@@ -56,7 +56,7 @@ impl<'a> ApplicationTarget<'a> {
             domain,
             woog,
             _test,
-        })
+        }))
     }
 }
 

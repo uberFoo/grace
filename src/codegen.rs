@@ -36,6 +36,20 @@ use crate::{
 
 macro_rules! get_subtypes_sorted {
     ($obj:expr, $store:expr) => {{
+        let mut subtypes = $obj.r15_subtype($store);
+        subtypes.sort_by(|a, b| {
+            let a = a.r15_object($store)[0];
+            let b = b.r15_object($store)[0];
+            a.name.cmp(&b.name)
+        });
+
+        subtypes
+    }};
+}
+pub(crate) use get_subtypes_sorted;
+
+macro_rules! get_subtypes_sorted_from_super_obj {
+    ($obj:expr, $store:expr) => {{
         let sup = $obj.r14_supertype($store)[0];
         let isa = sup.r13_isa($store)[0];
         let mut subtypes = isa.r27_subtype($store);
@@ -48,7 +62,7 @@ macro_rules! get_subtypes_sorted {
         subtypes
     }};
 }
-pub(crate) use get_subtypes_sorted;
+pub(crate) use get_subtypes_sorted_from_super_obj;
 
 macro_rules! get_assoc_referent_from_referrer_sorted {
     ($obj:expr, $store:expr) => {{
@@ -567,9 +581,13 @@ pub(crate) fn render_new_instance(
                 let obj = domain.sarzak().exhume_object(&obj).unwrap();
                 // If this is a subtype, grab the supertype object and if it's a hybrid, we need to
                 // handle the inner enum specially.
+                //
                 // 🚧: There are now multiple subtypes per object, and we don't know which one
                 // to grab. So if there are multiple hybrid supertypes, then we don't output
                 // the correct `{}Enum`. See grace#58.
+                //
+                // Grace #58 is closed, and yet I don't know how this is selecting the correct
+                // subtype. So, I'm just going to leave the commentary until I figure it out.
                 if let Some(sub) = obj.r15_subtype(domain.sarzak()).pop() {
                     let super_obj = sub.r27_isa(domain.sarzak())[0].r13_supertype(domain.sarzak())
                         [0]
@@ -1152,6 +1170,16 @@ macro_rules! test_local_and_imports {
     };
 }
 
+test_local_and_imports!(object_is_const, local_object_is_const);
+pub(crate) fn local_object_is_const(
+    object: &Object,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> bool {
+    local_object_is_singleton(object, config, domain)
+        && !local_object_is_supertype(object, config, domain)
+}
+
 pub(crate) fn local_object_is_struct(
     object: &Object,
     config: &GraceConfig,
@@ -1192,7 +1220,7 @@ pub(crate) fn local_object_is_supertype(
     is_super.len() > 0
 }
 
-test_local_and_imports!(object_is_subtype, local_object_is_subtype);
+// test_local_and_imports!(object_is_subtype, local_object_is_subtype);
 pub(crate) fn local_object_is_subtype(
     object: &Object,
     _config: &GraceConfig,

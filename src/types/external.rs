@@ -20,7 +20,6 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_method_new,
     },
     options::GraceConfig,
 };

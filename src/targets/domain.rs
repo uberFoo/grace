@@ -62,7 +62,7 @@ impl<'a> DomainTarget<'a> {
         src_path: &'a Path,
         mut domain: sarzak::v2::domain::Domain,
         _test: bool,
-    ) -> Box<dyn Target + 'a> {
+    ) -> Result<Box<dyn Target + 'a>> {
         // This is boss. Who says boss anymore?
         let config: GraceConfig = (options, &domain).into();
 
@@ -173,9 +173,9 @@ impl<'a> DomainTarget<'a> {
             }
         }
 
-        populate_woog(module, &config, &imported_domains, &mut woog, &domain);
+        populate_woog(module, &config, &imported_domains, &mut woog, &domain)?;
 
-        Box::new(Self {
+        Ok(Box::new(Self {
             config,
             package,
             module,
@@ -184,7 +184,7 @@ impl<'a> DomainTarget<'a> {
             imports: imported_domains,
             woog,
             _test,
-        })
+        }))
     }
 
     fn generate_types(&mut self) -> Result<(), ModelCompilerError> {

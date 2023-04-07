@@ -19,8 +19,9 @@ use crate::{
         emit_object_comments, find_store, get_assoc_referrer_obj_from_obj_via_assoc_referent,
         get_binary_referents_sorted, get_binary_referrers_sorted,
         get_objs_for_assoc_referrers_sorted, get_objs_for_binary_referents_sorted,
-        get_objs_for_binary_referrers_sorted, get_subtypes_sorted, object_is_enum,
-        object_is_singleton, object_is_supertype,
+        get_objs_for_binary_referrers_sorted, get_subtypes_sorted,
+        get_subtypes_sorted_from_super_obj, object_is_enum, object_is_singleton,
+        object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -99,7 +100,7 @@ impl CodeWriter for Enum {
             .filter(|r_obj| r_obj.id != obj.id)
             .collect();
 
-        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+        let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
         // Output the use statements.
         buffer.block(
@@ -157,7 +158,7 @@ impl CodeWriter for Enum {
                 }
 
                 // Add use statements for supertypes.
-                for subtype in obj.r15_subtype(domain.sarzak()) {
+                for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
@@ -319,7 +320,7 @@ impl CodeWriter for EnumGetIdImpl {
         );
         let woog = woog.as_ref().unwrap();
 
-        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+        let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -433,7 +434,7 @@ impl CodeWriter for EnumNewImpl {
         let woog = woog.as_ref().unwrap();
 
         let store = find_store(module, woog, domain);
-        let subtypes = get_subtypes_sorted!(obj, domain.sarzak());
+        let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
