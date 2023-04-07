@@ -117,8 +117,6 @@ impl CodeWriter for Hybrid {
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
 
-                // emit!(buffer, "use crate::{}::UUID_NS;", module);
-
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {

@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::associative_ts::types::anchor::Anchor;
 use crate::domain::associative_ts::types::isa_ui::IsaUi;
-use crate::domain::associative_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;

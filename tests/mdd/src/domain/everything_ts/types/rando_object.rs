@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::everything_ts::types::everything::Everything;
-use crate::domain::everything_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::everything_ts::store::ObjectStore as EverythingTsStore;

@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::associative_ts::types::event::Event;
 use crate::domain::associative_ts::types::state::State;
-use crate::domain::associative_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;

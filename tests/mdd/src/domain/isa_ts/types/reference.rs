@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::isa_ts::types::super_t::SuperT;
-use crate::domain::isa_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_ts::store::ObjectStore as IsaTsStore;

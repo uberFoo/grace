@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::external_ts::types::timestamp::Timestamp;
-use crate::domain::external_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::external_ts::store::ObjectStore as ExternalTsStore;

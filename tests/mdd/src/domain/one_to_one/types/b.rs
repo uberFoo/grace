@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::one_to_one::types::referent::Referent;
-use crate::domain::one_to_one::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;

@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-use-statements"}}}
 use uuid::Uuid;
 
-use crate::domain::one_to_one::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;

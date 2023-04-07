@@ -6,7 +6,6 @@ use crate::domain::one_to_many_ts::types::a::A;
 use crate::domain::one_to_many_ts::types::b::B;
 use crate::domain::one_to_many_ts::types::c::C;
 use crate::domain::one_to_many_ts::types::d::D;
-use crate::domain::one_to_many_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_many_ts::store::ObjectStore as OneToManyTsStore;

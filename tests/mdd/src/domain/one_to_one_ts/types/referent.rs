@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::domain::one_to_one_ts::types::a::A;
 use crate::domain::one_to_one_ts::types::b::B;
 use crate::domain::one_to_one_ts::types::c::C;
-use crate::domain::one_to_one_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_one_ts::store::ObjectStore as OneToOneTsStore;

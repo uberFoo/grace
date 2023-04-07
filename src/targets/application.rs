@@ -68,7 +68,10 @@ impl<'a> Target for ApplicationTarget<'a> {
         let mut types = PathBuf::from(self.src_path);
         types.push(self.module);
         types.push(TYPES);
-        fs::create_dir_all(&types).context(FileSnafu { path: &types })?;
+        fs::create_dir_all(&types).context(FileSnafu {
+            description: "creating type directory".to_owned(),
+            path: &types,
+        })?;
         types.push("discard");
 
         // Sort the objects -- I need to figure out how to do this automagically.

@@ -4,7 +4,6 @@ use uuid::Uuid;
 
 use crate::domain::sarzak::types::event::Event;
 use crate::domain::sarzak::types::state::State;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;

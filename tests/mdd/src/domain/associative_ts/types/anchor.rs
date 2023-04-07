@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::associative_ts::types::subtype_anchor::SubtypeAnchor;
-use crate::domain::associative_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;

@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::one_to_many_ts::types::referent::Referent;
-use crate::domain::one_to_many_ts::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::one_to_many_ts::store::ObjectStore as OneToManyTsStore;

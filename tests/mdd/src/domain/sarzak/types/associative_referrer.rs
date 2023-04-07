@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::associative::Associative;
 use crate::domain::sarzak::types::cardinality::Cardinality;
 use crate::domain::sarzak::types::object::Object;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;

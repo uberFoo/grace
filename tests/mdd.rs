@@ -44,8 +44,10 @@ macro_rules! test_target_domain {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
-                )
-                .unwrap();
+                ).map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -105,7 +107,10 @@ macro_rules! test_target_domain {
                     Box::new(&options),
                     false,
                 )
-                .unwrap();
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -163,7 +168,10 @@ macro_rules! test_target_domain_timestamps {
                     Box::new(&options),
                     false,
                 )
-                .unwrap();
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -224,7 +232,10 @@ macro_rules! test_target_domain_timestamps {
                     Box::new(&options),
                     false,
                 )
-                .unwrap();
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -270,7 +281,10 @@ macro_rules! test_target_application {
                     Box::new(&options),
                     false,
                 )
-                .unwrap();
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
 
             // Run cargo test
             let mut child = process::Command::new("cargo")
@@ -407,7 +421,10 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
             Box::new(&options),
             false,
         )
-        .unwrap();
+        .map_err(|e| {
+            println!("Compiler exited with: {}", e);
+            std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+        })?;
 
     Ok(ExitCode::SUCCESS)
 }

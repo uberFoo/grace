@@ -37,8 +37,8 @@ use crate::{
         external::ExternalGenerator,
         null::NullGenerator,
     },
-    woog::{persist_woog, populate_woog},
-    RS_EXT, TYPES,
+    woog::{init_woog, persist_woog, populate_woog},
+    DWARF_EXT, RS_EXT, TYPES,
 };
 
 const FROM: &str = "from";
@@ -63,6 +63,12 @@ impl<'a> DomainTarget<'a> {
         mut domain: sarzak::v2::domain::Domain,
         _test: bool,
     ) -> Box<dyn Target + 'a> {
+        // This is boss. Who says boss anymore?
+        let config: GraceConfig = (options, &domain).into();
+
+        // Create our local compiler domain.
+        let mut woog = init_woog(src_path, &config, &domain);
+
         // This creates an external entity of the ObjectStore so that
         // we can use it from within the domain. Remember that the ObjectStore is a
         // generated construct, and appears as if it was an external library to the
@@ -110,9 +116,6 @@ impl<'a> DomainTarget<'a> {
 
             Ty::new_external(&external, domain.sarzak_mut());
         }
-
-        // This is boss. Who says boss anymore?
-        let config: GraceConfig = (options, &domain).into();
 
         // Create an external entity for any objects with the annotation.
         let borrow_checker_pleasure_yourself =
@@ -170,14 +173,7 @@ impl<'a> DomainTarget<'a> {
             }
         }
 
-        // Create our local compiler domain.
-        let woog = populate_woog(
-            src_path.as_ref(),
-            module,
-            &config,
-            &imported_domains,
-            &domain,
-        );
+        populate_woog(module, &config, &imported_domains, &mut woog, &domain);
 
         Box::new(Self {
             config,
@@ -196,7 +192,10 @@ impl<'a> DomainTarget<'a> {
         let mut types = PathBuf::from(self.src_path);
         types.push(self.module);
         types.push(TYPES);
-        fs::create_dir_all(&types).context(FileSnafu { path: &types })?;
+        fs::create_dir_all(&types).context(FileSnafu {
+            description: "creating type directory".to_owned(),
+            path: &types,
+        })?;
         types.push("discard");
 
         // Sort the objects -- I need to figure out how to do this automagically.
@@ -391,6 +390,32 @@ impl<'a> DomainTarget<'a> {
         from.push("discard");
         from.set_file_name(FROM);
         from.set_extension(RS_EXT);
+
+        GeneratorBuilder::new()
+            .package(&self.package)
+            .config(&self.config)
+            .path(&from)?
+            .domain(&self.domain)
+            .module(self.module)
+            .imports(&self.imports)
+            .compiler_domain(&mut self.woog)
+            .generator(
+                DomainFromBuilder::new()
+                    .domain(domain.clone())
+                    .definition(DomainFromImpl::new())
+                    .build()?,
+            )
+            .generate()?;
+
+        Ok(())
+    }
+
+    fn generate_dwarf(&mut self, domain: &FromDomain) -> Result<(), ModelCompilerError> {
+        let mut from = PathBuf::from(self.src_path);
+        from.push(self.module);
+        from.push("discard");
+        from.set_file_name(self.domain.name().as_ident());
+        from.set_extension(DWARF_EXT);
 
         GeneratorBuilder::new()
             .package(&self.package)

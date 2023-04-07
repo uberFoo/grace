@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::external::types::timestamp::Timestamp;
-use crate::domain::external::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::external::store::ObjectStore as ExternalStore;

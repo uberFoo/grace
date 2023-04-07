@@ -32,14 +32,45 @@ use crate::{
     BUILD_DIR, TARGET_DIR,
 };
 
-pub(crate) fn persist_woog(woog: &WoogStore, src_path: &Path, domain: &Domain) -> Result<()> {
-    let mut path = PathBuf::from(src_path);
+pub(crate) fn init_woog<P: AsRef<Path>>(
+    src_path: P,
+    config: &GraceConfig,
+    domain: &Domain,
+) -> WoogStore {
+    // Look for a persisted store.
+    let mut path = PathBuf::from(src_path.as_ref());
     path.pop();
     path.push(TARGET_DIR);
     path.push(BUILD_DIR);
     path.push(domain.name());
 
-    woog.persist(&path).context(FileSnafu { path })
+    if path.exists() && !config.get_always_process() {
+        panic!("We don't want to load the store yet.");
+        log::debug!("Loading Woog store from: {}", path.display());
+        WoogStore::load(&path).unwrap_or_else(|e| {
+            log::warn!("Failed to load Woog store: {}", e);
+            WoogStore::new()
+        })
+    } else {
+        WoogStore::new()
+    }
+}
+
+pub(crate) fn persist_woog<P: AsRef<Path>>(
+    woog: &WoogStore,
+    src_path: P,
+    domain: &Domain,
+) -> Result<()> {
+    let mut path = PathBuf::from(src_path.as_ref());
+    path.pop();
+    path.push(TARGET_DIR);
+    path.push(BUILD_DIR);
+    path.push(domain.name());
+
+    woog.persist(&path).context(FileSnafu {
+        path,
+        description: "persisting Woog store".to_owned(),
+    })
 }
 
 /// Woog post-load domain processing
@@ -49,29 +80,12 @@ pub(crate) fn persist_woog(woog: &WoogStore, src_path: &Path, domain: &Domain) -
 /// We also inter types in woog that exist in sarzak, so that we can access them
 /// during code generation.
 pub(crate) fn populate_woog(
-    src_path: &Path,
     module: &str,
     config: &GraceConfig,
     imports: &HashMap<String, Domain>,
+    mut woog: &mut WoogStore,
     domain: &Domain,
-) -> WoogStore {
-    // Look for a persisted store.
-    let mut path = PathBuf::from(src_path);
-    path.pop();
-    path.push(TARGET_DIR);
-    path.push(BUILD_DIR);
-    path.push(domain.name());
-
-    let mut woog = if path.exists() && !config.get_always_process() {
-        log::debug!("Loading Woog store from: {}", path.display());
-        WoogStore::load(&path).unwrap_or_else(|e| {
-            log::warn!("Failed to load Woog store: {}", e);
-            WoogStore::new()
-        })
-    } else {
-        WoogStore::new()
-    };
-
+) -> Result<()> {
     let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
     objects.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -100,7 +114,7 @@ pub(crate) fn populate_woog(
         let _ = GraceType::new_ty(&ty, &mut woog);
     }
 
-    woog
+    Ok(())
 }
 
 fn inter_struct_method_new(
@@ -136,7 +150,7 @@ fn inter_struct_method_new(
 
     let table = SymbolTable::new(&block, woog);
 
-    let (mut params, mut fields) = collect_attributes(
+    let (mut params, mut fields) = collect_params_and_fields(
         obj, &structure, &function, &table, module, config, domain, woog,
     );
 
@@ -229,7 +243,7 @@ fn inter_hybrid_method_new(
 
         let table = SymbolTable::new(&block, woog);
 
-        let (mut params, mut fields) = collect_attributes(
+        let (mut params, mut fields) = collect_params_and_fields(
             s_obj, &structure, &function, &table, module, config, domain, woog,
         );
 
@@ -341,7 +355,7 @@ fn inter_external_method_new(
 
     let table = SymbolTable::new(&block, woog);
 
-    let (mut params, mut fields) = collect_attributes(
+    let (mut params, mut fields) = collect_params_and_fields(
         obj, &structure, &function, &table, module, config, domain, woog,
     );
 
@@ -414,7 +428,7 @@ fn inter_external_method_new(
     );
 }
 
-fn collect_attributes(
+fn collect_params_and_fields(
     obj: &Object,
     structure: &Structure,
     function: &Function,
@@ -543,4 +557,87 @@ fn collect_attributes(
     }
 
     (params, fields)
+}
+
+pub trait AttributeBuilder<A> {
+    fn new(name: String, ty: Ty) -> A;
+}
+
+/// Walk the object hierarchy to collect attributes for an object
+///
+/// The attributes are generated in a stable order.
+fn collect_attributes<A>(obj: &Object, domain: &Domain) -> Vec<A>
+where
+    A: AttributeBuilder<A>,
+{
+    let mut result: Vec<A> = Vec::new();
+
+    // Collect the local attributes
+    let mut attrs = obj.r1_attribute(domain.sarzak());
+    attrs.sort_by(|a, b| a.name.cmp(&b.name));
+    for attr in attrs {
+        let ty = attr.r2_ty(domain.sarzak())[0];
+
+        let attr = A::new(attr.as_ident(), ty.clone());
+        result.push(attr);
+    }
+
+    // These are more attributes on our object, and they should be sorted.
+    // let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
+    // And the referential attributes
+    // for referrer in &referrers {
+    //     let binary = referrer.r6_binary(domain.sarzak())[0];
+    //     let referent = binary.r5_referent(domain.sarzak())[0];
+    //     let r_obj = referent.r16_object(domain.sarzak())[0];
+    //     let cond = referrer.r11_conditionality(domain.sarzak())[0];
+
+    //     let ty = Ty::new_object(&r_obj, domain.sarzak_mut());
+
+    //     // This determines how a reference is stored in the struct. In this
+    //     // case a UUID.
+    //     match cond {
+    //         // If it's conditional build a parameter that's an optional reference
+    //         // to the referent.
+    //         Conditionality::Conditional(_) => {
+    //             let option = WoogOption::new(&ty, woog);
+    //             let ty = GraceType::new_woog_option(Uuid::new_v4(), &option, woog);
+
+    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+
+    //             last_field = link_field!(last_field, field, woog);
+
+    //             let _field = StructureField::new(&field, &structure, woog);
+    //         }
+    //         // An unconditional reference translates into a reference to the referent.
+    //         Conditionality::Unconditional(_) => {
+    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+
+    //             last_field = link_field!(last_field, field, woog);
+
+    //             let _field = StructureField::new(&field, &structure, woog);
+    //         }
+    //     }
+    // }
+
+    // // And the associative attributes
+    // for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+    //     let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
+
+    //     for referent in referents {
+    //         let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+
+    //         let field = Field::new(an_ass.referential_attribute.as_ident(), None, &uuid, woog);
+
+    //         last_field = link_field!(last_field, field, woog);
+
+    //         let _field = StructureField::new(&field, &structure, woog);
+    //     }
+    // }
+
+    // // Add the zeroth field
+    // debug_assert!(field_zero.is_some());
+    // structure.field_zero = field_zero;
+    // woog.inter_structure(structure);
+
+    result
 }

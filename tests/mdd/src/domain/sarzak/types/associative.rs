@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::an_associative_referent::AnAssociativeReferent;
 use crate::domain::sarzak::types::associative_referrer::AssociativeReferrer;
 use crate::domain::sarzak::types::relationship::Relationship;
-use crate::domain::sarzak::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::sarzak::store::ObjectStore as SarzakStore;

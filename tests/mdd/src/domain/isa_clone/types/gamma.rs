@@ -6,7 +6,6 @@ use crate::domain::isa_clone::types::alpha::Alpha;
 use crate::domain::isa_clone::types::beta::Beta;
 use crate::domain::isa_clone::types::super_bar::SuperBar;
 use crate::domain::isa_clone::types::super_foo::SuperFoo;
-use crate::domain::isa_clone::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
@@ -38,6 +37,11 @@ impl Gamma {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
+    // Navigate to [`Alpha`] across R10(isa)
+    pub fn r10_alpha<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Alpha> {
+        vec![store.exhume_alpha(&self.id).unwrap()]
+    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
     // Navigate to [`SuperFoo`] across R13(isa)
@@ -52,23 +56,19 @@ impl Gamma {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     // Navigate to [`Beta`] across R11(isa)
     pub fn r11_beta<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Beta> {
         vec![store.exhume_beta(&self.id).unwrap()]
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
-    // Navigate to [`Alpha`] across R10(isa)
-    pub fn r10_alpha<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Alpha> {
-        vec![store.exhume_alpha(&self.id).unwrap()]
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

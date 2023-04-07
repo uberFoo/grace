@@ -3,7 +3,6 @@
 use uuid::Uuid;
 
 use crate::domain::everything::types::rando_object::RandoObject;
-use crate::domain::everything::UUID_NS;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::everything::store::ObjectStore as EverythingStore;

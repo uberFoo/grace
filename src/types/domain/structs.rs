@@ -114,9 +114,6 @@ impl CodeWriter for Imports {
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");
 
-                // We need this to create id's.
-                emit!(buffer, "use crate::{}::UUID_NS;", module);
-
                 // Add the use statements from the options.
                 if let Some(use_paths) = config.get_use_paths(&obj.id) {
                     for path in use_paths {
