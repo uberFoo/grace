@@ -27,6 +27,7 @@ pub struct Parameter {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-implementation"}}}
 impl Parameter {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-new_"}}}
     /// Inter a new 'Parameter' in the store, and return it's `id`.
     pub fn new(name: String, next: Option<&Parameter>, store: &mut OneToOneTsStore) -> Parameter {
         let id = Uuid::new_v4();
@@ -36,6 +37,19 @@ impl Parameter {
             next: next.map(|parameter| parameter.id),
         };
         store.inter_parameter(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-new_"}}}
+    /// Inter a new 'Parameter' in the store, and return it's `id`.
+    pub fn new_(name: String, next: Option<&Parameter>) -> Parameter {
+        let id = Uuid::new_v4();
+        let new = Parameter {
+            id: id,
+            name: name,
+            next: next.map(|parameter| parameter.id),
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -24,6 +24,7 @@ pub struct D {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-implementation"}}}
 impl D {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new_"}}}
     /// Inter a new 'D' in the store, and return it's `id`.
     pub fn new(appellation: String, ptr: Option<&Referent>, store: &mut OneToManyStore) -> D {
         let id = Uuid::new_v4();
@@ -33,6 +34,19 @@ impl D {
             ptr: ptr.map(|referent| referent.id),
         };
         store.inter_d(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new_"}}}
+    /// Inter a new 'D' in the store, and return it's `id`.
+    pub fn new_(appellation: String, ptr: Option<&Referent>) -> D {
+        let id = Uuid::new_v4();
+        let new = D {
+            appellation: appellation,
+            id: id,
+            ptr: ptr.map(|referent| referent.id),
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

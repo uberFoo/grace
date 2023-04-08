@@ -22,6 +22,7 @@ pub struct Associative {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-implementation"}}}
 impl Associative {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
     /// Inter a new 'Associative' in the store, and return it's `id`.
     pub fn new(number: i64, from: &AssociativeReferrer, store: &mut SarzakStore) -> Associative {
         let id = Uuid::new_v4();
@@ -39,6 +40,18 @@ impl Associative {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
+    /// Inter a new 'Associative' in the store, and return it's `id`.
+    pub fn new_(number: i64, from: &AssociativeReferrer) -> Associative {
+        let id = Uuid::new_v4();
+        let new = Associative {
+            id: id,
+            number: number,
+            from: from.id,
+        };
+        new
+    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-from"}}}
     /// Navigate to [`AssociativeReferrer`] across R21(1-*)

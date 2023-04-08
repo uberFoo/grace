@@ -27,7 +27,7 @@ use crate::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
-        render_method_new,
+        render_methods,
     },
     options::GraceConfig,
     types::{
@@ -441,7 +441,7 @@ impl CodeWriter for StructNewImpl {
         //     )?;
         // }
 
-        render_method_new(buffer, obj, config, imports, woog, domain)
+        render_methods(buffer, obj, config, imports, woog, domain)
     }
 }
 

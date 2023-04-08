@@ -38,6 +38,19 @@ impl C {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new_"}}}
+    /// Inter a new 'C' in the store, and return it's `id`.
+    pub fn new_(like_water: f64, ptr: Option<&Referent>) -> C {
+        let id = Uuid::new_v4();
+        let new = C {
+            id: id,
+            like_water: like_water,
+            ptr: ptr.map(|referent| referent.id),
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R3(1-*c)
     pub fn r3_referent<'a>(&'a self, store: &'a OneToOneStore) -> Vec<&Referent> {

@@ -29,6 +29,7 @@ pub struct Attribute {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-implementation"}}}
 impl Attribute {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new_"}}}
     /// Inter a new 'Attribute' in the store, and return it's `id`.
     pub fn new(
         name: String,
@@ -44,6 +45,20 @@ impl Attribute {
             ty: ty.id(),
         };
         store.inter_attribute(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new_"}}}
+    /// Inter a new 'Attribute' in the store, and return it's `id`.
+    pub fn new_(name: String, obj_id: Option<&Object>, ty: &Ty) -> Attribute {
+        let id = Uuid::new_v4();
+        let new = Attribute {
+            id: id,
+            name: name,
+            obj_id: obj_id.map(|object| object.id),
+            ty: ty.id(),
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

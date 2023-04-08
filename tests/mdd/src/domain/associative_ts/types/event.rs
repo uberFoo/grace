@@ -23,11 +23,21 @@ pub struct Event {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-implementation"}}}
 impl Event {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
     /// Inter a new 'Event' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut AssociativeTsStore) -> Event {
         let id = Uuid::new_v4();
         let new = Event { id: id, name: name };
         store.inter_event(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
+    /// Inter a new 'Event' in the store, and return it's `id`.
+    pub fn new_(name: String) -> Event {
+        let id = Uuid::new_v4();
+        let new = Event { id: id, name: name };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

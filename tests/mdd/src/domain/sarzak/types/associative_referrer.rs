@@ -46,6 +46,19 @@ impl AssociativeReferrer {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new_"}}}
+    /// Inter a new 'Associative Referrer' in the store, and return it's `id`.
+    pub fn new_(cardinality: &Cardinality, obj_id: &Object) -> AssociativeReferrer {
+        let id = Uuid::new_v4();
+        let new = AssociativeReferrer {
+            id: id,
+            cardinality: cardinality.id(),
+            obj_id: obj_id.id,
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-forward-to-cardinality"}}}
     /// Navigate to [`Cardinality`] across R89(1-*)
     pub fn r89_cardinality<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Cardinality> {

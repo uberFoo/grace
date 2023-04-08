@@ -23,6 +23,7 @@ pub struct IsaUi {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-implementation"}}}
 impl IsaUi {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-new_"}}}
     /// Inter a new 'IsaUI' in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut AssociativeTsStore) -> IsaUi {
         let id = Uuid::new_v4();
@@ -31,6 +32,18 @@ impl IsaUi {
             number: number,
         };
         store.inter_isa_ui(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-new_"}}}
+    /// Inter a new 'IsaUI' in the store, and return it's `id`.
+    pub fn new_(number: i64) -> IsaUi {
+        let id = Uuid::new_v4();
+        let new = IsaUi {
+            id: id,
+            number: number,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

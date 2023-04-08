@@ -211,7 +211,7 @@ pub(crate) fn render_method_definition(
     domain: &Domain,
 ) -> Result<()> {
     // Write the beginning of the definition
-    write!(buffer, "pub fn {}(", method.as_ident()).context(FormatSnafu)?;
+    write!(buffer, "pub fn {}(", method.name).context(FormatSnafu)?;
 
     // Write the parameter list.
     // TODO: This is so clumsy! I should clean it up.
@@ -265,7 +265,7 @@ pub(crate) fn render_method_definition_new(
     write!(
         buffer,
         "pub fn {}(",
-        method.r25_function(woog).pop().unwrap().as_ident()
+        method.r25_function(woog).pop().unwrap().name
     )
     .context(FormatSnafu)?;
 
@@ -1001,7 +1001,7 @@ fn typecheck_and_coerce(
     })
 }
 
-pub(crate) fn render_method_new(
+pub(crate) fn render_methods(
     buffer: &mut Buffer,
     obj: &Object,
     config: &GraceConfig,
@@ -1009,113 +1009,121 @@ pub(crate) fn render_method_new(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    let method = woog
+    let mut methods: Vec<&WoogObjectMethod> = woog
         .iter_object_method()
-        .find(|m| m.object == obj.id)
-        .unwrap()
-        .clone();
+        .filter(|m| m.object == obj.id)
+        .collect();
 
-    buffer.block(
-        DirectiveKind::IgnoreOrig,
-        format!("{}-struct-impl-new", obj.as_ident()),
-        |buffer| {
-            // Output a docstring
-            emit!(
-                buffer,
-                "/// {}",
-                method.r25_function(woog).pop().unwrap().description
-            );
+    methods.sort_by(|a, b| {
+        let a = a.r25_function(woog)[0];
+        let b = b.r25_function(woog)[0];
+        a.name.cmp(&b.name)
+    });
 
-            // This renders the method signature.
-            // It's probably ok as it is.
-            render_method_definition_new(buffer, &method, woog, domain)?;
+    for method in methods {
+        let func = method.r25_function(woog).pop().unwrap();
 
-            // Find the properly scoped variable named `id`.
-            let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
-            let var = &table
-                .r20_variable(woog)
-                .iter()
-                .find(|&&v| v.name == "id")
-                .unwrap()
-                .subtype;
-            let id = match var {
-                // This works because the id of the variable is the same as the id of the
-                // subtype enum.
-                VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
-                _ => panic!("This should never happen"),
-            };
+        buffer.block(
+            DirectiveKind::IgnoreOrig,
+            format!("{}-struct-impl-{}", obj.as_ident(), func.name),
+            |buffer| {
+                // Output a docstring
+                emit!(buffer, "/// {}", func.description);
 
-            // This renders a let statement, assigning a new uuid to the id variable.
-            // This is where the work lies. I think that what I really want to do is
-            // create (let) statements in the block whilst populating woog. Then
-            // someplace else, maybe here, we iterate over the statements and generate
-            // code. Maybe an as_statement trait, or something?
-            render_make_uuid_new(buffer, &id, &method, woog, domain)?;
+                // This renders the method signature.
+                // It's probably ok as it is.
+                render_method_definition_new(buffer, &method, woog, domain)?;
 
-            // Look up the properly scoped variable named `new`.
-            let var = &table
-                .r20_variable(woog)
-                .iter()
-                .find(|&&v| v.name == "new")
-                .unwrap()
-                .subtype;
-            let new = match var {
-                VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
-                _ => panic!("This should never happen"),
-            };
+                // Find the properly scoped variable named `id`.
+                let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
+                let var = &table
+                    .r20_variable(woog)
+                    .iter()
+                    .find(|&&v| v.name == "id")
+                    .unwrap()
+                    .subtype;
+                let id = match var {
+                    // This works because the id of the variable is the same as the id of the
+                    // subtype enum.
+                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                    _ => panic!("This should never happen"),
+                };
 
-            // Now this is interesting. This is good. It's getting close to what I
-            // was talking about above. In the woog population code, the function
-            // for populating a new method I created a statement: a struct item.
-            // It's the struct for Self. I pull that out here, and then use when
-            // I call the renderer.
-            let stmt = match &method
-                .r23_block(woog)
-                .pop()
-                .unwrap()
-                .r12_statement(woog)
-                .pop()
-                .unwrap()
-                .subtype
-            {
-                StatementEnum::Item(id) => {
-                    let item = woog.exhume_item(id).unwrap();
-                    match item {
-                        Item::Structure(id) => woog.exhume_structure(id).unwrap(),
-                        _ => unimplemented!(),
-                    }
-                }
-                _ => unimplemented!(),
-            };
+                // This renders a let statement, assigning a new uuid to the id variable.
+                // This is where the work lies. I think that what I really want to do is
+                // create (let) statements in the block whilst populating woog. Then
+                // someplace else, maybe here, we iterate over the statements and generate
+                // code. Maybe an as_statement trait, or something?
+                render_make_uuid_new(buffer, &id, &method, woog, domain)?;
 
-            // I wrote this this morning, and already I'can't say how it works
-            // exactly. It takes a structure, and not a statement, so it's
-            // pretty low level. It's also assigning the let. Refactor time.
-            render_new_instance_new(
-                buffer,
-                obj,
-                &new,
-                &stmt,
-                &method
+                // Look up the properly scoped variable named `new`.
+                let var = &table
+                    .r20_variable(woog)
+                    .iter()
+                    .find(|&&v| v.name == "new")
+                    .unwrap()
+                    .subtype;
+                let new = match var {
+                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                    _ => panic!("This should never happen"),
+                };
+
+                // Now this is interesting. This is good. It's getting close to what I
+                // was talking about above. In the woog population code, the function
+                // for populating a new method I created a statement: a struct item.
+                // It's the struct for Self. I pull that out here, and then use when
+                // I call the renderer.
+                let stmt = match &method
                     .r23_block(woog)
                     .pop()
                     .unwrap()
-                    .r24_symbol_table(woog)
+                    .r12_statement(woog)
                     .pop()
-                    .unwrap(),
-                config,
-                imports,
-                woog,
-                domain,
-            )?;
+                    .unwrap()
+                    .subtype
+                {
+                    StatementEnum::Item(id) => {
+                        let item = woog.exhume_item(id).unwrap();
+                        match item {
+                            Item::Structure(id) => woog.exhume_structure(id).unwrap(),
+                            _ => unimplemented!(),
+                        }
+                    }
+                    _ => unimplemented!(),
+                };
 
-            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
-            emit!(buffer, "new");
-            emit!(buffer, "}}");
+                // I wrote this this morning, and already I'can't say how it works
+                // exactly. It takes a structure, and not a statement, so it's
+                // pretty low level. It's also assigning the let. Refactor time.
+                render_new_instance_new(
+                    buffer,
+                    obj,
+                    &new,
+                    &stmt,
+                    &method
+                        .r23_block(woog)
+                        .pop()
+                        .unwrap()
+                        .r24_symbol_table(woog)
+                        .pop()
+                        .unwrap(),
+                    config,
+                    imports,
+                    woog,
+                    domain,
+                )?;
 
-            Ok(())
-        },
-    )
+                if func.name == "new" {
+                    emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                }
+                emit!(buffer, "new");
+                emit!(buffer, "}}");
+
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
 }
 
 macro_rules! test_local_and_imports {

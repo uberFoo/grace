@@ -103,6 +103,7 @@ pub(crate) fn populate_woog(
         } else if local_object_is_struct(obj, config, domain) {
             log::debug!("Populating woog for struct: {}", obj.name);
             inter_struct_method_new(obj, module, config, domain, &mut woog);
+            inter_struct_method_new_(obj, module, config, domain, &mut woog);
         } else if local_object_is_hybrid(obj, config, domain) {
             // log::debug!("Populating woog for hybrid: {}", obj.name);
             // inter_hybrid_method_new(obj, module, config, imports, domain, &mut woog);
@@ -164,6 +165,80 @@ fn inter_struct_method_new(
         let _ = Value::new_variable(&mut_access, &ty, &var, woog);
         params.push(param);
     }
+
+    // Link the params
+    // I need to maintain the order I've adopted because I'don't need things
+    // changing. That said, I need to iterate over the local parameters,
+    // and not what's interred in the store. So, I do the weird thing, and
+    // iterate over the locals, and push the change to the store.
+    params.iter_mut().rev().fold(None, |next, param| {
+        param.next = next;
+        woog.inter_parameter(param.clone());
+        Some(param.id)
+    });
+    // Same-same for the fields
+    fields.iter_mut().rev().fold(None, |next, field| {
+        field.next = next;
+        woog.inter_structure_field(field.clone());
+        Some(field.id)
+    });
+
+    // Locals we'll need
+    let id = Local::new(Uuid::new_v4(), woog);
+    let var = Variable::new_local("id".to_owned(), &table, &id, woog);
+    let _value = Value::new_variable(
+        &access,
+        &GraceType::new_ty(&Ty::new_uuid(), woog),
+        &var,
+        woog,
+    );
+
+    let new = Local::new(Uuid::new_v4(), woog);
+    let var = Variable::new_local("new".to_owned(), &table, &new, woog);
+    let _value = Value::new_variable(
+        &access,
+        &GraceType::new_reference(&Reference::new(&obj, woog), woog),
+        &var,
+        woog,
+    );
+}
+
+fn inter_struct_method_new_(
+    obj: &Object,
+    module: &str,
+    config: &GraceConfig,
+    domain: &Domain,
+    woog: &mut WoogStore,
+) -> () {
+    let borrowed = Ownership::new_borrowed();
+    let public = Visibility::Public(PUBLIC);
+    let access = Access::new(&borrowed, &public, woog);
+
+    let mutable = Ownership::new_mutable();
+    let mut_access = Access::new(&mutable, &public, woog);
+
+    let block = Block::new(Uuid::new_v4(), woog);
+
+    let structure = Structure::new(obj.as_type(&Ownership::new_owned(), woog, domain), woog);
+    let item = Item::new_structure(&structure, woog);
+    let _ = Statement::new_item(&block, &item, woog);
+
+    let method = ObjectMethod::new(&block, obj, woog);
+    let function = Function::new_object_method(
+        format!(
+            "Inter a new '{}' in the store, and return it's `id`.",
+            obj.name
+        ),
+        "new_".to_owned(),
+        &method,
+        woog,
+    );
+
+    let table = SymbolTable::new(&block, woog);
+
+    let (mut params, mut fields) = collect_params_and_fields(
+        obj, &structure, &function, &table, module, config, domain, woog,
+    );
 
     // Link the params
     // I need to maintain the order I've adopted because I'don't need things
