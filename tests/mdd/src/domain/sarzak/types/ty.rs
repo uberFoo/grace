@@ -48,6 +48,11 @@ impl Ty {
         new
     }
 
+    pub fn new_external_(external: &External) -> Self {
+        let new = Self::External(external.id);
+        new
+    }
+
     /// Create a new instance of Ty::Float
     pub fn new_float() -> Self {
         // This is already in the store, see associated function `new` above.
@@ -64,6 +69,11 @@ impl Ty {
     pub fn new_object(object: &Object, store: &mut SarzakStore) -> Self {
         let new = Self::Object(object.id);
         store.inter_ty(new.clone());
+        new
+    }
+
+    pub fn new_object_(object: &Object) -> Self {
+        let new = Self::Object(object.id);
         new
     }
 

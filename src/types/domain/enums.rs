@@ -452,7 +452,6 @@ impl CodeWriter for EnumNewImpl {
                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
 
-                    // if object_is_singleton(s_obj, domain) && !object_is_supertype(s_obj, domain) {
                     if is_singleton && !is_supertype {
                         emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
                         emit!(
@@ -497,6 +496,39 @@ impl CodeWriter for EnumNewImpl {
                             );
                         }
                         emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                        emit!(buffer, "new");
+
+                        emit!(buffer, "}}");
+                        emit!(buffer, "");
+                        emit!(
+                            buffer,
+                            "pub fn new_{}_({}: &{}) -> Self {{",
+                            s_obj.as_ident(),
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        );
+                        // I feel sort of gross doing this, but also sort of not. Part of me feels
+                        // like I should move this, and the same idea in codegen::render_new_instance,
+                        // into a function. Refactor the bits. But then the other part of me wants to
+                        // see how this plays out once woog comes into play. I have a feeling that
+                        // I should be able to build the let statement in terms of woog and then
+                        // have it write itself. So for now, here we are. I'm only here because I'm
+                        // trying to get woog working, so that's sort of funny.
+                        if object_is_enum(s_obj, config, imports, domain)? {
+                            emit!(
+                                buffer,
+                                "let new = Self::{}({}.id());",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                s_obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "let new = Self::{}({}.id);",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                s_obj.as_ident()
+                            );
+                        }
                         emit!(buffer, "new");
                     }
                     emit!(buffer, "}}");

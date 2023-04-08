@@ -37,6 +37,11 @@ impl Relationship {
         new
     }
 
+    pub fn new_associative_(associative: &Associative) -> Self {
+        let new = Self::Associative(associative.id);
+        new
+    }
+
     /// Create a new instance of Relationship::Binary
     pub fn new_binary(binary: &Binary, store: &mut SarzakStore) -> Self {
         let new = Self::Binary(binary.id);
@@ -44,10 +49,20 @@ impl Relationship {
         new
     }
 
+    pub fn new_binary_(binary: &Binary) -> Self {
+        let new = Self::Binary(binary.id);
+        new
+    }
+
     /// Create a new instance of Relationship::Isa
     pub fn new_isa(isa: &Isa, store: &mut SarzakStore) -> Self {
         let new = Self::Isa(isa.id);
         store.inter_relationship(new.clone());
+        new
+    }
+
+    pub fn new_isa_(isa: &Isa) -> Self {
+        let new = Self::Isa(isa.id);
         new
     }
 
