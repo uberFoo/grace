@@ -151,7 +151,7 @@ impl FileGenerator for DefaultStructGenerator {
             },
         )?;
 
-        Ok(GenerationAction::Write)
+        Ok(GenerationAction::FormatWrite)
     }
 }
 
@@ -652,7 +652,7 @@ impl FileGenerator for DefaultModuleGenerator {
             },
         )?;
 
-        Ok(GenerationAction::Write)
+        Ok(GenerationAction::FormatWrite)
     }
 }
 

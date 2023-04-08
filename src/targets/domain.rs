@@ -34,6 +34,7 @@ use crate::{
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, Imports, Struct, StructNewImpl, StructRelNavImpl},
         },
+        dwarf::{DwarfBuilder, DwarfModule},
         external::ExternalGenerator,
         null::NullGenerator,
     },
@@ -334,6 +335,8 @@ impl<'a> DomainTarget<'a> {
             })
             .collect::<Result<Vec<_>, ModelCompilerError>>()?;
 
+        println!("Generated code for {} objects.", objects.len());
+
         Ok(())
     }
 
@@ -410,7 +413,7 @@ impl<'a> DomainTarget<'a> {
         Ok(())
     }
 
-    fn generate_dwarf(&mut self, domain: &FromDomain) -> Result<(), ModelCompilerError> {
+    fn generate_dwarf(&mut self) -> Result<(), ModelCompilerError> {
         let mut from = PathBuf::from(self.src_path);
         from.push(self.module);
         from.push("discard");
@@ -425,12 +428,7 @@ impl<'a> DomainTarget<'a> {
             .module(self.module)
             .imports(&self.imports)
             .compiler_domain(&mut self.woog)
-            .generator(
-                DomainFromBuilder::new()
-                    .domain(domain.clone())
-                    .definition(DomainFromImpl::new())
-                    .build()?,
-            )
+            .generator(DwarfBuilder::new().definition(DwarfModule::new()).build()?)
             .generate()?;
 
         Ok(())
@@ -454,6 +452,9 @@ impl<'a> Target for DomainTarget<'a> {
         if let Some(domain) = self.config.get_from_domain() {
             self.generate_from_module(&domain)?;
         }
+
+        // Generate the dwarf code
+        self.generate_dwarf()?;
 
         // persist_woog(&self.woog, self.src_path, &self.domain)?;
 

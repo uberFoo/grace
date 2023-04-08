@@ -138,7 +138,7 @@ impl FileGenerator for DomainFromGenerator {
             },
         )?;
 
-        Ok(GenerationAction::Write)
+        Ok(GenerationAction::FormatWrite)
     }
 }
 

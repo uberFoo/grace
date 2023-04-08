@@ -209,6 +209,14 @@ impl<'a> GeneratorBuilder<'a> {
             Ok(action) => {
                 match action {
                     GenerationAction::Write => {
+                        let path = self.path.unwrap();
+                        let mut file = File::create(&path).context(FileSnafu {
+                            description: "writing generated file".to_owned(),
+                            path: &path,
+                        })?;
+                        file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+                    }
+                    GenerationAction::FormatWrite => {
                         // Generation was successful, write the output.
                         //
                         // Because of the way `rustfmt` works (it acts like it's running
@@ -304,6 +312,7 @@ impl<'a> GeneratorBuilder<'a> {
                                 }
                             };
                         } else {
+                            // Path does not exist.
                             let mut file = File::create(&path).context(FileSnafu {
                                 description: "writing source file".to_owned(),
                                 path: &path,
@@ -334,6 +343,7 @@ impl<'a> GeneratorBuilder<'a> {
 }
 
 pub(crate) enum GenerationAction {
+    FormatWrite,
     Write,
     Skip,
 }

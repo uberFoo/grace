@@ -7,7 +7,7 @@ use fnv::FnvHashMap as HashMap;
 use log;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::Object,
+    sarzak::types::{Object, Ty},
     v2::domain::Domain,
     woog::{store::ObjectStore as WoogStore, Ownership, BORROWED, PUBLIC},
 };
@@ -17,12 +17,13 @@ use uuid::Uuid;
 use crate::{
     codegen::{
         buffer::{emit, Buffer},
+        collect_attributes,
         diff_engine::DirectiveKind,
         emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_binary_referrers_sorted, object_is_hybrid, object_is_singleton, object_is_supertype,
         render::{render_attributes, RenderConst, RenderIdent, RenderType},
-        render_make_uuid, render_method_definition, render_new_instance,
+        render_make_uuid, render_method_definition, render_new_instance, AttributeBuilder,
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
@@ -87,7 +88,7 @@ impl FileGenerator for DwarfGenerator {
     ) -> Result<GenerationAction> {
         // Output the domain/module documentation/description
         for line in domain.description().lines() {
-            emit!(buffer, "//! {}", line);
+            emit!(buffer, "// {}", line);
         }
 
         buffer.block(
@@ -125,7 +126,7 @@ impl CodeWriter for DwarfModule {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        imports: &Option<&HashMap<String, Domain>>,
+        _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
@@ -134,10 +135,21 @@ impl CodeWriter for DwarfModule {
         ensure!(
             woog.is_some(),
             CompilerSnafu {
-                description: "woog is required by DefaultModule"
+                description: "woog is required by DwarfModule"
             }
         );
         let woog = woog.as_ref().unwrap();
+
+        struct Attribute {
+            pub name: String,
+            pub ty: Ty,
+        }
+
+        impl AttributeBuilder<Attribute> for Attribute {
+            fn new(name: String, ty: Ty) -> Self {
+                Attribute { name, ty }
+            }
+        }
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -154,38 +166,30 @@ impl CodeWriter for DwarfModule {
                     .collect::<Vec<_>>();
 
                 for obj in &objects {
-                    emit!(buffer, "pub mod {};", obj.as_ident());
-                }
-                emit!(buffer, "");
-                for obj in &objects {
-                    if object_is_singleton(obj, config, imports, domain)?
-                        && !object_is_supertype(obj, config, imports, domain)?
-                    {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_const()
-                        );
-                    } else {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
-                        if object_is_hybrid(obj, config, imports, domain)? {
-                            emit!(
-                                buffer,
-                                "pub use crate::{}::{}::{}Enum;",
-                                module,
-                                obj.as_ident(),
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            );
-                        }
+                    emit!(
+                        buffer,
+                        "type {} {{",
+                        obj.as_type(&Ownership::new_owned(), woog, domain)
+                    );
+
+                    let attrs: Vec<Attribute> = collect_attributes(obj, domain);
+                    for attr in attrs {
+                        let ty = match attr.ty {
+                            Ty::Object(ref id) => {
+                                let obj = domain.sarzak().exhume_object(id).unwrap();
+                                obj.as_ident()
+                            }
+                            Ty::String(_) => "string".to_string(),
+                            Ty::Boolean(_) => "bool".to_string(),
+                            Ty::Integer(_) => "int".to_string(),
+                            Ty::Float(_) => "float".to_string(),
+                            Ty::Uuid(_) => "uuid".to_string(),
+                            Ty::External(_) => "ext_what_to_do".to_string(),
+                        };
+                        emit!(buffer, "    {}: {},", attr.name, ty);
                     }
+
+                    emit!(buffer, "}}");
                 }
 
                 Ok(())

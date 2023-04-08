@@ -132,7 +132,7 @@ impl FileGenerator for DomainStoreGenerator {
             },
         )?;
 
-        Ok(GenerationAction::Write)
+        Ok(GenerationAction::FormatWrite)
     }
 }
 

@@ -176,6 +176,6 @@ impl FileGenerator for ExternalGenerator {
             },
         )?;
 
-        Ok(GenerationAction::Write)
+        Ok(GenerationAction::FormatWrite)
     }
 }
