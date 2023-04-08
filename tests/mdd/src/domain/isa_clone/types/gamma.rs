@@ -38,11 +38,16 @@ impl Gamma {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
+    // Navigate to [`Alpha`] across R10(isa)
+    pub fn r10_alpha<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Alpha> {
+        vec![store.exhume_alpha(&self.id).unwrap()]
+    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
-    // Navigate to [`SuperFoo`] across R13(isa)
-    pub fn r13_super_foo<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SuperFoo> {
-        vec![store.exhume_super_foo(&self.id).unwrap()]
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // Navigate to [`Beta`] across R11(isa)
+    pub fn r11_beta<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Beta> {
+        vec![store.exhume_beta(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_bar"}}}
@@ -62,15 +67,12 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
-    // Navigate to [`Beta`] across R11(isa)
-    pub fn r11_beta<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Beta> {
-        vec![store.exhume_beta(&self.id).unwrap()]
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
-    // Navigate to [`Alpha`] across R10(isa)
-    pub fn r10_alpha<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&Alpha> {
-        vec![store.exhume_alpha(&self.id).unwrap()]
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
+    // Navigate to [`SuperFoo`] across R13(isa)
+    pub fn r13_super_foo<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SuperFoo> {
+        vec![store.exhume_super_foo(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

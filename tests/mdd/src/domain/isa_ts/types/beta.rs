@@ -11,13 +11,6 @@ use crate::domain::isa_ts::store::ObjectStore as IsaTsStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-enum-documentation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-hybrid-documentation"}}}
-/// This test is not complete.
-///
-/// To complete this test add Gamma to R11. The relationship to "Super Bar" is just so that
-/// we can create an instance of Beta to soothe the compiler.
-///
-/// See grace#58.
-///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-enum-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-hybrid-struct-definition"}}}
