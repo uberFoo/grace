@@ -6,6 +6,7 @@ use std::fmt::Write;
 use fnv::FnvHashMap as HashMap;
 use log;
 use sarzak::{
+    lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
     v2::domain::Domain,
@@ -142,11 +143,11 @@ impl CodeWriter for DwarfModule {
 
         struct Attribute {
             pub name: String,
-            pub ty: Ty,
+            pub ty: ValueType,
         }
 
         impl AttributeBuilder<Attribute> for Attribute {
-            fn new(name: String, ty: Ty) -> Self {
+            fn new(name: String, ty: ValueType) -> Self {
                 Attribute { name, ty }
             }
         }
@@ -175,16 +176,22 @@ impl CodeWriter for DwarfModule {
                     let attrs: Vec<Attribute> = collect_attributes(obj, domain);
                     for attr in attrs {
                         let ty = match attr.ty {
-                            Ty::Object(ref id) => {
-                                let obj = domain.sarzak().exhume_object(id).unwrap();
-                                obj.as_ident()
+                            ValueType::Ty(ref id) => {
+                                let ty = domain.sarzak().exhume_ty(id).unwrap();
+                                match ty {
+                                    Ty::Object(ref id) => {
+                                        let obj = domain.sarzak().exhume_object(id).unwrap();
+                                        obj.as_ident()
+                                    }
+                                    Ty::String(_) => "string".to_string(),
+                                    Ty::Boolean(_) => "bool".to_string(),
+                                    Ty::Integer(_) => "int".to_string(),
+                                    Ty::Float(_) => "float".to_string(),
+                                    Ty::Uuid(_) => "uuid".to_string(),
+                                    Ty::External(_) => "ext_what_to_do".to_string(),
+                                }
                             }
-                            Ty::String(_) => "string".to_string(),
-                            Ty::Boolean(_) => "bool".to_string(),
-                            Ty::Integer(_) => "int".to_string(),
-                            Ty::Float(_) => "float".to_string(),
-                            Ty::Uuid(_) => "uuid".to_string(),
-                            Ty::External(_) => "ext_what_to_do".to_string(),
+                            ValueType::WoogOption(_) => todo!(),
                         };
                         emit!(buffer, "    {}: {},", attr.name, ty);
                     }

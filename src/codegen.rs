@@ -10,6 +10,7 @@ use std::{fmt::Write, iter::zip};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
+    lu_dog::types::{ValueType, WoogOption},
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{External, Object, Ty},
     v2::domain::Domain,
@@ -20,7 +21,6 @@ use sarzak::{
             Structure, SymbolTable, Variable, VariableEnum, OWNED,
         },
     },
-    // lu_dog::types::
 };
 use snafu::prelude::*;
 use unicode_segmentation::UnicodeSegmentation;
@@ -1449,7 +1449,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
 }
 
 pub(crate) trait AttributeBuilder<A> {
-    fn new(name: String, ty: Ty) -> A;
+    fn new(name: String, ty: ValueType) -> A;
 }
 
 /// Walk the object hierarchy to collect attributes for an object
@@ -1466,6 +1466,7 @@ where
     attrs.sort_by(|a, b| a.name.cmp(&b.name));
     for attr in attrs {
         let ty = attr.r2_ty(domain.sarzak())[0];
+        let ty = ValueType::new_ty_(&ty);
 
         let attr = A::new(attr.as_ident(), ty.clone());
         result.push(attr);
@@ -1488,7 +1489,7 @@ where
             // If it's conditional build a parameter that's an optional reference
             // to the referent.
             Conditionality::Conditional(_) => {
-                let option = WoogOption::new(&ty, woog);
+                let option = WoogOption::new_(&ty);
                 let ty = GraceType::new_woog_option(Uuid::new_v4(), &option, woog);
 
                 let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
