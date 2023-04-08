@@ -27,11 +27,21 @@ pub struct Referent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new_"}}}
     /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToOneTsStore) -> Referent {
         let id = Uuid::new_v4();
         let new = Referent { id: id, name: name };
         store.inter_referent(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new_"}}}
+    /// Inter a new 'Referent' in the store, and return it's `id`.
+    pub fn new_(name: String) -> Referent {
+        let id = Uuid::new_v4();
+        let new = Referent { id: id, name: name };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

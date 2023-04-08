@@ -25,11 +25,21 @@ pub struct SubtypeA {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-implementation"}}}
 impl SubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new_"}}}
     /// Inter a new 'Subtype A' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut IsaTsStore) -> SubtypeA {
         let id = Uuid::new_v4();
         let new = SubtypeA { id: id, name: name };
         store.inter_subtype_a(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new_"}}}
+    /// Inter a new 'Subtype A' in the store, and return it's `id`.
+    pub fn new_(name: String) -> SubtypeA {
+        let id = Uuid::new_v4();
+        let new = SubtypeA { id: id, name: name };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

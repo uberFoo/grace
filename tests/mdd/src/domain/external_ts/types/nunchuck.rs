@@ -23,6 +23,7 @@ pub struct Nunchuck {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-implementation"}}}
 impl Nunchuck {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-struct-impl-new_"}}}
     /// Inter a new 'Nunchuck' in the store, and return it's `id`.
     pub fn new(time: &Timestamp, store: &mut ExternalTsStore) -> Nunchuck {
         let id = Uuid::new_v4();
@@ -31,6 +32,18 @@ impl Nunchuck {
             time: time.id,
         };
         store.inter_nunchuck(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-struct-impl-new_"}}}
+    /// Inter a new 'Nunchuck' in the store, and return it's `id`.
+    pub fn new_(time: &Timestamp) -> Nunchuck {
+        let id = Uuid::new_v4();
+        let new = Nunchuck {
+            id: id,
+            time: time.id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

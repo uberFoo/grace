@@ -30,6 +30,7 @@ pub struct AssociativeReferrer {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-implementation"}}}
 impl AssociativeReferrer {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new_"}}}
     /// Inter a new 'Associative Referrer' in the store, and return it's `id`.
     pub fn new(
         cardinality: &Cardinality,
@@ -43,6 +44,19 @@ impl AssociativeReferrer {
             obj_id: obj_id.id,
         };
         store.inter_associative_referrer(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new_"}}}
+    /// Inter a new 'Associative Referrer' in the store, and return it's `id`.
+    pub fn new_(cardinality: &Cardinality, obj_id: &Object) -> AssociativeReferrer {
+        let id = Uuid::new_v4();
+        let new = AssociativeReferrer {
+            id: id,
+            cardinality: cardinality.id(),
+            obj_id: obj_id.id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

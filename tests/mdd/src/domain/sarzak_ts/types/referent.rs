@@ -31,6 +31,7 @@ pub struct Referent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
 impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new_"}}}
     /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(
         description: String,
@@ -48,6 +49,26 @@ impl Referent {
             obj_id: obj_id.id,
         };
         store.inter_referent(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new_"}}}
+    /// Inter a new 'Referent' in the store, and return it's `id`.
+    pub fn new_(
+        description: String,
+        cardinality: &Cardinality,
+        conditionality: &Conditionality,
+        obj_id: &Object,
+    ) -> Referent {
+        let id = Uuid::new_v4();
+        let new = Referent {
+            description: description,
+            id: id,
+            cardinality: cardinality.id(),
+            conditionality: conditionality.id(),
+            obj_id: obj_id.id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

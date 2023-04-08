@@ -26,6 +26,7 @@ pub struct Event {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-implementation"}}}
 impl Event {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
     /// Inter a new 'Event' in the store, and return it's `id`.
     pub fn new(name: String, obj_id: &Object, store: &mut SarzakTsStore) -> Event {
         let id = Uuid::new_v4();
@@ -35,6 +36,19 @@ impl Event {
             obj_id: obj_id.id,
         };
         store.inter_event(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
+    /// Inter a new 'Event' in the store, and return it's `id`.
+    pub fn new_(name: String, obj_id: &Object) -> Event {
+        let id = Uuid::new_v4();
+        let new = Event {
+            id: id,
+            name: name,
+            obj_id: obj_id.id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

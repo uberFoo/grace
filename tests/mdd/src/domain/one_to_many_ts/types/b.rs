@@ -26,6 +26,7 @@ pub struct B {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-implementation"}}}
 impl B {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new_"}}}
     /// Inter a new 'B' in the store, and return it's `id`.
     pub fn new(baz: String, ptr: Option<&Referent>, store: &mut OneToManyTsStore) -> B {
         let id = Uuid::new_v4();
@@ -35,6 +36,19 @@ impl B {
             ptr: ptr.map(|referent| referent.id),
         };
         store.inter_b(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new_"}}}
+    /// Inter a new 'B' in the store, and return it's `id`.
+    pub fn new_(baz: String, ptr: Option<&Referent>) -> B {
+        let id = Uuid::new_v4();
+        let new = B {
+            baz: baz,
+            id: id,
+            ptr: ptr.map(|referent| referent.id),
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

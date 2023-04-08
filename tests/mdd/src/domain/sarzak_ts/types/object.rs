@@ -61,6 +61,20 @@ impl Object {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-new_"}}}
+    /// Inter a new 'Object' in the store, and return it's `id`.
+    pub fn new_(description: String, key_letters: String, name: String) -> Object {
+        let id = Uuid::new_v4();
+        let new = Object {
+            description: description,
+            id: id,
+            key_letters: key_letters,
+            name: name,
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-associative_referent"}}}
     /// Navigate to [`AssociativeReferent`] across R25(1-M)
     pub fn r25_associative_referent<'a>(

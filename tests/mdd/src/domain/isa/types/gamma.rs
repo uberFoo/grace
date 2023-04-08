@@ -27,6 +27,7 @@ pub struct Gamma {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-implementation"}}}
 impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-struct-impl-new_"}}}
     /// Inter a new 'Gamma' in the store, and return it's `id`.
     pub fn new(value: f64, store: &mut IsaStore) -> Gamma {
         let id = Uuid::new_v4();
@@ -40,6 +41,17 @@ impl Gamma {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-struct-impl-new_"}}}
+    /// Inter a new 'Gamma' in the store, and return it's `id`.
+    pub fn new_(value: f64) -> Gamma {
+        let id = Uuid::new_v4();
+        let new = Gamma {
+            id: id,
+            value: value,
+        };
+        new
+    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

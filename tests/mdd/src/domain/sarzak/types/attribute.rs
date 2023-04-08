@@ -47,6 +47,20 @@ impl Attribute {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new_"}}}
+    /// Inter a new 'Attribute' in the store, and return it's `id`.
+    pub fn new_(name: String, obj_id: Option<&Object>, ty: &Ty) -> Attribute {
+        let id = Uuid::new_v4();
+        let new = Attribute {
+            id: id,
+            name: name,
+            obj_id: obj_id.map(|object| object.id),
+            ty: ty.id(),
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-cond-to-obj_id"}}}
     /// Navigate to [`Object`] across R1(1-*c)
     pub fn r1_object<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Object> {

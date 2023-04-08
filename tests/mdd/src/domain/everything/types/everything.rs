@@ -27,6 +27,7 @@ pub struct Everything {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-implementation"}}}
 impl Everything {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new_"}}}
     /// Inter a new 'Everything' in the store, and return it's `id`.
     pub fn new(
         bool: bool,
@@ -46,6 +47,28 @@ impl Everything {
             rando: rando.id,
         };
         store.inter_everything(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new_"}}}
+    /// Inter a new 'Everything' in the store, and return it's `id`.
+    pub fn new_(
+        bool: bool,
+        float: f64,
+        int: i64,
+        string: String,
+        rando: &RandoObject,
+    ) -> Everything {
+        let id = Uuid::new_v4();
+        let new = Everything {
+            bool: bool,
+            float: float,
+            id: id,
+            int: int,
+            string: string,
+            rando: rando.id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

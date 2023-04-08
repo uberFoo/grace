@@ -25,6 +25,7 @@ pub struct Supertype {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"supertype-implementation"}}}
 impl Supertype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"supertype-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"supertype-struct-impl-new_"}}}
     /// Inter a new 'Supertype' in the store, and return it's `id`.
     pub fn new(obj_id: &Object, store: &mut SarzakTsStore) -> Supertype {
         let id = Uuid::new_v4();
@@ -33,6 +34,18 @@ impl Supertype {
             obj_id: obj_id.id,
         };
         store.inter_supertype(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"supertype-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"supertype-struct-impl-new_"}}}
+    /// Inter a new 'Supertype' in the store, and return it's `id`.
+    pub fn new_(obj_id: &Object) -> Supertype {
+        let id = Uuid::new_v4();
+        let new = Supertype {
+            id: id,
+            obj_id: obj_id.id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

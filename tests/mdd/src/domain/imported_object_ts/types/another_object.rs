@@ -32,6 +32,7 @@ pub struct AnotherObject {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-implementation"}}}
 impl AnotherObject {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new_"}}}
     /// Inter a new 'Another Object' in the store, and return it's `id`.
     pub fn new(
         ptr: &Object,
@@ -45,6 +46,19 @@ impl AnotherObject {
             edge: edge.id,
         };
         store.inter_another_object(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new_"}}}
+    /// Inter a new 'Another Object' in the store, and return it's `id`.
+    pub fn new_(ptr: &Object, edge: &SimpleSupertype) -> AnotherObject {
+        let id = Uuid::new_v4();
+        let new = AnotherObject {
+            id: id,
+            ptr: ptr.id,
+            edge: edge.id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

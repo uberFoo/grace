@@ -32,6 +32,7 @@ pub struct OhBoy {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-implementation"}}}
 impl OhBoy {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new_"}}}
     /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
     pub fn new(attribution: String, store: &mut IsaStore) -> OhBoy {
         let id = Uuid::new_v4();
@@ -40,6 +41,18 @@ impl OhBoy {
             id: id,
         };
         store.inter_oh_boy(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new_"}}}
+    /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
+    pub fn new_(attribution: String) -> OhBoy {
+        let id = Uuid::new_v4();
+        let new = OhBoy {
+            attribution: attribution,
+            id: id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

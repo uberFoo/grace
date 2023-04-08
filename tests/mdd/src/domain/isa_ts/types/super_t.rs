@@ -37,6 +37,7 @@ pub enum SuperTEnum {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-implementation"}}}
 impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new_subtype_a"}}}
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_a(
         pointer: &Reference,
@@ -56,6 +57,21 @@ impl SuperT {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new_subtype_a_"}}}
+    /// Inter a new SuperT in the store, and return it's `id`.
+    pub fn new_subtype_a_(pointer: &Reference, subtype: &SubtypeA) -> SuperT {
+        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
+        // about this local. This should be fixed in the near future.
+        let id = subtype.id;
+        let new = SuperT {
+            pointer: pointer.id,
+            subtype: SuperTEnum::SubtypeA(subtype.id),
+            id,
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new_subtype_b"}}}
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_b(
         pointer: &Reference,
@@ -71,6 +87,20 @@ impl SuperT {
             id,
         };
         store.inter_super_t(new.clone());
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new_subtype_b_"}}}
+    /// Inter a new SuperT in the store, and return it's `id`.
+    pub fn new_subtype_b_(pointer: &Reference, subtype: &SubtypeB) -> SuperT {
+        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
+        // about this local. This should be fixed in the near future.
+        let id = subtype.id;
+        let new = SuperT {
+            pointer: pointer.id,
+            subtype: SuperTEnum::SubtypeB(subtype.id),
+            id,
+        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

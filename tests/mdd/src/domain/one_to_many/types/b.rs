@@ -38,6 +38,19 @@ impl B {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new_"}}}
+    /// Inter a new 'B' in the store, and return it's `id`.
+    pub fn new_(baz: String, ptr: Option<&Referent>) -> B {
+        let id = Uuid::new_v4();
+        let new = B {
+            baz: baz,
+            id: id,
+            ptr: ptr.map(|referent| referent.id),
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R2(1-*c)
     pub fn r2_referent<'a>(&'a self, store: &'a OneToManyStore) -> Vec<&Referent> {

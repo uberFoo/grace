@@ -34,6 +34,19 @@ impl Isa {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new_"}}}
+    /// Inter a new 'Isa' in the store, and return it's `id`.
+    pub fn new_(number: i64, supertype: &Supertype) -> Isa {
+        let id = Uuid::new_v4();
+        let new = Isa {
+            id: id,
+            number: number,
+            supertype: supertype.id,
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-nav-forward-to-supertype"}}}
     /// Navigate to [`Supertype`] across R13(1-*)
     pub fn r13_supertype<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Supertype> {

@@ -61,6 +61,7 @@ pub struct NotImportant {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-implementation"}}}
 impl NotImportant {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new_"}}}
     /// Inter a new 'Not Important' in the store, and return it's `id`.
     pub fn new(name: Uuid, x_ref: &SuperT, store: &mut IsaStore) -> NotImportant {
         let id = Uuid::new_v4();
@@ -74,6 +75,19 @@ impl NotImportant {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-cond-to-x_ref"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new_"}}}
+    /// Inter a new 'Not Important' in the store, and return it's `id`.
+    pub fn new_(name: Uuid, x_ref: &SuperT) -> NotImportant {
+        let id = Uuid::new_v4();
+        let new = NotImportant {
+            id: id,
+            name: name,
+            x_ref: x_ref.id,
+        };
+        new
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-to-x_ref"}}}
     /// Navigate to [`SuperT`] across R888(1-*)
     pub fn r888_super_t<'a>(&'a self, store: &'a IsaStore) -> Vec<&SuperT> {
