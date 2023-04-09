@@ -39,6 +39,12 @@ pub enum Target {
     ///
     /// This target is intended to be run as an application.
     Application,
+    /// Dwarf Language Generation
+    ///
+    /// This is the first-stage target language. The model will be compiled to
+    /// a dwarf program, including embedded dwarf code. This will then be compiled
+    /// by `dwarfc` into instances in "Lu Dog".
+    Dwarf,
 }
 
 /// Domain Target Configuration

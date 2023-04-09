@@ -4,7 +4,7 @@ use sarzak::mc::ModelCompilerOptions;
 
 mod codegen;
 pub mod options;
-mod targets;
+mod target;
 mod todo;
 mod types;
 mod woog;
@@ -12,12 +12,11 @@ mod woog;
 pub use options::{DomainConfig, GraceCompilerOptions, Target};
 pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
-use targets::{application::ApplicationTarget, domain::DomainTarget};
+use target::{application::ApplicationTarget, domain::DomainTarget, dwarf::DwarfTarget};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const BUILD_TIME: &str = include!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
 
-pub(crate) const DWARF_EXT: &str = "道";
 pub(crate) const RS_EXT: &str = "rs";
 pub(crate) const TYPES: &str = "types";
 pub(crate) const TARGET_DIR: &str = "target";
@@ -48,6 +47,9 @@ impl SarzakModelCompiler for ModelCompiler {
             }
             Target::Application => {
                 ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
+            }
+            Target::Dwarf => {
+                DwarfTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
         };
 

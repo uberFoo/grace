@@ -531,6 +531,7 @@ impl CodeWriter for DomainStore {
             .collect::<Vec<_>>();
 
         let timestamp = config.get_persist_timestamps().unwrap_or(false);
+        let is_meta = config.is_meta_model();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -554,7 +555,13 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
-                emit!(buffer, "");
+                if timestamp && is_meta && false {
+                    emit!(buffer, "use snafu::prelude::*;");
+                    emit!(buffer, "");
+                    emit!(buffer, "use crate::mc::{{FileSnafu, Result}};");
+                } else {
+                    emit!(buffer, "");
+                }
                 emit!(buffer, "use crate::{}::types::{{", module);
 
                 for obj in &objects {
@@ -646,7 +653,7 @@ impl CodeWriter for DomainStore {
 
                 if persist {
                     generate_store_persistence(
-                        buffer, &objects, timestamp, module, config, woog, domain,
+                        buffer, &objects, timestamp, is_meta, module, config, woog, domain,
                     )?;
                 }
 
@@ -681,6 +688,7 @@ fn generate_store_persistence(
     buffer: &mut Buffer,
     objects: &[&&Object],
     timestamp: bool,
+    is_meta: bool,
     module: &str,
     config: &GraceConfig,
     woog: &WoogStore,
@@ -702,7 +710,7 @@ fn generate_store_persistence(
             );
             emit!(
                 buffer,
-                "/// In fact, I intend to add automaagic git integration as an option."
+                "/// In fact, I intend to add automagic git integration as an option."
             );
             emit!(
                 buffer,
@@ -791,7 +799,26 @@ fn generate_store_persistence(
                     emit!(buffer, "let id = file_name.split(\".\").next().unwrap();");
                     emit!(buffer, "if let Ok(id) = Uuid::parse_str(id) {{");
                     emit!(buffer, "if !self.{}.contains_key(&id) {{", obj.as_ident());
-                    emit!(buffer, "fs::remove_file(path)?;");
+                    if is_meta && false {
+                        emit!(buffer, "let result = fs::remove_file(path);");
+                        emit!(buffer, "match result {{");
+                        emit!(buffer, "Ok(_) => {{}}");
+                        emit!(buffer, "Err(e) => match e.kind() {{");
+                        emit!(buffer, "io::ErrorKind::NotFound => {{}}");
+                        emit!(buffer, "_ => {{");
+                        emit!(buffer, "return Err(e).context(FileSnafu {{");
+                        emit!(buffer, "path,");
+                        emit!(
+                            buffer,
+                            "description: \"Failed to remove file from store\".to_owned(),"
+                        );
+                        emit!(buffer, "}})");
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}},");
+                        emit!(buffer, "}}");
+                    } else {
+                        emit!(buffer, "fs::remove_file(path)?;");
+                    }
                     emit!(buffer, "}}");
                     emit!(buffer, "}}");
                     emit!(buffer, "}}");

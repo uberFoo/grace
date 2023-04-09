@@ -1472,42 +1472,42 @@ where
         result.push(attr);
     }
 
-    // These are more attributes on our object, and they should be sorted.
-    let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
-    // And the referential attributes
-    for referrer in &referrers {
-        let binary = referrer.r6_binary(domain.sarzak())[0];
-        let referent = binary.r5_referent(domain.sarzak())[0];
-        let r_obj = referent.r16_object(domain.sarzak())[0];
-        let cond = referrer.r11_conditionality(domain.sarzak())[0];
+    // // These are more attributes on our object, and they should be sorted.
+    // let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
+    // // And the referential attributes
+    // for referrer in &referrers {
+    //     let binary = referrer.r6_binary(domain.sarzak())[0];
+    //     let referent = binary.r5_referent(domain.sarzak())[0];
+    //     let r_obj = referent.r16_object(domain.sarzak())[0];
+    //     let cond = referrer.r11_conditionality(domain.sarzak())[0];
 
-        let ty = Ty::new_object(&r_obj, domain.sarzak_mut());
+    //     let ty = Ty::new_object(&r_obj, domain.sarzak_mut());
 
-        // This determines how a reference is stored in the struct. In this
-        // case a UUID.
-        match cond {
-            // If it's conditional build a parameter that's an optional reference
-            // to the referent.
-            Conditionality::Conditional(_) => {
-                let option = WoogOption::new_(&ty);
-                let ty = GraceType::new_woog_option(Uuid::new_v4(), &option, woog);
+    //     // This determines how a reference is stored in the struct. In this
+    //     // case a UUID.
+    //     match cond {
+    //         // If it's conditional build a parameter that's an optional reference
+    //         // to the referent.
+    //         Conditionality::Conditional(_) => {
+    //             let option = WoogOption::new_(&ty);
+    //             let ty = GraceType::new_woog_option(Uuid::new_v4(), &option, woog);
 
-                let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
 
-                last_field = link_field!(last_field, field, woog);
+    //             last_field = link_field!(last_field, field, woog);
 
-                let _field = StructureField::new(&field, &structure, woog);
-            }
-            // An unconditional reference translates into a reference to the referent.
-            Conditionality::Unconditional(_) => {
-                let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+    //             let _field = StructureField::new(&field, &structure, woog);
+    //         }
+    //         // An unconditional reference translates into a reference to the referent.
+    //         Conditionality::Unconditional(_) => {
+    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
 
-                last_field = link_field!(last_field, field, woog);
+    //             last_field = link_field!(last_field, field, woog);
 
-                let _field = StructureField::new(&field, &structure, woog);
-            }
-        }
-    }
+    //             let _field = StructureField::new(&field, &structure, woog);
+    //         }
+    //     }
+    // }
 
     // // And the associative attributes
     // for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {

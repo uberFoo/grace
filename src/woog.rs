@@ -2,7 +2,10 @@
 //!
 //! This involves creating instances in Woog that the compiler stages depend
 //! upon.
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
@@ -44,16 +47,16 @@ pub(crate) fn init_woog<P: AsRef<Path>>(
     path.push(BUILD_DIR);
     path.push(domain.name());
 
-    if path.exists() && !config.get_always_process() {
-        panic!("We don't want to load the store yet.");
-        log::debug!("Loading Woog store from: {}", path.display());
-        WoogStore::load(&path).unwrap_or_else(|e| {
-            log::warn!("Failed to load Woog store: {}", e);
-            WoogStore::new()
-        })
-    } else {
-        WoogStore::new()
-    }
+    // if path.exists() && !config.get_always_process() {
+    //     panic!("We don't want to load the store yet.");
+    //     log::debug!("Loading Woog store from: {}", path.display());
+    //     WoogStore::load(&path).unwrap_or_else(|e| {
+    //         log::warn!("Failed to load Woog store: {}", e);
+    //         WoogStore::new()
+    //     })
+    // } else {
+    WoogStore::new()
+    // }
 }
 
 pub(crate) fn persist_woog<P: AsRef<Path>>(

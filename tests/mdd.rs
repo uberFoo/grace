@@ -29,7 +29,11 @@ macro_rules! test_target_domain {
             let grace = ModelCompiler::default();
 
             // Build the domains
-            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
             let domain = DomainBuilder::new()
                 .cuckoo_model($path)
                 .unwrap()
@@ -91,7 +95,11 @@ macro_rules! test_target_domain {
             let grace = ModelCompiler::default();
 
             // Build the domains
-            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
             let domain = DomainBuilder::new()
                 .cuckoo_model($path)
                 .unwrap()
@@ -152,7 +160,11 @@ macro_rules! test_target_domain_timestamps {
             let grace = ModelCompiler::default();
 
             // Build the domains
-            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
             let domain = DomainBuilder::new()
                 .cuckoo_model($path)
                 .unwrap()
@@ -216,7 +228,11 @@ macro_rules! test_target_domain_timestamps {
             let grace = ModelCompiler::default();
 
             // Build the domains
-            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
             let domain = DomainBuilder::new()
                 .cuckoo_model($path)
                 .unwrap()
@@ -265,7 +281,11 @@ macro_rules! test_target_application {
             let grace = ModelCompiler::default();
 
             // Build the domains
-            log::debug!("Testing domain: {},  target: Domain.", $domain);
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
             let domain = DomainBuilder::new()
                 .cuckoo_model($path)
                 .unwrap()
@@ -303,9 +323,53 @@ macro_rules! test_target_application {
     };
 }
 
+macro_rules! test_target_dwarf {
+    ($name:ident, $domain:literal, $path:literal) => {
+        #[test]
+        fn $name() -> Result<(), std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Dwarf;
+
+            options.always_process = Some(true);
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("dwarf/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                )
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
+
+            // Run dwarfc?
+            Ok(())
+        }
+    };
+}
 // This is an imported domain that we need to build, so get it done early.
 test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak.json");
 test_target_domain_timestamps!(sarzak_ts, "sarzak_ts", "../sarzak/models/sarzak.json");
+test_target_dwarf!(sarzak_dwarf, "sarzak", "../sarzak/models/sarzak.json");
 
 // Domain Target Tests
 test_target_domain!(
@@ -405,12 +469,17 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
     let grace = ModelCompiler::default();
 
     // Build the domains
-    log::debug!("Testing domain from extrusion,  target: Domain.");
     let domain = DomainBuilder::new()
         .cuckoo_model("tests/mdd/models/isa.json")
         .unwrap()
         .build_v2()
         .unwrap();
+
+    log::debug!(
+        "Testing domain: {} from extrusion,  target: {:?}.",
+        domain.name(),
+        options.target
+    );
 
     grace
         .compile(
