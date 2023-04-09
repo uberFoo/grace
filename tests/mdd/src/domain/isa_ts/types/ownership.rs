@@ -31,6 +31,11 @@ impl Ownership {
         new
     }
 
+    pub fn new_borrowed_(borrowed: &Borrowed) -> Self {
+        let new = Self::Borrowed(borrowed.id());
+        new
+    }
+
     /// Create a new instance of Ownership::Owned
     pub fn new_owned() -> Self {
         // This is already in the store, see associated function `new` above.
