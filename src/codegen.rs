@@ -6,13 +6,16 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{fmt::Write, iter::zip};
+use std::{fmt::Write, iter::zip, sync::RwLock};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
-    lu_dog::types::{ValueType, WoogOption},
+    lu_dog::{
+        store::ObjectStore as LuDogStore,
+        types::{Some, ValueType, WoogOption},
+    },
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::{External, Object, Ty},
+    sarzak::types::{Conditionality, External, Object, Ty},
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
@@ -1455,7 +1458,11 @@ pub(crate) trait AttributeBuilder<A> {
 /// Walk the object hierarchy to collect attributes for an object
 ///
 /// The attributes are generated in a stable order.
-pub(crate) fn collect_attributes<A>(obj: &Object, domain: &Domain) -> Vec<A>
+pub(crate) fn collect_attributes<A>(
+    obj: &Object,
+    lu_dog: &RwLock<LuDogStore>,
+    domain: &Domain,
+) -> Vec<A>
 where
     A: AttributeBuilder<A>,
 {
@@ -1466,68 +1473,67 @@ where
     attrs.sort_by(|a, b| a.name.cmp(&b.name));
     for attr in attrs {
         let ty = attr.r2_ty(domain.sarzak())[0];
-        let ty = ValueType::new_ty_(&ty);
+        let mut lu_dog = lu_dog.write().unwrap();
+        let ty = ValueType::new_ty(&ty, &mut lu_dog);
 
         let attr = A::new(attr.as_ident(), ty.clone());
         result.push(attr);
     }
 
-    // // These are more attributes on our object, and they should be sorted.
-    // let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
-    // // And the referential attributes
-    // for referrer in &referrers {
-    //     let binary = referrer.r6_binary(domain.sarzak())[0];
-    //     let referent = binary.r5_referent(domain.sarzak())[0];
-    //     let r_obj = referent.r16_object(domain.sarzak())[0];
-    //     let cond = referrer.r11_conditionality(domain.sarzak())[0];
+    // These are more attributes on our object, and they should be sorted.
+    let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
+    // And the referential attributes
+    for referrer in &referrers {
+        let binary = referrer.r6_binary(domain.sarzak())[0];
+        let referent = binary.r5_referent(domain.sarzak())[0];
+        let r_obj = referent.r16_object(domain.sarzak())[0];
+        let cond = referrer.r11_conditionality(domain.sarzak())[0];
 
-    //     let ty = Ty::new_object(&r_obj, domain.sarzak_mut());
+        let attr_name = referrer.referential_attribute.as_ident();
 
-    //     // This determines how a reference is stored in the struct. In this
-    //     // case a UUID.
-    //     match cond {
-    //         // If it's conditional build a parameter that's an optional reference
-    //         // to the referent.
-    //         Conditionality::Conditional(_) => {
-    //             let option = WoogOption::new_(&ty);
-    //             let ty = GraceType::new_woog_option(Uuid::new_v4(), &option, woog);
+        let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
+        let mut lu_dog = lu_dog.write().unwrap();
+        let ty = ValueType::new_ty(&ty, &mut lu_dog);
 
-    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+        // This determines how a reference is stored in the struct. In this
+        // case a UUID.
+        match cond {
+            // If it's conditional build a parameter that's an optional reference
+            // to the referent.
+            Conditionality::Conditional(_) => {
+                let some = Some::new(&ty, &mut lu_dog);
+                let option = WoogOption::new_some(&some, &mut lu_dog);
+                let ty = ValueType::new_woog_option(&option, &mut lu_dog);
 
-    //             last_field = link_field!(last_field, field, woog);
+                let attr = A::new(attr_name, ty.clone());
+                result.push(attr);
+            }
+            // An unconditional reference translates into a reference to the referent.
+            Conditionality::Unconditional(_) => {
+                let attr = A::new(attr_name, ty.clone());
+                result.push(attr);
+            }
+        }
+    }
 
-    //             let _field = StructureField::new(&field, &structure, woog);
-    //         }
-    //         // An unconditional reference translates into a reference to the referent.
-    //         Conditionality::Unconditional(_) => {
-    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+    // And the associative attributes
+    for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+        let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
 
-    //             last_field = link_field!(last_field, field, woog);
+        for referent in referents {
+            let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+            let obj = referent.r25_object(domain.sarzak())[0];
 
-    //             let _field = StructureField::new(&field, &structure, woog);
-    //         }
-    //     }
-    // }
+            let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
+            let mut lu_dog = lu_dog.write().unwrap();
+            let ty = ValueType::new_ty(&ty, &mut lu_dog);
 
-    // // And the associative attributes
-    // for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-    //     let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
+            let attr_name = an_ass.referential_attribute.as_ident();
 
-    //     for referent in referents {
-    //         let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
-
-    //         let field = Field::new(an_ass.referential_attribute.as_ident(), None, &uuid, woog);
-
-    //         last_field = link_field!(last_field, field, woog);
-
-    //         let _field = StructureField::new(&field, &structure, woog);
-    //     }
-    // }
-
-    // // Add the zeroth field
-    // debug_assert!(field_zero.is_some());
-    // structure.field_zero = field_zero;
-    // woog.inter_structure(structure);
+            let attr = A::new(attr_name, ty.clone());
+            result.push(attr);
+        }
+    }
 
     result
 }

@@ -26,7 +26,7 @@ mod tests {
             "Widget".to_owned(),
             &mut store,
         );
-        let a = Attribute::new("froggles".to_owned(), Some(&o), &t, &mut store);
+        let a = Attribute::new("froggles".to_owned(), &o, &t, &mut store);
 
         store.persist("tmp/models").unwrap();
 

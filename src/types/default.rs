@@ -2,11 +2,12 @@
 //!
 //! This is the place to find all the default implementations for generating structs.
 //! These are meant to be used in an application domain.
-use std::fmt::Write;
+use std::{fmt::Write, sync::RwLock};
 
 use fnv::FnvHashMap as HashMap;
 use log;
 use sarzak::{
+    lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
     v2::domain::Domain,
@@ -89,6 +90,7 @@ impl FileGenerator for DefaultStructGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports_map: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -113,6 +115,7 @@ impl FileGenerator for DefaultStructGenerator {
                         config,
                         domain,
                         woog,
+                        _lu_dog,
                         imports_map,
                         package,
                         module,
@@ -126,6 +129,7 @@ impl FileGenerator for DefaultStructGenerator {
                         config,
                         domain,
                         woog,
+                        _lu_dog,
                         imports_map,
                         package,
                         module,
@@ -139,6 +143,7 @@ impl FileGenerator for DefaultStructGenerator {
                         config,
                         domain,
                         woog,
+                        _lu_dog,
                         imports_map,
                         package,
                         module,
@@ -175,6 +180,7 @@ impl CodeWriter for DefaultStruct {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -329,6 +335,7 @@ impl CodeWriter for DefaultImplementation {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -379,6 +386,7 @@ impl CodeWriter for DefaultImplementation {
                         config,
                         domain,
                         woog,
+                        _lu_dog,
                         imports,
                         package,
                         module,
@@ -422,6 +430,7 @@ impl CodeWriter for DefaultNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         _module: &str,
@@ -629,6 +638,7 @@ impl FileGenerator for DefaultModuleGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -645,7 +655,7 @@ impl FileGenerator for DefaultModuleGenerator {
             format!("{}-module-definition-file", module),
             |buffer| {
                 self.definition.write_code(
-                    config, domain, woog, imports, package, module, obj_id, buffer,
+                    config, domain, woog, _lu_dog, imports, package, module, obj_id, buffer,
                 )?;
 
                 Ok(())
@@ -675,6 +685,7 @@ impl CodeWriter for DefaultModule {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,

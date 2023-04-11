@@ -1,11 +1,12 @@
 //! Domain Struct Generation
 //!
 //! Your one-stop-shop for everything to do with structs in Rust!
-use std::fmt::Write;
+use std::{fmt::Write, sync::RwLock};
 
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use log;
 use sarzak::{
+    lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
     woog::{store::ObjectStore as WoogStore, types::Ownership},
@@ -55,6 +56,7 @@ impl CodeWriter for Imports {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -209,6 +211,7 @@ impl CodeWriter for Struct {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         _module: &str,
@@ -306,6 +309,7 @@ impl CodeWriter for DomainImplementation {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -342,6 +346,7 @@ impl CodeWriter for DomainImplementation {
                         config,
                         domain,
                         woog,
+                        lu_dog,
                         imports,
                         package,
                         module,
@@ -384,6 +389,7 @@ impl CodeWriter for StructNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         _module: &str,
@@ -466,6 +472,7 @@ impl CodeWriter for StructRelNavImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,

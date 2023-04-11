@@ -1,10 +1,11 @@
 //! Domain Enum with extras Generation
 //!
 //! Here we are.
-use std::fmt::Write;
+use std::{fmt::Write, sync::RwLock};
 
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
+    lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Conditionality,
     v2::domain::Domain,
@@ -57,6 +58,7 @@ impl CodeWriter for Hybrid {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -334,6 +336,7 @@ impl CodeWriter for HybridNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,

@@ -1,16 +1,16 @@
 //! Dwarf File Generation
 //!
 //! This is where we generate code for use in the next stage of the compiler.
-use std::fmt::Write;
+use std::{fmt::Write, sync::RwLock};
 
 use fnv::FnvHashMap as HashMap;
-use log;
 use sarzak::{
+    lu_dog::store::ObjectStore as LuDogStore,
     lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership, BORROWED, PUBLIC},
+    woog::{store::ObjectStore as WoogStore, Ownership},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -22,15 +22,11 @@ use crate::{
         diff_engine::DirectiveKind,
         emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_binary_referrers_sorted, object_is_hybrid, object_is_singleton, object_is_supertype,
-        render::{render_attributes, RenderConst, RenderIdent, RenderType},
-        render_make_uuid, render_method_definition, render_new_instance, AttributeBuilder,
+        render::RenderType,
+        AttributeBuilder,
     },
     options::GraceConfig,
-    todo::{GType, LValue, ObjectMethod, Parameter, RValue},
-    types::{
-        DwarfDefinition, MethodImplementation, TypeDefinition, TypeImplementation, TypeImports,
-    },
+    types::DwarfDefinition,
 };
 
 pub(crate) struct DwarfBuilder {
@@ -81,6 +77,7 @@ impl FileGenerator for DwarfGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -97,7 +94,7 @@ impl FileGenerator for DwarfGenerator {
             format!("{}-dwarf-file", module),
             |buffer| {
                 self.definition.write_code(
-                    config, domain, woog, imports, package, module, obj_id, buffer,
+                    config, domain, woog, lu_dog, imports, package, module, obj_id, buffer,
                 )?;
 
                 Ok(())
@@ -127,6 +124,7 @@ impl CodeWriter for DwarfModule {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -141,6 +139,14 @@ impl CodeWriter for DwarfModule {
         );
         let woog = woog.as_ref().unwrap();
 
+        ensure!(
+            lu_dog.is_some(),
+            CompilerSnafu {
+                description: "lu_dog is required by DwarfModule"
+            }
+        );
+        let lu_dog = lu_dog.as_ref().unwrap();
+
         struct Attribute {
             pub name: String,
             pub ty: ValueType,
@@ -154,7 +160,7 @@ impl CodeWriter for DwarfModule {
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
-            format!("{}-module-definition", module),
+            format!("{}-dwarf-output", module),
             |buffer| {
                 let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
                 objects.sort_by(|a, b| a.name.cmp(&b.name));
@@ -167,36 +173,74 @@ impl CodeWriter for DwarfModule {
                     .collect::<Vec<_>>();
 
                 for obj in &objects {
+                    //
+                    // Emit the type definition
+                    //
+                    emit_object_comments(&obj.description, "//", buffer);
                     emit!(
                         buffer,
-                        "type {} {{",
+                        "struct {} {{",
                         obj.as_type(&Ownership::new_owned(), woog, domain)
                     );
 
-                    let attrs: Vec<Attribute> = collect_attributes(obj, domain);
-                    for attr in attrs {
-                        let ty = match attr.ty {
-                            ValueType::Ty(ref id) => {
-                                let ty = domain.sarzak().exhume_ty(id).unwrap();
-                                match ty {
-                                    Ty::Object(ref id) => {
-                                        let obj = domain.sarzak().exhume_object(id).unwrap();
-                                        obj.as_ident()
-                                    }
-                                    Ty::String(_) => "string".to_string(),
-                                    Ty::Boolean(_) => "bool".to_string(),
-                                    Ty::Integer(_) => "int".to_string(),
-                                    Ty::Float(_) => "float".to_string(),
-                                    Ty::Uuid(_) => "uuid".to_string(),
-                                    Ty::External(_) => "ext_what_to_do".to_string(),
-                                }
-                            }
-                            ValueType::WoogOption(_) => todo!(),
-                        };
+                    let attrs: Vec<Attribute> = collect_attributes(obj, &lu_dog, domain);
+                    for attr in &attrs {
+                        let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
                         emit!(buffer, "    {}: {},", attr.name, ty);
                     }
 
                     emit!(buffer, "}}");
+
+                    //
+                    // Emit the impl block
+                    //
+                    emit!(
+                        buffer,
+                        "impl {} {{",
+                        obj.as_type(&Ownership::new_owned(), woog, domain)
+                    );
+
+                    //
+                    // Emit the constructor
+                    //
+                    write!(buffer, "    fn new(").context(FormatSnafu)?;
+                    let mut ft = true;
+                    let mut iter = attrs.iter();
+                    loop {
+                        match iter.next() {
+                            Some(attr) => {
+                                if attr.name == "id" {
+                                    continue;
+                                }
+                                if !ft {
+                                    write!(buffer, ", ").context(FormatSnafu)?;
+                                } else {
+                                    ft = false;
+                                }
+                                let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                                write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
+                            }
+                            None => break,
+                        }
+                    }
+                    // for attr in attrs {
+                    //     if attr.name == "id" {
+                    //         continue;
+                    //     }
+                    //     let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                    //     write!(buffer, "{}: {}, ", attr.name, ty).context(FormatSnafu)?;
+                    // }
+                    writeln!(buffer, ") -> Self {{").context(FormatSnafu)?;
+                    emit!(buffer, "        let id = Uuid::new();");
+                    emit!(buffer, "        Self {{");
+                    for attr in &attrs {
+                        emit!(buffer, "            {}: {},", attr.name, attr.name);
+                    }
+                    emit!(buffer, "        }}");
+                    emit!(buffer, "    }}");
+
+                    emit!(buffer, "}}");
+                    emit!(buffer, "");
                 }
 
                 Ok(())
@@ -204,5 +248,44 @@ impl CodeWriter for DwarfModule {
         )?;
 
         Ok(())
+    }
+}
+
+fn value_type_to_string(
+    ty: &ValueType,
+    lu_dog: &RwLock<LuDogStore>,
+    woog: &WoogStore,
+    domain: &Domain,
+) -> String {
+    match ty {
+        ValueType::Ty(ref id) => {
+            let ty = domain.sarzak().exhume_ty(id).unwrap();
+            match ty {
+                Ty::Object(ref id) => {
+                    let obj = domain.sarzak().exhume_object(id).unwrap();
+                    obj.as_type(&Ownership::new_owned(), woog, domain)
+                }
+                Ty::String(_) => "string".to_string(),
+                Ty::Boolean(_) => "bool".to_string(),
+                Ty::Integer(_) => "int".to_string(),
+                Ty::Float(_) => "float".to_string(),
+                Ty::Uuid(_) => "Uuid".to_string(),
+                Ty::External(_) => "ext_what_to_do".to_string(),
+            }
+        }
+        ValueType::WoogOption(ref id) => {
+            let inner = {
+                let lu_dog = lu_dog.read().unwrap();
+                let some = lu_dog.exhume_some(id).unwrap();
+                lu_dog.exhume_value_type(&some.inner_type).unwrap().clone()
+            };
+
+            let mut ty = String::new();
+            ty.push_str("Option<");
+            ty.push_str(&value_type_to_string(&inner, lu_dog, woog, domain));
+            ty.push_str(">");
+
+            ty
+        }
     }
 }

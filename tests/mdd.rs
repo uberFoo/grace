@@ -382,6 +382,11 @@ test_target_domain_timestamps!(
     "everything_ts",
     "tests/mdd/models/everything.json"
 );
+test_target_dwarf!(
+    everything_domain_dwarf,
+    "everything",
+    "tests/mdd/models/everything.json"
+);
 
 test_target_domain!(
     one_to_one_domain,
@@ -391,6 +396,11 @@ test_target_domain!(
 test_target_domain_timestamps!(
     one_to_one_domain_ts,
     "one_to_one_ts",
+    "tests/mdd/models/one_to_one.json"
+);
+test_target_dwarf!(
+    one_to_one_domain_dwarf,
+    "one_to_one",
     "tests/mdd/models/one_to_one.json"
 );
 
@@ -404,9 +414,15 @@ test_target_domain_timestamps!(
     "one_to_many_ts",
     "tests/mdd/models/one_to_many.json"
 );
+test_target_dwarf!(
+    one_to_many_domain_dwarf,
+    "one_to_many",
+    "tests/mdd/models/one_to_many.json"
+);
 
 test_target_domain!(isa_domain, "isa", "tests/mdd/models/isa.json");
 test_target_domain_timestamps!(isa_domain_ts, "isa_ts", "tests/mdd/models/isa.json");
+test_target_dwarf!(isa_domain_dwarf, "isa", "tests/mdd/models/isa.json");
 
 test_target_domain!(
     associative_domain,
@@ -416,6 +432,11 @@ test_target_domain!(
 test_target_domain_timestamps!(
     associative_domain_ts,
     "associative_ts",
+    "tests/mdd/models/associative.json"
+);
+test_target_dwarf!(
+    associative_domain_dwarf,
+    "associative",
     "tests/mdd/models/associative.json"
 );
 
@@ -434,9 +455,15 @@ test_target_domain_timestamps!(
     "domain/sarzak",
     "domain/isa"
 );
+test_target_dwarf!(
+    imported_object_domain_dwarf,
+    "imported_object",
+    "tests/mdd/models/imported_object.json"
+);
 
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
 test_target_domain_timestamps!(external_ts, "external_ts", "tests/mdd/models/external.json");
+test_target_dwarf!(external_dwarf, "external", "tests/mdd/models/external.json");
 
 // Application Target Tests
 test_target_application!(

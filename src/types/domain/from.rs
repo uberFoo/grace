@@ -1,9 +1,10 @@
 //! Generate From trait implementations for use in sarzak Domain
 //!
-use std::fmt::Write;
+use std::{fmt::Write, sync::RwLock};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
+    lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
     v2::domain::Domain,
@@ -84,6 +85,7 @@ impl FileGenerator for DomainFromGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -131,7 +133,7 @@ impl FileGenerator for DomainFromGenerator {
             format!("{}-from-impl-file", module),
             |buffer| {
                 self.definition.write_code(
-                    config, domain, woog, imports, package, module, obj_id, buffer,
+                    config, domain, woog, _lu_dog, imports, package, module, obj_id, buffer,
                 )?;
 
                 Ok(())
@@ -158,6 +160,7 @@ impl CodeWriter for DomainFromImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
+        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
