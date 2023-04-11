@@ -113,12 +113,13 @@ impl Object {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_Mc-to-attribute"}}}
-    /// Navigate to [`Attribute`] across R1(1-Mc)
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"object-struct-impl-nav-backward-1_M-to-attribute"}}}
+    /// Navigate to [`Attribute`] across R1(1-M)
     pub fn r1_attribute<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Attribute> {
         store
             .iter_attribute()
             .filter_map(|attribute| {
-                if attribute.obj_id == Some(self.id) {
+                if attribute.obj_id == self.id {
                     Some(attribute)
                 } else {
                     None

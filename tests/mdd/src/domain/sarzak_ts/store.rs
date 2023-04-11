@@ -36,6 +36,7 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
+use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -353,7 +354,8 @@ impl ObjectStore {
     pub fn inter_attribute(&mut self, attribute: Attribute) {
         let value = (attribute, SystemTime::now());
         self.attribute.insert(value.0.id, value.clone());
-        self.attribute_by_name.insert(value.0.name.clone(), value);
+        self.attribute_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`Attribute`] from the store.
@@ -505,7 +507,8 @@ impl ObjectStore {
     pub fn inter_event(&mut self, event: Event) {
         let value = (event, SystemTime::now());
         self.event.insert(value.0.id, value.clone());
-        self.event_by_name.insert(value.0.name.clone(), value);
+        self.event_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`Event`] from the store.
@@ -546,7 +549,8 @@ impl ObjectStore {
     pub fn inter_external(&mut self, external: External) {
         let value = (external, SystemTime::now());
         self.external.insert(value.0.id, value.clone());
-        self.external_by_name.insert(value.0.name.clone(), value);
+        self.external_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`External`] from the store.
@@ -620,7 +624,8 @@ impl ObjectStore {
     pub fn inter_object(&mut self, object: Object) {
         let value = (object, SystemTime::now());
         self.object.insert(value.0.id, value.clone());
-        self.object_by_name.insert(value.0.name.clone(), value);
+        self.object_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`Object`] from the store.
@@ -769,7 +774,8 @@ impl ObjectStore {
     pub fn inter_state(&mut self, state: State) {
         let value = (state, SystemTime::now());
         self.state.insert(value.0.id, value.clone());
-        self.state_by_name.insert(value.0.name.clone(), value);
+        self.state_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`State`] from the store.
@@ -1717,7 +1723,7 @@ impl ObjectStore {
                 let attribute: (Attribute, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .attribute_by_name
-                    .insert(attribute.0.name.clone(), attribute.clone());
+                    .insert(attribute.0.name.to_upper_camel_case(), attribute.clone());
                 store.attribute.insert(attribute.0.id, attribute);
             }
         }
@@ -1778,7 +1784,7 @@ impl ObjectStore {
                 let event: (Event, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .event_by_name
-                    .insert(event.0.name.clone(), event.clone());
+                    .insert(event.0.name.to_upper_camel_case(), event.clone());
                 store.event.insert(event.0.id, event);
             }
         }
@@ -1795,7 +1801,7 @@ impl ObjectStore {
                 let external: (External, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .external_by_name
-                    .insert(external.0.name.clone(), external.clone());
+                    .insert(external.0.name.to_upper_camel_case(), external.clone());
                 store.external.insert(external.0.id, external);
             }
         }
@@ -1826,7 +1832,7 @@ impl ObjectStore {
                 let object: (Object, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .object_by_name
-                    .insert(object.0.name.clone(), object.clone());
+                    .insert(object.0.name.to_upper_camel_case(), object.clone());
                 store.object.insert(object.0.id, object);
             }
         }
@@ -1885,7 +1891,7 @@ impl ObjectStore {
                 let state: (State, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .state_by_name
-                    .insert(state.0.name.clone(), state.clone());
+                    .insert(state.0.name.to_upper_camel_case(), state.clone());
                 store.state.insert(state.0.id, state);
             }
         }

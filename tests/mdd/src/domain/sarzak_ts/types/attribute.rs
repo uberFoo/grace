@@ -21,7 +21,7 @@ pub struct Attribute {
     pub id: Uuid,
     pub name: String,
     /// R1: [`Attribute`] 'lives in an' [`Object`]
-    pub obj_id: Option<Uuid>,
+    pub obj_id: Uuid,
     /// R2: [`Attribute`] 'has a' [`Ty`]
     pub ty: Uuid,
 }
@@ -31,17 +31,12 @@ impl Attribute {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new_"}}}
     /// Inter a new 'Attribute' in the store, and return it's `id`.
-    pub fn new(
-        name: String,
-        obj_id: Option<&Object>,
-        ty: &Ty,
-        store: &mut SarzakTsStore,
-    ) -> Attribute {
+    pub fn new(name: String, obj_id: &Object, ty: &Ty, store: &mut SarzakTsStore) -> Attribute {
         let id = Uuid::new_v4();
         let new = Attribute {
             id: id,
             name: name,
-            obj_id: obj_id.map(|object| object.id),
+            obj_id: obj_id.id,
             ty: ty.id(),
         };
         store.inter_attribute(new.clone());
@@ -51,24 +46,22 @@ impl Attribute {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new_"}}}
     /// Inter a new 'Attribute' in the store, and return it's `id`.
-    pub fn new_(name: String, obj_id: Option<&Object>, ty: &Ty) -> Attribute {
+    pub fn new_(name: String, obj_id: &Object, ty: &Ty) -> Attribute {
         let id = Uuid::new_v4();
         let new = Attribute {
             id: id,
             name: name,
-            obj_id: obj_id.map(|object| object.id),
+            obj_id: obj_id.id,
             ty: ty.id(),
         };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-cond-to-obj_id"}}}
-    /// Navigate to [`Object`] across R1(1-*c)
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-to-obj_id"}}}
+    /// Navigate to [`Object`] across R1(1-*)
     pub fn r1_object<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Object> {
-        match self.obj_id {
-            Some(ref obj_id) => vec![store.exhume_object(obj_id).unwrap()],
-            None => Vec::new(),
-        }
+        vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-to-ty"}}}
