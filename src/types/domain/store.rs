@@ -193,7 +193,7 @@ impl DomainStore {
                             );
                             emit!(
                                 buffer,
-                                "self.{}_by_name.insert(value.0.name.clone(), value);",
+                                "self.{}_by_name.insert(value.0.name.to_upper_camel_case(), value);",
                                 obj.as_ident()
                             );
                         } else {
@@ -216,7 +216,7 @@ impl DomainStore {
                             );
                             emit!(
                                 buffer,
-                                "self.{}_by_name.insert({}.name.clone(), {});",
+                                "self.{}_by_name.insert({}.name.to_upper_camel_case(), {});",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -558,6 +558,7 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
+                emit!(buffer, "use heck::ToUpperCamelCase;");
                 if timestamp && is_meta && false {
                     emit!(buffer, "use snafu::prelude::*;");
                     emit!(buffer, "");
@@ -565,6 +566,7 @@ impl CodeWriter for DomainStore {
                 } else {
                     emit!(buffer, "");
                 }
+                emit!(buffer, "");
                 emit!(buffer, "use crate::{}::types::{{", module);
 
                 for obj in &objects {
@@ -910,7 +912,7 @@ fn generate_store_persistence(
                     if object_has_name(obj, domain) {
                         emit!(
                             buffer,
-                            "store.{}_by_name.insert({}.0.name.clone(), {}.clone());",
+                            "store.{}_by_name.insert({}.0.name.to_upper_camel_case(), {}.clone());",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()
@@ -933,7 +935,7 @@ fn generate_store_persistence(
                     if object_has_name(obj, domain) {
                         emit!(
                             buffer,
-                            "store.{}_by_name.insert({}.name.clone(), {}.clone());",
+                            "store.{}_by_name.insert({}.name.to_upper_camel_case(), {}.clone());",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()

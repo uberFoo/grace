@@ -21,6 +21,7 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
+use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -150,7 +151,8 @@ impl ObjectStore {
     pub fn inter_parameter(&mut self, parameter: Parameter) {
         let value = (parameter, SystemTime::now());
         self.parameter.insert(value.0.id, value.clone());
-        self.parameter_by_name.insert(value.0.name.clone(), value);
+        self.parameter_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`Parameter`] from the store.
@@ -193,7 +195,8 @@ impl ObjectStore {
     pub fn inter_referent(&mut self, referent: Referent) {
         let value = (referent, SystemTime::now());
         self.referent.insert(value.0.id, value.clone());
-        self.referent_by_name.insert(value.0.name.clone(), value);
+        self.referent_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`Referent`] from the store.
@@ -487,7 +490,7 @@ impl ObjectStore {
                 let parameter: (Parameter, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .parameter_by_name
-                    .insert(parameter.0.name.clone(), parameter.clone());
+                    .insert(parameter.0.name.to_upper_camel_case(), parameter.clone());
                 store.parameter.insert(parameter.0.id, parameter);
             }
         }
@@ -504,7 +507,7 @@ impl ObjectStore {
                 let referent: (Referent, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .referent_by_name
-                    .insert(referent.0.name.clone(), referent.clone());
+                    .insert(referent.0.name.to_upper_camel_case(), referent.clone());
                 store.referent.insert(referent.0.id, referent);
             }
         }

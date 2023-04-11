@@ -22,6 +22,7 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
+use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -143,7 +144,8 @@ impl ObjectStore {
     pub fn inter_event(&mut self, event: Event) {
         let value = (event, SystemTime::now());
         self.event.insert(value.0.id, value.clone());
-        self.event_by_name.insert(value.0.name.clone(), value);
+        self.event_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`Event`] from the store.
@@ -217,7 +219,8 @@ impl ObjectStore {
     pub fn inter_state(&mut self, state: State) {
         let value = (state, SystemTime::now());
         self.state.insert(value.0.id, value.clone());
-        self.state_by_name.insert(value.0.name.clone(), value);
+        self.state_by_name
+            .insert(value.0.name.to_upper_camel_case(), value);
     }
 
     /// Exhume [`State`] from the store.
@@ -574,7 +577,7 @@ impl ObjectStore {
                 let event: (Event, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .event_by_name
-                    .insert(event.0.name.clone(), event.clone());
+                    .insert(event.0.name.to_upper_camel_case(), event.clone());
                 store.event.insert(event.0.id, event);
             }
         }
@@ -605,7 +608,7 @@ impl ObjectStore {
                 let state: (State, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .state_by_name
-                    .insert(state.0.name.clone(), state.clone());
+                    .insert(state.0.name.to_upper_camel_case(), state.clone());
                 store.state.insert(state.0.id, state);
             }
         }

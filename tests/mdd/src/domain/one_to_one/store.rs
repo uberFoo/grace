@@ -20,6 +20,7 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
+use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -131,7 +132,7 @@ impl ObjectStore {
     pub fn inter_parameter(&mut self, parameter: Parameter) {
         self.parameter.insert(parameter.id, parameter.clone());
         self.parameter_by_name
-            .insert(parameter.name.clone(), parameter);
+            .insert(parameter.name.to_upper_camel_case(), parameter);
     }
 
     /// Exhume [`Parameter`] from the store.
@@ -163,7 +164,7 @@ impl ObjectStore {
     pub fn inter_referent(&mut self, referent: Referent) {
         self.referent.insert(referent.id, referent.clone());
         self.referent_by_name
-            .insert(referent.name.clone(), referent);
+            .insert(referent.name.to_upper_camel_case(), referent);
     }
 
     /// Exhume [`Referent`] from the store.
@@ -338,7 +339,7 @@ impl ObjectStore {
                 let parameter: Parameter = serde_json::from_reader(reader)?;
                 store
                     .parameter_by_name
-                    .insert(parameter.name.clone(), parameter.clone());
+                    .insert(parameter.name.to_upper_camel_case(), parameter.clone());
                 store.parameter.insert(parameter.id, parameter);
             }
         }
@@ -355,7 +356,7 @@ impl ObjectStore {
                 let referent: Referent = serde_json::from_reader(reader)?;
                 store
                     .referent_by_name
-                    .insert(referent.name.clone(), referent.clone());
+                    .insert(referent.name.to_upper_camel_case(), referent.clone());
                 store.referent.insert(referent.id, referent);
             }
         }

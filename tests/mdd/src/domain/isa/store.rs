@@ -32,6 +32,7 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
+use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -107,7 +108,8 @@ impl ObjectStore {
     ///
     pub fn inter_alpha(&mut self, alpha: Alpha) {
         self.alpha.insert(alpha.id, alpha.clone());
-        self.alpha_by_name.insert(alpha.name.clone(), alpha);
+        self.alpha_by_name
+            .insert(alpha.name.to_upper_camel_case(), alpha);
     }
 
     /// Exhume [`Alpha`] from the store.
@@ -162,7 +164,8 @@ impl ObjectStore {
     ///
     pub fn inter_beta(&mut self, beta: Beta) {
         self.beta.insert(beta.id, beta.clone());
-        self.beta_by_name.insert(beta.name.clone(), beta);
+        self.beta_by_name
+            .insert(beta.name.to_upper_camel_case(), beta);
     }
 
     /// Exhume [`Beta`] from the store.
@@ -338,7 +341,7 @@ impl ObjectStore {
     pub fn inter_reference(&mut self, reference: Reference) {
         self.reference.insert(reference.id, reference.clone());
         self.reference_by_name
-            .insert(reference.name.clone(), reference);
+            .insert(reference.name.to_upper_camel_case(), reference);
     }
 
     /// Exhume [`Reference`] from the store.
@@ -420,7 +423,7 @@ impl ObjectStore {
     pub fn inter_subtype_a(&mut self, subtype_a: SubtypeA) {
         self.subtype_a.insert(subtype_a.id, subtype_a.clone());
         self.subtype_a_by_name
-            .insert(subtype_a.name.clone(), subtype_a);
+            .insert(subtype_a.name.to_upper_camel_case(), subtype_a);
     }
 
     /// Exhume [`SubtypeA`] from the store.
@@ -793,7 +796,7 @@ impl ObjectStore {
                 let alpha: Alpha = serde_json::from_reader(reader)?;
                 store
                     .alpha_by_name
-                    .insert(alpha.name.clone(), alpha.clone());
+                    .insert(alpha.name.to_upper_camel_case(), alpha.clone());
                 store.alpha.insert(alpha.id, alpha);
             }
         }
@@ -822,7 +825,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let beta: Beta = serde_json::from_reader(reader)?;
-                store.beta_by_name.insert(beta.name.clone(), beta.clone());
+                store
+                    .beta_by_name
+                    .insert(beta.name.to_upper_camel_case(), beta.clone());
                 store.beta.insert(beta.id, beta);
             }
         }
@@ -923,7 +928,7 @@ impl ObjectStore {
                 let reference: Reference = serde_json::from_reader(reader)?;
                 store
                     .reference_by_name
-                    .insert(reference.name.clone(), reference.clone());
+                    .insert(reference.name.to_upper_camel_case(), reference.clone());
                 store.reference.insert(reference.id, reference);
             }
         }
@@ -972,7 +977,7 @@ impl ObjectStore {
                 let subtype_a: SubtypeA = serde_json::from_reader(reader)?;
                 store
                     .subtype_a_by_name
-                    .insert(subtype_a.name.clone(), subtype_a.clone());
+                    .insert(subtype_a.name.to_upper_camel_case(), subtype_a.clone());
                 store.subtype_a.insert(subtype_a.id, subtype_a);
             }
         }
