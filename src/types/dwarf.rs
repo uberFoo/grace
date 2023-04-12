@@ -3,7 +3,7 @@
 //! This is where we generate code for use in the next stage of the compiler.
 use std::{fmt::Write, sync::RwLock};
 
-use fnv::FnvHashMap as HashMap;
+use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
     lu_dog::store::ObjectStore as LuDogStore,
     lu_dog::types::ValueType,
@@ -162,6 +162,21 @@ impl CodeWriter for DwarfModule {
             DirectiveKind::IgnoreOrig,
             format!("{}-dwarf-output", module),
             |buffer| {
+                // Add an import statement for each imported domain
+                let mut imports = HashSet::default();
+                for imported in domain
+                    .sarzak()
+                    .iter_object()
+                    .filter(|obj| config.is_imported(&obj.id))
+                {
+                    let imported_object = config.get_imported(&imported.id).unwrap();
+                    imports.insert(imported_object.domain.as_str());
+                }
+
+                for import in imports {
+                    emit!(buffer, "import {};", import);
+                }
+
                 let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
                 objects.sort_by(|a, b| a.name.cmp(&b.name));
                 let objects = objects
