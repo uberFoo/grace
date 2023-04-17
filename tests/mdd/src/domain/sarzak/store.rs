@@ -42,8 +42,8 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::{
     AcknowledgedEvent, AnAssociativeReferent, Associative, AssociativeReferent,
     AssociativeReferrer, Attribute, Binary, Cardinality, Conditionality, Event, External, Isa,
-    Object, Referent, Referrer, Relationship, State, Subtype, Supertype, Ty, BOOLEAN, CONDITIONAL,
-    FLOAT, INTEGER, MANY, ONE, STRING, UNCONDITIONAL, UUID,
+    Many, Object, Referent, Referrer, Relationship, State, Subtype, Supertype, Ty, BOOLEAN,
+    CONDITIONAL, FLOAT, INTEGER, MANY, ONE, S_STRING, S_UUID, UNCONDITIONAL,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -54,22 +54,18 @@ pub struct ObjectStore {
     associative_referent: HashMap<Uuid, AssociativeReferent>,
     associative_referrer: HashMap<Uuid, AssociativeReferrer>,
     attribute: HashMap<Uuid, Attribute>,
-    attribute_by_name: HashMap<String, Attribute>,
     binary: HashMap<Uuid, Binary>,
     cardinality: HashMap<Uuid, Cardinality>,
     conditionality: HashMap<Uuid, Conditionality>,
     event: HashMap<Uuid, Event>,
-    event_by_name: HashMap<String, Event>,
     external: HashMap<Uuid, External>,
-    external_by_name: HashMap<String, External>,
     isa: HashMap<Uuid, Isa>,
     object: HashMap<Uuid, Object>,
-    object_by_name: HashMap<String, Object>,
+    object_id_by_name: HashMap<String, Uuid>,
     referent: HashMap<Uuid, Referent>,
     referrer: HashMap<Uuid, Referrer>,
     relationship: HashMap<Uuid, Relationship>,
     state: HashMap<Uuid, State>,
-    state_by_name: HashMap<String, State>,
     subtype: HashMap<Uuid, Subtype>,
     supertype: HashMap<Uuid, Supertype>,
     ty: HashMap<Uuid, Ty>,
@@ -84,37 +80,38 @@ impl ObjectStore {
             associative_referent: HashMap::default(),
             associative_referrer: HashMap::default(),
             attribute: HashMap::default(),
-            attribute_by_name: HashMap::default(),
             binary: HashMap::default(),
             cardinality: HashMap::default(),
             conditionality: HashMap::default(),
             event: HashMap::default(),
-            event_by_name: HashMap::default(),
             external: HashMap::default(),
-            external_by_name: HashMap::default(),
             isa: HashMap::default(),
             object: HashMap::default(),
-            object_by_name: HashMap::default(),
+            object_id_by_name: HashMap::default(),
             referent: HashMap::default(),
             referrer: HashMap::default(),
             relationship: HashMap::default(),
             state: HashMap::default(),
-            state_by_name: HashMap::default(),
             subtype: HashMap::default(),
             supertype: HashMap::default(),
             ty: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
         store.inter_cardinality(Cardinality::Many(MANY));
+        let many = Object::new("".to_owned(), "".to_owned(), "Many".to_owned(), &mut store);
+        store.inter_object(many);
         store.inter_cardinality(Cardinality::One(ONE));
         store.inter_conditionality(Conditionality::Conditional(CONDITIONAL));
         store.inter_conditionality(Conditionality::Unconditional(UNCONDITIONAL));
         store.inter_ty(Ty::Boolean(BOOLEAN));
         store.inter_ty(Ty::Float(FLOAT));
         store.inter_ty(Ty::Integer(INTEGER));
-        store.inter_ty(Ty::String(STRING));
-        store.inter_ty(Ty::Uuid(UUID));
+        store.inter_ty(Ty::SString(S_STRING));
+        store.inter_ty(Ty::SUuid(S_UUID));
 
         store
     }
@@ -259,9 +256,7 @@ impl ObjectStore {
     /// Inter [`Attribute`] into the store.
     ///
     pub fn inter_attribute(&mut self, attribute: Attribute) {
-        self.attribute.insert(attribute.id, attribute.clone());
-        self.attribute_by_name
-            .insert(attribute.name.to_upper_camel_case(), attribute);
+        self.attribute.insert(attribute.id, attribute);
     }
 
     /// Exhume [`Attribute`] from the store.
@@ -274,12 +269,6 @@ impl ObjectStore {
     ///
     pub fn exhume_attribute_mut(&mut self, id: &Uuid) -> Option<&mut Attribute> {
         self.attribute.get_mut(id)
-    }
-
-    /// Exhume [`Attribute`] from the store by name.
-    ///
-    pub fn exhume_attribute_by_name(&self, name: &str) -> Option<&Attribute> {
-        self.attribute_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Attribute>`.
@@ -364,9 +353,7 @@ impl ObjectStore {
     /// Inter [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
-        self.event.insert(event.id, event.clone());
-        self.event_by_name
-            .insert(event.name.to_upper_camel_case(), event);
+        self.event.insert(event.id, event);
     }
 
     /// Exhume [`Event`] from the store.
@@ -381,12 +368,6 @@ impl ObjectStore {
         self.event.get_mut(id)
     }
 
-    /// Exhume [`Event`] from the store by name.
-    ///
-    pub fn exhume_event_by_name(&self, name: &str) -> Option<&Event> {
-        self.event_by_name.get(name)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
     ///
     pub fn iter_event(&self) -> impl Iterator<Item = &Event> {
@@ -396,9 +377,7 @@ impl ObjectStore {
     /// Inter [`External`] into the store.
     ///
     pub fn inter_external(&mut self, external: External) {
-        self.external.insert(external.id, external.clone());
-        self.external_by_name
-            .insert(external.name.to_upper_camel_case(), external);
+        self.external.insert(external.id, external);
     }
 
     /// Exhume [`External`] from the store.
@@ -411,12 +390,6 @@ impl ObjectStore {
     ///
     pub fn exhume_external_mut(&mut self, id: &Uuid) -> Option<&mut External> {
         self.external.get_mut(id)
-    }
-
-    /// Exhume [`External`] from the store by name.
-    ///
-    pub fn exhume_external_by_name(&self, name: &str) -> Option<&External> {
-        self.external_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, External>`.
@@ -452,9 +425,9 @@ impl ObjectStore {
     /// Inter [`Object`] into the store.
     ///
     pub fn inter_object(&mut self, object: Object) {
-        self.object.insert(object.id, object.clone());
-        self.object_by_name
-            .insert(object.name.to_upper_camel_case(), object);
+        self.object_id_by_name
+            .insert(object.name.to_upper_camel_case(), object.id);
+        self.object.insert(object.id, object);
     }
 
     /// Exhume [`Object`] from the store.
@@ -471,8 +444,8 @@ impl ObjectStore {
 
     /// Exhume [`Object`] from the store by name.
     ///
-    pub fn exhume_object_by_name(&self, name: &str) -> Option<&Object> {
-        self.object_by_name.get(name)
+    pub fn exhume_object_id_by_name(&self, name: &str) -> Option<&Uuid> {
+        self.object_id_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Object>`.
@@ -556,9 +529,7 @@ impl ObjectStore {
     /// Inter [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
-        self.state.insert(state.id, state.clone());
-        self.state_by_name
-            .insert(state.name.to_upper_camel_case(), state);
+        self.state.insert(state.id, state);
     }
 
     /// Exhume [`State`] from the store.
@@ -571,12 +542,6 @@ impl ObjectStore {
     ///
     pub fn exhume_state_mut(&mut self, id: &Uuid) -> Option<&mut State> {
         self.state.get_mut(id)
-    }
-
-    /// Exhume [`State`] from the store by name.
-    ///
-    pub fn exhume_state_by_name(&self, name: &str) -> Option<&State> {
-        self.state_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.
@@ -1020,9 +985,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let attribute: Attribute = serde_json::from_reader(reader)?;
-                store
-                    .attribute_by_name
-                    .insert(attribute.name.to_upper_camel_case(), attribute.clone());
                 store.attribute.insert(attribute.id, attribute);
             }
         }
@@ -1081,9 +1043,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let event: Event = serde_json::from_reader(reader)?;
-                store
-                    .event_by_name
-                    .insert(event.name.to_upper_camel_case(), event.clone());
                 store.event.insert(event.id, event);
             }
         }
@@ -1098,9 +1057,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let external: External = serde_json::from_reader(reader)?;
-                store
-                    .external_by_name
-                    .insert(external.name.to_upper_camel_case(), external.clone());
                 store.external.insert(external.id, external);
             }
         }
@@ -1130,8 +1086,8 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let object: Object = serde_json::from_reader(reader)?;
                 store
-                    .object_by_name
-                    .insert(object.name.to_upper_camel_case(), object.clone());
+                    .object_id_by_name
+                    .insert(object.name.to_upper_camel_case(), object.id);
                 store.object.insert(object.id, object);
             }
         }
@@ -1188,9 +1144,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let state: State = serde_json::from_reader(reader)?;
-                store
-                    .state_by_name
-                    .insert(state.name.to_upper_camel_case(), state.clone());
                 store.state.insert(state.id, state);
             }
         }

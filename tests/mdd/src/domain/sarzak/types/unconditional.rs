@@ -11,5 +11,17 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"unconditional-const-definition"}}}
 pub const UNCONDITIONAL: Uuid = uuid!["17ee33a9-33bb-5998-ba89-7a9f2fe12080"];
+
+pub struct Unconditional;
+
+impl Unconditional {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn id(&self) -> Uuid {
+        UNCONDITIONAL
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

@@ -3,6 +3,7 @@ use sarzak::mc::{ModelCompilerError, Result};
 pub(crate) mod application;
 pub(crate) mod domain;
 pub(crate) mod dwarf;
+pub(crate) mod svm;
 
 pub(crate) trait Target {
     /// Compile the target

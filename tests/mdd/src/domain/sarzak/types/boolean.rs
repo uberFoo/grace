@@ -14,5 +14,17 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"boolean-const-definition"}}}
 pub const BOOLEAN: Uuid = uuid!["b1a060e2-a30e-5291-8ef3-7fad8a6311d4"];
+
+pub struct Boolean;
+
+impl Boolean {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn id(&self) -> Uuid {
+        BOOLEAN
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

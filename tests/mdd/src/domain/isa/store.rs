@@ -45,10 +45,8 @@ use crate::domain::isa::types::{
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
     alpha: HashMap<Uuid, Alpha>,
-    alpha_by_name: HashMap<String, Alpha>,
     baz: HashMap<Uuid, Baz>,
     beta: HashMap<Uuid, Beta>,
-    beta_by_name: HashMap<String, Beta>,
     borrowed: HashMap<Uuid, Borrowed>,
     gamma: HashMap<Uuid, Gamma>,
     henry: HashMap<Uuid, Henry>,
@@ -56,11 +54,9 @@ pub struct ObjectStore {
     oh_boy: HashMap<Uuid, OhBoy>,
     ownership: HashMap<Uuid, Ownership>,
     reference: HashMap<Uuid, Reference>,
-    reference_by_name: HashMap<String, Reference>,
     simple_subtype_a: HashMap<Uuid, SimpleSubtypeA>,
     simple_supertype: HashMap<Uuid, SimpleSupertype>,
     subtype_a: HashMap<Uuid, SubtypeA>,
-    subtype_a_by_name: HashMap<String, SubtypeA>,
     subtype_b: HashMap<Uuid, SubtypeB>,
     super_bar: HashMap<Uuid, SuperBar>,
     super_foo: HashMap<Uuid, SuperFoo>,
@@ -71,10 +67,8 @@ impl ObjectStore {
     pub fn new() -> Self {
         let mut store = Self {
             alpha: HashMap::default(),
-            alpha_by_name: HashMap::default(),
             baz: HashMap::default(),
             beta: HashMap::default(),
-            beta_by_name: HashMap::default(),
             borrowed: HashMap::default(),
             gamma: HashMap::default(),
             henry: HashMap::default(),
@@ -82,11 +76,9 @@ impl ObjectStore {
             oh_boy: HashMap::default(),
             ownership: HashMap::default(),
             reference: HashMap::default(),
-            reference_by_name: HashMap::default(),
             simple_subtype_a: HashMap::default(),
             simple_supertype: HashMap::default(),
             subtype_a: HashMap::default(),
-            subtype_a_by_name: HashMap::default(),
             subtype_b: HashMap::default(),
             super_bar: HashMap::default(),
             super_foo: HashMap::default(),
@@ -94,6 +86,9 @@ impl ObjectStore {
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
         store.inter_borrowed(Borrowed::Mutable(MUTABLE));
         store.inter_borrowed(Borrowed::Shared(SHARED));
         store.inter_ownership(Ownership::Borrowed(Borrowed::Mutable(MUTABLE).id()));
@@ -107,9 +102,7 @@ impl ObjectStore {
     /// Inter [`Alpha`] into the store.
     ///
     pub fn inter_alpha(&mut self, alpha: Alpha) {
-        self.alpha.insert(alpha.id, alpha.clone());
-        self.alpha_by_name
-            .insert(alpha.name.to_upper_camel_case(), alpha);
+        self.alpha.insert(alpha.id, alpha);
     }
 
     /// Exhume [`Alpha`] from the store.
@@ -122,12 +115,6 @@ impl ObjectStore {
     ///
     pub fn exhume_alpha_mut(&mut self, id: &Uuid) -> Option<&mut Alpha> {
         self.alpha.get_mut(id)
-    }
-
-    /// Exhume [`Alpha`] from the store by name.
-    ///
-    pub fn exhume_alpha_by_name(&self, name: &str) -> Option<&Alpha> {
-        self.alpha_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Alpha>`.
@@ -163,9 +150,7 @@ impl ObjectStore {
     /// Inter [`Beta`] into the store.
     ///
     pub fn inter_beta(&mut self, beta: Beta) {
-        self.beta.insert(beta.id, beta.clone());
-        self.beta_by_name
-            .insert(beta.name.to_upper_camel_case(), beta);
+        self.beta.insert(beta.id, beta);
     }
 
     /// Exhume [`Beta`] from the store.
@@ -178,12 +163,6 @@ impl ObjectStore {
     ///
     pub fn exhume_beta_mut(&mut self, id: &Uuid) -> Option<&mut Beta> {
         self.beta.get_mut(id)
-    }
-
-    /// Exhume [`Beta`] from the store by name.
-    ///
-    pub fn exhume_beta_by_name(&self, name: &str) -> Option<&Beta> {
-        self.beta_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Beta>`.
@@ -339,9 +318,7 @@ impl ObjectStore {
     /// Inter [`Reference`] into the store.
     ///
     pub fn inter_reference(&mut self, reference: Reference) {
-        self.reference.insert(reference.id, reference.clone());
-        self.reference_by_name
-            .insert(reference.name.to_upper_camel_case(), reference);
+        self.reference.insert(reference.id, reference);
     }
 
     /// Exhume [`Reference`] from the store.
@@ -354,12 +331,6 @@ impl ObjectStore {
     ///
     pub fn exhume_reference_mut(&mut self, id: &Uuid) -> Option<&mut Reference> {
         self.reference.get_mut(id)
-    }
-
-    /// Exhume [`Reference`] from the store by name.
-    ///
-    pub fn exhume_reference_by_name(&self, name: &str) -> Option<&Reference> {
-        self.reference_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Reference>`.
@@ -421,9 +392,7 @@ impl ObjectStore {
     /// Inter [`SubtypeA`] into the store.
     ///
     pub fn inter_subtype_a(&mut self, subtype_a: SubtypeA) {
-        self.subtype_a.insert(subtype_a.id, subtype_a.clone());
-        self.subtype_a_by_name
-            .insert(subtype_a.name.to_upper_camel_case(), subtype_a);
+        self.subtype_a.insert(subtype_a.id, subtype_a);
     }
 
     /// Exhume [`SubtypeA`] from the store.
@@ -436,12 +405,6 @@ impl ObjectStore {
     ///
     pub fn exhume_subtype_a_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeA> {
         self.subtype_a.get_mut(id)
-    }
-
-    /// Exhume [`SubtypeA`] from the store by name.
-    ///
-    pub fn exhume_subtype_a_by_name(&self, name: &str) -> Option<&SubtypeA> {
-        self.subtype_a_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeA>`.
@@ -794,9 +757,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let alpha: Alpha = serde_json::from_reader(reader)?;
-                store
-                    .alpha_by_name
-                    .insert(alpha.name.to_upper_camel_case(), alpha.clone());
                 store.alpha.insert(alpha.id, alpha);
             }
         }
@@ -825,9 +785,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let beta: Beta = serde_json::from_reader(reader)?;
-                store
-                    .beta_by_name
-                    .insert(beta.name.to_upper_camel_case(), beta.clone());
                 store.beta.insert(beta.id, beta);
             }
         }
@@ -926,9 +883,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let reference: Reference = serde_json::from_reader(reader)?;
-                store
-                    .reference_by_name
-                    .insert(reference.name.to_upper_camel_case(), reference.clone());
                 store.reference.insert(reference.id, reference);
             }
         }
@@ -975,9 +929,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let subtype_a: SubtypeA = serde_json::from_reader(reader)?;
-                store
-                    .subtype_a_by_name
-                    .insert(subtype_a.name.to_upper_camel_case(), subtype_a.clone());
                 store.subtype_a.insert(subtype_a.id, subtype_a);
             }
         }

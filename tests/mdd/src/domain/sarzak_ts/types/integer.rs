@@ -14,5 +14,17 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"integer-const-definition"}}}
 pub const INTEGER: Uuid = uuid!["045f5d22-f71b-5845-9113-b8b859d1dbac"];
+
+pub struct Integer;
+
+impl Integer {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn id(&self) -> Uuid {
+        INTEGER
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

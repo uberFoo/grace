@@ -19,7 +19,7 @@ pub struct Everything {
     pub float: f64,
     pub id: Uuid,
     pub int: i64,
-    pub string: String,
+    pub s_string: String,
     /// R1: [`Everything`] 'points at' [`RandoObject`]
     pub rando: Uuid,
 }
@@ -33,7 +33,7 @@ impl Everything {
         bool: bool,
         float: f64,
         int: i64,
-        string: String,
+        s_string: String,
         rando: &RandoObject,
         store: &mut EverythingStore,
     ) -> Everything {
@@ -43,7 +43,7 @@ impl Everything {
             float: float,
             id: id,
             int: int,
-            string: string,
+            s_string: s_string,
             rando: rando.id,
         };
         store.inter_everything(new.clone());
@@ -57,7 +57,7 @@ impl Everything {
         bool: bool,
         float: f64,
         int: i64,
-        string: String,
+        s_string: String,
         rando: &RandoObject,
     ) -> Everything {
         let id = Uuid::new_v4();
@@ -66,7 +66,7 @@ impl Everything {
             float: float,
             id: id,
             int: int,
-            string: string,
+            s_string: s_string,
             rando: rando.id,
         };
         new

@@ -38,7 +38,8 @@ use crate::{
 pub(crate) struct GeneratorBuilder<'a> {
     /// Output Path
     ///
-    /// This is the path where the generated file will be written.
+    /// This is the path where the generated file will be written. It is inclusive
+    /// of the file name to which to write.
     path: Option<PathBuf>,
     /// File Generator
     ///
@@ -228,7 +229,9 @@ impl<'a> GeneratorBuilder<'a> {
                             description: "writing generated file".to_owned(),
                             path: &path,
                         })?;
-                        file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+                        file.write_all(&buffer.dump().as_bytes()).context(IOSnafu {
+                            description: "writing generated file".to_owned(),
+                        })?;
                     }
                     GenerationAction::FormatWrite => {
                         // Generation was successful, write the output.
@@ -272,18 +275,24 @@ impl<'a> GeneratorBuilder<'a> {
                             );
 
                             // Grab the original, formatted output.
-                            let orig = fs::read_to_string(&path).context(IOSnafu)?;
+                            let orig = fs::read_to_string(&path).context(IOSnafu {
+                                description: "reading existing file".to_owned(),
+                            })?;
 
                             // Format the generated buffer
                             let mut file = File::create(&path).context(FileSnafu {
                                 description: "writing generated file for formatting".to_owned(),
                                 path: &path,
                             })?;
-                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu {
+                                description: "writing generated file for formatting".to_owned(),
+                            })?;
                             match format(&path, true) {
                                 Ok(_) => {
                                     // Grab the formatted, generated output
-                                    let incoming = fs::read_to_string(&path).context(IOSnafu)?;
+                                    let incoming = fs::read_to_string(&path).context(IOSnafu {
+                                        description: "reading generated file".to_owned(),
+                                    })?;
 
                                     let mut file = File::create(&path).context(FileSnafu {
                                         description: "writing generated file to diff".to_owned(),
@@ -292,6 +301,7 @@ impl<'a> GeneratorBuilder<'a> {
                                     // This is where we diff and write the output.
                                     if orig.len() > 0 {
                                         let diffed = process_diff(
+                                            &path,
                                             orig.trim(),
                                             incoming.trim(),
                                             // Default to overwriting so that doc comments are overwritten
@@ -300,10 +310,14 @@ impl<'a> GeneratorBuilder<'a> {
                                         );
 
                                         // Write the file
-                                        file.write_all(&diffed.as_bytes()).context(IOSnafu)?;
+                                        file.write_all(&diffed.as_bytes()).context(IOSnafu {
+                                            description: "writing generated file".to_owned(),
+                                        })?;
                                     } else {
                                         // Write the file
-                                        file.write_all(&incoming.as_bytes()).context(IOSnafu)?;
+                                        file.write_all(&incoming.as_bytes()).context(IOSnafu {
+                                            description: "writing generated file".to_owned(),
+                                        })?;
                                     }
                                 }
                                 Err(e) => {
@@ -312,7 +326,9 @@ impl<'a> GeneratorBuilder<'a> {
                                         description: "writing original source file".to_owned(),
                                         path: &path,
                                     })?;
-                                    file.write_all(&orig.as_bytes()).context(IOSnafu)?;
+                                    file.write_all(&orig.as_bytes()).context(IOSnafu {
+                                        description: "writing original file".to_owned(),
+                                    })?;
 
                                     eprintln!("{}", e);
 
@@ -331,7 +347,9 @@ impl<'a> GeneratorBuilder<'a> {
                                 description: "writing source file".to_owned(),
                                 path: &path,
                             })?;
-                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu)?;
+                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu {
+                                description: "writing new file".to_owned(),
+                            })?;
 
                             match format(&path, false) {
                                 Ok(_) => {}

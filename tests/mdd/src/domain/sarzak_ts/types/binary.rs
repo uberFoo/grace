@@ -37,7 +37,6 @@ pub struct Binary {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-implementation"}}}
 impl Binary {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new_"}}}
     /// Inter a new 'Binary' in the store, and return it's `id`.
     pub fn new(number: i64, to: &Referent, from: &Referrer, store: &mut SarzakTsStore) -> Binary {
         let id = Uuid::new_v4();
@@ -51,7 +50,6 @@ impl Binary {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new_"}}}
     /// Inter a new 'Binary' in the store, and return it's `id`.
     pub fn new_(number: i64, to: &Referent, from: &Referrer) -> Binary {

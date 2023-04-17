@@ -9,6 +9,7 @@ pub(crate) mod domain;
 pub(crate) mod dwarf;
 pub(crate) mod external;
 pub(crate) mod null;
+pub(crate) mod svm;
 
 /// Type Imports Trait
 ///

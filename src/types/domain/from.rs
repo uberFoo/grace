@@ -374,7 +374,7 @@ impl CodeWriter for DomainFromImpl {
                             // now is tricky because over there we're using GType's. That should
                             // maybe get unified somehow by then?
                             match ty {
-                                Ty::String(_) => {
+                                Ty::SString(_) => {
                                     emit!(
                                         buffer,
                                         "{}: src.{}.clone(),",

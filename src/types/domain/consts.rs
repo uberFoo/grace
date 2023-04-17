@@ -8,7 +8,7 @@ use sarzak::{
     lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::store::ObjectStore as WoogStore,
+    woog::{store::ObjectStore as WoogStore, types::Ownership},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -18,7 +18,7 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         emit_object_comments,
-        render::{RenderConst, RenderIdent},
+        render::{RenderConst, RenderIdent, RenderType},
     },
     options::GraceConfig,
     types::{CodeWriter, TypeDefinition},
@@ -41,7 +41,7 @@ impl CodeWriter for DomainConst {
         &self,
         _config: &GraceConfig,
         domain: &Domain,
-        _woog: &Option<&mut WoogStore>,
+        woog: &Option<&mut WoogStore>,
         _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
@@ -57,6 +57,13 @@ impl CodeWriter for DomainConst {
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        ensure!(
+            woog.is_some(),
+            CompilerSnafu {
+                description: "woog is required by DomainStruct"
+            }
+        );
+        let woog = woog.as_ref().unwrap();
 
         log::debug!("writing Const Definition for {}", obj.name);
 
@@ -92,6 +99,27 @@ impl CodeWriter for DomainConst {
                     obj.as_const(),
                     id
                 );
+
+                emit!(buffer, "");
+                emit!(
+                    buffer,
+                    "pub struct {};",
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+                emit!(buffer, "");
+                emit!(
+                    buffer,
+                    "impl {} {{",
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+                emit!(buffer, "    pub fn new() -> Self {{");
+                emit!(buffer, "        Self {{}}");
+                emit!(buffer, "    }}");
+                emit!(buffer, "");
+                emit!(buffer, "    pub fn id(&self) -> Uuid {{");
+                emit!(buffer, "        {}", obj.as_const());
+                emit!(buffer, "    }}");
+                emit!(buffer, "}}");
                 Ok(())
             },
         )?;

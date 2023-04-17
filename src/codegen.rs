@@ -286,42 +286,34 @@ pub(crate) fn render_method_definition_new(
         }
     });
 
-    ensure!(
-        param.is_some(),
-        CompilerSnafu {
-            description: format!(
-                "No parameter found for {}::{}",
-                object.as_type(&Ownership::Owned(OWNED), woog, domain),
-                method.r25_function(woog).pop().unwrap().as_ident()
+    if param.is_some() {
+        let mut param = param.unwrap();
+
+        loop {
+            let value = param
+                .r8_variable(woog)
+                .pop()
+                .unwrap()
+                .r7_value(woog)
+                .pop()
+                .unwrap();
+            let ty = value.r3_grace_type(woog)[0];
+            let access = value.r16_access(woog)[0];
+            let mutability = access.r15_ownership(woog)[0];
+
+            write!(
+                buffer,
+                "{}: {},",
+                param.r8_variable(woog)[0].name.as_ident(),
+                ty.as_type(&mutability, woog, domain)
             )
-        }
-    );
-    let mut param = param.unwrap();
+            .context(FormatSnafu)?;
 
-    loop {
-        let value = param
-            .r8_variable(woog)
-            .pop()
-            .unwrap()
-            .r7_value(woog)
-            .pop()
-            .unwrap();
-        let ty = value.r3_grace_type(woog)[0];
-        let access = value.r16_access(woog)[0];
-        let mutability = access.r15_ownership(woog)[0];
-
-        write!(
-            buffer,
-            "{}: {},",
-            param.r8_variable(woog)[0].name.as_ident(),
-            ty.as_type(&mutability, woog, domain)
-        )
-        .context(FormatSnafu)?;
-
-        if let Some(next_param) = param.r1_parameter(woog).pop() {
-            param = next_param;
-        } else {
-            break;
+            if let Some(next_param) = param.r1_parameter(woog).pop() {
+                param = next_param;
+            } else {
+                break;
+            }
         }
     }
 
@@ -433,7 +425,7 @@ pub(crate) fn render_make_uuid_new(
             GraceType::Ty(id) => {
                 let sty = domain.sarzak().exhume_ty(id).unwrap();
                 match sty {
-                    Ty::Uuid(_) => true,
+                    Ty::SUuid(_) => true,
                     _ => false,
                 }
             }
@@ -457,82 +449,76 @@ pub(crate) fn render_make_uuid_new(
         }
     });
 
-    ensure!(
-        param.is_some(),
-        CompilerSnafu {
-            description: format!(
-                "No parameter found for {}::{}",
-                object.as_type(&Ownership::Owned(OWNED), woog, domain),
-                method.r25_function(woog).pop().unwrap().as_ident()
-            )
-        }
-    );
+    if param.is_some() {
+        let mut param = param.unwrap();
 
-    let mut param = param.unwrap();
+        let mut format_string = String::new();
+        let mut args = String::new();
 
-    let mut format_string = String::new();
-    let mut args = String::new();
+        loop {
+            let value = param
+                .r8_variable(woog)
+                .pop()
+                .unwrap()
+                .r7_value(woog)
+                .pop()
+                .unwrap();
+            let ty = value.r3_grace_type(woog)[0];
 
-    loop {
-        let value = param
-            .r8_variable(woog)
-            .pop()
-            .unwrap()
-            .r7_value(woog)
-            .pop()
-            .unwrap();
-        let ty = value.r3_grace_type(woog)[0];
-
-        match &ty {
-            GraceType::Reference(_) => {
-                format_string.extend(["{:?}:"]);
-                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
-            }
-            GraceType::WoogOption(_) => {
-                format_string.extend(["{:?}:"]);
-                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
-            }
-            GraceType::Ty(id) => {
-                let ty = domain.sarzak().exhume_ty(id).unwrap();
-                match &ty {
-                    // This is really about the store, and we don't want to include that.
-                    // However, I don't think we'd want to try printing anything external,
-                    // so this here is generally a Good Thing.
-                    Ty::External(e) => {
-                        let ext = domain.sarzak().exhume_external(e).unwrap();
-                        // 🚧 This is lame. I need something better, and nothing comes
-                        // immediately to mind.
-                        if ext.name == "SystemTime" {
-                            format_string.extend(["{:?}:"]);
+            match &ty {
+                GraceType::Reference(_) => {
+                    format_string.extend(["{:?}:"]);
+                    args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
+                }
+                GraceType::WoogOption(_) => {
+                    format_string.extend(["{:?}:"]);
+                    args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
+                }
+                GraceType::Ty(id) => {
+                    let ty = domain.sarzak().exhume_ty(id).unwrap();
+                    match &ty {
+                        // This is really about the store, and we don't want to include that.
+                        // However, I don't think we'd want to try printing anything external,
+                        // so this here is generally a Good Thing.
+                        Ty::External(e) => {
+                            let ext = domain.sarzak().exhume_external(e).unwrap();
+                            // 🚧 This is lame. I need something better, and nothing comes
+                            // immediately to mind.
+                            if ext.name == "SystemTime" {
+                                format_string.extend(["{:?}:"]);
+                                args.extend([
+                                    param.r8_variable(woog)[0].name.as_ident(),
+                                    ",".to_owned(),
+                                ]);
+                            }
+                        }
+                        _ => {
+                            format_string.extend(["{}:"]);
                             args.extend([
                                 param.r8_variable(woog)[0].name.as_ident(),
                                 ",".to_owned(),
                             ]);
                         }
                     }
-                    _ => {
-                        format_string.extend(["{}:"]);
-                        args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
-                    }
+                }
+                _ => {
+                    format_string.extend(["{}:"]);
+                    args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
                 }
             }
-            _ => {
-                format_string.extend(["{}:"]);
-                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
+
+            if let Some(next_param) = param.r1_parameter(woog).pop() {
+                param = next_param;
+            } else {
+                break;
             }
         }
 
-        if let Some(next_param) = param.r1_parameter(woog).pop() {
-            param = next_param;
-        } else {
-            break;
-        }
+        // Remove the trailing ":"
+        format_string.pop();
+        // And the trailining ","
+        args.pop();
     }
-
-    // Remove the trailing ":"
-    format_string.pop();
-    // And the trailining ","
-    args.pop();
 
     // emit!(
     //     buffer,
@@ -946,7 +932,7 @@ fn typecheck_and_coerce(
         GraceType::Ty(id) => {
             let ty = domain.sarzak().exhume_ty(&id).unwrap();
             match ty {
-                Ty::Uuid(_) => {
+                Ty::SUuid(_) => {
                     // If the lhs is a uuid, and the rhs is a reference, we need to
                     // pull it's id.
                     match &rhs_ty {
@@ -1458,6 +1444,9 @@ pub(crate) trait AttributeBuilder<A> {
 /// Walk the object hierarchy to collect attributes for an object
 ///
 /// The attributes are generated in a stable order.
+///
+/// This is only applicable to generating dwarf code, and I think it should be
+/// moved.
 pub(crate) fn collect_attributes<A>(
     obj: &Object,
     lu_dog: &RwLock<LuDogStore>,
@@ -1501,8 +1490,7 @@ where
             // If it's conditional build a parameter that's an optional reference
             // to the referent.
             Conditionality::Conditional(_) => {
-                let some = Some::new(&ty, &mut lu_dog);
-                let option = WoogOption::new_some(&some, &mut lu_dog);
+                let option = WoogOption::new_none(&ty, &mut lu_dog);
                 let ty = ValueType::new_woog_option(&option, &mut lu_dog);
 
                 let attr = A::new(attr_name, ty.clone());

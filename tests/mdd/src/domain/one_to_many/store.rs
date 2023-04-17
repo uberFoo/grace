@@ -29,27 +29,26 @@ use crate::domain::one_to_many::types::{Referent, A, B, C, D};
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
     a: HashMap<Uuid, A>,
-    a_by_name: HashMap<String, A>,
     b: HashMap<Uuid, B>,
     c: HashMap<Uuid, C>,
     d: HashMap<Uuid, D>,
     referent: HashMap<Uuid, Referent>,
-    referent_by_name: HashMap<String, Referent>,
 }
 
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
             a: HashMap::default(),
-            a_by_name: HashMap::default(),
             b: HashMap::default(),
             c: HashMap::default(),
             d: HashMap::default(),
             referent: HashMap::default(),
-            referent_by_name: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
 
         store
     }
@@ -58,8 +57,7 @@ impl ObjectStore {
     /// Inter [`A`] into the store.
     ///
     pub fn inter_a(&mut self, a: A) {
-        self.a.insert(a.id, a.clone());
-        self.a_by_name.insert(a.name.to_upper_camel_case(), a);
+        self.a.insert(a.id, a);
     }
 
     /// Exhume [`A`] from the store.
@@ -72,12 +70,6 @@ impl ObjectStore {
     ///
     pub fn exhume_a_mut(&mut self, id: &Uuid) -> Option<&mut A> {
         self.a.get_mut(id)
-    }
-
-    /// Exhume [`A`] from the store by name.
-    ///
-    pub fn exhume_a_by_name(&self, name: &str) -> Option<&A> {
-        self.a_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, A>`.
@@ -161,9 +153,7 @@ impl ObjectStore {
     /// Inter [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
-        self.referent.insert(referent.id, referent.clone());
-        self.referent_by_name
-            .insert(referent.name.to_upper_camel_case(), referent);
+        self.referent.insert(referent.id, referent);
     }
 
     /// Exhume [`Referent`] from the store.
@@ -176,12 +166,6 @@ impl ObjectStore {
     ///
     pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
         self.referent.get_mut(id)
-    }
-
-    /// Exhume [`Referent`] from the store by name.
-    ///
-    pub fn exhume_referent_by_name(&self, name: &str) -> Option<&Referent> {
-        self.referent_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
@@ -294,9 +278,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let a: A = serde_json::from_reader(reader)?;
-                store
-                    .a_by_name
-                    .insert(a.name.to_upper_camel_case(), a.clone());
                 store.a.insert(a.id, a);
             }
         }
@@ -353,9 +334,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referent: Referent = serde_json::from_reader(reader)?;
-                store
-                    .referent_by_name
-                    .insert(referent.name.to_upper_camel_case(), referent.clone());
                 store.referent.insert(referent.id, referent);
             }
         }

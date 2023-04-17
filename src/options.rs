@@ -45,6 +45,14 @@ pub enum Target {
     /// a dwarf program, including embedded dwarf code. This will then be compiled
     /// by `dwarfc` into instances in "Lu Dog".
     Dwarf,
+    /// Sarzak Virtual Machine
+    ///
+    /// The SVM is a virtual machine that is used to run the dwarf language, over
+    /// the target domain from the previous stage. It provides a REPL, among other
+    /// services.
+    ///
+    /// This is a second-stage target.
+    Svm,
 }
 
 /// Domain Target Configuration

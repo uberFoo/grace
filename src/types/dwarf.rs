@@ -105,9 +105,8 @@ impl FileGenerator for DwarfGenerator {
     }
 }
 
-/// Default Types Module Generator / CodeWriter
+/// Dwarf Generator / CodeWriter
 ///
-/// This generates a rust file that imports the generated type implementations.
 pub(crate) struct DwarfModule;
 
 impl DwarfModule {
@@ -191,7 +190,7 @@ impl CodeWriter for DwarfModule {
                     //
                     // Emit the type definition
                     //
-                    emit_object_comments(&obj.description, "//", buffer);
+                    emit_object_comments(&obj.description, "//", buffer)?;
                     emit!(
                         buffer,
                         "struct {} {{",
@@ -273,6 +272,9 @@ fn value_type_to_string(
     domain: &Domain,
 ) -> String {
     match ty {
+        ValueType::Empty(_) => "()".to_string(),
+        ValueType::Error(_) => "maybe error type wasn't a good idea".to_string(),
+        ValueType::Function(_) => "<function>".to_string(),
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
             match ty {
@@ -280,19 +282,19 @@ fn value_type_to_string(
                     let obj = domain.sarzak().exhume_object(id).unwrap();
                     obj.as_type(&Ownership::new_owned(), woog, domain)
                 }
-                Ty::String(_) => "string".to_string(),
+                Ty::SString(_) => "string".to_string(),
                 Ty::Boolean(_) => "bool".to_string(),
                 Ty::Integer(_) => "int".to_string(),
                 Ty::Float(_) => "float".to_string(),
-                Ty::Uuid(_) => "Uuid".to_string(),
+                Ty::SUuid(_) => "Uuid".to_string(),
                 Ty::External(_) => "ext_what_to_do".to_string(),
             }
         }
         ValueType::WoogOption(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
-                let some = lu_dog.exhume_some(id).unwrap();
-                lu_dog.exhume_value_type(&some.inner_type).unwrap().clone()
+                let option = lu_dog.exhume_woog_option(id).unwrap().clone();
+                option.r2_value_type(&lu_dog)[0].clone()
             };
 
             let mut ty = String::new();

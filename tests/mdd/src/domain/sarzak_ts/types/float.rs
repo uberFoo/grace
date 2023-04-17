@@ -14,5 +14,17 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"float-const-definition"}}}
 pub const FLOAT: Uuid = uuid!["1fe11221-b8be-5f99-a161-e378f90b094d"];
+
+pub struct Float;
+
+impl Float {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn id(&self) -> Uuid {
+        FLOAT
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

@@ -188,13 +188,13 @@ impl DomainStore {
                             );
                             emit!(
                                 buffer,
-                                "self.{}.insert(value.0.{id}, value.clone());",
-                                obj.as_ident(),
+                                "self.{}_id_by_name.insert(value.0.name.to_upper_camel_case(), (value.0.{id}, value.1));",
+                                obj.as_ident()
                             );
                             emit!(
                                 buffer,
-                                "self.{}_by_name.insert(value.0.name.to_upper_camel_case(), value);",
-                                obj.as_ident()
+                                "self.{}.insert(value.0.{id}, value);",
+                                obj.as_ident(),
                             );
                         } else {
                             emit!(
@@ -209,17 +209,17 @@ impl DomainStore {
                         if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "self.{}.insert({}.{id}, {}.clone());",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident(),
-                            );
-                            emit!(
-                                buffer,
-                                "self.{}_by_name.insert({}.name.to_upper_camel_case(), {});",
+                                "self.{}_id_by_name.insert({}.name.to_upper_camel_case(), {}.{id});",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
+                            );
+                            emit!(
+                                buffer,
+                                "self.{}.insert({}.{id}, {});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident(),
                             );
                         } else {
                             emit!(
@@ -292,20 +292,19 @@ impl DomainStore {
                         emit!(buffer, "///");
                         emit!(
                             buffer,
-                            "pub fn exhume_{}_by_name(&self, name: &str) -> Option<&{}> {{",
+                            "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<&Uuid> {{",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         if timestamp {
                             emit!(
                                 buffer,
-                                "self.{}_by_name.get(name).map(|{}| &{}.0)",
+                                "self.{}_id_by_name.get(name).map(|{}| &{}.0)",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
                         } else {
-                            emit!(buffer, "self.{}_by_name.get(name)", obj.as_ident());
+                            emit!(buffer, "self.{}_id_by_name.get(name)", obj.as_ident());
                         }
                         emit!(buffer, "}}");
                         emit!(buffer, "");
@@ -594,9 +593,8 @@ impl CodeWriter for DomainStore {
                         if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "{}_by_name: HashMap<String, ({}, SystemTime)>,",
-                                obj.as_ident(),
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                "{}_id_by_name: HashMap<String, (Uuid, SystemTime)>,",
+                                obj.as_ident()
                             );
                         }
                     } else {
@@ -609,9 +607,8 @@ impl CodeWriter for DomainStore {
                         if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "{}_by_name: HashMap<String, {}>,",
+                                "{}_id_by_name: HashMap<String, Uuid>,",
                                 obj.as_ident(),
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
                             );
                         }
                     }
@@ -628,13 +625,16 @@ impl CodeWriter for DomainStore {
                 for obj in &objects {
                     emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
                     if object_has_name(obj, domain) {
-                        emit!(buffer, "{}_by_name: HashMap::default(),", obj.as_ident());
+                        emit!(buffer, "{}_id_by_name: HashMap::default(),", obj.as_ident());
                     }
 
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
                 emit!(buffer, "// Initialize Singleton Subtypes");
+                emit!(buffer, "// 💥 Look at how beautiful this generated code is for super/sub-type graphs!");
+                emit!(buffer, "// I remember having a bit of a struggle making it work. It's recursive, with");
+                emit!(buffer, "// a lot of special cases, and I think it calls other recursive functions...💥");
                 for obj in &supertypes {
                     emit_singleton_subtype_instances(
                         obj,
@@ -672,21 +672,29 @@ impl CodeWriter for DomainStore {
     }
 }
 
+/// Check to see if an object has a name attribute
+///
+/// I'm using this to generate "by name" lookup for objects that have a name.
+/// This is, this is only useful for objects with unique names. And we only
+/// seem to need it for `Object` so far.
+///
+/// So I'm short-circuiting this now.
 fn object_has_name(obj: &Object, domain: &Domain) -> bool {
-    obj.r1_attribute(domain.sarzak())
-        .iter()
-        .find(|attr| {
-            if attr.name == "name" {
-                if let Ty::String(_) = attr.r2_ty(domain.sarzak())[0] {
-                    true
-                } else {
-                    false
-                }
-            } else {
-                false
-            }
-        })
-        .is_some()
+    obj.name == "Object"
+    // obj.r1_attribute(domain.sarzak())
+    //     .iter()
+    //     .find(|attr| {
+    //         if attr.name == "name" {
+    //             if let Ty::SString(_) = attr.r2_ty(domain.sarzak())[0] {
+    //                 true
+    //             } else {
+    //                 false
+    //             }
+    //         } else {
+    //             false
+    //         }
+    //     })
+    //     .is_some()
 }
 
 fn generate_store_persistence(
@@ -912,7 +920,8 @@ fn generate_store_persistence(
                     if object_has_name(obj, domain) {
                         emit!(
                             buffer,
-                            "store.{}_by_name.insert({}.0.name.to_upper_camel_case(), {}.clone());",
+                            "store.{}_id_by_name.insert({}.0.name.to_upper_camel_case(), ({}.0.{id}, {}.1));",
+                            obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()
@@ -935,7 +944,7 @@ fn generate_store_persistence(
                     if object_has_name(obj, domain) {
                         emit!(
                             buffer,
-                            "store.{}_by_name.insert({}.name.to_upper_camel_case(), {}.clone());",
+                            "store.{}_id_by_name.insert({}.name.to_upper_camel_case(), {}.{id});",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()

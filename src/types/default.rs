@@ -700,58 +700,65 @@ impl CodeWriter for DefaultModule {
         );
         let woog = woog.as_ref().unwrap();
 
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-module-definition", module),
-            |buffer| {
-                let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
-                objects.sort_by(|a, b| a.name.cmp(&b.name));
-                let objects = objects
-                    .iter()
-                    .filter(|obj| {
-                        // Don't include imported objects
-                        !config.is_imported(&obj.id)
-                    })
-                    .collect::<Vec<_>>();
+        // buffer.block(
+        // DirectiveKind::IgnoreOrig,
+        // format!("{}-module-definition", module),
+        // |buffer| {
+        let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.name.cmp(&b.name));
+        let objects = objects
+            .iter()
+            .filter(|obj| {
+                // Don't include imported objects
+                !config.is_imported(&obj.id)
+            })
+            .collect::<Vec<_>>();
 
-                for obj in &objects {
-                    emit!(buffer, "pub mod {};", obj.as_ident());
+        for obj in &objects {
+            emit!(buffer, "pub mod {};", obj.as_ident());
+        }
+        emit!(buffer, "");
+        for obj in &objects {
+            if object_is_singleton(obj, config, imports, domain)?
+                && !object_is_supertype(obj, config, imports, domain)?
+            {
+                emit!(
+                    buffer,
+                    "pub use crate::{}::{}::{};",
+                    module,
+                    obj.as_ident(),
+                    obj.as_const()
+                );
+                emit!(
+                    buffer,
+                    "pub use crate::{}::{}::{};",
+                    module,
+                    obj.as_ident(),
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub use crate::{}::{}::{};",
+                    module,
+                    obj.as_ident(),
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+                if object_is_hybrid(obj, config, imports, domain)? {
+                    emit!(
+                        buffer,
+                        "pub use crate::{}::{}::{}Enum;",
+                        module,
+                        obj.as_ident(),
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
                 }
-                emit!(buffer, "");
-                for obj in &objects {
-                    if object_is_singleton(obj, config, imports, domain)?
-                        && !object_is_supertype(obj, config, imports, domain)?
-                    {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_const()
-                        );
-                    } else {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
-                        if object_is_hybrid(obj, config, imports, domain)? {
-                            emit!(
-                                buffer,
-                                "pub use crate::{}::{}::{}Enum;",
-                                module,
-                                obj.as_ident(),
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            );
-                        }
-                    }
-                }
+            }
+        }
 
-                Ok(())
-            },
-        )?;
+        // Ok(())
+        // },
+        // )?;
 
         Ok(())
     }

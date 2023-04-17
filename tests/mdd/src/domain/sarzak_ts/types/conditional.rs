@@ -11,5 +11,17 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditional-const-definition"}}}
 pub const CONDITIONAL: Uuid = uuid!["1ef6f1f8-de66-552b-8d4a-a04215c37c1e"];
+
+pub struct Conditional;
+
+impl Conditional {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn id(&self) -> Uuid {
+        CONDITIONAL
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

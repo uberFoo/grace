@@ -191,7 +191,7 @@ fn inter_struct_method_new(
     let var = Variable::new_local("id".to_owned(), &table, &id, woog);
     let _value = Value::new_variable(
         &access,
-        &GraceType::new_ty(&Ty::new_uuid(), woog),
+        &GraceType::new_ty(&Ty::new_s_uuid(), woog),
         &var,
         woog,
     );
@@ -265,7 +265,7 @@ fn inter_struct_method_new_(
     let var = Variable::new_local("id".to_owned(), &table, &id, woog);
     let _value = Value::new_variable(
         &access,
-        &GraceType::new_ty(&Ty::new_uuid(), woog),
+        &GraceType::new_ty(&Ty::new_s_uuid(), woog),
         &var,
         woog,
     );
@@ -376,7 +376,7 @@ fn inter_hybrid_method_new(
         let var = Variable::new_local("id".to_owned(), &table, &id, woog);
         let _value = Value::new_variable(
             &access,
-            &GraceType::new_ty(&Ty::new_uuid(), woog),
+            &GraceType::new_ty(&Ty::new_s_uuid(), woog),
             &var,
             woog,
         );
@@ -491,7 +491,7 @@ fn inter_external_method_new(
     let var = Variable::new_local("id".to_owned(), &table, &id, woog);
     let _value = Value::new_variable(
         &access,
-        &GraceType::new_ty(&Ty::new_uuid(), woog),
+        &GraceType::new_ty(&Ty::new_s_uuid(), woog),
         &var,
         woog,
     );
@@ -572,7 +572,7 @@ fn collect_params_and_fields(
                 let _ = Value::new_variable(&access, &ty, &var, woog);
                 params.push(param);
 
-                let uuid = GraceType::new_ty(&Ty::new_uuid(), woog);
+                let uuid = GraceType::new_ty(&Ty::new_s_uuid(), woog);
                 let option = WoogOption::new(&uuid, woog);
                 let ty = GraceType::new_woog_option(&option, woog);
                 let field = Field::new(referrer.referential_attribute.as_ident(), &ty, woog);
@@ -595,7 +595,7 @@ fn collect_params_and_fields(
 
                 let field = Field::new(
                     referrer.referential_attribute.as_ident(),
-                    &GraceType::new_ty(&Ty::new_uuid(), woog),
+                    &GraceType::new_ty(&Ty::new_s_uuid(), woog),
                     woog,
                 );
                 let field = StructureField::new(None, &field, &structure, woog);
@@ -626,7 +626,7 @@ fn collect_params_and_fields(
 
             let field = Field::new(
                 an_ass.referential_attribute.as_ident(),
-                &GraceType::new_ty(&Ty::new_uuid(), woog),
+                &GraceType::new_ty(&Ty::new_s_uuid(), woog),
                 woog,
             );
             let field = StructureField::new(None, &field, &structure, woog);

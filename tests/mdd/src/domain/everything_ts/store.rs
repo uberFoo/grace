@@ -28,7 +28,6 @@ use crate::domain::everything_ts::types::{Everything, RandoObject};
 pub struct ObjectStore {
     everything: HashMap<Uuid, (Everything, SystemTime)>,
     rando_object: HashMap<Uuid, (RandoObject, SystemTime)>,
-    rando_object_by_name: HashMap<String, (RandoObject, SystemTime)>,
 }
 
 impl ObjectStore {
@@ -36,10 +35,12 @@ impl ObjectStore {
         let store = Self {
             everything: HashMap::default(),
             rando_object: HashMap::default(),
-            rando_object_by_name: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
 
         store
     }
@@ -84,10 +85,8 @@ impl ObjectStore {
     /// Inter [`RandoObject`] into the store.
     ///
     pub fn inter_rando_object(&mut self, rando_object: RandoObject) {
-        let value = (rando_object, SystemTime::now());
-        self.rando_object.insert(value.0.id, value.clone());
-        self.rando_object_by_name
-            .insert(value.0.name.to_upper_camel_case(), value);
+        self.rando_object
+            .insert(rando_object.id, (rando_object, SystemTime::now()));
     }
 
     /// Exhume [`RandoObject`] from the store.
@@ -104,14 +103,6 @@ impl ObjectStore {
         self.rando_object
             .get_mut(id)
             .map(|rando_object| &mut rando_object.0)
-    }
-
-    /// Exhume [`RandoObject`] from the store by name.
-    ///
-    pub fn exhume_rando_object_by_name(&self, name: &str) -> Option<&RandoObject> {
-        self.rando_object_by_name
-            .get(name)
-            .map(|rando_object| &rando_object.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
@@ -257,10 +248,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let rando_object: (RandoObject, SystemTime) = serde_json::from_reader(reader)?;
-                store.rando_object_by_name.insert(
-                    rando_object.0.name.to_upper_camel_case(),
-                    rando_object.clone(),
-                );
                 store.rando_object.insert(rando_object.0.id, rando_object);
             }
         }

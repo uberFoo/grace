@@ -4,6 +4,8 @@
 //!
 //! This takes care of writing the output to the file, hopefully without clobbering
 //! what's already there. While also hopefully actually doing it's job.
+use std::path::PathBuf;
+
 use diff;
 use serde::{Deserialize, Serialize};
 
@@ -90,7 +92,12 @@ impl DirectiveComment {
 ///
 /// Given to strings, diff according to the rules, which are defined using
 /// directives embedded in the source file.
-pub(crate) fn process_diff(orig: &str, incoming: &str, directive: DirectiveKind) -> String {
+pub(crate) fn process_diff(
+    path: &PathBuf,
+    orig: &str,
+    incoming: &str,
+    directive: DirectiveKind,
+) -> String {
     log::trace!("diffing buffers");
     let mut diff = diff::lines(orig, incoming);
 
@@ -98,7 +105,7 @@ pub(crate) fn process_diff(orig: &str, incoming: &str, directive: DirectiveKind)
     // the list.
     diff.reverse();
 
-    process_diff_not_recursive_after_all(&mut diff, directive)
+    process_diff_not_recursive_after_all(path, &mut diff, directive)
 }
 
 /// Process the Diff
@@ -121,6 +128,7 @@ pub(crate) fn process_diff(orig: &str, incoming: &str, directive: DirectiveKind)
 /// In fact, I'm not convinced that this is the correct approach. I need to do
 /// some serious thinking about this.
 fn process_diff_not_recursive_after_all<'a>(
+    path: &PathBuf,
     lines: &'a mut Vec<diff::Result<&'a str>>,
     directive: DirectiveKind,
 ) -> String {
@@ -188,7 +196,12 @@ fn process_diff_not_recursive_after_all<'a>(
                                 // I should jump on this. It's frustrating to have the otherwise
                                 // pristine files get corrupted by this. And I think it would work
                                 // without too much effort.
-                                log::warn!("unbalanced directives: {:?} != {:?}", d, directive);
+                                log::warn!(
+                                    "unbalanced directives in {}: {:?} != {:?}",
+                                    path.display(),
+                                    d,
+                                    directive
+                                );
                             }
                             // The directive will be written below.
                             directive = stack.pop().expect("unbalanced directives")

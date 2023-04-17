@@ -27,7 +27,6 @@ use crate::domain::everything::types::{Everything, RandoObject};
 pub struct ObjectStore {
     everything: HashMap<Uuid, Everything>,
     rando_object: HashMap<Uuid, RandoObject>,
-    rando_object_by_name: HashMap<String, RandoObject>,
 }
 
 impl ObjectStore {
@@ -35,10 +34,12 @@ impl ObjectStore {
         let store = Self {
             everything: HashMap::default(),
             rando_object: HashMap::default(),
-            rando_object_by_name: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
 
         store
     }
@@ -71,10 +72,7 @@ impl ObjectStore {
     /// Inter [`RandoObject`] into the store.
     ///
     pub fn inter_rando_object(&mut self, rando_object: RandoObject) {
-        self.rando_object
-            .insert(rando_object.id, rando_object.clone());
-        self.rando_object_by_name
-            .insert(rando_object.name.to_upper_camel_case(), rando_object);
+        self.rando_object.insert(rando_object.id, rando_object);
     }
 
     /// Exhume [`RandoObject`] from the store.
@@ -87,12 +85,6 @@ impl ObjectStore {
     ///
     pub fn exhume_rando_object_mut(&mut self, id: &Uuid) -> Option<&mut RandoObject> {
         self.rando_object.get_mut(id)
-    }
-
-    /// Exhume [`RandoObject`] from the store by name.
-    ///
-    pub fn exhume_rando_object_by_name(&self, name: &str) -> Option<&RandoObject> {
-        self.rando_object_by_name.get(name)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
@@ -183,10 +175,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let rando_object: RandoObject = serde_json::from_reader(reader)?;
-                store.rando_object_by_name.insert(
-                    rando_object.name.to_upper_camel_case(),
-                    rando_object.clone(),
-                );
                 store.rando_object.insert(rando_object.id, rando_object);
             }
         }

@@ -421,8 +421,8 @@ impl RenderType for Ty {
                 let object = domain.sarzak().exhume_object(&o).unwrap();
                 format!("{}", object.as_type(mutability, woog, domain))
             }
-            Self::String(_) => "String".to_owned(),
-            Self::Uuid(_) => "Uuid".to_owned(),
+            Self::SString(_) => "String".to_owned(),
+            Self::SUuid(_) => "Uuid".to_owned(),
             Self::External(e) => {
                 let ext = domain.sarzak().exhume_external(&e).unwrap();
                 // format!("&{}", ext.as_type(mutability, woog, domain))
@@ -553,12 +553,15 @@ impl Sanitize for &str {
             "True" => "true_literal".to_owned(),
             "false" => "false_literal".to_owned(),
             "False" => "false_literal".to_owned(),
-            "uuid" => "woog_uuid".to_owned(),
-            "Uuid" => "woog_uuid".to_owned(),
+            "uuid" => "s_uuid".to_owned(),
+            "Uuid" => "s_uuid".to_owned(),
+            "UUID" => "s_uuid".to_owned(),
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
             "super" => "x_super".to_owned(),
             "Super" => "x_super".to_owned(),
+            "String" => "s_string".to_owned(),
+            "string" => "s_string".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -588,12 +591,15 @@ impl Sanitize for String {
             "True" => "true_literal".to_owned(),
             "false" => "false_literal".to_owned(),
             "False" => "false_literal".to_owned(),
-            "uuid" => "woog_uuid".to_owned(),
-            "Uuid" => "woog_uuid".to_owned(),
+            "uuid" => "s_uuid".to_owned(),
+            "Uuid" => "s_uuid".to_owned(),
+            "UUID" => "s_uuid".to_owned(),
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
             "super" => "x_super".to_owned(),
             "Super" => "x_super".to_owned(),
+            "String" => "s_string".to_owned(),
+            "string" => "s_string".to_owned(),
             _ => self.to_owned(),
         }
     }

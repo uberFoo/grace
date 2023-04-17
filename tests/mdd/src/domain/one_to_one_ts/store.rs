@@ -33,9 +33,7 @@ pub struct ObjectStore {
     b: HashMap<Uuid, (B, SystemTime)>,
     c: HashMap<Uuid, (C, SystemTime)>,
     parameter: HashMap<Uuid, (Parameter, SystemTime)>,
-    parameter_by_name: HashMap<String, (Parameter, SystemTime)>,
     referent: HashMap<Uuid, (Referent, SystemTime)>,
-    referent_by_name: HashMap<String, (Referent, SystemTime)>,
 }
 
 impl ObjectStore {
@@ -45,12 +43,13 @@ impl ObjectStore {
             b: HashMap::default(),
             c: HashMap::default(),
             parameter: HashMap::default(),
-            parameter_by_name: HashMap::default(),
             referent: HashMap::default(),
-            referent_by_name: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
 
         store
     }
@@ -149,10 +148,8 @@ impl ObjectStore {
     /// Inter [`Parameter`] into the store.
     ///
     pub fn inter_parameter(&mut self, parameter: Parameter) {
-        let value = (parameter, SystemTime::now());
-        self.parameter.insert(value.0.id, value.clone());
-        self.parameter_by_name
-            .insert(value.0.name.to_upper_camel_case(), value);
+        self.parameter
+            .insert(parameter.id, (parameter, SystemTime::now()));
     }
 
     /// Exhume [`Parameter`] from the store.
@@ -165,14 +162,6 @@ impl ObjectStore {
     ///
     pub fn exhume_parameter_mut(&mut self, id: &Uuid) -> Option<&mut Parameter> {
         self.parameter.get_mut(id).map(|parameter| &mut parameter.0)
-    }
-
-    /// Exhume [`Parameter`] from the store by name.
-    ///
-    pub fn exhume_parameter_by_name(&self, name: &str) -> Option<&Parameter> {
-        self.parameter_by_name
-            .get(name)
-            .map(|parameter| &parameter.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Parameter>`.
@@ -193,10 +182,8 @@ impl ObjectStore {
     /// Inter [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
-        let value = (referent, SystemTime::now());
-        self.referent.insert(value.0.id, value.clone());
-        self.referent_by_name
-            .insert(value.0.name.to_upper_camel_case(), value);
+        self.referent
+            .insert(referent.id, (referent, SystemTime::now()));
     }
 
     /// Exhume [`Referent`] from the store.
@@ -209,12 +196,6 @@ impl ObjectStore {
     ///
     pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
         self.referent.get_mut(id).map(|referent| &mut referent.0)
-    }
-
-    /// Exhume [`Referent`] from the store by name.
-    ///
-    pub fn exhume_referent_by_name(&self, name: &str) -> Option<&Referent> {
-        self.referent_by_name.get(name).map(|referent| &referent.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
@@ -488,9 +469,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let parameter: (Parameter, SystemTime) = serde_json::from_reader(reader)?;
-                store
-                    .parameter_by_name
-                    .insert(parameter.0.name.to_upper_camel_case(), parameter.clone());
                 store.parameter.insert(parameter.0.id, parameter);
             }
         }
@@ -505,9 +483,6 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referent: (Referent, SystemTime) = serde_json::from_reader(reader)?;
-                store
-                    .referent_by_name
-                    .insert(referent.0.name.to_upper_camel_case(), referent.clone());
                 store.referent.insert(referent.0.id, referent);
             }
         }
