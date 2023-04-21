@@ -10,16 +10,16 @@ use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-documentation"}}}
 /// An anchor, or anchor point, is the location where an arrow from a relationship attached
-/// to an object.
+///  to an object.
 ///
 /// Rather than storing the `x` and `y` coordinates of where the anchor attaches, we are related
-/// to an [Edge], which is related to a box, which is related to the [Object] to which we are
-/// attached. This of course completes the circuit from the [Relationship] for which we are
-/// drawing the lines in the first place.
+///  to an [Edge], which is related to a box, which is related to the [Object] to which we are
+///  attached. This of course completes the circuit from the [Relationship] for which we are
+///  drawing the lines in the first place.
 ///
 /// Anchor also contains a direction, so that we know the orientation to draw the arrows. Finally
-///, there is an offset, which is a point that describes the offset from the anchor for the
-/// relationship phrase.
+/// , there is an offset, which is a point that describes the offset from the anchor for the
+///  relationship phrase.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-definition"}}}

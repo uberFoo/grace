@@ -27,7 +27,7 @@ use crate::domain::sarzak_ts::store::ObjectStore as SarzakTsStore;
 /// version 5 UUID.
 ///
 /// 🐶 {"derive": ["Clone", "Debug", "Deserialize", "Eq", "Hash", "PartialEq", "Serialize
-///"]}
+/// "]}
 ///
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

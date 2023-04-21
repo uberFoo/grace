@@ -11,7 +11,7 @@ use uuid::Uuid;
 /// Type Ownership
 ///
 /// This is tied closely with Rust. There are tthree possible options: owned, mutable and borrowed
-///.
+/// .
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-enum-definition"}}}

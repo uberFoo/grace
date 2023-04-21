@@ -14,7 +14,7 @@ use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;
 /// The target of our relationship tests.
 ///
 /// It is conditionally related to [`OneToOneConditional`] across _R2_, and it is unconditionally
-/// related to [`OneToOneUnconditional`] across _R1_.
+///  related to [`OneToOneUnconditional`] across _R1_.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-definition"}}}

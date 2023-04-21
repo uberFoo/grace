@@ -17,7 +17,7 @@ use uuid::Uuid;
 /// The type of a value
 ///
 /// There are several values available: [Integer], [Boolean], [Float], [String], and [UUID]
-///.
+/// .
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-enum-definition"}}}

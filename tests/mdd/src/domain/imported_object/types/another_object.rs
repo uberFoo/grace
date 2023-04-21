@@ -15,7 +15,7 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 /// This is another object, but different.
 ///
 /// As a side effect, this is going to test being able to collapse a type with a space. It will
-/// break, and I’ll have a new feature.
+///  break, and I’ll have a new feature.
 ///
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

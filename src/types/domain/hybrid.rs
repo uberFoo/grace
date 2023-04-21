@@ -234,7 +234,7 @@ impl CodeWriter for Hybrid {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-hybrid-documentation", obj.as_ident()),
-            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(obj.description.as_str(), "/// ", "", buffer),
         )?;
 
         log::debug!("writing Struct Definition for {}", obj.name);

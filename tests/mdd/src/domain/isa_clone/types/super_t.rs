@@ -15,7 +15,7 @@ use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 /// A [`Supertype`] with normal [`Subtype`]s
 ///
 /// This was called "Super". Rust didn't like it when it became "super". There needs to be
-///a way of fixing keywords.
+/// a way of fixing keywords.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-enum-definition"}}}

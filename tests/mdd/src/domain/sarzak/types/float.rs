@@ -7,7 +7,7 @@ use uuid::{uuid, Uuid};
 /// The Floating Point Type
 ///
 /// This type holds numbers from ℝ. This type is just a placeholder. It's implementation is
-/// determined downstream by the code generator.
+///  determined downstream by the code generator.
 ///
 /// ❗️{"singleton_object": true}
 ///

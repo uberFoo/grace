@@ -12,9 +12,9 @@ use crate::domain::one_to_one_ts::store::ObjectStore as OneToOneTsStore;
 /// A: Referrer with Conditional [`Referent`]
 ///
 /// This type is related to the [`Referent`] across a conditional relationship. This is 1-1c
-///, and given that I am the referrer, I have the referential attribute/I am formalizing the
-/// relationship. I think I prefer the latter language, but the former is very descriptive.
-///..
+/// , and given that I am the referrer, I have the referential attribute/I am formalizing the
+///  relationship. I think I prefer the latter language, but the former is very descriptive.
+/// ..
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-definition"}}}

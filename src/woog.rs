@@ -37,7 +37,7 @@ use crate::{
 
 pub(crate) fn init_woog<P: AsRef<Path>>(
     src_path: P,
-    config: &GraceConfig,
+    _config: &GraceConfig,
     domain: &Domain,
 ) -> WoogStore {
     // Look for a persisted store.
@@ -218,7 +218,6 @@ fn inter_struct_method_new_(
     let access = Access::new(&borrowed, &public, woog);
 
     let mutable = Ownership::new_mutable();
-    let mut_access = Access::new(&mutable, &public, woog);
 
     let block = Block::new(Uuid::new_v4(), woog);
 

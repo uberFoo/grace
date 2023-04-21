@@ -10,7 +10,7 @@ use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-documentation"}}}
 /// This represents additional data necessary to render an `Isa` relationship in the user interface
-///.
+/// .
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-definition"}}}

@@ -553,15 +553,16 @@ impl Sanitize for &str {
             "True" => "true_literal".to_owned(),
             "false" => "false_literal".to_owned(),
             "False" => "false_literal".to_owned(),
-            "uuid" => "s_uuid".to_owned(),
-            "Uuid" => "s_uuid".to_owned(),
-            "UUID" => "s_uuid".to_owned(),
+            "uuid" => "z_uuid".to_owned(),
+            "Uuid" => "z_uuid".to_owned(),
+            "UUID" => "z_uuid".to_owned(),
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
-            "super" => "x_super".to_owned(),
-            "Super" => "x_super".to_owned(),
-            "String" => "s_string".to_owned(),
-            "string" => "s_string".to_owned(),
+            "super" => "z_super".to_owned(),
+            "Super" => "z_super".to_owned(),
+            "String" => "z_string".to_owned(),
+            "string" => "z_string".to_owned(),
+            "Object Store" => "z_object_store".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -600,6 +601,7 @@ impl Sanitize for String {
             "Super" => "x_super".to_owned(),
             "String" => "s_string".to_owned(),
             "string" => "s_string".to_owned(),
+            "Object Store" => "z_object_store".to_owned(),
             _ => self.to_owned(),
         }
     }

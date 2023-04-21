@@ -7,7 +7,7 @@ use uuid::{uuid, Uuid};
 /// The Integer Type
 ///
 /// This is an interger that can hold positive and negative values. This type is just a placeholder
-///. It's implementation is determined downstream by the code generator.
+/// . It's implementation is determined downstream by the code generator.
 ///
 /// ❗️{"singleton_object": true}
 ///

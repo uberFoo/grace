@@ -101,7 +101,7 @@ impl FileGenerator for ExternalGenerator {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-ee-documentation", object.as_ident()),
-            |buffer| emit_object_comments(object.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(object.description.as_str(), "/// ", "", buffer),
         )?;
 
         buffer.block(

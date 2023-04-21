@@ -13,6 +13,7 @@ use sarzak::{
     lu_dog::{
         store::ObjectStore as LuDogStore,
         types::{Some, ValueType, WoogOption},
+        Reference,
     },
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Conditionality, External, Object, Ty},
@@ -27,6 +28,7 @@ use sarzak::{
 };
 use snafu::prelude::*;
 use unicode_segmentation::UnicodeSegmentation;
+use uuid::Uuid;
 
 use crate::{
     codegen::{
@@ -1274,12 +1276,17 @@ fn local_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Dom
 ///
 /// This is still pretty cool compared to before. The long strings really got
 /// to me.
-pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buffer) -> Result<()> {
+pub(crate) fn emit_object_comments(
+    input: &str,
+    prefix: &str,
+    suffix: &str,
+    context: &mut Buffer,
+) -> Result<()> {
     const MAX_LEN: usize = 90;
 
     if input.len() > 0 {
         for line in input.split('\n') {
-            write!(context, "{} ", comment).context(FormatSnafu)?;
+            write!(context, "{}", prefix).context(FormatSnafu)?;
             let mut length = 4;
 
             // Split the string by words, and append a word until we run out
@@ -1295,21 +1302,26 @@ pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buf
                         // be there, but I'll be cautious anyway. Oh, but I can't
                         // because I don't own the buffer. Shit.
 
+                        // No clue what I was going on about up there.
+                        write!(context, "{}", suffix).context(FormatSnafu)?;
+
                         // Add a newline
                         emit!(context, "");
                         length = 0;
 
-                        write!(context, "{}{}", comment, word).context(FormatSnafu)?;
+                        write!(context, "{}{}", prefix, word).context(FormatSnafu)?;
                         length += word.len() + 3;
                     }
                 }
             }
 
+            write!(context, "{}", suffix).context(FormatSnafu)?;
+
             // Add a trailing newline
             emit!(context, "");
         }
 
-        emit!(context, "{}", comment);
+        emit!(context, "{}{}", prefix, suffix);
     }
 
     Ok(())
@@ -1483,6 +1495,8 @@ where
         let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
         let mut lu_dog = lu_dog.write().unwrap();
         let ty = ValueType::new_ty(&ty, &mut lu_dog);
+        let ty = Reference::new(Uuid::new_v4(), &ty, &mut lu_dog);
+        let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
         // This determines how a reference is stored in the struct. In this
         // case a UUID.
@@ -1515,6 +1529,8 @@ where
             let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
             let mut lu_dog = lu_dog.write().unwrap();
             let ty = ValueType::new_ty(&ty, &mut lu_dog);
+            let ty = Reference::new(Uuid::new_v4(), &ty, &mut lu_dog);
+            let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
             let attr_name = an_ass.referential_attribute.as_ident();
 

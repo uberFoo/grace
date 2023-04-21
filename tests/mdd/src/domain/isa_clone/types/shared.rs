@@ -7,7 +7,7 @@ use uuid::{uuid, Uuid};
 /// A shared borrow.
 ///
 /// According to rust rules, you may have any number of shared references outstanding at one
-/// time. Just as long as there are zero mutable references.
+///  time. Just as long as there are zero mutable references.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"shared-const-definition"}}}

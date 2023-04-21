@@ -82,7 +82,7 @@ impl CodeWriter for DomainConst {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-const-documentation", obj.as_ident()),
-            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(obj.description.as_str(), "/// ", "", buffer),
         )?;
 
         let domain_id = Uuid::from_slice(domain.id().as_bytes()).unwrap();

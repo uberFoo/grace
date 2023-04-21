@@ -89,17 +89,17 @@ impl FileGenerator for DwarfGenerator {
             emit!(buffer, "// {}", line);
         }
 
-        buffer.block(
-            DirectiveKind::AllowEditing,
-            format!("{}-dwarf-file", module),
-            |buffer| {
-                self.definition.write_code(
-                    config, domain, woog, lu_dog, imports, package, module, obj_id, buffer,
-                )?;
-
-                Ok(())
-            },
+        // buffer.block(
+        // DirectiveKind::AllowEditing,
+        // format!("{}-dwarf-file", module),
+        // |buffer| {
+        self.definition.write_code(
+            config, domain, woog, lu_dog, imports, package, module, obj_id, buffer,
         )?;
+
+        // Ok(())
+        // },
+        // )?;
 
         Ok(GenerationAction::Write)
     }
@@ -157,109 +157,126 @@ impl CodeWriter for DwarfModule {
             }
         }
 
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-dwarf-output", module),
-            |buffer| {
-                // Add an import statement for each imported domain
-                let mut imports = HashSet::default();
-                for imported in domain
-                    .sarzak()
-                    .iter_object()
-                    .filter(|obj| config.is_imported(&obj.id))
-                {
-                    let imported_object = config.get_imported(&imported.id).unwrap();
-                    imports.insert(imported_object.domain.as_str());
-                }
+        // buffer.block(
+        //     DirectiveKind::IgnoreOrig,
+        //     format!("{}-dwarf-output", module),
+        //     |buffer| {
+        // Add an import statement for each imported domain
+        let mut imports = HashSet::default();
+        for imported in domain
+            .sarzak()
+            .iter_object()
+            .filter(|obj| config.is_imported(&obj.id))
+        {
+            let imported_object = config.get_imported(&imported.id).unwrap();
+            imports.insert(imported_object.domain.as_str());
+        }
+        // Insert ourselves
+        imports.insert(module);
 
-                for import in imports {
-                    emit!(buffer, "import {};", import);
-                }
+        for import in imports {
+            emit!(buffer, "use {};", import);
+        }
+        emit!(buffer, "");
 
-                let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
-                objects.sort_by(|a, b| a.name.cmp(&b.name));
-                let objects = objects
-                    .iter()
-                    .filter(|obj| {
-                        // Don't include imported objects
-                        !config.is_imported(&obj.id)
-                    })
-                    .collect::<Vec<_>>();
+        let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.name.cmp(&b.name));
+        let objects = objects
+            .iter()
+            .filter(|obj| {
+                // Don't include imported objects
+                !config.is_imported(&obj.id)
+            })
+            .collect::<Vec<_>>();
 
-                for obj in &objects {
-                    //
-                    // Emit the type definition
-                    //
-                    emit_object_comments(&obj.description, "//", buffer)?;
-                    emit!(
-                        buffer,
-                        "struct {} {{",
-                        obj.as_type(&Ownership::new_owned(), woog, domain)
-                    );
+        for obj in &objects {
+            //
+            // Emit the type definition
+            //
+            let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
+            emit_object_comments(&obj.description, "// ", "", buffer)?;
+            emit!(buffer, "struct {} {{", obj_type,);
 
-                    let attrs: Vec<Attribute> = collect_attributes(obj, &lu_dog, domain);
-                    for attr in &attrs {
-                        let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
-                        emit!(buffer, "    {}: {},", attr.name, ty);
-                    }
+            let attrs: Vec<Attribute> = collect_attributes(obj, &lu_dog, domain);
+            for attr in &attrs {
+                let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                emit!(buffer, "    {}: {},", attr.name, ty);
+            }
 
-                    emit!(buffer, "}}");
+            emit!(buffer, "}}");
 
-                    //
-                    // Emit the impl block
-                    //
-                    emit!(
-                        buffer,
-                        "impl {} {{",
-                        obj.as_type(&Ownership::new_owned(), woog, domain)
-                    );
+            //
+            // Emit the impl block
+            //
+            emit!(buffer, "impl {} {{", obj_type,);
 
-                    //
-                    // Emit the constructor
-                    //
-                    write!(buffer, "    fn new(").context(FormatSnafu)?;
-                    let mut ft = true;
-                    let mut iter = attrs.iter();
-                    loop {
-                        match iter.next() {
-                            Some(attr) => {
-                                if attr.name == "id" {
-                                    continue;
-                                }
-                                if !ft {
-                                    write!(buffer, ", ").context(FormatSnafu)?;
-                                } else {
-                                    ft = false;
-                                }
-                                let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
-                                write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
-                            }
-                            None => break,
+            //
+            // Emit the constructor
+            //
+            write!(buffer, "    fn new(").context(FormatSnafu)?;
+            let mut ft = true;
+            let mut iter = attrs.iter();
+            loop {
+                match iter.next() {
+                    Some(attr) => {
+                        if attr.name == "id" {
+                            continue;
                         }
+                        if !ft {
+                            write!(buffer, ", ").context(FormatSnafu)?;
+                        } else {
+                            ft = false;
+                        }
+                        let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                        write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
                     }
-                    // for attr in attrs {
-                    //     if attr.name == "id" {
-                    //         continue;
-                    //     }
-                    //     let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
-                    //     write!(buffer, "{}: {}, ", attr.name, ty).context(FormatSnafu)?;
-                    // }
-                    writeln!(buffer, ") -> Self {{").context(FormatSnafu)?;
-                    emit!(buffer, "        let id = Uuid::new();");
-                    emit!(buffer, "        Self {{");
-                    for attr in &attrs {
-                        emit!(buffer, "            {}: {},", attr.name, attr.name);
-                    }
-                    emit!(buffer, "        }}");
-                    emit!(buffer, "    }}");
-
-                    emit!(buffer, "}}");
-                    emit!(buffer, "");
+                    None => break,
                 }
+            }
+            // for attr in attrs {
+            //     if attr.name == "id" {
+            //         continue;
+            //     }
+            //     let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+            //     write!(buffer, "{}: {}, ", attr.name, ty).context(FormatSnafu)?;
+            // }
+            writeln!(buffer, ") -> {} {{", obj_type).context(FormatSnafu)?;
+            emit!(buffer, "        let id = Uuid::new_v4();");
+            emit!(buffer, "        {} {{", obj_type);
+            for attr in &attrs {
+                emit!(buffer, "            {}: {},", attr.name, attr.name);
+            }
+            emit!(buffer, "        }}");
+            emit!(buffer, "    }}");
+            emit!(buffer, "");
 
-                Ok(())
-            },
-        )?;
+            emit!(buffer, "    fn help() -> () {{");
+            emit_object_comments(
+                // What a cheat!
+                &obj.description.replace("\"", "\u{201d}"),
+                "        print(\"",
+                "\\n\");",
+                buffer,
+            )?;
+            emit!(buffer, "    }}");
+            emit!(buffer, "");
+
+            emit!(buffer, "    fn info() -> () {{");
+            emit!(buffer, "        print(\"struct {} {{\\n\");", obj_type,);
+            for attr in &attrs {
+                let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                emit!(buffer, "        print(\"    {}: {},\\n\");", attr.name, ty);
+            }
+            emit!(buffer, "        print(\"}}\\n\");");
+            emit!(buffer, "    }}");
+
+            emit!(buffer, "}}");
+            emit!(buffer, "");
+        }
+
+        //         Ok(())
+        //     },
+        // )?;
 
         Ok(())
     }
@@ -275,6 +292,26 @@ fn value_type_to_string(
         ValueType::Empty(_) => "()".to_string(),
         ValueType::Error(_) => "maybe error type wasn't a good idea".to_string(),
         ValueType::Function(_) => "<function>".to_string(),
+        ValueType::List(ref id) => {
+            let inner = {
+                let lu_dog = lu_dog.read().unwrap();
+                let list = lu_dog.exhume_list(id).unwrap();
+                list.r36_value_type(&lu_dog)[0].clone()
+            };
+            format!(
+                "Vec<{}>",
+                &value_type_to_string(&inner, lu_dog, woog, domain)
+            )
+        }
+        ValueType::Reference(ref id) => {
+            let inner = {
+                let lu_dog = lu_dog.read().unwrap();
+                let reference = lu_dog.exhume_reference(id).unwrap();
+                reference.r35_value_type(&lu_dog)[0].clone()
+            };
+
+            format!("&{}", &value_type_to_string(&inner, lu_dog, woog, domain))
+        }
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
             match ty {
@@ -290,19 +327,37 @@ fn value_type_to_string(
                 Ty::External(_) => "ext_what_to_do".to_string(),
             }
         }
+        ValueType::Unknown(_) => "<unknown>".to_string(),
         ValueType::WoogOption(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
-                let option = lu_dog.exhume_woog_option(id).unwrap().clone();
+                let option = lu_dog.exhume_woog_option(id).unwrap();
                 option.r2_value_type(&lu_dog)[0].clone()
             };
 
-            let mut ty = String::new();
-            ty.push_str("Option<");
-            ty.push_str(&value_type_to_string(&inner, lu_dog, woog, domain));
-            ty.push_str(">");
+            format!(
+                "Option<{}>",
+                &value_type_to_string(&inner, lu_dog, woog, domain)
+            )
+        }
+        ValueType::WoogStruct(ref id) => {
+            let lu_dog = lu_dog.read().unwrap();
+            let woog_struct = lu_dog.exhume_woog_struct(id).unwrap();
+            woog_struct
+                .name
+                .as_type(&Ownership::new_owned(), woog, domain)
+        }
+        ValueType::ZObjectStore(ref id) => {
+            let domain_name = {
+                let lu_dog = lu_dog.read().unwrap();
+                let zobject_store = lu_dog.exhume_z_object_store(id).unwrap();
+                zobject_store.domain.to_owned()
+            };
 
-            ty
+            format!(
+                "{}Store",
+                domain_name.as_type(&Ownership::new_owned(), woog, domain)
+            )
         }
     }
 }

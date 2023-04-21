@@ -14,7 +14,7 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 /// Associative Object
 ///
 /// This is used in an [`Associative`] relationship to point to the Associative object itself
-///. It's the box with the line pointing at another line.
+/// . It's the box with the line pointing at another line.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-definition"}}}

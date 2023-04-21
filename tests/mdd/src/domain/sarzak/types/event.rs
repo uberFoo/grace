@@ -11,7 +11,7 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-documentation"}}}
 /// An event is sent to an object, and processed by the current state. Assuming it accepts the
-/// event. Otherwise it’s dropped on the floor.
+///  event. Otherwise it’s dropped on the floor.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-definition"}}}

@@ -121,8 +121,8 @@ impl TypeDefinition for SvmModule {}
 impl CodeWriter for SvmModule {
     fn write_code(
         &self,
-        config: &GraceConfig,
-        domain: &Domain,
+        _config: &GraceConfig,
+        _domain: &Domain,
         woog: &Option<&mut WoogStore>,
         lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
@@ -137,7 +137,7 @@ impl CodeWriter for SvmModule {
                 description: "woog is required by SvmModule"
             }
         );
-        let woog = woog.as_ref().unwrap();
+        let _woog = woog.as_ref().unwrap();
 
         ensure!(
             lu_dog.is_some(),
@@ -145,12 +145,12 @@ impl CodeWriter for SvmModule {
                 description: "lu_dog is required by SvmModule"
             }
         );
-        let lu_dog = lu_dog.as_ref().unwrap();
+        let _lu_dog = lu_dog.as_ref().unwrap();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-svm-output", module),
-            |buffer| {
+            |_buffer| {
                 // Load up lu dog and see what imports we have to deal with
 
                 // Generate use statements for the imports

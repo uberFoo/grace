@@ -15,7 +15,7 @@ use crate::domain::sarzak_ts::store::ObjectStore as SarzakTsStore;
 /// The other objects in an Associative Relationship
 ///
 /// This represents one of the two objects that are related in an [`Associative`] relationhip
-///.
+/// .
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-definition"}}}

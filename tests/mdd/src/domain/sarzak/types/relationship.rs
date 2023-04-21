@@ -10,13 +10,13 @@ use uuid::Uuid;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-enum-documentation"}}}
 /// A `Relationship` indicates that a set of objects are connected to each other in some manner
-///. Typically it is a _real world_ relationship. In the
+/// . Typically it is a _real world_ relationship. In the
 /// case of this model it is strictly an abstraction.
 ///
 /// There are three types of `Relationship`: [`Isa`], [`Binary`], and [`Associative`]. Thus
-/// `Relationship` is itself the *supertype* in an [`Isa`] relationship. It is a partitioning
-/// *supertype-subtype* relationship, rather one of inheritance. As such, it’s  perfectly
-/// suited to a rust `enum`! 😃
+///  `Relationship` is itself the *supertype* in an [`Isa`] relationship. It is a partitioning
+///  *supertype-subtype* relationship, rather one of inheritance. As such, it’s  perfectly
+///  suited to a rust `enum`! 😃
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-enum-definition"}}}

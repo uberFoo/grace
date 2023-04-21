@@ -534,6 +534,11 @@ impl CodeWriter for DomainStore {
 
         let timestamp = config.get_persist_timestamps().unwrap_or(false);
         let is_meta = config.is_meta_model();
+        let has_name = objects
+            .iter()
+            .map(|obj| object_has_name(obj, domain))
+            .find(|x| *x)
+            .is_some();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -557,7 +562,9 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
-                emit!(buffer, "use heck::ToUpperCamelCase;");
+                if has_name {
+                    emit!(buffer, "use heck::ToUpperCamelCase;");
+                }
                 if timestamp && is_meta && false {
                     emit!(buffer, "use snafu::prelude::*;");
                     emit!(buffer, "");
@@ -679,8 +686,8 @@ impl CodeWriter for DomainStore {
 /// seem to need it for `Object` so far.
 ///
 /// So I'm short-circuiting this now.
-fn object_has_name(obj: &Object, domain: &Domain) -> bool {
-    obj.name == "Object"
+fn object_has_name(obj: &Object, _domain: &Domain) -> bool {
+    obj.name == "Object" || obj.name == "Struct"
     // obj.r1_attribute(domain.sarzak())
     //     .iter()
     //     .find(|attr| {

@@ -13,7 +13,7 @@ use crate::domain::associative::store::ObjectStore as AssociativeStore;
 /// Subtype Anchor
 ///
 /// Just as it sounds, these are [`Anchor`]s used by [`Subtype`]s in an [`Isa`] relationship
-///.
+/// .
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-definition"}}}

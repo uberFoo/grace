@@ -42,8 +42,8 @@ use uuid::Uuid;
 use crate::domain::sarzak::types::{
     AcknowledgedEvent, AnAssociativeReferent, Associative, AssociativeReferent,
     AssociativeReferrer, Attribute, Binary, Cardinality, Conditionality, Event, External, Isa,
-    Many, Object, Referent, Referrer, Relationship, State, Subtype, Supertype, Ty, BOOLEAN,
-    CONDITIONAL, FLOAT, INTEGER, MANY, ONE, S_STRING, S_UUID, UNCONDITIONAL,
+    Object, Referent, Referrer, Relationship, State, Subtype, Supertype, Ty, BOOLEAN, CONDITIONAL,
+    FLOAT, INTEGER, MANY, ONE, S_STRING, S_UUID, UNCONDITIONAL,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -102,8 +102,6 @@ impl ObjectStore {
         // I remember having a bit of a struggle making it work. It's recursive, with
         // a lot of special cases, and I think it calls other recursive functions...💥
         store.inter_cardinality(Cardinality::Many(MANY));
-        let many = Object::new("".to_owned(), "".to_owned(), "Many".to_owned(), &mut store);
-        store.inter_object(many);
         store.inter_cardinality(Cardinality::One(ONE));
         store.inter_conditionality(Conditionality::Conditional(CONDITIONAL));
         store.inter_conditionality(Conditionality::Unconditional(UNCONDITIONAL));

@@ -246,7 +246,7 @@ impl CodeWriter for Enum {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-enum-documentation", obj.as_ident()),
-            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(obj.description.as_str(), "/// ", "", buffer),
         )?;
 
         // Enum Definition

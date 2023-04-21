@@ -12,8 +12,8 @@ use crate::domain::isa::store::ObjectStore as IsaStore;
 /// Optional Enum Attribute
 ///
 /// This is testing code generation as specified in the description. The specific issue is in
-/// the grace Domain code. Here's what it's currently generating. The problem is commented inline
-///.
+///  the grace Domain code. Here's what it's currently generating. The problem is commented inline
+/// .
 ///
 /// ```ignore
 ///     pub fn new(

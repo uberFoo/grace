@@ -239,7 +239,7 @@ impl CodeWriter for Struct {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
-            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(obj.description.as_str(), "/// ", "", buffer),
         )?;
 
         buffer.block(

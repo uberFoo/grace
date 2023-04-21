@@ -7,7 +7,7 @@ use uuid::{uuid, Uuid};
 /// The String Type
 ///
 /// This type holds unicode characters. This type is just a placeholder. It's implementation
-/// is determined downstream by the code generator.
+///  is determined downstream by the code generator.
 ///
 /// ❗️{"singleton_object": true}
 ///
