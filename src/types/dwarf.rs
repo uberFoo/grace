@@ -292,6 +292,15 @@ fn value_type_to_string(
         ValueType::Empty(_) => "()".to_string(),
         ValueType::Error(_) => "maybe error type wasn't a good idea".to_string(),
         ValueType::Function(_) => "<function>".to_string(),
+        ValueType::Import(ref import) => {
+            let lu_dog = lu_dog.read().unwrap();
+            let import = lu_dog.exhume_import(import).unwrap();
+            if import.has_alias {
+                import.alias.clone()
+            } else {
+                import.name.clone()
+            }
+        }
         ValueType::List(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();

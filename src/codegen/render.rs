@@ -563,6 +563,8 @@ impl Sanitize for &str {
             "String" => "z_string".to_owned(),
             "string" => "z_string".to_owned(),
             "Object Store" => "z_object_store".to_owned(),
+            "Some" => "z_some".to_owned(),
+            "None" => "z_none".to_owned(),
             _ => self.to_string(),
         }
     }
@@ -602,6 +604,8 @@ impl Sanitize for String {
             "String" => "s_string".to_owned(),
             "string" => "s_string".to_owned(),
             "Object Store" => "z_object_store".to_owned(),
+            "Some" => "z_some".to_owned(),
+            "None" => "z_none".to_owned(),
             _ => self.to_owned(),
         }
     }

@@ -12,7 +12,7 @@ use fnv::FnvHashMap as HashMap;
 use sarzak::{
     lu_dog::{
         store::ObjectStore as LuDogStore,
-        types::{Some, ValueType, WoogOption},
+        types::{ValueType, WoogOption},
         Reference,
     },
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -22,7 +22,7 @@ use sarzak::{
         store::ObjectStore as WoogStore,
         types::{
             GraceType, Item, Local, ObjectMethod as WoogObjectMethod, Ownership, StatementEnum,
-            Structure, SymbolTable, Variable, VariableEnum, OWNED,
+            Structure, SymbolTable, Variable, VariableEnum,
         },
     },
 };
@@ -1495,7 +1495,7 @@ where
         let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
         let mut lu_dog = lu_dog.write().unwrap();
         let ty = ValueType::new_ty(&ty, &mut lu_dog);
-        let ty = Reference::new(Uuid::new_v4(), &ty, &mut lu_dog);
+        let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
         let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
         // This determines how a reference is stored in the struct. In this
@@ -1504,7 +1504,7 @@ where
             // If it's conditional build a parameter that's an optional reference
             // to the referent.
             Conditionality::Conditional(_) => {
-                let option = WoogOption::new_none(&ty, &mut lu_dog);
+                let option = WoogOption::new_z_none(&ty, &mut lu_dog);
                 let ty = ValueType::new_woog_option(&option, &mut lu_dog);
 
                 let attr = A::new(attr_name, ty.clone());
@@ -1529,7 +1529,7 @@ where
             let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
             let mut lu_dog = lu_dog.write().unwrap();
             let ty = ValueType::new_ty(&ty, &mut lu_dog);
-            let ty = Reference::new(Uuid::new_v4(), &ty, &mut lu_dog);
+            let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
             let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
             let attr_name = an_ass.referential_attribute.as_ident();
