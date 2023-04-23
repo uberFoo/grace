@@ -241,7 +241,7 @@ impl CodeWriter for DwarfModule {
             //     write!(buffer, "{}: {}, ", attr.name, ty).context(FormatSnafu)?;
             // }
             writeln!(buffer, ") -> {} {{", obj_type).context(FormatSnafu)?;
-            emit!(buffer, "        let id = Uuid::new_v4();");
+            emit!(buffer, "        let id = Uuid::new();");
             emit!(buffer, "        {} {{", obj_type);
             for attr in &attrs {
                 emit!(buffer, "            {}: {},", attr.name, attr.name);
