@@ -671,7 +671,6 @@ pub(crate) fn render_new_instance(
                         (local_object_is_hybrid(super_obj, config, domain), None)
                     };
 
-                    // if local_object_is_hybrid(super_obj, config, domain) {
                     if is_hybrid {
                         match rval.ty {
                             GType::Uuid => {
@@ -697,8 +696,12 @@ pub(crate) fn render_new_instance(
                                         buffer,
                                         "{}: {}Enum::{}({}.read().unwrap().{id}),",
                                         field.name,
-                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        foo_super_obj.unwrap().as_type(
+                                            &Ownership::new_borrowed(),
+                                            woog,
+                                            domain
+                                        ),
+                                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         rval.name
                                     )
                                 } else {
@@ -1344,7 +1347,7 @@ pub(crate) fn local_object_is_hybrid(
     domain: &Domain,
 ) -> bool {
     let attrs = object.r1_attribute(domain.sarzak());
-    log::debug!("attrs: {:?}", attrs);
+    log::debug!("{} is_hybrid attrs: {:?}", object.name, attrs);
 
     local_object_is_supertype(object, config, domain)
         && (attrs.len() > 1 || local_object_is_referrer(object, config, domain))
@@ -1363,7 +1366,7 @@ pub(crate) fn local_object_is_supertype(
     domain: &Domain,
 ) -> bool {
     let is_super = object.r14_supertype(domain.sarzak());
-    log::debug!("is_super: {:?}", is_super);
+    log::debug!("{} is_super: {:?}", object.name, is_super);
 
     is_super.len() > 0
 }
@@ -1375,7 +1378,7 @@ pub(crate) fn local_object_is_subtype(
     domain: &Domain,
 ) -> bool {
     let is_sub = object.r15_subtype(domain.sarzak());
-    log::debug!("is_sub: {:?}", is_sub);
+    log::debug!("{} is_sub: {:?}", object.name, is_sub);
 
     is_sub.len() > 0
 }
@@ -1391,7 +1394,7 @@ pub(crate) fn local_object_is_singleton(
     }
 
     let attrs = object.r1_attribute(domain.sarzak());
-    log::debug!("attrs: {:?}", attrs);
+    log::debug!("{} is_singleton attrs: {:?}", object.name, attrs);
 
     attrs.len() < 2
         && !local_object_is_referrer(object, config, domain)
@@ -1402,8 +1405,12 @@ pub(crate) fn local_object_is_singleton(
 fn local_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Domain) -> bool {
     let referrers = object.r17_referrer(domain.sarzak());
     let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
-    log::debug!("referrers: {:?}", referrers);
-    log::debug!("assoc_referrers: {:?}", assoc_referrers);
+    log::debug!("{} is_referrer referrers: {:?}", object.name, referrers);
+    log::debug!(
+        "{} is_referrer assoc_referrers: {:?}",
+        object.name,
+        assoc_referrers
+    );
 
     referrers.len() > 0 || assoc_referrers.len() > 0
 }
