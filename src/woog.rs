@@ -106,7 +106,7 @@ pub(crate) fn populate_woog(
         } else if local_object_is_struct(obj, config, domain) {
             log::debug!("Populating woog for struct: {}", obj.name);
             inter_struct_method_new(obj, module, config, domain, &mut woog);
-            inter_struct_method_new_(obj, module, config, domain, &mut woog);
+            // inter_struct_method_new_(obj, module, config, domain, &mut woog);
         } else if local_object_is_hybrid(obj, config, domain) {
             // log::debug!("Populating woog for hybrid: {}", obj.name);
             // inter_hybrid_method_new(obj, module, config, imports, domain, &mut woog);

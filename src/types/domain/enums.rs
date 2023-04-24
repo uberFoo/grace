@@ -113,6 +113,10 @@ impl CodeWriter for Enum {
                 let mut uses = HashSet::default();
                 let mut import_store = false;
 
+                if config.get_uber_store() {
+                    emit!(buffer, "use std::sync::{{Arc, RwLock}};\n")
+                }
+
                 // Everything has an `id`, everything needs this.
                 uses.insert("use uuid::Uuid;".to_owned());
 
@@ -445,6 +449,8 @@ impl CodeWriter for EnumNewImpl {
             DirectiveKind::IgnoreOrig,
             format!("{}-new-impl", obj.as_ident()),
             |buffer| {
+                let is_uber = config.get_uber_store();
+
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
@@ -458,26 +464,58 @@ impl CodeWriter for EnumNewImpl {
                     );
 
                     if is_singleton && !is_supertype {
-                        emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
-                        emit!(
-                            buffer,
-                            "// This is already in the store, see associated function `new` above."
-                        );
-                        emit!(
-                            buffer,
-                            "Self::{}({})",
-                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                            s_obj.as_const()
-                        );
+                        if is_uber {
+                            emit!(
+                                buffer,
+                                "pub fn new_{}() -> Arc<RwLock<Self>> {{",
+                                s_obj.as_ident()
+                            );
+                            emit!(
+                                buffer,
+                                "// This is already in the store, see associated function `new` above."
+                            );
+                            emit!(
+                                buffer,
+                                "Arc::new(RwLock::new(Self::{}({})))",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                s_obj.as_const()
+                            );
+                        } else {
+                            emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
+                            emit!(
+                                buffer,
+                                "// This is already in the store, see associated function `new` above."
+                            );
+                            emit!(
+                                buffer,
+                                "Self::{}({})",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                s_obj.as_const()
+                            );
+                        }
+                        emit!(buffer, "}}");
+                        emit!(buffer, "");
                     } else {
-                        emit!(
-                            buffer,
-                            "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
-                            s_obj.as_ident(),
-                            s_obj.as_ident(),
-                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                            store.name
-                        );
+                        if is_uber {
+                            emit!(
+                                buffer,
+                                "pub fn new_{}({}: Arc<RwLock<{}>>, store: &mut {}) -> Arc<RwLock<Self>> {{",
+                                s_obj.as_ident(),
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                store.name
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
+                                s_obj.as_ident(),
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                store.name
+                            );
+                        }
+
                         // I feel sort of gross doing this, but also sort of not. Part of me feels
                         // like I should move this, and the same idea in codegen::render_new_instance,
                         // into a function. Refactor the bits. But then the other part of me wants to
@@ -485,59 +523,34 @@ impl CodeWriter for EnumNewImpl {
                         // I should be able to build the let statement in terms of woog and then
                         // have it write itself. So for now, here we are. I'm only here because I'm
                         // trying to get woog working, so that's sort of funny.
-                        if object_is_enum(s_obj, config, imports, domain)? {
+                        let id = if object_is_enum(s_obj, config, imports, domain)? {
+                            "id()"
+                        } else {
+                            "id"
+                        };
+
+                        if is_uber {
                             emit!(
                                 buffer,
-                                "let new = Self::{}({}.id());",
+                                "let new = Arc::new(RwLock::new(Self::{}({}.read().unwrap().{id})));",
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                 s_obj.as_ident()
                             );
                         } else {
                             emit!(
                                 buffer,
-                                "let new = Self::{}({}.id);",
+                                "let new = Self::{}({}.{id});",
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                 s_obj.as_ident()
                             );
-                        }
+                        };
+
                         emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                         emit!(buffer, "new");
 
                         emit!(buffer, "}}");
                         emit!(buffer, "");
-                        emit!(
-                            buffer,
-                            "pub fn new_{}_({}: &{}) -> Self {{",
-                            s_obj.as_ident(),
-                            s_obj.as_ident(),
-                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                        );
-                        // I feel sort of gross doing this, but also sort of not. Part of me feels
-                        // like I should move this, and the same idea in codegen::render_new_instance,
-                        // into a function. Refactor the bits. But then the other part of me wants to
-                        // see how this plays out once woog comes into play. I have a feeling that
-                        // I should be able to build the let statement in terms of woog and then
-                        // have it write itself. So for now, here we are. I'm only here because I'm
-                        // trying to get woog working, so that's sort of funny.
-                        if object_is_enum(s_obj, config, imports, domain)? {
-                            emit!(
-                                buffer,
-                                "let new = Self::{}({}.id());",
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                s_obj.as_ident()
-                            );
-                        } else {
-                            emit!(
-                                buffer,
-                                "let new = Self::{}({}.id);",
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                s_obj.as_ident()
-                            );
-                        }
-                        emit!(buffer, "new");
                     }
-                    emit!(buffer, "}}");
-                    emit!(buffer, "");
                 }
                 Ok(())
             },

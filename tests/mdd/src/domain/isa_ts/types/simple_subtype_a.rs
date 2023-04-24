@@ -32,11 +32,6 @@ impl SimpleSubtypeA {
         new
     }
 
-    pub fn new_oh_boy_(oh_boy: &OhBoy) -> Self {
-        let new = Self::OhBoy(oh_boy.id);
-        new
-    }
-
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-get-id-impl"}}}
     pub fn id(&self) -> Uuid {

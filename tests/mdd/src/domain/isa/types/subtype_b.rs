@@ -33,18 +33,9 @@ impl SubtypeB {
             number: number,
         };
         store.inter_subtype_b(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new_"}}}
-    /// Inter a new 'Subtype B' in the store, and return it's `id`.
-    pub fn new_(number: i64) -> SubtypeB {
-        let id = Uuid::new_v4();
-        let new = SubtypeB {
-            id: id,
-            number: number,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

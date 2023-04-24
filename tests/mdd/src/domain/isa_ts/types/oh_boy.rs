@@ -45,15 +45,6 @@ impl OhBoy {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new_"}}}
-    /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
-    pub fn new_(attribution: String) -> OhBoy {
-        let id = Uuid::new_v4();
-        let new = OhBoy {
-            attribution: attribution,
-            id: id,
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-impl-nav-subtype-to-supertype-simple_subtype_a"}}}
     // Navigate to [`SimpleSubtypeA`] across R8(isa)

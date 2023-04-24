@@ -1,7 +1,10 @@
 //! Dwarf File Generation
 //!
 //! This is where we generate code for use in the next stage of the compiler.
-use std::{fmt::Write, sync::RwLock};
+use std::{
+    fmt::Write,
+    sync::{Arc, RwLock},
+};
 
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
@@ -148,11 +151,11 @@ impl CodeWriter for DwarfModule {
 
         struct Attribute {
             pub name: String,
-            pub ty: ValueType,
+            pub ty: Arc<RwLock<ValueType>>,
         }
 
         impl AttributeBuilder<Attribute> for Attribute {
-            fn new(name: String, ty: ValueType) -> Self {
+            fn new(name: String, ty: Arc<RwLock<ValueType>>) -> Self {
                 Attribute { name, ty }
             }
         }
@@ -199,7 +202,7 @@ impl CodeWriter for DwarfModule {
 
             let attrs: Vec<Attribute> = collect_attributes(obj, &lu_dog, domain);
             for attr in &attrs {
-                let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                let ty = value_type_to_string(attr.ty.clone(), lu_dog, woog, domain);
                 emit!(buffer, "    {}: {},", attr.name, ty);
             }
 
@@ -227,7 +230,7 @@ impl CodeWriter for DwarfModule {
                         } else {
                             ft = false;
                         }
-                        let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                        let ty = value_type_to_string(attr.ty.clone(), lu_dog, woog, domain);
                         write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
                     }
                     None => break,
@@ -264,7 +267,7 @@ impl CodeWriter for DwarfModule {
             emit!(buffer, "    fn info() -> () {{");
             emit!(buffer, "        print(\"struct {} {{\\n\");", obj_type,);
             for attr in &attrs {
-                let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
+                let ty = value_type_to_string(attr.ty.clone(), lu_dog, woog, domain);
                 emit!(buffer, "        print(\"    {}: {},\\n\");", attr.name, ty);
             }
             emit!(buffer, "        print(\"}}\\n\");");
@@ -283,18 +286,23 @@ impl CodeWriter for DwarfModule {
 }
 
 fn value_type_to_string(
-    ty: &ValueType,
+    ty: Arc<RwLock<ValueType>>,
     lu_dog: &RwLock<LuDogStore>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> String {
-    match ty {
+    match ty.read().unwrap().clone() {
         ValueType::Empty(_) => "()".to_string(),
         ValueType::Error(_) => "maybe error type wasn't a good idea".to_string(),
         ValueType::Function(_) => "<function>".to_string(),
         ValueType::Import(ref import) => {
             let lu_dog = lu_dog.read().unwrap();
-            let import = lu_dog.exhume_import(import).unwrap();
+            let import = lu_dog
+                .exhume_import(import)
+                .unwrap()
+                .read()
+                .unwrap()
+                .clone();
             if import.has_alias {
                 import.alias.clone()
             } else {
@@ -304,22 +312,22 @@ fn value_type_to_string(
         ValueType::List(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
-                let list = lu_dog.exhume_list(id).unwrap();
+                let list = lu_dog.exhume_list(id).unwrap().read().unwrap().clone();
                 list.r36_value_type(&lu_dog)[0].clone()
             };
             format!(
                 "Vec<{}>",
-                &value_type_to_string(&inner, lu_dog, woog, domain)
+                &value_type_to_string(inner, lu_dog, woog, domain)
             )
         }
         ValueType::Reference(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
-                let reference = lu_dog.exhume_reference(id).unwrap();
+                let reference = lu_dog.exhume_reference(id).unwrap().read().unwrap().clone();
                 reference.r35_value_type(&lu_dog)[0].clone()
             };
 
-            format!("&{}", &value_type_to_string(&inner, lu_dog, woog, domain))
+            format!("&{}", &value_type_to_string(inner, lu_dog, woog, domain))
         }
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
@@ -340,18 +348,28 @@ fn value_type_to_string(
         ValueType::WoogOption(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
-                let option = lu_dog.exhume_woog_option(id).unwrap();
+                let option = lu_dog
+                    .exhume_woog_option(id)
+                    .unwrap()
+                    .read()
+                    .unwrap()
+                    .clone();
                 option.r2_value_type(&lu_dog)[0].clone()
             };
 
             format!(
                 "Option<{}>",
-                &value_type_to_string(&inner, lu_dog, woog, domain)
+                &value_type_to_string(inner, lu_dog, woog, domain)
             )
         }
         ValueType::WoogStruct(ref id) => {
             let lu_dog = lu_dog.read().unwrap();
-            let woog_struct = lu_dog.exhume_woog_struct(id).unwrap();
+            let woog_struct = lu_dog
+                .exhume_woog_struct(id)
+                .unwrap()
+                .read()
+                .unwrap()
+                .clone();
             woog_struct
                 .name
                 .as_type(&Ownership::new_owned(), woog, domain)
@@ -359,7 +377,12 @@ fn value_type_to_string(
         ValueType::ZObjectStore(ref id) => {
             let domain_name = {
                 let lu_dog = lu_dog.read().unwrap();
-                let zobject_store = lu_dog.exhume_z_object_store(id).unwrap();
+                let zobject_store = lu_dog
+                    .exhume_z_object_store(id)
+                    .unwrap()
+                    .read()
+                    .unwrap()
+                    .clone();
                 zobject_store.domain.to_owned()
             };
 

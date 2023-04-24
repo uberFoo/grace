@@ -43,16 +43,6 @@ impl A {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new_"}}}
-    /// Inter a new 'A' in the store, and return it's `id`.
-    pub fn new_(number: i64, ptr: &Referent) -> A {
-        let id = Uuid::new_v4();
-        let new = A {
-            id: id,
-            number: number,
-            ptr: ptr.id,
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-nav-forward-to-ptr"}}}
     /// Navigate to [`Referent`] across R1(1-*)

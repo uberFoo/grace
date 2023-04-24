@@ -35,19 +35,9 @@ impl State {
             obj_id: obj_id.id,
         };
         store.inter_state(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new_"}}}
-    /// Inter a new 'State' in the store, and return it's `id`.
-    pub fn new_(name: String, obj_id: &Object) -> State {
-        let id = Uuid::new_v4();
-        let new = State {
-            id: id,
-            name: name,
-            obj_id: obj_id.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

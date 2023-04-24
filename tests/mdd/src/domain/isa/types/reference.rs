@@ -30,15 +30,9 @@ impl Reference {
         let id = Uuid::new_v4();
         let new = Reference { id: id, name: name };
         store.inter_reference(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new_"}}}
-    /// Inter a new 'Reference' in the store, and return it's `id`.
-    pub fn new_(name: String) -> Reference {
-        let id = Uuid::new_v4();
-        let new = Reference { id: id, name: name };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

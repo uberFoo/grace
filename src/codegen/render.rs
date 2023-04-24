@@ -24,6 +24,7 @@ use crate::{
         buffer::{emit, Buffer},
         get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
     },
+    options::GraceConfig,
     todo::{External, GType, ObjectMethod, Parameter as todoP},
 };
 
@@ -373,6 +374,133 @@ impl<'a> RenderStatement for ObjectMethod<'a> {
     }
 }
 */
+
+pub(crate) trait ForStore {
+    fn for_store(
+        &self,
+        mutability: &Ownership,
+        config: &GraceConfig,
+        woog: &WoogStore,
+        domain: &Domain,
+    ) -> String;
+}
+
+impl ForStore for GraceType {
+    fn for_store(
+        &self,
+        mutability: &Ownership,
+        config: &GraceConfig,
+        woog: &WoogStore,
+        domain: &Domain,
+    ) -> String {
+        let is_uber = config.get_uber_store();
+
+        match self {
+            Self::Ty(t) => {
+                let ty = domain.sarzak().exhume_ty(&t).unwrap();
+                ty.as_type(mutability, woog, domain)
+            }
+            Self::WoogOption(o) => {
+                let o = woog.exhume_woog_option(&o).unwrap();
+                let inner = o.r20_grace_type(woog)[0];
+
+                let (inner, imported) = if let GraceType::Reference(ref id) = inner {
+                    let reference = woog.exhume_reference(&id).unwrap();
+                    let object = reference.r13_object(domain.sarzak())[0];
+
+                    // Here we swizzle the type from a reference to just an object, as
+                    // we don't want it to output as a reference.
+                    let ty = domain.sarzak().exhume_ty(&object.id).unwrap();
+                    let ty = woog.exhume_grace_type(&ty.id()).unwrap();
+
+                    (ty, config.is_imported(&object.id))
+                } else {
+                    (inner, false)
+                };
+
+                if is_uber && !imported {
+                    format!(
+                        "Option<Arc<RwLock<{}>>>",
+                        inner.as_type(mutability, woog, domain)
+                    )
+                } else {
+                    format!("Option<{}>", inner.as_type(mutability, woog, domain))
+                }
+            }
+            Self::Reference(r) => {
+                let reference = woog.exhume_reference(&r).unwrap();
+                let object = reference.r13_object(domain.sarzak())[0];
+                let imported = config.is_imported(&object.id);
+
+                if is_uber && !imported {
+                    format!("Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
+                } else {
+                    format!("&{}", object.as_type(mutability, woog, domain))
+                }
+            }
+            Self::TimeStamp(_) => "SystemTime".to_owned(),
+        }
+    }
+}
+
+impl ForStore for GType {
+    fn for_store(
+        &self,
+        mutability: &Ownership,
+        config: &GraceConfig,
+        woog: &WoogStore,
+        domain: &Domain,
+    ) -> String {
+        let is_uber = config.get_uber_store();
+
+        match self {
+            GType::Boolean => "bool".to_owned(),
+            GType::Object(o) => {
+                let object = domain.sarzak().exhume_object(&o).unwrap();
+                format!("{}", object.as_type(mutability, woog, domain))
+            }
+            GType::Reference(r) => {
+                let object = domain.sarzak().exhume_object(&r).unwrap();
+
+                if is_uber {
+                    format!("Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
+                } else {
+                    format!("&{}", object.as_type(mutability, woog, domain))
+                }
+            }
+            GType::Option(o) => {
+                let (o, imported) = if let GType::Reference(id) = **o {
+                    let object = domain.sarzak().exhume_object(&id).unwrap();
+
+                    // Here we swizzle the type from a reference to just an object, as
+                    // we don't want it to output as a reference.
+                    let ty = domain.sarzak().exhume_ty(&object.id).unwrap();
+
+                    (Box::new(GType::Object(id)), config.is_imported(&object.id))
+                } else {
+                    (o.clone(), false)
+                };
+
+                if is_uber && !imported {
+                    format!(
+                        "Option<Arc<RwLock<{}>>>",
+                        o.as_type(mutability, woog, domain)
+                    )
+                } else {
+                    format!("Option<{}>", o.as_type(mutability, woog, domain))
+                }
+            }
+            GType::External(e) => {
+                format!("&{}", e.as_type(mutability, woog, domain))
+            }
+            GType::String => "String".to_owned(),
+            GType::Uuid => "Uuid".to_owned(),
+            GType::Float => "f64".to_owned(),
+            GType::Integer => "i64".to_owned(),
+        }
+    }
+}
+
 /// Trait for rendering type as a Type
 ///
 /// This trait represents the sanitization of an unknown string, into one

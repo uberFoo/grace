@@ -89,6 +89,8 @@ pub struct DomainConfig {
     ///
     /// This is used to persist model files. It may be useful for persisting
     /// user domains.
+    ///
+    /// **This will become the default and the option will go away**.
     #[arg(long, short, action=ArgAction::SetTrue)]
     pub persist: bool,
     /// Persist with timestamps
@@ -99,6 +101,22 @@ pub struct DomainConfig {
     /// changed.
     #[arg(long, short = 't', action=ArgAction::SetTrue, requires = "persist")]
     pub persist_timestamps: bool,
+    /// Better Store
+    ///
+    /// This enables multi-threaded support in the store. It also integrates better
+    /// overall by persisting changes to the store without having to inter things,
+    /// etc. Basically every instance returned by the store is wrapped in an
+    /// `Arc<RwLock<>>`, so the references are all shared and protected. It's
+    /// just a pain in the ass to use.
+    ///
+    /// The thought is that this will be abstracted away by writing dwarf files
+    /// to interact with the store, not Rust code.
+    ///
+    /// Eventually this option will go away in favor of making it the default.
+    /// That requires rewriting big chunks of the compiler, so I'm going to
+    /// do it piecemeal.
+    #[arg(long, action=ArgAction::SetTrue)]
+    pub uber_store: bool,
     /// This Domain is Sarzak
     ///
     /// There can be only one! 💥😱🤣
@@ -115,8 +133,9 @@ pub struct DomainConfig {
 
 const DOMAIN_FROM_MODULE: Option<String> = None;
 const DOMAIN_FROM_PATH: Option<PathBuf> = None;
-const DOMAIN_PERSIST: bool = false;
+const DOMAIN_PERSIST: bool = true;
 const DOMAIN_PERSIST_TIMESTAMPS: bool = false;
+const DOMAIN_UBER_STORE: bool = false;
 const DOMAIN_IS_SARZAK: bool = false;
 const DOMAIN_IS_META_MODEL: bool = false;
 
@@ -132,6 +151,7 @@ impl Default for DomainConfig {
             from_path: DOMAIN_FROM_PATH,
             persist: DOMAIN_PERSIST,
             persist_timestamps: DOMAIN_PERSIST_TIMESTAMPS,
+            uber_store: DOMAIN_UBER_STORE,
             is_sarzak: DOMAIN_IS_SARZAK,
             is_meta_model: DOMAIN_IS_META_MODEL,
         }
@@ -295,19 +315,26 @@ impl GraceConfig {
     /// Get the `persist` value for the target.
     ///
     /// As above, this is sort of a special purpose function.
-    pub(crate) fn get_persist(&self) -> Option<bool> {
+    pub(crate) fn get_persist(&self) -> bool {
         match self.get_target() {
-            Target::Domain(config) => Some(config.persist),
-            _ => None,
+            Target::Domain(config) => config.persist,
+            _ => false,
         }
     }
 
     /// Get the `persist_timestamps` value for the target.
     ///
-    pub(crate) fn get_persist_timestamps(&self) -> Option<bool> {
+    pub(crate) fn get_persist_timestamps(&self) -> bool {
         match self.get_target() {
-            Target::Domain(config) => Some(config.persist_timestamps),
-            _ => None,
+            Target::Domain(config) => config.persist_timestamps,
+            _ => false,
+        }
+    }
+
+    pub(crate) fn get_uber_store(&self) -> bool {
+        match self.get_target() {
+            Target::Domain(config) => config.uber_store,
+            _ => false,
         }
     }
 

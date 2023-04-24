@@ -52,26 +52,9 @@ impl AssociativeReferent {
             obj_id: obj_id.id,
         };
         store.inter_associative_referent(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new_"}}}
-    /// Inter a new 'Associative Referent' in the store, and return it's `id`.
-    pub fn new_(
-        description: String,
-        cardinality: &Cardinality,
-        conditionality: &Conditionality,
-        obj_id: &Object,
-    ) -> AssociativeReferent {
-        let id = Uuid::new_v4();
-        let new = AssociativeReferent {
-            description: description,
-            id: id,
-            cardinality: cardinality.id(),
-            conditionality: conditionality.id(),
-            obj_id: obj_id.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

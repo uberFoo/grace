@@ -440,7 +440,7 @@ impl ObjectStore {
         self.object.get_mut(id)
     }
 
-    /// Exhume [`Object`] from the store by name.
+    /// Exhume [`Object`] id from the store by name.
     ///
     pub fn exhume_object_id_by_name(&self, name: &str) -> Option<&Uuid> {
         self.object_id_by_name.get(name)
@@ -887,7 +887,7 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
         let path = path.join("sarzak.json");

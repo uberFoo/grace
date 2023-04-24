@@ -507,7 +507,7 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
         let path = path.join("associative.json");
@@ -527,7 +527,7 @@ impl ObjectStore {
                     serde_json::from_reader(reader)?;
                 store
                     .acknowledged_event
-                    .insert(acknowledged_event.0.id, acknowledged_event);
+                    .insert(acknowledged_event.id, acknowledged_event);
             }
         }
 
@@ -541,7 +541,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let anchor: (Anchor, SystemTime) = serde_json::from_reader(reader)?;
-                store.anchor.insert(anchor.0.id, anchor);
+                store.anchor.insert(anchor.id, anchor);
             }
         }
 
@@ -555,7 +555,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let event: (Event, SystemTime) = serde_json::from_reader(reader)?;
-                store.event.insert(event.0.id, event);
+                store.event.insert(event.id, event);
             }
         }
 
@@ -569,7 +569,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let isa_ui: (IsaUi, SystemTime) = serde_json::from_reader(reader)?;
-                store.isa_ui.insert(isa_ui.0.id, isa_ui);
+                store.isa_ui.insert(isa_ui.id, isa_ui);
             }
         }
 
@@ -583,7 +583,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let state: (State, SystemTime) = serde_json::from_reader(reader)?;
-                store.state.insert(state.0.id, state);
+                store.state.insert(state.id, state);
             }
         }
 
@@ -599,7 +599,7 @@ impl ObjectStore {
                 let subtype_anchor: (SubtypeAnchor, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .subtype_anchor
-                    .insert(subtype_anchor.0.id, subtype_anchor);
+                    .insert(subtype_anchor.id, subtype_anchor);
             }
         }
 

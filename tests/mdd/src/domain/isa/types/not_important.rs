@@ -71,20 +71,10 @@ impl NotImportant {
             x_ref: x_ref.id,
         };
         store.inter_not_important(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-cond-to-x_ref"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new_"}}}
-    /// Inter a new 'Not Important' in the store, and return it's `id`.
-    pub fn new_(name: Uuid, x_ref: &SuperT) -> NotImportant {
-        let id = Uuid::new_v4();
-        let new = NotImportant {
-            id: id,
-            name: name,
-            x_ref: x_ref.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-cond-to-x_ref"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

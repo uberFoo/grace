@@ -37,15 +37,6 @@ impl SubtypeB {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new_"}}}
-    /// Inter a new 'Subtype B' in the store, and return it's `id`.
-    pub fn new_(number: i64) -> SubtypeB {
-        let id = Uuid::new_v4();
-        let new = SubtypeB {
-            id: id,
-            number: number,
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-impl-nav-subtype-to-supertype-super_t"}}}
     // Navigate to [`SuperT`] across R2(isa)

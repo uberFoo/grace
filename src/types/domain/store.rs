@@ -6,7 +6,7 @@ use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
     lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::{Object, Ty},
+    sarzak::types::Object,
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
@@ -159,7 +159,17 @@ impl DomainStore {
             DirectiveKind::IgnoreOrig,
             format!("{}-object-store-methods", module),
             |buffer| {
+                let is_uber = config.get_uber_store();
+
                 for obj in objects {
+                    let thing = if is_uber {
+                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                    } else {
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    };
+
+                    // 🚦
+                    // Generate inter_ methods
                     emit!(
                         buffer,
                         "/// Inter [`{}`] into the store.",
@@ -171,7 +181,7 @@ impl DomainStore {
                         "pub fn inter_{}(&mut self, {}: {}) {{",
                         obj.as_ident(),
                         obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        thing
                     );
                     let id = if local_object_is_enum(obj, config, domain) {
                         "id()"
@@ -179,60 +189,135 @@ impl DomainStore {
                         "id"
                     };
 
+                    if is_uber {
+                        emit!(buffer, "let read = {}.read().unwrap();", obj.as_ident());
+                    }
+
                     if timestamp {
                         if object_has_name(obj, domain) {
-                            emit!(
-                                buffer,
-                                "let value = ({}, SystemTime::now());",
-                                obj.as_ident()
-                            );
-                            emit!(
-                                buffer,
-                                "self.{}_id_by_name.insert(value.0.name.to_upper_camel_case(), (value.0.{id}, value.1));",
-                                obj.as_ident()
-                            );
-                            emit!(
-                                buffer,
-                                "self.{}.insert(value.0.{id}, value);",
-                                obj.as_ident(),
-                            );
+
+                            if is_uber {
+                                emit!(
+                                    buffer,
+                                    "let value = ({}.clone(), SystemTime::now());",
+                                    obj.as_ident()
+                                );
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "let value = ({}, SystemTime::now());",
+                                    obj.as_ident()
+                                );
+                            }
+
+                            if is_uber {
+                                emit!(
+                                    buffer,
+                                    "self.{}_id_by_name.insert(read.name.to_upper_camel_case(), (read.{id}, value.1));",
+                                    obj.as_ident(),
+                                );
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert(read.{id}, value);",
+                                    obj.as_ident(),
+                                );
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "self.{}_id_by_name.insert(value.0.name.to_upper_camel_case(), (value.0.{id}, value.1));",
+                                    obj.as_ident(),
+                                );
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert(value.0).{id}, value);",
+                                    obj.as_ident(),
+                                );
+                            }
+
                         } else {
-                            emit!(
-                                buffer,
-                                "self.{}.insert({}.{id}, ({}, SystemTime::now()));",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
+
+                             if is_uber {
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert(read.{id}, ({}.clone(), SystemTime::now()));",
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert({}.{id}, ({}, SystemTime::now()));",
+                                    obj.as_ident(),
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            }
+
                         }
                     } else {
                         if object_has_name(obj, domain) {
-                            emit!(
-                                buffer,
-                                "self.{}_id_by_name.insert({}.name.to_upper_camel_case(), {}.{id});",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
-                            emit!(
-                                buffer,
-                                "self.{}.insert({}.{id}, {});",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident(),
-                            );
+
+                            if is_uber {
+                                emit!(
+                                    buffer,
+                                    "self.{}_id_by_name.insert(read.name.to_upper_camel_case(), read.{id});",
+                                    obj.as_ident(),
+                                );
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert(read.{id}, {}.clone());",
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "self.{}_id_by_name.insert({}.name.to_upper_camel_case(), {}.{id});",
+                                    obj.as_ident(),
+                                    obj.as_ident(),
+                                    obj.as_ident(),
+                                );
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert({}.{id}, {});",
+                                    obj.as_ident(),
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            }
+
                         } else {
-                            emit!(
-                                buffer,
-                                "self.{}.insert({}.{id}, {});",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
+
+                            if is_uber {
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert(read.{id}, {}.clone());",
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "self.{}.insert({}.{id}, {});",
+                                    obj.as_ident(),
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            }
+
                         }
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
+
+                    // 🚦
+                    // Generate exhume_ methods
+                    let thing = if is_uber {
+                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                    } else {
+                        format!("&{}", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                    };
+
                     emit!(
                         buffer,
                         "/// Exhume [`{}`] from the store.",
@@ -241,52 +326,73 @@ impl DomainStore {
                     emit!(buffer, "///");
                     emit!(
                         buffer,
-                        "pub fn exhume_{}(&self, id: &Uuid) -> Option<&{}> {{",
+                        "pub fn exhume_{}(&self, id: &Uuid) -> Option<{}> {{",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        thing
                     );
-                    if timestamp {
-                        emit!(
-                            buffer,
-                            "self.{}.get(id).map(|{}| &{}.0)",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
+
+                    if is_uber {
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}.get(id).map(|{}| {}.0.clone())",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "self.{}.get(id)", obj.as_ident());
+                        }
                     } else {
-                        emit!(buffer, "self.{}.get(id)", obj.as_ident());
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}.get(id).map(|{}| &{}.0)",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "self.{}.get(id)", obj.as_ident());
+                        }
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
-                    emit!(
-                        buffer,
-                        "/// Exhume [`{}`] from the store — mutably.",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
-                    emit!(buffer, "///");
-                    emit!(
-                        buffer,
-                        "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
-                        obj.as_ident(),
-                        obj.as_type(&Ownership::Mutable(MUTABLE), woog, domain)
-                    );
-                    if timestamp {
+
+                    // 🚦
+                    // Generate mutable get -- I don't see this sticking around.
+                    if !is_uber {
                         emit!(
                             buffer,
-                            "self.{}.get_mut(id).map(|{}| &mut {}.0)",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
+                            "/// Exhume [`{}`] from the store — mutably.",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
-                    } else {
-                        emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
+                        emit!(buffer, "///");
+                        emit!(
+                            buffer,
+                            "pub fn exhume_{}_mut(&mut self, id: &Uuid) -> Option<&{}> {{",
+                            obj.as_ident(),
+                            obj.as_type(&Ownership::Mutable(MUTABLE), woog, domain)
+                        );
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}.get_mut(id).map(|{}| &mut {}.0)",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "self.{}.get_mut(id)", obj.as_ident());
+                        }
+                        emit!(buffer, "}}");
+                        emit!(buffer, "");
                     }
-                    emit!(buffer, "}}");
-                    emit!(buffer, "");
+
                     if object_has_name(obj, domain) {
                         emit!(
                             buffer,
-                            "/// Exhume [`{}`] from the store by name.",
+                            "/// Exhume [`{}`] id from the store by name.",
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         emit!(buffer, "///");
@@ -309,31 +415,63 @@ impl DomainStore {
                         emit!(buffer, "}}");
                         emit!(buffer, "");
                     }
+
+                    // 🚦
+                    // Generate iter_ methods
                     emit!(
                         buffer,
                         "/// Get an iterator over the internal `HashMap<&Uuid, {}>`.",
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
-                    emit!(
-                        buffer,
-                        "pub fn iter_{}(&self) -> impl Iterator<Item = &{}> {{",
-                        obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
-                    if timestamp {
+
+                    if is_uber {
                         emit!(
                             buffer,
-                            "self.{}.values().map(|{}| &{}.0)",
+                            "pub fn iter_{}(&self) -> impl Iterator<Item = Arc<RwLock<{}>>> + '_ {{",
                             obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     } else {
-                        emit!(buffer, "self.{}.values()", obj.as_ident());
+                        emit!(
+                            buffer,
+                            "pub fn iter_{}(&self) -> impl Iterator<Item = &{}> {{",
+                            obj.as_ident(),
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
                     }
+
+                    if is_uber {
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}.values().map(|{}| {}.0.clone())",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "self.{}.values()", obj.as_ident());
+                        }
+                    } else {
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{}.values().map(|{}| &{}.0)",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "self.{}.values()", obj.as_ident());
+                        }
+                    }
+
                     emit!(buffer, "}}");
                     emit!(buffer, "");
+
+                    // 🚦
+                    // Generate code to get timestamp
                     if timestamp {
                         emit!(
                             buffer,
@@ -403,6 +541,8 @@ impl CodeWriter for DomainStore {
         );
         let woog = woog.as_ref().unwrap();
 
+        // This is used internally to generate some code to initialize the store
+        // with const values. It's pretty gnarly.
         fn emit_singleton_subtype_uses(
             supertypes: &[&&Object],
             config: &GraceConfig,
@@ -441,6 +581,8 @@ impl CodeWriter for DomainStore {
             }
         }
 
+        // This is used internally to generate some code to initialize the store
+        // with const values. It's pretty gnarly.
         fn emit_singleton_subtype_uses_inner(
             sup: &Object,
             config: &GraceConfig,
@@ -513,6 +655,7 @@ impl CodeWriter for DomainStore {
             Ok(())
         }
 
+        // This is actually the beginning of the function.
         let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
@@ -532,33 +675,32 @@ impl CodeWriter for DomainStore {
             })
             .collect::<Vec<_>>();
 
-        let timestamp = config.get_persist_timestamps().unwrap_or(false);
+        let timestamp = config.get_persist_timestamps();
         let is_meta = config.is_meta_model();
         let has_name = objects
             .iter()
             .map(|obj| object_has_name(obj, domain))
             .find(|x| *x)
             .is_some();
+        let is_uber = config.get_uber_store();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-object-store-definition", module),
             |buffer| {
-                let persist = if let Some(persist) = config.get_persist() {
-                    persist
-                } else {
-                    false
-                };
+                let persist = config.get_persist();
 
                 if persist {
                     if timestamp {
                         emit!(buffer, "use std::{{io::{{self, prelude::*}}, fs, path::Path, time::SystemTime}};");
-                        emit!(buffer, "");
                     } else {
                         emit!(buffer, "use std::{{io::{{self, prelude::*}}, fs, path::Path}};");
-                        emit!(buffer, "");
                     }
                 }
+                if is_uber {
+                    emit!(buffer, "use std::sync::{{Arc, RwLock}};")
+                }
+                emit!(buffer, "");
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
@@ -590,12 +732,18 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");
                 emit!(buffer, "pub struct ObjectStore {{");
                 for obj in &objects {
+                    let thing = if is_uber {
+                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                    } else {
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    };
+
                     if timestamp {
                         emit!(
                             buffer,
                             "{}: HashMap<Uuid, ({}, SystemTime)>,",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            thing
                         );
                         if object_has_name(obj, domain) {
                             emit!(
@@ -609,7 +757,7 @@ impl CodeWriter for DomainStore {
                             buffer,
                             "{}: HashMap<Uuid, {}>,",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            thing
                         );
                         if object_has_name(obj, domain) {
                             emit!(
@@ -643,17 +791,30 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "// I remember having a bit of a struggle making it work. It's recursive, with");
                 emit!(buffer, "// a lot of special cases, and I think it calls other recursive functions...💥");
                 for obj in &supertypes {
-                    emit_singleton_subtype_instances(
-                        obj,
-                        &format!("store.inter_{}(", obj.as_ident()),
-                        &");",
-                        config,
-                        domain,
-                        woog,
-                        buffer,
-                    )?;
+                    if is_uber {
+                        emit_singleton_subtype_instances(
+                            obj,
+                            &format!("store.inter_{}(Arc::new(RwLock::new(", obj.as_ident()),
+                            &")));",
+                            config,
+                            domain,
+                            woog,
+                            buffer,
+                        )?;
+                    } else {
+                        emit_singleton_subtype_instances(
+                            obj,
+                            &format!("store.inter_{}(", obj.as_ident()),
+                            &");",
+                            config,
+                            domain,
+                            woog,
+                            buffer,
+                        )?;
+                    }
                 }
                 emit!(buffer, "");
+
                 emit!(buffer, "store");
                 emit!(buffer, "}}");
                 emit!(buffer, "");
@@ -718,6 +879,8 @@ fn generate_store_persistence(
         DirectiveKind::IgnoreOrig,
         format!("{}-object-store-persistence", module),
         |buffer| {
+            let is_uber = config.get_uber_store();
+
             emit!(buffer, "/// Persist the store.");
             emit!(buffer, "///");
             emit!(
@@ -755,6 +918,7 @@ fn generate_store_persistence(
             emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
             emit!(buffer, "fs::create_dir_all(&path)?;");
             emit!(buffer, "");
+
             for obj in objects {
                 emit!(buffer, "// Persist {}.", obj.name);
                 emit!(buffer, "{{");
@@ -767,28 +931,50 @@ fn generate_store_persistence(
                         obj.as_ident(),
                         obj.as_ident()
                     );
-                    if local_object_is_enum(obj, config, domain) {
+                    let id = if local_object_is_enum(obj, config, domain) {
+                        "id()"
+                    } else {
+                        "id"
+                    };
+
+                    if is_uber {
                         emit!(
                             buffer,
-                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id()));",
+                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.read().unwrap().{id}));",
                             obj.as_ident()
                         );
                     } else {
                         emit!(
                             buffer,
-                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.id));",
+                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.{id}));",
                             obj.as_ident()
                         );
-                    }
+                    };
+
                     emit!(buffer, "if path.exists() {{");
                     emit!(buffer, "let file = fs::File::open(&path)?;");
                     emit!(buffer, "let reader = io::BufReader::new(file);");
-                    emit!(
-                        buffer,
-                        "let on_disk: ({}, SystemTime) = serde_json::from_reader(reader)?;",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
-                    emit!(buffer, "if on_disk.0 != {}_tuple.0 {{", obj.as_ident());
+
+                    if is_uber {
+                        emit!(
+                            buffer,
+                            "let on_disk: (Arc<RwLock<{}>>, SystemTime) = serde_json::from_reader(reader)?;",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "let on_disk: ({}, SystemTime) = serde_json::from_reader(reader)?;",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                    }
+
+                    if is_uber {
+                        emit!(buffer, "if on_disk.0.read().unwrap().to_owned() != {}_tuple.0.read().unwrap().to_owned() {{", obj.as_ident());
+                    } else {
+                        emit!(buffer, "if on_disk.0 != {}_tuple.0 {{", obj.as_ident());
+                    }
+
                     emit!(buffer, "let file = fs::File::create(path)?;");
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
                     emit!(
@@ -797,6 +983,7 @@ fn generate_store_persistence(
                         obj.as_ident()
                     );
                     emit!(buffer, "}}");
+
                     emit!(buffer, "}} else {{");
                     emit!(buffer, "let file = fs::File::create(&path)?;");
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
@@ -805,8 +992,11 @@ fn generate_store_persistence(
                         "serde_json::to_writer_pretty(&mut writer, &{}_tuple)?;",
                         obj.as_ident()
                     );
+
                     emit!(buffer, "}}");
+
                     emit!(buffer, "}}");
+
                     // Now we need to delete any files that correspond to something
                     // in the store that went away.
                     emit!(buffer, "for file in fs::read_dir(&path)? {{");
@@ -891,7 +1081,7 @@ fn generate_store_persistence(
             );
             emit!(
                 buffer,
-                "/// In fact, I intend to add automaagic git integration as an option."
+                "/// In fact, I intend to add automagic git integration as an option."
             );
             emit!(
                 buffer,
@@ -902,6 +1092,7 @@ fn generate_store_persistence(
             emit!(buffer, "");
             emit!(buffer, "let mut store = Self::new();");
             emit!(buffer, "");
+
             for obj in objects {
                 emit!(buffer, "// Load {}.", obj.name);
                 emit!(buffer, "{{");
@@ -917,46 +1108,78 @@ fn generate_store_persistence(
                 } else {
                     "id"
                 };
+
+                let thing = if is_uber {
+                    format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                } else {
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                };
+
                 if timestamp {
                     emit!(
                         buffer,
                         "let {}: ({}, SystemTime) = serde_json::from_reader(reader)?;",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        thing,
                     );
                     if object_has_name(obj, domain) {
-                        emit!(
-                            buffer,
-                            "store.{}_id_by_name.insert({}.0.name.to_upper_camel_case(), ({}.0.{id}, {}.1));",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
+                        if is_uber {
+                            emit!(
+                                buffer,
+                                "store.{}_id_by_name.insert({}.0.read().unwrap().name.to_upper_camel_case(), ({}.0.read().unwrap().{id}, {}.1));",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "store.{}_id_by_name.insert({}.0.name.to_upper_camel_case(), ({}.0.{id}, {}.1));",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        }
                     }
-                    emit!(
-                        buffer,
-                        "store.{}.insert({}.0.{id}, {});",
-                        obj.as_ident(),
-                        obj.as_ident(),
-                        obj.as_ident()
-                    );
                 } else {
                     emit!(
                         buffer,
                         "let {}: {} = serde_json::from_reader(reader)?;",
                         obj.as_ident(),
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        thing,
                     );
                     if object_has_name(obj, domain) {
-                        emit!(
-                            buffer,
-                            "store.{}_id_by_name.insert({}.name.to_upper_camel_case(), {}.{id});",
-                            obj.as_ident(),
-                            obj.as_ident(),
-                            obj.as_ident()
-                        );
+                        if is_uber {
+                            emit!(
+                                buffer,
+                                "store.{}_id_by_name.insert({}.read().unwrap().name.to_upper_camel_case(), {}.read().unwrap().{id});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "store.{}_id_by_name.insert({}.name.to_upper_camel_case(), {}.{id});",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                        }
                     }
+                }
+
+                if is_uber {
+                    emit!(
+                        buffer,
+                        "store.{}.insert({}.read().unwrap().{id}, {}.clone());",
+                        obj.as_ident(),
+                        obj.as_ident(),
+                        obj.as_ident()
+                    );
+                } else {
                     emit!(
                         buffer,
                         "store.{}.insert({}.{id}, {});",
@@ -965,6 +1188,7 @@ fn generate_store_persistence(
                         obj.as_ident()
                     );
                 }
+
                 emit!(buffer, "}}");
                 emit!(buffer, "}}");
                 emit!(buffer, "");

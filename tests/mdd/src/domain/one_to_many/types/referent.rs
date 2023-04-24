@@ -37,12 +37,6 @@ impl Referent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new_"}}}
-    /// Inter a new 'Referent' in the store, and return it's `id`.
-    pub fn new_(name: String) -> Referent {
-        let id = Uuid::new_v4();
-        let new = Referent { id: id, name: name };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-a"}}}
     /// Navigate to [`A`] across R1(1-M)

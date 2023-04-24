@@ -43,19 +43,9 @@ impl SubtypeAnchor {
             isaui_id: isaui_id.id,
         };
         store.inter_subtype_anchor(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-new_"}}}
-    /// Inter a new 'Subtype Anchor' in the store, and return it's `id`.
-    pub fn new_(anchor_id: &Anchor, isaui_id: &IsaUi) -> SubtypeAnchor {
-        let id = Uuid::new_v4();
-        let new = SubtypeAnchor {
-            id: id,
-            anchor_id: anchor_id.id,
-            isaui_id: isaui_id.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -38,16 +38,6 @@ impl D {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-new_"}}}
-    /// Inter a new 'D' in the store, and return it's `id`.
-    pub fn new_(appellation: String, ptr: Option<&Referent>) -> D {
-        let id = Uuid::new_v4();
-        let new = D {
-            appellation: appellation,
-            id: id,
-            ptr: ptr.map(|referent| referent.id),
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R4(1-*c)

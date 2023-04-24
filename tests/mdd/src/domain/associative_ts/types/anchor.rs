@@ -41,18 +41,9 @@ impl Anchor {
             number: number,
         };
         store.inter_anchor(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new_"}}}
-    /// Inter a new 'Anchor' in the store, and return it's `id`.
-    pub fn new_(number: i64) -> Anchor {
-        let id = Uuid::new_v4();
-        let new = Anchor {
-            id: id,
-            number: number,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -409,7 +409,7 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
         let path = path.join("one_to_one.json");
@@ -426,7 +426,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let a: (A, SystemTime) = serde_json::from_reader(reader)?;
-                store.a.insert(a.0.id, a);
+                store.a.insert(a.id, a);
             }
         }
 
@@ -440,7 +440,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let b: (B, SystemTime) = serde_json::from_reader(reader)?;
-                store.b.insert(b.0.id, b);
+                store.b.insert(b.id, b);
             }
         }
 
@@ -454,7 +454,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let c: (C, SystemTime) = serde_json::from_reader(reader)?;
-                store.c.insert(c.0.id, c);
+                store.c.insert(c.id, c);
             }
         }
 
@@ -468,7 +468,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let parameter: (Parameter, SystemTime) = serde_json::from_reader(reader)?;
-                store.parameter.insert(parameter.0.id, parameter);
+                store.parameter.insert(parameter.id, parameter);
             }
         }
 
@@ -482,7 +482,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referent: (Referent, SystemTime) = serde_json::from_reader(reader)?;
-                store.referent.insert(referent.0.id, referent);
+                store.referent.insert(referent.id, referent);
             }
         }
 

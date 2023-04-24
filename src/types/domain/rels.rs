@@ -50,12 +50,12 @@ pub(crate) fn generate_binary_referrer_rels(
         // one. This is because of the normalized, table-nature of the store,
         // and more importantly the method.
         match cond {
-            Conditionality::Unconditional(_) => {
-                forward(buffer, obj, referrer, binary, store, r_obj, woog, domain)?
-            }
-            Conditionality::Conditional(_) => {
-                forward_conditional(buffer, obj, referrer, binary, store, r_obj, woog, domain)?
-            }
+            Conditionality::Unconditional(_) => forward(
+                buffer, obj, referrer, binary, store, r_obj, config, woog, domain,
+            )?,
+            Conditionality::Conditional(_) => forward_conditional(
+                buffer, obj, referrer, binary, store, r_obj, config, woog, domain,
+            )?,
         }
     }
 
@@ -96,14 +96,14 @@ pub(crate) fn generate_binary_referent_rels(
         match card {
             Cardinality::One(_) => match my_cond {
                 Conditionality::Unconditional(_) => backward_one(
-                    buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
+                    buffer, obj, r_obj, id, binary, store, referrer, config, woog, domain,
                 )?,
                 Conditionality::Conditional(_) => match other_cond {
                     Conditionality::Unconditional(_) => backward_one_conditional(
-                        buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
+                        buffer, obj, r_obj, id, binary, store, referrer, config, woog, domain,
                     )?,
                     Conditionality::Conditional(_) => backward_one_biconditional(
-                        buffer, obj, r_obj, id, binary, &store, referrer, &woog, &domain,
+                        buffer, obj, r_obj, id, binary, &store, referrer, config, woog, domain,
                     )?,
                 },
             },
@@ -111,10 +111,10 @@ pub(crate) fn generate_binary_referent_rels(
             // that neither of them depend on the conditionality of this side.
             Cardinality::Many(_) => match other_cond {
                 Conditionality::Unconditional(_) => backward_1_m(
-                    buffer, obj, r_obj, id, binary, store, referrer, woog, domain,
+                    buffer, obj, r_obj, id, binary, store, referrer, config, woog, domain,
                 )?,
                 Conditionality::Conditional(_) => backward_1_mc(
-                    buffer, obj, r_obj, id, binary, store, referrer, woog, domain,
+                    buffer, obj, r_obj, id, binary, store, referrer, config, woog, domain,
                 )?,
             },
         }
@@ -156,6 +156,7 @@ pub(crate) fn generate_assoc_referrer_rels(
                 assoc.number,
                 store,
                 assoc_obj,
+                config,
                 woog,
                 domain,
             )?;
@@ -205,6 +206,7 @@ pub(crate) fn generate_assoc_referent_rels(
                     assoc.number,
                     store,
                     referential_attribute,
+                    config,
                     woog,
                     domain,
                 )?,
@@ -216,6 +218,7 @@ pub(crate) fn generate_assoc_referent_rels(
                     assoc.number,
                     store,
                     referential_attribute,
+                    config,
                     woog,
                     domain,
                 )?,
@@ -228,6 +231,7 @@ pub(crate) fn generate_assoc_referent_rels(
                 assoc.number,
                 store,
                 &referential_attribute,
+                config,
                 woog,
                 domain,
             )?,
@@ -275,6 +279,7 @@ fn forward(
     binary: &Binary,
     store: &External,
     r_obj: &Object,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -292,14 +297,27 @@ fn forward(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number,
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                binary.number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if config.get_uber_store() {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(
                 buffer,
                 "vec![store.exhume_{}(&self.{}).unwrap()]",
@@ -320,6 +338,7 @@ fn forward_conditional(
     binary: &Binary,
     store: &External,
     r_obj: &Object,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -331,20 +350,36 @@ fn forward_conditional(
             referrer.referential_attribute.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store();
+            let is_imported = config.is_imported(&r_obj.id);
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*c)",
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number,
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                binary.number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if is_uber && !is_imported {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(
                 buffer,
                 "match self.{} {{",
@@ -374,6 +409,7 @@ fn backward_one(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -385,29 +421,57 @@ fn backward_one(
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store();
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                binary.number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
-            emit!(
-                buffer,
-                ".find(|{}| {}.{} == self.{}).unwrap()]",
-                r_obj.as_ident(),
-                r_obj.as_ident(),
-                referrer.referential_attribute.as_ident(),
-                id
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.read().unwrap().{} == self.{}).unwrap()]",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id
+                );
+            } else {
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.{} == self.{}).unwrap()]",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id
+                );
+            }
+
             emit!(buffer, "}}");
 
             Ok(())
@@ -423,6 +487,7 @@ fn backward_one_conditional(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -434,41 +499,80 @@ fn backward_one_conditional(
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store();
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
-            emit!(
-                buffer,
-                "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                binary.number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(
                 buffer,
                 "let {} = store.iter_{}()",
                 r_obj.as_ident(),
                 r_obj.as_ident()
             );
-            emit!(
-                buffer,
-                ".find(|{}| {}.{} == self.{});",
-                r_obj.as_ident(),
-                r_obj.as_ident(),
-                referrer.referential_attribute.as_ident(),
-                id
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.read().unwrap().{} == self.{});",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id
+                );
+            } else {
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.{} == self.{});",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id
+                );
+            }
+
             emit!(buffer, "match {} {{", r_obj.as_ident());
-            emit!(
-                buffer,
-                "Some(ref {}) => vec![{}],",
-                r_obj.as_ident(),
-                r_obj.as_ident()
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    "Some(ref {}) => vec![{}.clone()],",
+                    r_obj.as_ident(),
+                    r_obj.as_ident()
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "Some(ref {}) => vec![{}],",
+                    r_obj.as_ident(),
+                    r_obj.as_ident()
+                );
+            }
+
             emit!(buffer, "None => Vec::new(),");
             emit!(buffer, "}}");
             emit!(buffer, "}}");
@@ -486,6 +590,7 @@ fn backward_one_biconditional(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -497,41 +602,80 @@ fn backward_one_biconditional(
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store();
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1c-1c)",
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
-            emit!(
-                buffer,
-                "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                binary.number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}c_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(
                 buffer,
                 "let {} = store.iter_{}()",
                 r_obj.as_ident(),
                 r_obj.as_ident()
             );
-            emit!(
-                buffer,
-                ".find(|{}| {}.{} == Some(self.{}));",
-                r_obj.as_ident(),
-                r_obj.as_ident(),
-                referrer.referential_attribute.as_ident(),
-                id
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.read().unwrap().{} == Some(self.{}));",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id
+                );
+            } else {
+                emit!(
+                    buffer,
+                    ".find(|{}| {}.{} == Some(self.{}));",
+                    r_obj.as_ident(),
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id
+                );
+            }
+
             emit!(buffer, "match {} {{", r_obj.as_ident());
-            emit!(
-                buffer,
-                "Some(ref {}) => vec![{}],",
-                r_obj.as_ident(),
-                r_obj.as_ident()
-            );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    "Some(ref {}) => vec![{}.clone()],",
+                    r_obj.as_ident(),
+                    r_obj.as_ident()
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "Some(ref {}) => vec![{}],",
+                    r_obj.as_ident(),
+                    r_obj.as_ident()
+                );
+            }
+
             emit!(buffer, "None => Vec::new(),");
             emit!(buffer, "}}");
             emit!(buffer, "}}");
@@ -549,6 +693,7 @@ fn backward_1_m(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -566,25 +711,53 @@ fn backward_1_m(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                binary.number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if config.get_uber_store() {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
-            emit!(
-                buffer,
-                ".filter_map(|{}| if {}.{} == self.{} {{ Some({}) }} else {{ None }})",
-                r_obj.as_ident(),
-                r_obj.as_ident(),
-                referrer.referential_attribute.as_ident(),
-                id,
-                r_obj.as_ident(),
-            );
+            emit!(buffer, ".filter_map(|{}| {{", r_obj.as_ident(),);
+
+            if config.get_uber_store() {
+                // emit!(buffer, "let read = {}.read().unwrap();", r_obj.as_ident(),);
+                emit!(
+                    buffer,
+                    "if {}.read().unwrap().{} == self.{} {{ Some({}) }} else {{ None }}",
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id,
+                    r_obj.as_ident(),
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "if {}.{} == self.{} {{ Some({}) }} else {{ None }}",
+                    r_obj.as_ident(),
+                    referrer.referential_attribute.as_ident(),
+                    id,
+                    r_obj.as_ident(),
+                );
+            }
+            emit!(buffer, "}})");
             emit!(buffer, ".collect()");
+
             emit!(buffer, "}}");
 
             Ok(())
@@ -600,6 +773,7 @@ fn backward_1_mc(
     binary: &Binary,
     store: &External,
     referrer: &Referrer,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -611,21 +785,48 @@ fn backward_1_mc(
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store();
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-Mc)",
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number
             );
+
+            if is_uber {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    binary.number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
+            emit!(buffer, "store.iter_{}()", r_obj.as_ident());
+
+            if is_uber {
             emit!(
                 buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                binary.number,
+                ".filter_map(|{}| if {}.read().unwrap().{} == Some(self.{}) {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                r_obj.as_ident(),
+                referrer.referential_attribute.as_ident(),
+                id,
+                r_obj.as_ident(),
             );
-            emit!(buffer, "store.iter_{}()", r_obj.as_ident());
+        } else {
             emit!(
                 buffer,
                 ".filter_map(|{}| if {}.{} == Some(self.{}) {{ Some({}) }} else {{ None }})",
@@ -635,6 +836,8 @@ fn backward_1_mc(
                 id,
                 r_obj.as_ident(),
             );
+        }
+
             emit!(buffer, ".collect()");
             emit!(buffer, "}}");
 
@@ -650,6 +853,7 @@ fn forward_assoc(
     number: i64,
     store: &External,
     r_obj: &Object,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -667,14 +871,27 @@ fn forward_assoc(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number,
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if config.get_uber_store() {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(
                 buffer,
                 "vec![store.exhume_{}(&self.{}).unwrap()]",
@@ -696,6 +913,7 @@ fn backward_assoc_one(
     number: i64,
     store: &External,
     referential_attribute: &String,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -713,14 +931,27 @@ fn backward_assoc_one(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if config.get_uber_store() {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
@@ -745,6 +976,7 @@ fn backward_assoc_one_conditional(
     number: i64,
     store: &External,
     referential_attribute: &String,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -762,14 +994,27 @@ fn backward_assoc_one_conditional(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if config.get_uber_store() {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(
                 buffer,
                 "let {} = store.iter_{}()",
@@ -808,6 +1053,7 @@ fn backward_assoc_many(
     number: i64,
     store: &External,
     referential_attribute: &String,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -825,14 +1071,27 @@ fn backward_assoc_many(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                number,
-                r_obj.as_ident(),
-                store.name,
-                r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if config.get_uber_store() {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
+                    r_obj.as_ident(),
+                    store.name,
+                    r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
+
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(
                 buffer,
@@ -875,14 +1134,26 @@ fn subtype_to_supertype(
                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 number
             );
-            emit!(
-                buffer,
-                "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                number,
-                s_obj.as_ident(),
-                store.name,
-                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            );
+
+            if config.get_uber_store() {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
+                    number,
+                    s_obj.as_ident(),
+                    store.name,
+                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
+                    number,
+                    s_obj.as_ident(),
+                    store.name,
+                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            }
             if local_object_is_enum(obj, config, domain) {
                 emit!(
                     buffer,

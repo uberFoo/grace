@@ -53,28 +53,9 @@ impl Referrer {
             obj_id: obj_id.id,
         };
         store.inter_referrer(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-struct-impl-new_"}}}
-    /// Inter a new 'Referrer' in the store, and return it's `id`.
-    pub fn new_(
-        description: String,
-        referential_attribute: String,
-        cardinality: &Cardinality,
-        conditionality: &Conditionality,
-        obj_id: &Object,
-    ) -> Referrer {
-        let id = Uuid::new_v4();
-        let new = Referrer {
-            description: description,
-            id: id,
-            referential_attribute: referential_attribute,
-            cardinality: cardinality.id(),
-            conditionality: conditionality.id(),
-            obj_id: obj_id.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referrer-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

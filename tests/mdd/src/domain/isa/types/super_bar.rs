@@ -23,11 +23,6 @@ impl SuperBar {
         new
     }
 
-    pub fn new_gamma_(gamma: &Gamma) -> Self {
-        let new = Self::Gamma(gamma.id);
-        new
-    }
-
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-get-id-impl"}}}
     pub fn id(&self) -> Uuid {

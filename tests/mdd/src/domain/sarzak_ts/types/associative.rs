@@ -32,19 +32,9 @@ impl Associative {
             from: from.id,
         };
         store.inter_associative(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
-    /// Inter a new 'Associative' in the store, and return it's `id`.
-    pub fn new_(number: i64, from: &AssociativeReferrer) -> Associative {
-        let id = Uuid::new_v4();
-        let new = Associative {
-            id: id,
-            number: number,
-            from: from.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

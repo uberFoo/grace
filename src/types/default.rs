@@ -573,7 +573,7 @@ impl CodeWriter for DefaultNewImpl {
                 );
 
                 // Output the top of the function definition
-                render_method_definition(buffer, &method, woog, domain)?;
+                render_method_definition(buffer, &method, config, woog, domain)?;
 
                 // Output the code to create the `id`.
                 let id = LValue::new("id", GType::Uuid, None);

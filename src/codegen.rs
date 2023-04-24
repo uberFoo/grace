@@ -6,7 +6,11 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{fmt::Write, iter::zip, sync::RwLock};
+use std::{
+    fmt::Write,
+    iter::zip,
+    sync::{Arc, RwLock},
+};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
@@ -34,7 +38,7 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        render::{RenderIdent, RenderType},
+        render::{ForStore, RenderIdent, RenderType},
     },
     options::GraceConfig,
     todo::{GType, LValue, ObjectMethod, RValue},
@@ -213,9 +217,12 @@ pub(crate) use get_binary_referents_sorted;
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
     method: &ObjectMethod,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let is_uber = config.get_uber_store();
+
     // Write the beginning of the definition
     write!(buffer, "pub fn {}(", method.name).context(FormatSnafu)?;
 
@@ -223,36 +230,68 @@ pub(crate) fn render_method_definition(
     // TODO: This is so clumsy! I should clean it up.
     if let Some(mut param) = method.param {
         let mutability = woog.exhume_ownership(&param.mutability).unwrap();
-        write!(
-            buffer,
-            "{}: {},",
-            param.as_ident(),
-            param.ty.as_type(&mutability, woog, domain),
-        )
-        .context(FormatSnafu)?;
 
-        while let Some(next_param) = param.next {
-            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
+        if is_uber {
             write!(
                 buffer,
                 "{}: {},",
-                // Why do I need to drill down to name?
-                next_param.name.as_ident(),
-                next_param.ty.as_type(&mutability, woog, domain),
+                param.as_ident(),
+                param.ty.for_store(&mutability, config, woog, domain),
             )
             .context(FormatSnafu)?;
+        } else {
+            write!(
+                buffer,
+                "{}: {},",
+                param.as_ident(),
+                param.ty.as_type(&mutability, woog, domain),
+            )
+            .context(FormatSnafu)?;
+        }
+
+        while let Some(next_param) = param.next {
+            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
+
+            if is_uber {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    // Why do I need to drill down to name?
+                    next_param.name.as_ident(),
+                    next_param.ty.for_store(&mutability, config, woog, domain),
+                )
+                .context(FormatSnafu)?;
+            } else {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    // Why do I need to drill down to name?
+                    next_param.name.as_ident(),
+                    next_param.ty.as_type(&mutability, woog, domain),
+                )
+                .context(FormatSnafu)?;
+            }
 
             param = &next_param;
         }
     }
 
     // Finish the first line of the definition
-    writeln!(
-        buffer,
-        ") -> {} {{",
-        method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
-    )
-    .context(FormatSnafu)?;
+    if config.get_uber_store() {
+        writeln!(
+            buffer,
+            ") -> Arc<RwLock<{}>> {{",
+            method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+        )
+        .context(FormatSnafu)?;
+    } else {
+        writeln!(
+            buffer,
+            ") -> {} {{",
+            method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+        )
+        .context(FormatSnafu)?;
+    }
 
     Ok(())
 }
@@ -260,10 +299,12 @@ pub(crate) fn render_method_definition(
 pub(crate) fn render_method_definition_new(
     buffer: &mut Buffer,
     method: &WoogObjectMethod,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     let object = domain.sarzak().exhume_object(&method.object).unwrap();
+    let is_uber = config.get_uber_store();
 
     log::debug!("Rendering new method definition for {}", object.as_ident());
 
@@ -303,13 +344,25 @@ pub(crate) fn render_method_definition_new(
             let access = value.r16_access(woog)[0];
             let mutability = access.r15_ownership(woog)[0];
 
-            write!(
-                buffer,
-                "{}: {},",
-                param.r8_variable(woog)[0].name.as_ident(),
-                ty.as_type(&mutability, woog, domain)
-            )
-            .context(FormatSnafu)?;
+            let param_name = param.r8_variable(woog)[0].name.as_ident();
+
+            if is_uber && param_name != "store" {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    param_name,
+                    ty.for_store(&mutability, config, woog, domain)
+                )
+                .context(FormatSnafu)?;
+            } else {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    param_name,
+                    ty.as_type(&mutability, woog, domain)
+                )
+                .context(FormatSnafu)?;
+            }
 
             if let Some(next_param) = param.r1_parameter(woog).pop() {
                 param = next_param;
@@ -323,12 +376,21 @@ pub(crate) fn render_method_definition_new(
     // I think it may be that we need to trace method -> call, and use the
     // type of call as the return type.
     // Finish the first line of the definition
-    writeln!(
-        buffer,
-        ") -> {} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
-    )
-    .context(FormatSnafu)?;
+    if is_uber {
+        writeln!(
+            buffer,
+            ") -> Arc<RwLock<{}>> {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        )
+        .context(FormatSnafu)?;
+    } else {
+        writeln!(
+            buffer,
+            ") -> {} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        )
+        .context(FormatSnafu)?;
+    }
 
     Ok(())
 }
@@ -553,11 +615,22 @@ pub(crate) fn render_new_instance(
         assert!(lval.ty == GType::Reference(object.id));
         write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
     }
-    emit!(
-        buffer,
-        "{} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
-    );
+
+    if config.get_uber_store() {
+        emit!(
+            buffer,
+            "Arc::new(RwLock::new({} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        );
+    } else {
+        emit!(
+            buffer,
+            "{} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        );
+    }
+
+    let is_uber = config.get_uber_store();
 
     let tuples = zip(fields, rvals);
 
@@ -612,10 +685,16 @@ pub(crate) fn render_new_instance(
                             }
                             GType::Reference(r_obj) => {
                                 let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
-                                if local_object_is_enum(r_obj, config, domain) {
+                                let id = if local_object_is_enum(r_obj, config, domain) {
+                                    "id()"
+                                } else {
+                                    "id"
+                                };
+
+                                if is_uber {
                                     emit!(
                                         buffer,
-                                        "{}: {}Enum::{}({}.id()),",
+                                        "{}: {}Enum::{}({}.read().unwrap().{id}),",
                                         field.name,
                                         super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         obj.as_type(&Ownership::new_borrowed(), woog, domain),
@@ -624,7 +703,7 @@ pub(crate) fn render_new_instance(
                                 } else {
                                     emit!(
                                         buffer,
-                                        "{}: {}Enum::{}({}.id),",
+                                        "{}: {}Enum::{}({}.{id}),",
                                         field.name,
                                         foo_super_obj.unwrap().as_type(
                                             &Ownership::new_borrowed(),
@@ -637,14 +716,25 @@ pub(crate) fn render_new_instance(
                                 }
                             }
                             _ => {
-                                emit!(
-                                    buffer,
-                                    "{}: {}Enum::{}({}.id),",
-                                    field.name,
-                                    super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    rval.name
-                                )
+                                if is_uber {
+                                    emit!(
+                                        buffer,
+                                        "{}: {}Enum::{}({}.read().unwrap().id),",
+                                        field.name,
+                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        rval.name
+                                    )
+                                } else {
+                                    emit!(
+                                        buffer,
+                                        "{}: {}Enum::{}({}.id),",
+                                        field.name,
+                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        rval.name
+                                    )
+                                }
                             }
                         }
                     } else {
@@ -661,10 +751,21 @@ pub(crate) fn render_new_instance(
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                    if local_object_is_enum(obj, config, domain) {
-                        emit!(buffer, "{}: {}.id(),", field.name, rval.name)
+                    let id = if local_object_is_enum(obj, config, domain) {
+                        "id()"
                     } else {
-                        emit!(buffer, "{}: {}.id,", field.name, rval.name)
+                        "id"
+                    };
+
+                    if is_uber {
+                        emit!(
+                            buffer,
+                            "{}: {}.read().unwrap().{id},",
+                            field.name,
+                            rval.name
+                        )
+                    } else {
+                        emit!(buffer, "{}: {}.{id},", field.name, rval.name)
                     }
                 }
                 _ => ensure!(
@@ -684,10 +785,16 @@ pub(crate) fn render_new_instance(
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                        if local_object_is_enum(obj, config, domain) {
+                        let id = if local_object_is_enum(obj, config, domain) {
+                            "id()"
+                        } else {
+                            "id"
+                        };
+
+                        if is_uber {
                             emit!(
                                 buffer,
-                                "{}: {}.map(|{}| {}.id()),",
+                                "{}: {}.map(|{}| {}.read().unwrap().{id}),",
                                 field.name,
                                 rval.name,
                                 obj.as_ident(),
@@ -696,7 +803,7 @@ pub(crate) fn render_new_instance(
                         } else {
                             emit!(
                                 buffer,
-                                "{}: {}.map(|{}| {}.id),",
+                                "{}: {}.map(|{}| {}.{id}),",
                                 field.name,
                                 rval.name,
                                 obj.as_ident(),
@@ -743,11 +850,15 @@ pub(crate) fn render_new_instance(
 
     emit!(buffer, "id");
 
-    if lval.is_some() {
-        emit!(buffer, "}};");
+    if config.get_uber_store() {
+        write!(buffer, "}}))").context(FormatSnafu)?;
     } else {
-        emit!(buffer, "}}")
-    };
+        write!(buffer, "}}").context(FormatSnafu)?;
+    }
+
+    if lval.is_some() {
+        emit!(buffer, ";");
+    }
 
     Ok(())
 }
@@ -802,6 +913,8 @@ pub(crate) fn render_new_instance_new(
         }
     );
 
+    let is_uber = config.get_uber_store();
+
     let mut first = structure
         .r27_structure_field(woog)
         .iter()
@@ -821,11 +934,19 @@ pub(crate) fn render_new_instance_new(
 
     write!(buffer, "let {} = ", var.r8_variable(woog)[0].name).context(FormatSnafu)?;
 
-    emit!(
-        buffer,
-        "{} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
-    );
+    if is_uber {
+        emit!(
+            buffer,
+            "Arc::new(RwLock::new({} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        );
+    } else {
+        emit!(
+            buffer,
+            "{} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        );
+    }
 
     // Now we need to extract the values for the fields from the symbol table.
     // Except that it's not so simple since it's not a map. So really, it needs
@@ -852,7 +973,11 @@ pub(crate) fn render_new_instance_new(
         emit!(buffer, "{}: {},", f.as_ident(), rval_string);
     }
 
-    emit!(buffer, "}};");
+    if is_uber {
+        emit!(buffer, "}}));");
+    } else {
+        emit!(buffer, "}};");
+    }
 
     Ok(())
 }
@@ -871,9 +996,9 @@ fn typecheck_and_coerce(
     domain: &Domain,
 ) -> Result<String> {
     let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
+    let is_uber = config.get_uber_store();
 
     Ok(match &lhs_ty {
-        // GraceType::Reference(id) => {}
         GraceType::WoogOption(_) => {
             // ✨ Until this comment changes, i.e., until this is used by more than
             // rendering a new Self item, the type of the lhs option is uuid.
@@ -886,16 +1011,24 @@ fn typecheck_and_coerce(
                             let reference = woog.exhume_reference(&id).unwrap();
                             let object = reference.r13_object(domain.sarzak())[0];
 
-                            if local_object_is_enum(object, config, domain) {
+                            let imported = config.is_imported(&object.id);
+
+                            let id = if local_object_is_enum(object, config, domain) {
+                                "id()"
+                            } else {
+                                "id"
+                            };
+
+                            if is_uber && !imported {
                                 format!(
-                                    "{}.map(|{}| {}.id())",
+                                    "{}.map(|{}| {}.read().unwrap().{id})",
                                     rhs.as_ident(),
                                     object.as_ident(),
                                     object.as_ident()
                                 )
                             } else {
                                 format!(
-                                    "{}.map(|{}| {}.id)",
+                                    "{}.map(|{}| {}.{id})",
                                     rhs.as_ident(),
                                     object.as_ident(),
                                     object.as_ident()
@@ -944,10 +1077,16 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            if object_is_enum(obj, config, imports, domain)? {
-                                format!("{}.id()", rhs.as_ident())
+                            let id = if local_object_is_enum(obj, config, domain) {
+                                "id()"
                             } else {
-                                format!("{}.id", rhs.as_ident())
+                                "id"
+                            };
+
+                            if is_uber {
+                                format!("{}.read().unwrap().{id}", rhs.as_ident())
+                            } else {
+                                format!("{}.{id}", rhs.as_ident())
                             }
                         }
                         _ => {
@@ -988,7 +1127,12 @@ fn typecheck_and_coerce(
                     )
                 }
             );
-            rhs.as_ident()
+
+            if is_uber {
+                format!("{}.read().unwrap().to_owned()", rhs.as_ident())
+            } else {
+                rhs.as_ident()
+            }
         }
     })
 }
@@ -1024,7 +1168,7 @@ pub(crate) fn render_methods(
 
                 // This renders the method signature.
                 // It's probably ok as it is.
-                render_method_definition_new(buffer, &method, woog, domain)?;
+                render_method_definition_new(buffer, &method, config, woog, domain)?;
 
                 // Find the properly scoped variable named `id`.
                 let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
@@ -1450,7 +1594,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
 }
 
 pub(crate) trait AttributeBuilder<A> {
-    fn new(name: String, ty: ValueType) -> A;
+    fn new(name: String, ty: Arc<RwLock<ValueType>>) -> A;
 }
 
 /// Walk the object hierarchy to collect attributes for an object
@@ -1475,7 +1619,7 @@ where
     for attr in attrs {
         let ty = attr.r2_ty(domain.sarzak())[0];
         let mut lu_dog = lu_dog.write().unwrap();
-        let ty = ValueType::new_ty(&ty, &mut lu_dog);
+        let ty = ValueType::new_ty(Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
 
         let attr = A::new(attr.as_ident(), ty.clone());
         result.push(attr);
@@ -1494,9 +1638,9 @@ where
 
         let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
         let mut lu_dog = lu_dog.write().unwrap();
-        let ty = ValueType::new_ty(&ty, &mut lu_dog);
-        let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
-        let ty = ValueType::new_reference(&ty, &mut lu_dog);
+        let ty = ValueType::new_ty(Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
+        let ty = Reference::new(Uuid::new_v4(), false, ty, &mut lu_dog);
+        let ty = ValueType::new_reference(ty, &mut lu_dog);
 
         // This determines how a reference is stored in the struct. In this
         // case a UUID.
@@ -1504,8 +1648,8 @@ where
             // If it's conditional build a parameter that's an optional reference
             // to the referent.
             Conditionality::Conditional(_) => {
-                let option = WoogOption::new_z_none(&ty, &mut lu_dog);
-                let ty = ValueType::new_woog_option(&option, &mut lu_dog);
+                let option = WoogOption::new_z_none(ty, &mut lu_dog);
+                let ty = ValueType::new_woog_option(option, &mut lu_dog);
 
                 let attr = A::new(attr_name, ty.clone());
                 result.push(attr);
@@ -1527,10 +1671,11 @@ where
             let obj = referent.r25_object(domain.sarzak())[0];
 
             let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
+            let ty = Arc::new(RwLock::new(ty.to_owned()));
             let mut lu_dog = lu_dog.write().unwrap();
-            let ty = ValueType::new_ty(&ty, &mut lu_dog);
-            let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
-            let ty = ValueType::new_reference(&ty, &mut lu_dog);
+            let ty = ValueType::new_ty(ty, &mut lu_dog);
+            let ty = Reference::new(Uuid::new_v4(), false, ty, &mut lu_dog);
+            let ty = ValueType::new_reference(ty, &mut lu_dog);
 
             let attr_name = an_ass.referential_attribute.as_ident();
 

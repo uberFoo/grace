@@ -113,6 +113,10 @@ impl CodeWriter for Imports {
                 let mut imports = HashSet::default();
                 let mut uses = HashSet::default();
 
+                if config.get_uber_store() {
+                    emit!(buffer, "use std::sync::{{Arc, RwLock}};\n")
+                }
+
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
                 emit!(buffer, "");

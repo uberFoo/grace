@@ -39,24 +39,9 @@ impl AnAssociativeReferent {
             referent: referent.id,
         };
         store.inter_an_associative_referent(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new_"}}}
-    /// Inter a new 'An Associative Referent' in the store, and return it's `id`.
-    pub fn new_(
-        referential_attribute: String,
-        associative: &Associative,
-        referent: &AssociativeReferent,
-    ) -> AnAssociativeReferent {
-        let id = Uuid::new_v4();
-        let new = AnAssociativeReferent {
-            id: id,
-            referential_attribute: referential_attribute,
-            associative: associative.id,
-            referent: referent.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
