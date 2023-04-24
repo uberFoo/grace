@@ -77,7 +77,6 @@ impl FileGenerator for SvmGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -94,7 +93,7 @@ impl FileGenerator for SvmGenerator {
             format!("{}-svm-file", module),
             |buffer| {
                 self.definition.write_code(
-                    config, domain, woog, lu_dog, imports, package, module, obj_id, buffer,
+                    config, domain, woog, imports, package, module, obj_id, buffer,
                 )?;
 
                 Ok(())
@@ -124,7 +123,6 @@ impl CodeWriter for SvmModule {
         _config: &GraceConfig,
         _domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
@@ -138,14 +136,6 @@ impl CodeWriter for SvmModule {
             }
         );
         let _woog = woog.as_ref().unwrap();
-
-        ensure!(
-            lu_dog.is_some(),
-            CompilerSnafu {
-                description: "lu_dog is required by SvmModule"
-            }
-        );
-        let _lu_dog = lu_dog.as_ref().unwrap();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,

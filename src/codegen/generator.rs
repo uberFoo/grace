@@ -58,10 +58,6 @@ pub(crate) struct GeneratorBuilder<'a> {
     /// to make it generic, but Rust things are creeping in. Like mutability,
     /// and crate public.
     woog: Option<&'a mut WoogStore>,
-    /// Lu Dog Store
-    ///
-    /// The lu_dog ObjectStore. This domain is a model of the DSL I'm calling dwarf.
-    lu_dog: Option<&'a RwLock<LuDogStore>>,
     /// Grace Compiler Configuration
     ///
     /// These are the [`ConfigValue`]s to the model compiler -- the compiler's
@@ -95,7 +91,6 @@ impl<'a> GeneratorBuilder<'a> {
             generator: None,
             domain: None,
             woog: None,
-            lu_dog: None,
             config: None,
             package: None,
             module: None,
@@ -144,12 +139,6 @@ impl<'a> GeneratorBuilder<'a> {
 
     pub(crate) fn woog(mut self, domain: &'a mut WoogStore) -> Self {
         self.woog = Some(domain);
-
-        self
-    }
-
-    pub(crate) fn lu_dog(mut self, domain: &'a RwLock<LuDogStore>) -> Self {
-        self.lu_dog = Some(domain);
 
         self
     }
@@ -214,7 +203,6 @@ impl<'a> GeneratorBuilder<'a> {
             &self.config.unwrap(),
             &self.domain.unwrap(),
             &self.woog,
-            &self.lu_dog,
             &self.imports,
             self.package.unwrap(),
             self.module.unwrap().as_str(),
@@ -386,7 +374,6 @@ pub(crate) trait FileGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -406,7 +393,6 @@ pub(crate) trait CodeWriter {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,

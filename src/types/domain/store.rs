@@ -1,10 +1,9 @@
 //! Generate ObjectStore for use in sarzak Domain
 //!
-use std::{fmt::Write, sync::RwLock};
+use std::fmt::Write;
 
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
-    lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
     v2::domain::Domain,
@@ -68,7 +67,6 @@ impl FileGenerator for DomainStoreGenerator {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _lu_dog: &Option<&RwLock<LuDogStore>>,
         imports: &Option<&HashMap<String, Domain>>,
         package: &str,
         module: &str,
@@ -127,7 +125,7 @@ impl FileGenerator for DomainStoreGenerator {
                 }
 
                 self.definition.write_code(
-                    config, domain, woog, _lu_dog, imports, package, module, obj_id, buffer,
+                    config, domain, woog, imports, package, module, obj_id, buffer,
                 )?;
 
                 Ok(())
@@ -229,7 +227,7 @@ impl DomainStore {
                                 );
                                 emit!(
                                     buffer,
-                                    "self.{}.insert(value.0).{id}, value);",
+                                    "self.{}.insert(value.0.{id}, value);",
                                     obj.as_ident(),
                                 );
                             }
@@ -526,7 +524,6 @@ impl CodeWriter for DomainStore {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,

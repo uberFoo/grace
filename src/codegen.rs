@@ -41,6 +41,7 @@ use crate::{
         render::{ForStore, RenderIdent, RenderType},
     },
     options::GraceConfig,
+    target::dwarf::LU_DOG,
     todo::{GType, LValue, ObjectMethod, RValue},
 };
 
@@ -1603,14 +1604,11 @@ pub(crate) trait AttributeBuilder<A> {
 ///
 /// This is only applicable to generating dwarf code, and I think it should be
 /// moved.
-pub(crate) fn collect_attributes<A>(
-    obj: &Object,
-    lu_dog: &RwLock<LuDogStore>,
-    domain: &Domain,
-) -> Vec<A>
+pub(crate) fn collect_attributes<A>(obj: &Object, domain: &Domain) -> Vec<A>
 where
     A: AttributeBuilder<A>,
 {
+    let lu_dog = &LU_DOG;
     let mut result: Vec<A> = Vec::new();
 
     // Collect the local attributes

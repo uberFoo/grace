@@ -1,11 +1,10 @@
 //! Domain Const Generation
 //!
 //! There we were.
-use std::{fmt::Write, sync::RwLock};
+use std::fmt::Write;
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
-    lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
     woog::{store::ObjectStore as WoogStore, types::Ownership},
@@ -42,7 +41,6 @@ impl CodeWriter for DomainConst {
         _config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _lu_dog: &Option<&RwLock<LuDogStore>>,
         _imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         _module: &str,

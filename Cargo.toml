@@ -22,6 +22,7 @@ names = "0.14.0"
 chrono = "0.4.23"
 fnv = "1.0.7"
 rayon = "1.7.0"
+lazy_static = "1.4.0"
 
 [build-dependencies]
 chrono = "0.4.23"
