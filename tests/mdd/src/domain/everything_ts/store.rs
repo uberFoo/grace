@@ -233,7 +233,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let everything: (Everything, SystemTime) = serde_json::from_reader(reader)?;
-                store.everything.insert(everything.id, everything);
+                store.everything.insert(everything.0.id, everything);
             }
         }
 
@@ -247,7 +247,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let rando_object: (RandoObject, SystemTime) = serde_json::from_reader(reader)?;
-                store.rando_object.insert(rando_object.id, rando_object);
+                store.rando_object.insert(rando_object.0.id, rando_object);
             }
         }
 

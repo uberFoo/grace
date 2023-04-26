@@ -1140,6 +1140,23 @@ fn generate_store_persistence(
                             );
                         }
                     }
+                    if is_uber {
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.0.read().unwrap().{id}, {}.clone());",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.0.{id}, {});",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    }
                 } else {
                     emit!(
                         buffer,
@@ -1166,24 +1183,23 @@ fn generate_store_persistence(
                             );
                         }
                     }
-                }
-
-                if is_uber {
-                    emit!(
-                        buffer,
-                        "store.{}.insert({}.read().unwrap().{id}, {}.clone());",
-                        obj.as_ident(),
-                        obj.as_ident(),
-                        obj.as_ident()
-                    );
-                } else {
-                    emit!(
-                        buffer,
-                        "store.{}.insert({}.{id}, {});",
-                        obj.as_ident(),
-                        obj.as_ident(),
-                        obj.as_ident()
-                    );
+                    if is_uber {
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.read().unwrap().{id}, {}.clone());",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "store.{}.insert({}.{id}, {});",
+                            obj.as_ident(),
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    }
                 }
 
                 emit!(buffer, "}}");

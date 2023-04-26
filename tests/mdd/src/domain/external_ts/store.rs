@@ -225,7 +225,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let nunchuck: (Nunchuck, SystemTime) = serde_json::from_reader(reader)?;
-                store.nunchuck.insert(nunchuck.id, nunchuck);
+                store.nunchuck.insert(nunchuck.0.id, nunchuck);
             }
         }
 
@@ -239,7 +239,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let timestamp: (Timestamp, SystemTime) = serde_json::from_reader(reader)?;
-                store.timestamp.insert(timestamp.id, timestamp);
+                store.timestamp.insert(timestamp.0.id, timestamp);
             }
         }
 

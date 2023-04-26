@@ -162,7 +162,7 @@ impl ObjectStore {
                 let another_object: (AnotherObject, SystemTime) = serde_json::from_reader(reader)?;
                 store
                     .another_object
-                    .insert(another_object.id, another_object);
+                    .insert(another_object.0.id, another_object);
             }
         }
 
