@@ -1,5 +1,6 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"integer-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"integer-use-statements"}}}
+use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -15,6 +16,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"integer-const-definition"}}}
 pub const INTEGER: Uuid = uuid!["045f5d22-f71b-5845-9113-b8b859d1dbac"];
 
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Integer;
 
 impl Integer {

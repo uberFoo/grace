@@ -18,7 +18,7 @@ use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
     options::{GraceCompilerOptions, GraceConfig},
     target::Target,
-    types::dwarf::{DwarfBuilder, DwarfModule},
+    types::dwarf::{DwarfBuilder, DwarfFile},
     woog::init_woog,
     BUILD_DIR, TARGET_DIR,
 };
@@ -102,7 +102,7 @@ impl<'a> Target for DwarfTarget<'a> {
                     .domain(&self.domain)
                     .module(self.module)
                     .woog(&mut woog)
-                    .generator(DwarfBuilder::new().definition(DwarfModule::new()).build()?)
+                    .generator(DwarfBuilder::new().definition(DwarfFile::new()).build()?)
                     .generate()?;
 
                 Ok(())

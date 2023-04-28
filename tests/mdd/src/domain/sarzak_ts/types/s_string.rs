@@ -1,5 +1,6 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"s_string-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"s_string-use-statements"}}}
+use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -15,6 +16,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"s_string-const-definition"}}}
 pub const S_STRING: Uuid = uuid!["eb75208b-bf2e-55f9-9a38-7c1553f31960"];
 
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct SString;
 
 impl SString {

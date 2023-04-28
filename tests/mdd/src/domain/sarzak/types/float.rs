@@ -1,5 +1,6 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"float-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"float-use-statements"}}}
+use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -15,6 +16,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"float-const-definition"}}}
 pub const FLOAT: Uuid = uuid!["1fe11221-b8be-5f99-a161-e378f90b094d"];
 
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Float;
 
 impl Float {

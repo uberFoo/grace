@@ -1,5 +1,6 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"boolean-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"boolean-use-statements"}}}
+use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -15,6 +16,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"boolean-const-definition"}}}
 pub const BOOLEAN: Uuid = uuid!["b1a060e2-a30e-5291-8ef3-7fad8a6311d4"];
 
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Boolean;
 
 impl Boolean {

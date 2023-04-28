@@ -20,8 +20,7 @@ use uuid::Uuid;
 use crate::{
     codegen::{
         buffer::{emit, Buffer},
-        collect_attributes,
-        emit_object_comments,
+        collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         render::RenderType,
         AttributeBuilder,
@@ -60,15 +59,8 @@ impl DwarfBuilder {
     }
 }
 
-/// Generator -- Code Generator Engine
-///
-/// This is supposed to be general, but it's very much geared towards generating
-/// a file that contains a struct definition and implementations. I need to
-/// do some refactoring.
-///
-/// As just hinted at, the idea is that you plug in different code writers that
-/// know how to write different parts of some rust code. This one is for
-/// structs.
+pub(crate) struct DwarfSVMGenerator {}
+
 pub(crate) struct DwarfGenerator {
     definition: Box<dyn DwarfDefinition>,
 }
@@ -108,17 +100,17 @@ impl FileGenerator for DwarfGenerator {
 
 /// Dwarf Generator / CodeWriter
 ///
-pub(crate) struct DwarfModule;
+pub(crate) struct DwarfFile;
 
-impl DwarfModule {
+impl DwarfFile {
     pub(crate) fn new() -> Box<dyn DwarfDefinition> {
         Box::new(Self)
     }
 }
 
-impl DwarfDefinition for DwarfModule {}
+impl DwarfDefinition for DwarfFile {}
 
-impl CodeWriter for DwarfModule {
+impl CodeWriter for DwarfFile {
     fn write_code(
         &self,
         config: &GraceConfig,
