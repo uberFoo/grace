@@ -5,12 +5,10 @@ use std::{
     fs::{self, File},
     io::prelude::*,
     path::{Path, PathBuf},
-    sync::RwLock,
 };
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
-    lu_dog::store::ObjectStore as LuDogStore,
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
     v2::domain::Domain,
     woog::store::ObjectStore as WoogStore,

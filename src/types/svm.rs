@@ -1,16 +1,13 @@
 //! Svm File Generation
 //!
 //! This is where we generate code for use in the next stage of the compiler.
-use std::{fmt::Write, sync::RwLock};
+use std::{fmt::Write};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
-    lu_dog::store::ObjectStore as LuDogStore,
-    lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::{Object, Ty},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership},
+    woog::{store::ObjectStore as WoogStore},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -18,11 +15,8 @@ use uuid::Uuid;
 use crate::{
     codegen::{
         buffer::{emit, Buffer},
-        collect_attributes,
         diff_engine::DirectiveKind,
-        emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        render::RenderType,
         AttributeBuilder,
     },
     options::GraceConfig,

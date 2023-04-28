@@ -15,7 +15,6 @@ use std::{
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
     lu_dog::{
-        store::ObjectStore as LuDogStore,
         types::{ValueType, WoogOption},
         Reference,
     },
@@ -501,7 +500,7 @@ pub(crate) fn render_make_uuid_new(
         }
     );
 
-    let object = domain.sarzak().exhume_object(&method.object).unwrap();
+    let _object = domain.sarzak().exhume_object(&method.object).unwrap();
 
     // We want to render a UUID made up of all of the parameters to the function.
     // So we do the cheap thing and just use the parameter list.
@@ -1017,7 +1016,7 @@ fn typecheck_and_coerce(
 
                             let imported = config.is_imported(&object.id);
 
-                            let id = if local_object_is_enum(object, config, domain) {
+                            let id = if object_is_enum(object, config, imports, domain)? {
                                 "id()"
                             } else {
                                 "id"
@@ -1081,7 +1080,7 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            let id = if local_object_is_enum(obj, config, domain) {
+                            let id = if object_is_enum(obj, config, imports, domain)? {
                                 "id()"
                             } else {
                                 "id"

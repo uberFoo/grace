@@ -8,7 +8,6 @@ use std::{
 
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use sarzak::{
-    lu_dog::store::ObjectStore as LuDogStore,
     lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
@@ -22,7 +21,6 @@ use crate::{
     codegen::{
         buffer::{emit, Buffer},
         collect_attributes,
-        diff_engine::DirectiveKind,
         emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         render::RenderType,
@@ -140,7 +138,7 @@ impl CodeWriter for DwarfModule {
         );
         let woog = woog.as_ref().unwrap();
 
-        let lu_dog = &LU_DOG;
+        let _lu_dog = &LU_DOG;
 
         struct Attribute {
             pub name: String,

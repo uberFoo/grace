@@ -525,7 +525,7 @@ impl CodeWriter for HybridNewImpl {
 
             // Fuck me. I'm starting to regret not merging feature/recurse. Although, it probably
             // would be more work than this. It's just that this is ugly.
-            let mut params_no_store = params_.clone();
+            let _params_no_store = params_.clone();
 
             // Add the store to the end of the  input parameters
             let store = find_store(module, woog, domain);

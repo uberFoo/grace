@@ -3,7 +3,6 @@
 //! This involves creating instances in Woog that the compiler stages depend
 //! upon.
 use std::{
-    fs,
     path::{Path, PathBuf},
 };
 
@@ -217,7 +216,7 @@ fn inter_struct_method_new_(
     let public = Visibility::Public(PUBLIC);
     let access = Access::new(&borrowed, &public, woog);
 
-    let mutable = Ownership::new_mutable();
+    let _mutable = Ownership::new_mutable();
 
     let block = Block::new(Uuid::new_v4(), woog);
 

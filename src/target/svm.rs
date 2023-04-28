@@ -1,24 +1,20 @@
 use std::{
-    fs,
     path::{Path, PathBuf},
     sync::RwLock,
 };
 
-use rayon::prelude::*;
+
 use sarzak::{
-    domain::DomainBuilder,
     lu_dog::store::ObjectStore as LuDogStore,
     mc::{FileSnafu, ModelCompilerError, Result},
-    sarzak::types::Object,
     woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
 
 use crate::{
-    codegen::{generator::GeneratorBuilder, render::RenderIdent},
+    codegen::{render::RenderIdent},
     options::{GraceCompilerOptions, GraceConfig},
     target::Target,
-    types::svm::{SvmBuilder, SvmModule},
     woog::init_woog,
     BIN, BUILD_DIR, RS_EXT, SVM, TARGET_DIR,
 };

@@ -38,7 +38,7 @@ impl TypeDefinition for DomainConst {}
 impl CodeWriter for DomainConst {
     fn write_code(
         &self,
-        _config: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
@@ -72,6 +72,13 @@ impl CodeWriter for DomainConst {
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::{{Uuid, uuid}};");
 
+                // Add the use statements from the options.
+                if let Some(use_paths) = config.get_use_paths(&obj.id) {
+                    for path in use_paths {
+                        emit!(buffer, "use {};", path);
+                    }
+                }
+
                 Ok(())
             },
         )?;
@@ -99,6 +106,13 @@ impl CodeWriter for DomainConst {
                 );
 
                 emit!(buffer, "");
+                if let Some(derives) = config.get_derives(&obj.id) {
+                    write!(buffer, "#[derive(").context(FormatSnafu)?;
+                    for d in derives {
+                        write!(buffer, "{},", d).context(FormatSnafu)?;
+                    }
+                    emit!(buffer, ")]");
+                }
                 emit!(
                     buffer,
                     "pub struct {};",

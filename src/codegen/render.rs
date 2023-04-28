@@ -474,7 +474,7 @@ impl ForStore for GType {
 
                     // Here we swizzle the type from a reference to just an object, as
                     // we don't want it to output as a reference.
-                    let ty = domain.sarzak().exhume_ty(&object.id).unwrap();
+                    let _ty = domain.sarzak().exhume_ty(&object.id).unwrap();
 
                     (Box::new(GType::Object(id)), config.is_imported(&object.id))
                 } else {

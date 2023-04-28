@@ -54,7 +54,7 @@ impl<'a> DwarfTarget<'a> {
         let woog = init_woog(src_path, &config, &domain);
 
         // This needs to become a global someplace.
-        let lu_dog = LuDogStore::new();
+        let _lu_dog = LuDogStore::new();
         // let lu_dog = RwLock::new(lu_dog);
 
         Ok(Box::new(Self {

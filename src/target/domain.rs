@@ -19,7 +19,7 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, is_object_stale, local_object_is_hybrid,
+        generator::GeneratorBuilder, local_object_is_hybrid,
         local_object_is_singleton, local_object_is_supertype, render::RenderIdent,
     },
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
@@ -34,11 +34,10 @@ use crate::{
             store::{DomainStore, DomainStoreBuilder},
             structs::{DomainImplBuilder, Imports, Struct, StructNewImpl, StructRelNavImpl},
         },
-        dwarf::{DwarfBuilder, DwarfModule},
         external::ExternalGenerator,
         null::NullGenerator,
     },
-    woog::{init_woog, persist_woog, populate_woog},
+    woog::{init_woog, populate_woog},
     RS_EXT, TYPES,
 };
 
