@@ -1080,13 +1080,15 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
+                            let is_imported = config.is_imported(&obj.id);
+
                             let id = if object_is_enum(obj, config, imports, domain)? {
                                 "id()"
                             } else {
                                 "id"
                             };
 
-                            if is_uber {
+                            if is_uber && !is_imported {
                                 format!("{}.read().unwrap().{id}", rhs.as_ident())
                             } else {
                                 format!("{}.{id}", rhs.as_ident())

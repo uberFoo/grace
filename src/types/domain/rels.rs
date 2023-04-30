@@ -297,8 +297,9 @@ fn forward(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number,
             );
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
 
-            if config.get_uber_store() {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -350,8 +351,7 @@ fn forward_conditional(
             referrer.referential_attribute.as_ident()
         ),
         |buffer| {
-            let is_uber = config.get_uber_store();
-            let is_imported = config.is_imported(&r_obj.id);
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
 
             emit!(
                 buffer,
@@ -360,7 +360,7 @@ fn forward_conditional(
                 binary.number,
             );
 
-            if is_uber && !is_imported {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -421,7 +421,7 @@ fn backward_one(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.get_uber_store();
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
 
             emit!(
                 buffer,
@@ -499,7 +499,7 @@ fn backward_one_conditional(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.get_uber_store();
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
 
             emit!(
                 buffer,
@@ -602,7 +602,7 @@ fn backward_one_biconditional(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.get_uber_store();
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
 
             emit!(
                 buffer,
@@ -705,6 +705,8 @@ fn backward_1_m(
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
@@ -712,7 +714,7 @@ fn backward_1_m(
                 binary.number
             );
 
-            if config.get_uber_store() {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -735,8 +737,7 @@ fn backward_1_m(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
             emit!(buffer, ".filter_map(|{}| {{", r_obj.as_ident(),);
 
-            if config.get_uber_store() {
-                // emit!(buffer, "let read = {}.read().unwrap();", r_obj.as_ident(),);
+            if is_uber {
                 emit!(
                     buffer,
                     "if {}.read().unwrap().{} == self.{} {{ Some({}) }} else {{ None }}",
@@ -785,7 +786,7 @@ fn backward_1_mc(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.get_uber_store();
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
 
             emit!(
                 buffer,
@@ -865,6 +866,8 @@ fn forward_assoc(
             referential_attribute.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*)",
@@ -872,7 +875,7 @@ fn forward_assoc(
                 number,
             );
 
-            if config.get_uber_store() {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -925,6 +928,8 @@ fn backward_assoc_one(
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
@@ -932,7 +937,7 @@ fn backward_assoc_one(
                 number
             );
 
-            if config.get_uber_store() {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -953,12 +958,26 @@ fn backward_assoc_one(
             }
 
             emit!(buffer, "vec![store.iter_{}()", r_obj.as_ident());
+
+            let lhs = if is_uber {
+                format!(
+                    "{}.read().unwrap().{}",
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                )
+            } else {
+                format!(
+                    "{}.read().unwrap().{}",
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                )
+            };
+
             emit!(
                 buffer,
-                ".find(|{}| {}.{} == self.{}).unwrap()]",
+                ".find(|{}| {} == self.{}).unwrap()]",
                 r_obj.as_ident(),
-                r_obj.as_ident(),
-                referential_attribute.as_ident(),
+                lhs,
                 id
             );
             emit!(buffer, "}}");
@@ -988,6 +1007,8 @@ fn backward_assoc_one_conditional(
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
@@ -995,7 +1016,7 @@ fn backward_assoc_one_conditional(
                 number
             );
 
-            if config.get_uber_store() {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -1060,11 +1081,13 @@ fn backward_assoc_many(
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
-            "{}-struct-impl-nav-backward-assoc_many-to-{}",
+            "{}-struct-impl-nav-backward-assoc-many-to-{}",
             obj.as_ident(),
             r_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
+
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
@@ -1072,7 +1095,7 @@ fn backward_assoc_many(
                 number
             );
 
-            if config.get_uber_store() {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -1093,12 +1116,22 @@ fn backward_assoc_many(
             }
 
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
+
+            let lhs = if is_uber {
+                format!(
+                    "{}.read().unwrap().{}",
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                )
+            } else {
+                format!("{}.{}", r_obj.as_ident(), referential_attribute.as_ident())
+            };
+
             emit!(
                 buffer,
-                ".filter_map(|{}| if {}.{} == self.{} {{ Some({}) }} else {{ None }})",
+                ".filter_map(|{}| if {} == self.{} {{ Some({}) }} else {{ None }})",
                 r_obj.as_ident(),
-                r_obj.as_ident(),
-                referential_attribute.as_ident(),
+                lhs,
                 id,
                 r_obj.as_ident(),
             );
@@ -1128,6 +1161,8 @@ fn subtype_to_supertype(
             s_obj.as_ident()
         ),
         |buffer| {
+            let is_uber = config.get_uber_store() && !config.is_imported(&s_obj.id);
+
             emit!(
                 buffer,
                 "// Navigate to [`{}`] across R{}(isa)",
@@ -1135,7 +1170,7 @@ fn subtype_to_supertype(
                 number
             );
 
-            if config.get_uber_store() {
+            if is_uber {
                 emit!(
                     buffer,
                     "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
@@ -1154,6 +1189,7 @@ fn subtype_to_supertype(
                     s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
             }
+
             if local_object_is_enum(obj, config, domain) {
                 emit!(
                     buffer,
