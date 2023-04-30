@@ -77,7 +77,7 @@ impl FileGenerator for ChaChaGenerator {
     ) -> Result<GenerationAction> {
         // Output the domain/module documentation/description
         for line in domain.description().lines() {
-            emit!(buffer, "// {}", line);
+            emit!(buffer, "//! {}", line);
         }
 
         // buffer.block(

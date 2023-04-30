@@ -420,7 +420,7 @@ impl ForStore for GraceType {
 
                 if is_uber && !imported {
                     format!(
-                        "Option<Arc<RwLock<{}>>>",
+                        "Option<&Arc<RwLock<{}>>>",
                         inner.as_type(mutability, woog, domain)
                     )
                 } else {
@@ -433,7 +433,7 @@ impl ForStore for GraceType {
                 let imported = config.is_imported(&object.id);
 
                 if is_uber && !imported {
-                    format!("Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
+                    format!("&Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
                 } else {
                     format!("&{}", object.as_type(mutability, woog, domain))
                 }
@@ -463,7 +463,7 @@ impl ForStore for GType {
                 let object = domain.sarzak().exhume_object(&r).unwrap();
 
                 if is_uber {
-                    format!("Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
+                    format!("&Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
                 } else {
                     format!("&{}", object.as_type(mutability, woog, domain))
                 }
@@ -483,7 +483,7 @@ impl ForStore for GType {
 
                 if is_uber && !imported {
                     format!(
-                        "Option<Arc<RwLock<{}>>>",
+                        "Option<&Arc<RwLock<{}>>>",
                         o.as_type(mutability, woog, domain)
                     )
                 } else {

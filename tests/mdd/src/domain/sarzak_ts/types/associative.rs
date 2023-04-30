@@ -48,6 +48,7 @@ impl Associative {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-backward-assoc_many-to-an_associative_referent"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-backward-assoc-many-to-an_associative_referent"}}}
     /// Navigate to [`AnAssociativeReferent`] across R22(1-M)
     pub fn r22_an_associative_referent<'a>(
         &'a self,

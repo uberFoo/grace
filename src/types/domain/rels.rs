@@ -966,11 +966,7 @@ fn backward_assoc_one(
                     referential_attribute.as_ident()
                 )
             } else {
-                format!(
-                    "{}.read().unwrap().{}",
-                    r_obj.as_ident(),
-                    referential_attribute.as_ident()
-                )
+                format!("{}.{}", r_obj.as_ident(), referential_attribute.as_ident())
             };
 
             emit!(

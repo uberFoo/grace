@@ -38,6 +38,7 @@ impl IsaUi {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-new_"}}}
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-nav-backward-assoc_many-to-subtype_anchor"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-struct-impl-nav-backward-assoc-many-to-subtype_anchor"}}}
     /// Navigate to [`SubtypeAnchor`] across R10(1-M)
     pub fn r10_subtype_anchor<'a>(&'a self, store: &'a AssociativeStore) -> Vec<&SubtypeAnchor> {
         store

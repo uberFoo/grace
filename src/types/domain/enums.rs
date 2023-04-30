@@ -462,17 +462,18 @@ impl CodeWriter for EnumNewImpl {
                         if is_uber {
                             emit!(
                                 buffer,
-                                "pub fn new_{}() -> Arc<RwLock<Self>> {{",
-                                s_obj.as_ident()
+                                "pub fn new_{}(store: &{}) -> Arc<RwLock<Self>> {{",
+                                s_obj.as_ident(),
+                                store.name
                             );
                             emit!(
                                 buffer,
-                                "// This is already in the store, see associated function `new` above."
+                                "// This is already in the store."
                             );
                             emit!(
                                 buffer,
-                                "Arc::new(RwLock::new(Self::{}({})))",
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                "store.exhume_{}(&{}).unwrap()",
+                                obj.as_ident(),
                                 s_obj.as_const()
                             );
                         } else {
@@ -526,11 +527,22 @@ impl CodeWriter for EnumNewImpl {
 
                         if is_uber {
                             emit!(
+                                buffer, "if let Some({}) = store.exhume_{}(&{}.read().unwrap().{id}) {{",
+                                s_obj.as_ident(),
+                                obj.as_ident(),
+                                s_obj.as_ident()
+                            );
+                            emit!(buffer, "{}", s_obj.as_ident());
+                            emit!(buffer, "}} else {{");
+                            emit!(
                                 buffer,
                                 "let new = Arc::new(RwLock::new(Self::{}({}.read().unwrap().{id})));",
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                 s_obj.as_ident()
                             );
+                            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                            emit!(buffer, "new");
+                            emit!(buffer, "}}");
                         } else {
                             emit!(
                                 buffer,
@@ -538,10 +550,9 @@ impl CodeWriter for EnumNewImpl {
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                 s_obj.as_ident()
                             );
-                        };
-
                         emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                         emit!(buffer, "new");
+                        };
 
                         emit!(buffer, "}}");
                         emit!(buffer, "");
