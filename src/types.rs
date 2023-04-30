@@ -43,4 +43,6 @@ pub(crate) trait ModuleDefinition: CodeWriter {}
 
 pub(crate) trait DwarfDefinition: CodeWriter {}
 
+pub(crate) trait ChaChaDefinition: CodeWriter {}
+
 pub(crate) trait ObjectStoreDefinition: CodeWriter {}

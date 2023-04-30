@@ -18,9 +18,9 @@ use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
     options::{GraceCompilerOptions, GraceConfig},
     target::Target,
-    types::dwarf::{DwarfBuilder, DwarfFile},
+    types::dwarf::{ChaChaBuilder, ChaChaFile, DwarfBuilder, DwarfFile},
     woog::init_woog,
-    BUILD_DIR, TARGET_DIR,
+    BUILD_DIR, RS_EXT, TARGET_DIR,
 };
 
 pub(crate) const DWARF_EXT: &str = "道";
@@ -78,13 +78,19 @@ impl<'a> Target for DwarfTarget<'a> {
         path.push(self.domain.name());
 
         fs::create_dir_all(&path).context(FileSnafu {
-            description: "creating type directory".to_owned(),
+            description: "creating dwarf output directory".to_owned(),
             path: &path,
         })?;
 
-        path.push("discard");
-        path.set_file_name(self.domain.name().as_ident());
-        path.set_extension(DWARF_EXT);
+        let mut dwarf_file = path.clone();
+        dwarf_file.push("discard");
+        dwarf_file.set_file_name(self.domain.name().as_ident());
+        dwarf_file.set_extension(DWARF_EXT);
+
+        let mut chacha_file = path.clone();
+        chacha_file.push("discard");
+        chacha_file.set_file_name(self.domain.name().as_ident());
+        chacha_file.set_extension(RS_EXT);
 
         // Sort the objects -- I need to figure out how to do this automagically.
         let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
@@ -96,13 +102,23 @@ impl<'a> Target for DwarfTarget<'a> {
                 let mut woog = self.woog.clone();
 
                 GeneratorBuilder::new()
-                    .path(&path)?
+                    .path(&dwarf_file)?
                     .package(&self.package)
                     .config(&self.config)
                     .domain(&self.domain)
                     .module(self.module)
                     .woog(&mut woog)
                     .generator(DwarfBuilder::new().definition(DwarfFile::new()).build()?)
+                    .generate()?;
+
+                GeneratorBuilder::new()
+                    .path(&chacha_file)?
+                    .package(&self.package)
+                    .config(&self.config)
+                    .domain(&self.domain)
+                    .module(self.module)
+                    .woog(&mut woog)
+                    .generator(ChaChaBuilder::new().definition(ChaChaFile::new()).build()?)
                     .generate()?;
 
                 Ok(())
