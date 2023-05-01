@@ -211,12 +211,12 @@ impl DomainStore {
                             if is_uber {
                                 emit!(
                                     buffer,
-                                    "self.{}_id_by_name.insert(read.name.to_upper_camel_case(), (read.{id}, value.1));",
+                                    "self.{}_id_by_name.write().unwrap().insert(read.name.to_upper_camel_case(), (read.{id}, value.1));",
                                     obj.as_ident(),
                                 );
                                 emit!(
                                     buffer,
-                                    "self.{}.insert(read.{id}, value);",
+                                    "self.{}.write().unwrap().insert(read.{id}, value);",
                                     obj.as_ident(),
                                 );
                             } else {
@@ -237,7 +237,7 @@ impl DomainStore {
                              if is_uber {
                                 emit!(
                                     buffer,
-                                    "self.{}.insert(read.{id}, ({}.clone(), SystemTime::now()));",
+                                    "self.{}.write().unwrap().insert(read.{id}, ({}.clone(), SystemTime::now()));",
                                     obj.as_ident(),
                                     obj.as_ident()
                                 );
@@ -258,12 +258,12 @@ impl DomainStore {
                             if is_uber {
                                 emit!(
                                     buffer,
-                                    "self.{}_id_by_name.insert(read.name.to_upper_camel_case(), read.{id});",
+                                    "self.{}_id_by_name.write().unwrap().insert(read.name.to_upper_camel_case(), read.{id});",
                                     obj.as_ident(),
                                 );
                                 emit!(
                                     buffer,
-                                    "self.{}.insert(read.{id}, {}.clone());",
+                                    "self.{}.write().unwrap().insert(read.{id}, {}.clone());",
                                     obj.as_ident(),
                                     obj.as_ident()
                                 );
@@ -289,7 +289,7 @@ impl DomainStore {
                             if is_uber {
                                 emit!(
                                     buffer,
-                                    "self.{}.insert(read.{id}, {}.clone());",
+                                    "self.{}.write().unwrap().insert(read.{id}, {}.clone());",
                                     obj.as_ident(),
                                     obj.as_ident()
                                 );
@@ -333,13 +333,19 @@ impl DomainStore {
                         if timestamp {
                             emit!(
                                 buffer,
-                                "self.{}.get(id).map(|{}| {}.0.clone())",
+                                "self.{}.read().unwrap().get(id).map(|{}| {}.0.clone())",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
                         } else {
-                            emit!(buffer, "self.{}.get(id)", obj.as_ident());
+                            emit!(
+                                buffer,
+                                "self.{}.read().unwrap().get(id).map(|{}| {}.clone())",
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident(),
+                            );
                         }
                     } else {
                         if timestamp {
@@ -396,19 +402,33 @@ impl DomainStore {
                         emit!(buffer, "///");
                         emit!(
                             buffer,
-                            "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<&Uuid> {{",
+                            "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
                             obj.as_ident(),
                         );
-                        if timestamp {
-                            emit!(
-                                buffer,
-                                "self.{}_id_by_name.get(name).map(|{}| &{}.0)",
-                                obj.as_ident(),
-                                obj.as_ident(),
-                                obj.as_ident()
-                            );
+                        if is_uber {
+                            if timestamp {
+                                emit!(
+                                    buffer,
+                                    "self.{}_id_by_name.read().unwrap().get(name).map(|{}| {}.0)",
+                                    obj.as_ident(),
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            } else {
+                                emit!(buffer, "self.{}_id_by_name.read().unwrap().get(name)", obj.as_ident());
+                            }
                         } else {
-                            emit!(buffer, "self.{}_id_by_name.get(name)", obj.as_ident());
+                            if timestamp {
+                                emit!(
+                                    buffer,
+                                    "self.{}_id_by_name.get(name).map(|{}| {}.0)",
+                                    obj.as_ident(),
+                                    obj.as_ident(),
+                                    obj.as_ident()
+                                );
+                            } else {
+                                emit!(buffer, "self.{}_id_by_name.get(name)", obj.as_ident());
+                            }
                         }
                         emit!(buffer, "}}");
                         emit!(buffer, "");
@@ -443,13 +463,37 @@ impl DomainStore {
                         if timestamp {
                             emit!(
                                 buffer,
-                                "self.{}.values().map(|{}| {}.0.clone())",
+                                "let values: Vec<Arc<RwLock<{}>>> = self.{}.read().unwrap().values().map(|{}| {}.0.clone()).collect();",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
                             );
+                            emit!(
+                                buffer,
+                                "let len = values.len();"
+                            );
+                            emit!(
+                                buffer,
+                                "(0..len).map(move|i| values[i].clone())",
+                            );
                         } else {
-                            emit!(buffer, "self.{}.values()", obj.as_ident());
+                            emit!(
+                                buffer,
+                                "let values: Vec<Arc<RwLock<{}>>> = self.{}.read().unwrap().values().map(|{}| {}.clone()).collect();",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                obj.as_ident(),
+                                obj.as_ident(),
+                                obj.as_ident()
+                            );
+                            emit!(
+                                buffer,
+                                "let len = values.len();"
+                            );
+                            emit!(
+                                buffer,
+                                "(0..len).map(move|i| values[i].clone())",
+                            );
                         }
                     } else {
                         if timestamp {
@@ -484,11 +528,18 @@ impl DomainStore {
                             obj.as_ident(),
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
+                        let verb = if is_uber {
+                            ".read().unwrap().get"
+                        } else {
+                            ".get"
+                        };
+
                         if local_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
-                                "self.{}.get(&{}.id()).map(|{}| {}.1).unwrap_or(SystemTime::now())",
+                                "self.{}{}(&{}.id()).map(|{}| {}.1).unwrap_or(SystemTime::now())",
                                 obj.as_ident(),
+                                verb,
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -496,8 +547,9 @@ impl DomainStore {
                         } else {
                             emit!(
                                 buffer,
-                                "self.{}.get(&{}.id).map(|{}| {}.1).unwrap_or(SystemTime::now())",
+                                "self.{}{}(&{}.id).map(|{}| {}.1).unwrap_or(SystemTime::now())",
                                 obj.as_ident(),
+                                verb,
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -729,39 +781,71 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");
                 emit!(buffer, "pub struct ObjectStore {{");
                 for obj in &objects {
-                    let thing = if is_uber {
+                    let value_type = if is_uber {
                         format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
                     } else {
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     };
 
                     if timestamp {
-                        emit!(
-                            buffer,
-                            "{}: HashMap<Uuid, ({}, SystemTime)>,",
-                            obj.as_ident(),
-                            thing
-                        );
-                        if object_has_name(obj, domain) {
+                        if is_uber {
                             emit!(
                                 buffer,
-                                "{}_id_by_name: HashMap<String, (Uuid, SystemTime)>,",
-                                obj.as_ident()
+                                "{}: Arc<RwLock<HashMap<Uuid, ({}, SystemTime)>>>,",
+                                obj.as_ident(),
+                                value_type
                             );
+                            if object_has_name(obj, domain) {
+                                emit!(
+                                    buffer,
+                                    "{}_id_by_name: Arc<RwLock<HashMap<String, (Uuid, SystemTime)>>>,",
+                                    obj.as_ident()
+                                );
+                            }
+                        } else {
+                            emit!(
+                                buffer,
+                                "{}: HashMap<Uuid, ({}, SystemTime)>,",
+                                obj.as_ident(),
+                                value_type
+                            );
+                            if object_has_name(obj, domain) {
+                                emit!(
+                                    buffer,
+                                    "{}_id_by_name: HashMap<String, (Uuid, SystemTime)>,",
+                                    obj.as_ident()
+                                );
+                            }
                         }
                     } else {
-                        emit!(
-                            buffer,
-                            "{}: HashMap<Uuid, {}>,",
-                            obj.as_ident(),
-                            thing
-                        );
-                        if object_has_name(obj, domain) {
+                        if is_uber {
                             emit!(
                                 buffer,
-                                "{}_id_by_name: HashMap<String, Uuid>,",
+                                "{}: Arc<RwLock<HashMap<Uuid, {}>>>,",
                                 obj.as_ident(),
+                                value_type
                             );
+                            if object_has_name(obj, domain) {
+                                emit!(
+                                    buffer,
+                                    "{}_id_by_name: Arc<RwLock<HashMap<String, Uuid>>>,",
+                                    obj.as_ident(),
+                                );
+                            }
+                        } else {
+                            emit!(
+                                buffer,
+                                "{}: HashMap<Uuid, {}>,",
+                                obj.as_ident(),
+                                value_type
+                            );
+                            if object_has_name(obj, domain) {
+                                emit!(
+                                    buffer,
+                                    "{}_id_by_name: HashMap<String, Uuid>,",
+                                    obj.as_ident(),
+                                );
+                            }
                         }
                     }
                 }
@@ -775,11 +859,17 @@ impl CodeWriter for DomainStore {
                     emit!(buffer, "let store = Self {{");
                 }
                 for obj in &objects {
-                    emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
-                    if object_has_name(obj, domain) {
-                        emit!(buffer, "{}_id_by_name: HashMap::default(),", obj.as_ident());
+                    if is_uber {
+                        emit!(buffer, "{}: Arc::new(RwLock::new(HashMap::default())),", obj.as_ident());
+                        if object_has_name(obj, domain) {
+                            emit!(buffer, "{}_id_by_name: Arc::new(RwLock::new(HashMap::default())),", obj.as_ident());
+                        }
+                    } else {
+                        emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
+                        if object_has_name(obj, domain) {
+                            emit!(buffer, "{}_id_by_name: HashMap::default(),", obj.as_ident());
+                        }
                     }
-
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
@@ -922,12 +1012,21 @@ fn generate_store_persistence(
                 emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
                 emit!(buffer, "fs::create_dir_all(&path)?;");
                 if timestamp {
-                    emit!(
-                        buffer,
-                        "for {}_tuple in self.{}.values() {{",
-                        obj.as_ident(),
-                        obj.as_ident()
-                    );
+                    if is_uber {
+                        emit!(
+                            buffer,
+                            "for {}_tuple in self.{}.read().unwrap().values() {{",
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "for {}_tuple in self.{}.values() {{",
+                            obj.as_ident(),
+                            obj.as_ident()
+                        );
+                    }
                     let id = if local_object_is_enum(obj, config, domain) {
                         "id()"
                     } else {
@@ -1005,7 +1104,11 @@ fn generate_store_persistence(
                     );
                     emit!(buffer, "let id = file_name.split(\".\").next().unwrap();");
                     emit!(buffer, "if let Ok(id) = Uuid::parse_str(id) {{");
-                    emit!(buffer, "if !self.{}.contains_key(&id) {{", obj.as_ident());
+                    if is_uber {
+                        emit!(buffer, "if !self.{}.read().unwrap().contains_key(&id) {{", obj.as_ident());
+                    } else {
+                        emit!(buffer, "if !self.{}.contains_key(&id) {{", obj.as_ident());
+                    }
                     if is_meta && false {
                         emit!(buffer, "let result = fs::remove_file(path);");
                         emit!(buffer, "match result {{");
@@ -1031,24 +1134,49 @@ fn generate_store_persistence(
                     emit!(buffer, "}}");
                     emit!(buffer, "}}");
                 } else {
-                    emit!(
-                        buffer,
-                        "for {} in self.{}.values() {{",
-                        obj.as_ident(),
-                        obj.as_ident()
-                    );
-                    if local_object_is_enum(obj, config, domain) {
+                    if is_uber {
                         emit!(
                             buffer,
-                            "let path = path.join(format!(\"{{}}.json\", {}.id()));",
+                            "for {} in self.{}.read().unwrap().values() {{",
+                            obj.as_ident(),
                             obj.as_ident()
                         );
                     } else {
                         emit!(
                             buffer,
-                            "let path = path.join(format!(\"{{}}.json\", {}.id));",
+                            "for {} in self.{}.values() {{",
+                            obj.as_ident(),
                             obj.as_ident()
                         );
+                    }
+                    if is_uber {
+                        if local_object_is_enum(obj, config, domain) {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}.read().unwrap().id()));",
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}.read().unwrap().id));",
+                                obj.as_ident()
+                            );
+                        }
+                    } else {
+                        if local_object_is_enum(obj, config, domain) {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}.id()));",
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "let path = path.join(format!(\"{{}}.json\", {}.id));",
+                                obj.as_ident()
+                            );
+                        }
                     }
                     emit!(buffer, "let file = fs::File::create(path)?;");
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
@@ -1123,7 +1251,7 @@ fn generate_store_persistence(
                         if is_uber {
                             emit!(
                                 buffer,
-                                "store.{}_id_by_name.insert({}.0.read().unwrap().name.to_upper_camel_case(), ({}.0.read().unwrap().{id}, {}.1));",
+                                "store.{}_id_by_name.write().unwrap().insert({}.0.read().unwrap().name.to_upper_camel_case(), ({}.0.read().unwrap().{id}, {}.1));",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident(),
@@ -1143,7 +1271,7 @@ fn generate_store_persistence(
                     if is_uber {
                         emit!(
                             buffer,
-                            "store.{}.insert({}.0.read().unwrap().{id}, {}.clone());",
+                            "store.{}.write().unwrap().insert({}.0.read().unwrap().{id}, {}.clone());",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()
@@ -1168,7 +1296,7 @@ fn generate_store_persistence(
                         if is_uber {
                             emit!(
                                 buffer,
-                                "store.{}_id_by_name.insert({}.read().unwrap().name.to_upper_camel_case(), {}.read().unwrap().{id});",
+                                "store.{}_id_by_name.write().unwrap().insert({}.read().unwrap().name.to_upper_camel_case(), {}.read().unwrap().{id});",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -1186,7 +1314,7 @@ fn generate_store_persistence(
                     if is_uber {
                         emit!(
                             buffer,
-                            "store.{}.insert({}.read().unwrap().{id}, {}.clone());",
+                            "store.{}.write().unwrap().insert({}.read().unwrap().{id}, {}.clone());",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()
