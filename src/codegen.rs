@@ -1625,7 +1625,7 @@ where
     for attr in attrs {
         let ty = attr.r2_ty(domain.sarzak())[0];
         let mut lu_dog = lu_dog.write().unwrap();
-        let ty = ValueType::new_ty(Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
+        let ty = ValueType::new_ty(ty, &mut lu_dog);
 
         let attr = A::new(attr.as_ident(), ty.clone());
         result.push(attr);
@@ -1644,9 +1644,9 @@ where
 
         let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
         let mut lu_dog = lu_dog.write().unwrap();
-        let ty = ValueType::new_ty(Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
+        let ty = ValueType::new_ty(ty, &mut lu_dog);
         let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
-        let ty = ValueType::new_reference(ty, &mut lu_dog);
+        let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
         // This determines how a reference is stored in the struct. In this
         // case a UUID.
@@ -1655,7 +1655,7 @@ where
             // to the referent.
             Conditionality::Conditional(_) => {
                 let option = WoogOption::new_z_none(&ty, &mut lu_dog);
-                let ty = ValueType::new_woog_option(option, &mut lu_dog);
+                let ty = ValueType::new_woog_option(&option, &mut lu_dog);
 
                 let attr = A::new(attr_name, ty.clone());
                 result.push(attr);
@@ -1677,11 +1677,10 @@ where
             let obj = referent.r25_object(domain.sarzak())[0];
 
             let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
-            let ty = Arc::new(RwLock::new(ty.to_owned()));
             let mut lu_dog = lu_dog.write().unwrap();
             let ty = ValueType::new_ty(ty, &mut lu_dog);
             let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
-            let ty = ValueType::new_reference(ty, &mut lu_dog);
+            let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
             let attr_name = an_ass.referential_attribute.as_ident();
 

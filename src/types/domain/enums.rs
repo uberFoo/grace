@@ -444,12 +444,13 @@ impl CodeWriter for EnumNewImpl {
             DirectiveKind::IgnoreOrig,
             format!("{}-new-impl", obj.as_ident()),
             |buffer| {
-                let is_uber = config.get_uber_store();
+                let is_uber = config.get_uber_store() && !config.is_imported(&obj.id);
 
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
                     let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+                    let is_imported = config.is_imported(&s_obj.id);
 
                     emit!(
                         buffer,
@@ -493,14 +494,25 @@ impl CodeWriter for EnumNewImpl {
                         emit!(buffer, "");
                     } else {
                         if is_uber {
-                            emit!(
-                                buffer,
-                                "pub fn new_{}({}: Arc<RwLock<{}>>, store: &mut {}) -> Arc<RwLock<Self>> {{",
-                                s_obj.as_ident(),
-                                s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                store.name
-                            );
+                            if is_imported {
+                                emit!(
+                                    buffer,
+                                    "pub fn new_{}({}: &{}, store: &mut {}) -> Arc<RwLock<Self>> {{",
+                                    s_obj.as_ident(),
+                                    s_obj.as_ident(),
+                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    store.name
+                                );
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "pub fn new_{}({}: &Arc<RwLock<{}>>, store: &mut {}) -> Arc<RwLock<Self>> {{",
+                                    s_obj.as_ident(),
+                                    s_obj.as_ident(),
+                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    store.name
+                                );
+                            }
                         } else {
                             emit!(
                                 buffer,
@@ -526,23 +538,43 @@ impl CodeWriter for EnumNewImpl {
                         };
 
                         if is_uber {
-                            emit!(
-                                buffer, "if let Some({}) = store.exhume_{}(&{}.read().unwrap().{id}) {{",
-                                s_obj.as_ident(),
-                                obj.as_ident(),
-                                s_obj.as_ident()
-                            );
-                            emit!(buffer, "{}", s_obj.as_ident());
-                            emit!(buffer, "}} else {{");
-                            emit!(
-                                buffer,
-                                "let new = Arc::new(RwLock::new(Self::{}({}.read().unwrap().{id})));",
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                s_obj.as_ident()
-                            );
-                            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
-                            emit!(buffer, "new");
-                            emit!(buffer, "}}");
+                            if is_imported {
+                                emit!(
+                                    buffer, "if let Some({}) = store.exhume_{}(&{}.{id}) {{",
+                                    s_obj.as_ident(),
+                                    obj.as_ident(),
+                                    s_obj.as_ident()
+                                );
+                                emit!(buffer, "{}", s_obj.as_ident());
+                                emit!(buffer, "}} else {{");
+                                emit!(
+                                    buffer,
+                                    "let new = Arc::new(RwLock::new(Self::{}({}.{id})));",
+                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    s_obj.as_ident()
+                                );
+                                emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                                emit!(buffer, "new");
+                                emit!(buffer, "}}");
+                            } else {
+                                emit!(
+                                    buffer, "if let Some({}) = store.exhume_{}(&{}.read().unwrap().{id}) {{",
+                                    s_obj.as_ident(),
+                                    obj.as_ident(),
+                                    s_obj.as_ident()
+                                );
+                                emit!(buffer, "{}", s_obj.as_ident());
+                                emit!(buffer, "}} else {{");
+                                emit!(
+                                    buffer,
+                                    "let new = Arc::new(RwLock::new(Self::{}({}.read().unwrap().{id})));",
+                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    s_obj.as_ident()
+                                );
+                                emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                                emit!(buffer, "new");
+                                emit!(buffer, "}}");
+                            }
                         } else {
                             emit!(
                                 buffer,
