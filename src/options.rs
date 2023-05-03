@@ -44,7 +44,7 @@ pub enum Target {
     /// This is the first-stage target language. The model will be compiled to
     /// a dwarf program, including embedded dwarf code. This will then be compiled
     /// by `dwarfc` into instances in "Lu Dog".
-    Dwarf,
+    Dwarf(DwarfConfig),
     /// Sarzak Virtual Machine
     ///
     /// The SVM is a virtual machine that is used to run the dwarf language, over
@@ -144,6 +144,9 @@ const DOMAIN_IS_META_MODEL: bool = false;
 /// We select defaults that are appropriate for applications that aren't using
 /// the domain as the backend for a model compiler. Put another way, the defaults
 /// are most appropriate for domains that aren't meta-models.
+///
+/// I'm not sure why I wrote that. I don't know what the difference might be. I
+/// guess we could compare these defaults to what's in the `salzak.toml` file.
 impl Default for DomainConfig {
     fn default() -> Self {
         DomainConfig {
@@ -156,6 +159,22 @@ impl Default for DomainConfig {
             is_meta_model: DOMAIN_IS_META_MODEL,
         }
     }
+}
+
+/// Dowarf Target Configuration
+///
+/// The dwarf target has the following, target-specific, configuration options.
+#[derive(Args, Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct DwarfConfig {
+    /// Store Path
+    ///
+    /// Path to the parnet directory contiining the store to load. The store
+    /// type needs to match the domain that is being compiled.
+    ///
+    /// Note that the store contains instances of the domain, whereas the domain
+    /// being compiled is comprised of instances of the meta-model.
+    #[arg(short, long)]
+    pub store_path: PathBuf,
 }
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
@@ -288,6 +307,14 @@ impl GraceConfig {
             }
         } else {
             &DEFAULT_TARGET
+        }
+    }
+
+    pub(crate) fn get_store_path(&self) -> Option<&PathBuf> {
+        if let Target::Dwarf(config) = self.get_target() {
+            Some(&config.store_path)
+        } else {
+            None
         }
     }
 

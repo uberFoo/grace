@@ -52,7 +52,7 @@ impl SarzakModelCompiler for ModelCompiler {
             Target::Application => {
                 ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
-            Target::Dwarf => {
+            Target::Dwarf(_) => {
                 DwarfTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
             Target::Svm => {

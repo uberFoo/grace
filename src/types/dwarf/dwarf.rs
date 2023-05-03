@@ -22,7 +22,7 @@ use crate::{
         buffer::{emit, Buffer},
         collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        render::RenderType,
+        render::{RenderConst, RenderType},
         AttributeBuilder,
     },
     options::GraceConfig,
@@ -183,10 +183,10 @@ impl CodeWriter for DwarfFile {
 
             let attrs: Vec<Attribute> = collect_attributes(obj, domain);
             for attr in &attrs {
-                let ty = value_type_to_string(attr.ty.clone(), woog, domain);
+                let ty = value_type_to_string(&attr.ty, woog, domain);
                 emit!(buffer, "    {}: {},", attr.name, ty);
             }
-
+            emit!(buffer, "    proxy: {}Proxy,", obj_type);
             emit!(buffer, "}}");
 
             //
@@ -198,6 +198,8 @@ impl CodeWriter for DwarfFile {
             // Emit the constructor
             //
             write!(buffer, "    fn new(").context(FormatSnafu)?;
+
+            let mut args = String::new();
             let mut ft = true;
             let mut iter = attrs.iter();
             loop {
@@ -208,32 +210,38 @@ impl CodeWriter for DwarfFile {
                         }
                         if !ft {
                             write!(buffer, ", ").context(FormatSnafu)?;
+                            args.extend([", ".to_string()]);
                         } else {
                             ft = false;
                         }
-                        let ty = value_type_to_string(attr.ty.clone(), woog, domain);
+                        let ty = value_type_to_string(&attr.ty, woog, domain);
                         write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
+                        args.extend([attr.name.clone()]);
                     }
                     None => break,
                 }
             }
-            // for attr in attrs {
-            //     if attr.name == "id" {
-            //         continue;
-            //     }
-            //     let ty = value_type_to_string(&attr.ty, lu_dog, woog, domain);
-            //     write!(buffer, "{}: {}, ", attr.name, ty).context(FormatSnafu)?;
-            // }
             writeln!(buffer, ") -> {} {{", obj_type).context(FormatSnafu)?;
             emit!(buffer, "        let id = Uuid::new();");
             emit!(buffer, "        {} {{", obj_type);
             for attr in &attrs {
                 emit!(buffer, "            {}: {},", attr.name, attr.name);
             }
+
+            emit!(
+                buffer,
+                "            proxy: {}::new({}),",
+                obj.as_const(),
+                args
+            );
+
             emit!(buffer, "        }}");
             emit!(buffer, "    }}");
             emit!(buffer, "");
 
+            //
+            // Generate the help() method
+            //
             emit!(buffer, "    fn help() -> () {{");
             emit_object_comments(
                 // What a cheat!
@@ -245,10 +253,13 @@ impl CodeWriter for DwarfFile {
             emit!(buffer, "    }}");
             emit!(buffer, "");
 
+            //
+            // Generate the info() method
+            //
             emit!(buffer, "    fn info() -> () {{");
             emit!(buffer, "        print(\"struct {} {{\\n\");", obj_type,);
             for attr in &attrs {
-                let ty = value_type_to_string(attr.ty.clone(), woog, domain);
+                let ty = value_type_to_string(&attr.ty, woog, domain);
                 emit!(buffer, "        print(\"    {}: {},\\n\");", attr.name, ty);
             }
             emit!(buffer, "        print(\"}}\\n\");");
@@ -266,10 +277,10 @@ impl CodeWriter for DwarfFile {
     }
 }
 
-fn value_type_to_string(ty: Arc<RwLock<ValueType>>, woog: &WoogStore, domain: &Domain) -> String {
+fn value_type_to_string(ty: &Arc<RwLock<ValueType>>, woog: &WoogStore, domain: &Domain) -> String {
     let lu_dog = &LU_DOG;
 
-    match ty.read().unwrap().clone() {
+    match *ty.read().unwrap() {
         ValueType::Empty(_) => "()".to_string(),
         ValueType::Error(_) => "maybe error type wasn't a good idea".to_string(),
         ValueType::Function(_) => "<function>".to_string(),
@@ -293,7 +304,7 @@ fn value_type_to_string(ty: Arc<RwLock<ValueType>>, woog: &WoogStore, domain: &D
                 let list = lu_dog.exhume_list(id).unwrap().read().unwrap().clone();
                 list.r36_value_type(&lu_dog)[0].clone()
             };
-            format!("Vec<{}>", &value_type_to_string(inner, woog, domain))
+            format!("Vec<{}>", &value_type_to_string(&inner, woog, domain))
         }
         ValueType::Reference(ref id) => {
             let inner = {
@@ -302,7 +313,7 @@ fn value_type_to_string(ty: Arc<RwLock<ValueType>>, woog: &WoogStore, domain: &D
                 reference.r35_value_type(&lu_dog)[0].clone()
             };
 
-            format!("&{}", &value_type_to_string(inner, woog, domain))
+            format!("&{}", &value_type_to_string(&inner, woog, domain))
         }
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
@@ -332,7 +343,7 @@ fn value_type_to_string(ty: Arc<RwLock<ValueType>>, woog: &WoogStore, domain: &D
                 option.r2_value_type(&lu_dog)[0].clone()
             };
 
-            format!("Option<{}>", &value_type_to_string(inner, woog, domain))
+            format!("Option<{}>", &value_type_to_string(&inner, woog, domain))
         }
         ValueType::WoogStruct(ref id) => {
             let lu_dog = lu_dog.read().unwrap();

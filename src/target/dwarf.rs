@@ -26,6 +26,10 @@ use crate::{
 pub(crate) const DWARF_EXT: &str = "道";
 
 lazy_static! {
+    //
+    // This is the global LuDog store. It's got it's own locking, but this still needs
+    // to be behind an RwLock. So, maybe using a global isn't such a great idea.
+    //
     pub(crate) static ref LU_DOG: RwLock<LuDogStore> = RwLock::new(LuDogStore::new());
 }
 
@@ -93,37 +97,37 @@ impl<'a> Target for DwarfTarget<'a> {
         chacha_file.set_extension(RS_EXT);
 
         // Sort the objects -- I need to figure out how to do this automagically.
-        let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
-        objects.sort_by(|a, b| a.name.cmp(&b.name));
+        // let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
+        // objects.sort_by(|a, b| a.name.cmp(&b.name));
 
-        objects
-            .par_iter()
-            .map(|_obj| {
-                let mut woog = self.woog.clone();
+        // objects
+        // .par_iter()
+        // .map(|_obj| {
+        let mut woog = self.woog.clone();
 
-                GeneratorBuilder::new()
-                    .path(&dwarf_file)?
-                    .package(&self.package)
-                    .config(&self.config)
-                    .domain(&self.domain)
-                    .module(self.module)
-                    .woog(&mut woog)
-                    .generator(DwarfBuilder::new().definition(DwarfFile::new()).build()?)
-                    .generate()?;
+        GeneratorBuilder::new()
+            .path(&dwarf_file)?
+            .package(&self.package)
+            .config(&self.config)
+            .domain(&self.domain)
+            .module(self.module)
+            .woog(&mut woog)
+            .generator(DwarfBuilder::new().definition(DwarfFile::new()).build()?)
+            .generate()?;
 
-                GeneratorBuilder::new()
-                    .path(&chacha_file)?
-                    .package(&self.package)
-                    .config(&self.config)
-                    .domain(&self.domain)
-                    .module(self.module)
-                    .woog(&mut woog)
-                    .generator(ChaChaBuilder::new().definition(ChaChaFile::new()).build()?)
-                    .generate()?;
+        GeneratorBuilder::new()
+            .path(&chacha_file)?
+            .package(&self.package)
+            .config(&self.config)
+            .domain(&self.domain)
+            .module(self.module)
+            .woog(&mut woog)
+            .generator(ChaChaBuilder::new().definition(ChaChaFile::new()).build()?)
+            .generate()?;
 
-                Ok(())
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        // Ok(())
+        // })
+        // .collect::<Result<Vec<_>, _>>()?;
 
         Ok(())
     }
