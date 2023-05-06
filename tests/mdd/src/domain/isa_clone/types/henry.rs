@@ -20,7 +20,6 @@ pub struct Henry {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-implementation"}}}
 impl Henry {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-struct-impl-new_"}}}
     /// Inter a new 'Henry' in the store, and return it's `id`.
     pub fn new(last_name: String, bar: &SimpleSubtypeA, store: &mut IsaCloneStore) -> Henry {
         let id = Uuid::new_v4();
@@ -30,9 +29,6 @@ impl Henry {
             bar: bar.id(),
         };
         store.inter_henry(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

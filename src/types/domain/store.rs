@@ -418,12 +418,12 @@ impl DomainStore {
                                 emit!(buffer, "self.{}_id_by_name.read().unwrap().get(name)", obj.as_ident());
                             }
                         } else {
-                            emit!(
-                                buffer,
-                                "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
-                                obj.as_ident(),
-                            );
                             if timestamp {
+                                emit!(
+                                    buffer,
+                                    "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
+                                    obj.as_ident(),
+                                );
                                 emit!(
                                     buffer,
                                     "self.{}_id_by_name.get(name).map(|{}| {}.0)",
@@ -432,6 +432,13 @@ impl DomainStore {
                                     obj.as_ident()
                                 );
                             } else {
+                                // 🚧 Is this right? We are changing the signaature of the method, which
+                                // i think is bad as it will break existing code.
+                                emit!(
+                                    buffer,
+                                    "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<&Uuid> {{",
+                                    obj.as_ident(),
+                                );
                                 emit!(buffer, "self.{}_id_by_name.get(name)", obj.as_ident());
                             }
                         }

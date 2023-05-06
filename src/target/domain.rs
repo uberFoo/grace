@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use ansi_term::Colour;
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use heck::ToUpperCamelCase;
 use rayon::prelude::*;
@@ -19,8 +20,8 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, local_object_is_hybrid,
-        local_object_is_singleton, local_object_is_supertype, render::RenderIdent,
+        generator::GeneratorBuilder, local_object_is_hybrid, local_object_is_singleton,
+        local_object_is_supertype, render::RenderIdent,
     },
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
     target::Target,
@@ -224,11 +225,11 @@ impl<'a> DomainTarget<'a> {
                 types.set_file_name(obj.as_ident());
                 types.set_extension(RS_EXT);
 
-                println!(
-                    "Generating code for: {} ... output path: {}",
-                    obj.name,
-                    types.display(),
-                );
+                // println!(
+                //     "Generating code for: {} ... output path: {}",
+                //     Colour::Blue.paint(&obj.name),
+                //     Colour::White.dimmed().paint(types.display().to_string()),
+                // );
 
                 // Test if the object is a supertype. For those we generate as enums.
                 let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
@@ -237,6 +238,13 @@ impl<'a> DomainTarget<'a> {
                     // Well, I don't have a use case for that at the moment, so they
                     // will be done in due time.
                     if local_object_is_hybrid(obj, &self.config, &self.domain) {
+                        println!(
+                            "Generating code for: {} ({}) ... output path: {}",
+                            Colour::Blue.paint(&obj.name),
+                            Colour::Cyan.italic().paint("hybrid"),
+                            Colour::White.dimmed().paint(types.display().to_string()),
+                        );
+
                         DefaultStructBuilder::new()
                             .definition(Hybrid::new())
                             .implementation(
@@ -248,6 +256,13 @@ impl<'a> DomainTarget<'a> {
                             )
                             .build()?
                     } else {
+                        println!(
+                            "Generating code for: {} ({}) ... output path: {}",
+                            Colour::Blue.paint(&obj.name),
+                            Colour::Green.italic().paint("enum"),
+                            Colour::White.dimmed().paint(types.display().to_string()),
+                        );
+
                         DefaultStructBuilder::new()
                             .definition(Enum::new())
                             .implementation(
@@ -278,16 +293,35 @@ impl<'a> DomainTarget<'a> {
                     NullGenerator::new()
                 } else if self.config.is_external(&obj.id) {
                     // If the object is external, we create a newtype to wrap it.
+                    println!(
+                        "Generating code for: {} ({}) ... output path: {}",
+                        Colour::Blue.paint(&obj.name),
+                        Colour::Red.italic().paint("external"),
+                        Colour::White.dimmed().paint(types.display().to_string()),
+                    );
 
                     ExternalGenerator::new()
                 } else if local_object_is_singleton(obj, &self.config, &self.domain) {
                     // Look for naked objects, and generate a singleton for them.
+                    println!(
+                        "Generating code for: {} ({}) ... output path: {}",
+                        Colour::Blue.paint(&obj.name),
+                        Colour::Purple.italic().paint("singleton"),
+                        Colour::White.dimmed().paint(types.display().to_string()),
+                    );
 
                     log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
                         .definition(DomainConst::new())
                         .build()?
                 } else {
+                    println!(
+                        "Generating code for: {} ({}) ... output path: {}",
+                        Colour::Blue.paint(&obj.name),
+                        Colour::Yellow.italic().paint("struct"),
+                        Colour::White.dimmed().paint(types.display().to_string()),
+                    );
+
                     DefaultStructBuilder::new()
                         .imports(Imports::new())
                         // Definition type

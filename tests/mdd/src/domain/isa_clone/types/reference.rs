@@ -32,9 +32,6 @@ impl Reference {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new_"}}}
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-nav-backward-one-to-super_t"}}}
     /// Navigate to [`SuperT`] across R88(1-1)
     pub fn r88_super_t<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SuperT> {

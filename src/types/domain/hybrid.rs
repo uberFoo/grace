@@ -134,7 +134,6 @@ impl CodeWriter for Hybrid {
 
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
                     let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
-                    let is_hybrid = object_is_hybrid(s_obj, config, imports, domain)?;
 
                     if config.is_imported(&s_obj.id) {
                         let imported_object = config.get_imported(&s_obj.id).unwrap();
@@ -153,15 +152,6 @@ impl CodeWriter for Hybrid {
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                             ));
                         }
-
-                        if is_hybrid {
-                            uses.insert(format!(
-                                "use crate::{}::types::{}::{}Enum;",
-                                imported_object.domain,
-                                s_obj.as_ident(),
-                                s_obj.as_const()
-                            ));
-                        }
                     } else {
                         if is_singleton && !is_supertype {
                             uses.insert(format!(
@@ -173,15 +163,6 @@ impl CodeWriter for Hybrid {
                         } else {
                             uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
-                                module,
-                                s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            ));
-                        }
-
-                        if is_hybrid {
-                            uses.insert(format!(
-                                "use crate::{}::types::{}::{}Enum;",
                                 module,
                                 s_obj.as_ident(),
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -226,6 +207,15 @@ impl CodeWriter for Hybrid {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
+
+                    if object_is_hybrid(s_obj, config, imports, domain)? {
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{}Enum;",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    }
 
                     uses.insert(format!(
                         "use crate::{}::types::{}::{};",

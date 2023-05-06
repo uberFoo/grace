@@ -610,7 +610,7 @@ impl ObjectStore {
 
     /// Exhume [`Object`] id from the store by name.
     ///
-    pub fn exhume_object_id_by_name(&self, name: &str) -> Option<&Uuid> {
+    pub fn exhume_object_id_by_name(&self, name: &str) -> Option<Uuid> {
         self.object_id_by_name.get(name).map(|object| object.0)
     }
 
