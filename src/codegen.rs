@@ -973,7 +973,11 @@ pub(crate) fn render_new_instance_new(
         let f = field.r27_field(woog)[0];
         let ty = f.r29_grace_type(woog)[0];
         let rval_string = typecheck_and_coerce(ty, rval, config, imports, woog, domain)?;
-        emit!(buffer, "{}: {},", f.as_ident(), rval_string);
+        if f.as_ident() == rval_string {
+            emit!(buffer, "{rval_string},");
+        } else {
+            emit!(buffer, "{}: {rval_string},", f.as_ident());
+        }
     }
 
     if is_uber {

@@ -131,7 +131,18 @@ impl CodeWriter for DomainConst {
                 emit!(buffer, "    pub fn id(&self) -> Uuid {{");
                 emit!(buffer, "        {}", obj.as_const());
                 emit!(buffer, "    }}");
+                emit!(buffer, "}}\n");
+
+                emit!(
+                    buffer,
+                    "impl Default for {} {{",
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+                emit!(buffer, "    fn default() -> Self {{");
+                emit!(buffer, "        Self::new()");
+                emit!(buffer, "    }}");
                 emit!(buffer, "}}");
+
                 Ok(())
             },
         )?;

@@ -736,25 +736,23 @@ fn backward_1_m(
             }
 
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
-            emit!(buffer, ".filter_map(|{}| {{", r_obj.as_ident(),);
+            emit!(buffer, ".filter(|{}| {{", r_obj.as_ident(),);
 
             if is_uber {
                 emit!(
                     buffer,
-                    "if {}.read().unwrap().{} == self.{} {{ Some({}) }} else {{ None }}",
+                    "{}.read().unwrap().{} == self.{}",
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident(),
                     id,
-                    r_obj.as_ident(),
                 );
             } else {
                 emit!(
                     buffer,
-                    "if {}.{} == self.{} {{ Some({}) }} else {{ None }}",
+                    "{}.{} == self.{}",
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident(),
                     id,
-                    r_obj.as_ident(),
                 );
             }
             emit!(buffer, "}})");

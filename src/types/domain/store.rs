@@ -999,7 +999,7 @@ fn generate_store_persistence(
                 "pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
             );
             emit!(buffer, "let path = path.as_ref();");
-            emit!(buffer, "fs::create_dir_all(&path)?;");
+            emit!(buffer, "fs::create_dir_all(path)?;");
             emit!(buffer, "");
             emit!(
                 buffer,
@@ -1114,7 +1114,7 @@ fn generate_store_persistence(
                         buffer,
                         "let file_name = path.file_name().unwrap().to_str().unwrap();"
                     );
-                    emit!(buffer, "let id = file_name.split(\".\").next().unwrap();");
+                    emit!(buffer, "let id = file_name.split('.').next().unwrap();");
                     emit!(buffer, "if let Ok(id) = Uuid::parse_str(id) {{");
                     if is_uber {
                         emit!(buffer, "if !self.{}.read().unwrap().contains_key(&id) {{", obj.as_ident());
@@ -1234,8 +1234,8 @@ fn generate_store_persistence(
                 emit!(buffer, "// Load {}.", obj.name);
                 emit!(buffer, "{{");
                 emit!(buffer, "let path = path.join(\"{}\");", obj.as_ident());
-                emit!(buffer, "let mut entries = fs::read_dir(path)?;");
-                emit!(buffer, "while let Some(entry) = entries.next() {{");
+                emit!(buffer, "let entries = fs::read_dir(path)?;");
+                emit!(buffer, "for entry in entries {{");
                 emit!(buffer, "let entry = entry?;");
                 emit!(buffer, "let path = entry.path();");
                 emit!(buffer, "let file = fs::File::open(path)?;");
