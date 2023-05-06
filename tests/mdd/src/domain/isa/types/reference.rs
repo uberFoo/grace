@@ -24,15 +24,11 @@ pub struct Reference {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-implementation"}}}
 impl Reference {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new_"}}}
     /// Inter a new 'Reference' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut IsaStore) -> Reference {
         let id = Uuid::new_v4();
         let new = Reference { id: id, name: name };
         store.inter_reference(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

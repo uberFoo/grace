@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use crate::domain::isa::store::ObjectStore as IsaStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-enum-documentation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-documentation"}}}
 /// This [`Supertype`] is Simple
 ///
@@ -26,9 +25,6 @@ use crate::domain::isa::store::ObjectStore as IsaStore;
 /// . This is going to raise all sorts of hell, because I think I only made hybrid work with
 ///  referentials. Maybe not. We'll see. Fun! 💥💥💥💥
 ///
-// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-enum-definition"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-enum-definition"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -47,8 +43,6 @@ pub enum SimpleSupertypeEnum {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-implementation"}}}
 impl SimpleSupertype {
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-new-impl"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new_simple_subtype_a"}}}
     /// Inter a new SimpleSupertype in the store, and return it's `id`.
     pub fn new_simple_subtype_a(
@@ -56,9 +50,7 @@ impl SimpleSupertype {
         subtype: &SimpleSubtypeA,
         store: &mut IsaStore,
     ) -> SimpleSupertype {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id();
+        let id = Uuid::new_v4();
         let new = SimpleSupertype {
             state: state,
             subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.id()),
@@ -68,24 +60,16 @@ impl SimpleSupertype {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-get-id-impl"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new_simple_subtype_a_"}}}
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new_simple_subtype_b"}}}
     /// Inter a new SimpleSupertype in the store, and return it's `id`.
     pub fn new_simple_subtype_b(state: bool, store: &mut IsaStore) -> SimpleSupertype {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = SIMPLE_SUBTYPE_B;
+        let id = Uuid::new_v4();
         let new = SimpleSupertype {
             state: state,
             subtype: SimpleSupertypeEnum::SimpleSubtypeB(SIMPLE_SUBTYPE_B),
             id,
         };
         store.inter_simple_supertype(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new_simple_subtype_b_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

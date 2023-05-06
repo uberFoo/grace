@@ -51,9 +51,7 @@ impl SimpleSupertype {
         subtype: &SimpleSubtypeA,
         store: &mut IsaTsStore,
     ) -> SimpleSupertype {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id();
+        let id = Uuid::new_v4();
         let new = SimpleSupertype {
             state: state,
             subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.id()),
@@ -69,9 +67,7 @@ impl SimpleSupertype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-new_simple_subtype_b"}}}
     /// Inter a new SimpleSupertype in the store, and return it's `id`.
     pub fn new_simple_subtype_b(state: bool, store: &mut IsaTsStore) -> SimpleSupertype {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = SIMPLE_SUBTYPE_B;
+        let id = Uuid::new_v4();
         let new = SimpleSupertype {
             state: state,
             subtype: SimpleSupertypeEnum::SimpleSubtypeB(SIMPLE_SUBTYPE_B),

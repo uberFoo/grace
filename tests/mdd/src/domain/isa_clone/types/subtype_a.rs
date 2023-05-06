@@ -3,6 +3,7 @@
 use uuid::Uuid;
 
 use crate::domain::isa_clone::types::super_t::SuperT;
+use crate::domain::isa_clone::types::super_t::SuperTEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
@@ -40,7 +41,16 @@ impl SubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-impl-nav-subtype-to-supertype-super_t"}}}
     // Navigate to [`SuperT`] across R2(isa)
     pub fn r2_super_t<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SuperT> {
-        vec![store.exhume_super_t(&self.id).unwrap()]
+        vec![store
+            .iter_super_t()
+            .find(|super_t| {
+                if let SuperTEnum::SubtypeA(id) = super_t.subtype {
+                    id == self.id
+                } else {
+                    false
+                }
+            })
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

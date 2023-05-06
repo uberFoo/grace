@@ -16,6 +16,7 @@ use crate::{
         diff_engine::DirectiveKind,
         find_store, get_assoc_referent_from_referrer_sorted, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_subtypes_sorted, local_object_is_enum,
+        local_object_is_hybrid,
         render::{RenderIdent, RenderType},
     },
     options::GraceConfig,
@@ -1149,53 +1150,63 @@ fn subtype_to_supertype(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let obj_ident = obj.as_ident();
+    let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+    let s_obj_ident = s_obj.as_ident();
+    let s_obj_type = s_obj.as_type(&Ownership::new_borrowed(), woog, domain);
+    let store_name = &store.name;
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
-            "{}-impl-nav-subtype-to-supertype-{}",
-            obj.as_ident(),
-            s_obj.as_ident()
+            "{obj_ident}-impl-nav-subtype-to-supertype-{s_obj_ident}"
         ),
         |buffer| {
             let is_uber = config.get_uber_store() && !config.is_imported(&s_obj.id);
+            let is_hybrid = local_object_is_hybrid(s_obj, config, domain);
 
             emit!(
                 buffer,
-                "// Navigate to [`{}`] across R{}(isa)",
-                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                number
+                "// Navigate to [`{s_obj_type}`] across R{number}(isa)"
             );
 
             if is_uber {
                 emit!(
                     buffer,
-                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<Arc<RwLock<{}>>> {{",
-                    number,
-                    s_obj.as_ident(),
-                    store.name,
-                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    "pub fn r{number}_{s_obj_ident}<'a>(&'a self, store: &'a {store_name}) -> Vec<Arc<RwLock<{s_obj_type}>>> {{"
                 );
             } else {
                 emit!(
                     buffer,
-                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                    number,
-                    s_obj.as_ident(),
-                    store.name,
-                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    "pub fn r{number}_{s_obj_ident}<'a>(&'a self, store: &'a {store_name}) -> Vec<&{s_obj_type}> {{"
                 );
             }
 
-            if local_object_is_enum(obj, config, domain) {
-                emit!(
-                    buffer,
-                    "vec![store.exhume_{}(&self.id()).unwrap()]",
-                    s_obj.as_ident()
-                );
+            let id = if local_object_is_enum(obj, config, domain) {
+                "id()"
+            } else {
+                "id"
+            };
+            if is_hybrid {
+                if is_uber {
+                emit!(buffer, "vec![store.iter_{s_obj_ident}().find(|{s_obj_ident}| {{if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}.read().unwrap().subtype {{ id == self.{id} }} else {{ false }} }}).unwrap()] // 💥");
+                } else {
+                emit!(buffer, "vec![store.iter_{s_obj_ident}().find(|{s_obj_ident}| {{if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}.subtype {{ id == self.{id} }} else {{ false }} }}).unwrap()]");
+                }
+                // vec![store
+                //     .iter_simple_supertype()
+                //     .find(|simple_supertype| {
+                //         if let SimpleSupertypeEnum::SimpleSubtypeA(id) = simple_supertype.subtype {
+                //             id == self.id()
+                //         } else {
+                //             false
+                //         }
+                //     })
+                //     .unwrap()]
             } else {
                 emit!(
                     buffer,
-                    "vec![store.exhume_{}(&self.id).unwrap()]",
+                    "vec![store.exhume_{}(&self.{id}).unwrap()]",
                     s_obj.as_ident()
                 );
             }

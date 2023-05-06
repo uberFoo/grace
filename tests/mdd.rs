@@ -3,7 +3,9 @@
 use std::process::{self, ExitCode};
 
 use env_logger;
-use grace::{DomainConfig, GraceCompilerOptions, ModelCompiler, SarzakModelCompiler, Target};
+use grace::{
+    DomainConfig, DwarfConfig, GraceCompilerOptions, ModelCompiler, SarzakModelCompiler, Target,
+};
 use log;
 use sarzak::domain::DomainBuilder;
 
@@ -330,7 +332,9 @@ macro_rules! test_target_dwarf {
             let _ = env_logger::builder().is_test(true).try_init();
 
             let mut options = GraceCompilerOptions::default();
-            options.target = Target::Dwarf;
+            options.target = Target::Dwarf(DwarfConfig {
+                store_path: $path.into(),
+            });
 
             options.always_process = Some(true);
             let grace = ModelCompiler::default();

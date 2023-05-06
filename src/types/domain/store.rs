@@ -400,12 +400,12 @@ impl DomainStore {
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         emit!(buffer, "///");
-                        emit!(
-                            buffer,
-                            "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
-                            obj.as_ident(),
-                        );
                         if is_uber {
+                            emit!(
+                                buffer,
+                                "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
+                                obj.as_ident(),
+                            );
                             if timestamp {
                                 emit!(
                                     buffer,
@@ -418,6 +418,11 @@ impl DomainStore {
                                 emit!(buffer, "self.{}_id_by_name.read().unwrap().get(name)", obj.as_ident());
                             }
                         } else {
+                            emit!(
+                                buffer,
+                                "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
+                                obj.as_ident(),
+                            );
                             if timestamp {
                                 emit!(
                                     buffer,

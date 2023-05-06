@@ -24,7 +24,7 @@ use crate::{
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
-        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_enum,
+        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid,
         object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
@@ -134,6 +134,7 @@ impl CodeWriter for Hybrid {
 
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
                     let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+                    let is_hybrid = object_is_hybrid(s_obj, config, imports, domain)?;
 
                     if config.is_imported(&s_obj.id) {
                         let imported_object = config.get_imported(&s_obj.id).unwrap();
@@ -152,6 +153,15 @@ impl CodeWriter for Hybrid {
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                             ));
                         }
+
+                        if is_hybrid {
+                            uses.insert(format!(
+                                "use crate::{}::types::{}::{}Enum;",
+                                imported_object.domain,
+                                s_obj.as_ident(),
+                                s_obj.as_const()
+                            ));
+                        }
                     } else {
                         if is_singleton && !is_supertype {
                             uses.insert(format!(
@@ -163,6 +173,15 @@ impl CodeWriter for Hybrid {
                         } else {
                             uses.insert(format!(
                                 "use crate::{}::types::{}::{};",
+                                module,
+                                s_obj.as_ident(),
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ));
+                        }
+
+                        if is_hybrid {
+                            uses.insert(format!(
+                                "use crate::{}::types::{}::{}Enum;",
                                 module,
                                 s_obj.as_ident(),
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -618,28 +637,29 @@ impl CodeWriter for HybridNewImpl {
                     // Take the ID from the subtype
                     // We shouldn't be doing this sort of thing here -- getting the testing
                     // stuff working will allow this to be done in a uniform manner.
-                    emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
-                    emit!(buffer,"// about this local. This should be fixed in the near future.");
-                    if object_is_enum(s_obj, config, imports, domain)? {
-                        if is_uber {
-                            emit!(buffer, "let id = {}.read().unwrap().id();", SUBTYPE_ATTR);
-                        } else {
-                            emit!(buffer, "let id = {}.id();", SUBTYPE_ATTR);
-                        }
-                    } else if object_is_singleton(s_obj, config, imports, domain)? {
-                        if !object_is_supertype(s_obj, config, imports, domain)? {
-                            emit!(buffer, "let id = {};", rvals.last().unwrap().name);
-                        } else {
-                            emit!(buffer, "let id = {};", SUBTYPE_ATTR);
-                        }
-                    } else {
-                        if is_uber {
-                            emit!(buffer, "let id = {}.read().unwrap().id;", SUBTYPE_ATTR);
-                        } else {
-                            emit!(buffer, "let id = {}.id;", SUBTYPE_ATTR);
-                        }
+                    // emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
+                    // emit!(buffer,"// about this local. This should be fixed in the near future.");
+                    // if object_is_enum(s_obj, config, imports, domain)? {
+                    //     if is_uber {
+                    //         emit!(buffer, "let id = {}.read().unwrap().id();", SUBTYPE_ATTR);
+                    //     } else {
+                    //         emit!(buffer, "let id = {}.id();", SUBTYPE_ATTR);
+                    //     }
+                    // } else if object_is_singleton(s_obj, config, imports, domain)? {
+                    //     if !object_is_supertype(s_obj, config, imports, domain)? {
+                    //         emit!(buffer, "let id = {};", rvals.last().unwrap().name);
+                    //     } else {
+                    //         emit!(buffer, "let id = {};", SUBTYPE_ATTR);
+                    //     }
+                    // } else {
+                    //     if is_uber {
+                    //         emit!(buffer, "let id = {}.read().unwrap().id;", SUBTYPE_ATTR);
+                    //     } else {
+                    //         emit!(buffer, "let id = {}.id;", SUBTYPE_ATTR);
+                    //     }
+                    // }
 
-                    }
+                    emit!(buffer, "let id = Uuid::new_v4();");
 
                     // Output code to create the instance
                     let new = LValue::new("new", GType::Reference(obj.id), None);

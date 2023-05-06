@@ -22,7 +22,6 @@ pub struct Associative {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-implementation"}}}
 impl Associative {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
     /// Inter a new 'Associative' in the store, and return it's `id`.
     pub fn new(number: i64, from: &AssociativeReferrer, store: &mut SarzakTsStore) -> Associative {
         let id = Uuid::new_v4();
@@ -32,9 +31,6 @@ impl Associative {
             from: from.id,
         };
         store.inter_associative(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -47,7 +43,6 @@ impl Associative {
         vec![store.exhume_associative_referrer(&self.from).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-backward-assoc_many-to-an_associative_referent"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-backward-assoc-many-to-an_associative_referent"}}}
     /// Navigate to [`AnAssociativeReferent`] across R22(1-M)
     pub fn r22_an_associative_referent<'a>(

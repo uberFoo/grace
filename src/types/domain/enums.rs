@@ -20,7 +20,7 @@ use crate::{
         get_binary_referents_sorted, get_binary_referrers_sorted,
         get_objs_for_assoc_referrers_sorted, get_objs_for_binary_referents_sorted,
         get_objs_for_binary_referrers_sorted, get_subtypes_sorted,
-        get_subtypes_sorted_from_super_obj, object_is_enum, object_is_singleton,
+        get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid, object_is_singleton,
         object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
@@ -175,6 +175,15 @@ impl CodeWriter for Enum {
                         s_obj.as_ident(),
                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     ));
+
+                    if object_is_hybrid(s_obj, config, imports, domain)? {
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{}Enum;",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    }
                 }
 
                 let mut only_singletons = true;

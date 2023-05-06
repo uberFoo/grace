@@ -44,9 +44,7 @@ impl SuperT {
         subtype: &SubtypeA,
         store: &mut IsaTsStore,
     ) -> SuperT {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id;
+        let id = Uuid::new_v4();
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeA(subtype.id),
@@ -66,9 +64,7 @@ impl SuperT {
         subtype: &SubtypeB,
         store: &mut IsaTsStore,
     ) -> SuperT {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id;
+        let id = Uuid::new_v4();
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeB(subtype.id),

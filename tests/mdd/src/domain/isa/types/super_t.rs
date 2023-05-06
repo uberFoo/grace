@@ -45,9 +45,7 @@ impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new_subtype_a"}}}
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_a(pointer: &Reference, subtype: &SubtypeA, store: &mut IsaStore) -> SuperT {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id;
+        let id = Uuid::new_v4();
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeA(subtype.id),
@@ -63,9 +61,7 @@ impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-new_subtype_b"}}}
     /// Inter a new SuperT in the store, and return it's `id`.
     pub fn new_subtype_b(pointer: &Reference, subtype: &SubtypeB, store: &mut IsaStore) -> SuperT {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id;
+        let id = Uuid::new_v4();
         let new = SuperT {
             pointer: pointer.id,
             subtype: SuperTEnum::SubtypeB(subtype.id),

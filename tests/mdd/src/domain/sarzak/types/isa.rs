@@ -22,7 +22,6 @@ pub struct Isa {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-implementation"}}}
 impl Isa {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new_"}}}
     /// Inter a new 'Isa' in the store, and return it's `id`.
     pub fn new(number: i64, supertype: &Supertype, store: &mut SarzakStore) -> Isa {
         let id = Uuid::new_v4();
@@ -32,9 +31,6 @@ impl Isa {
             supertype: supertype.id,
         };
         store.inter_isa(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

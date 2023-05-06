@@ -23,7 +23,6 @@ pub struct AnAssociativeReferent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-implementation"}}}
 impl AnAssociativeReferent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new_"}}}
     /// Inter a new 'An Associative Referent' in the store, and return it's `id`.
     pub fn new(
         referential_attribute: String,
@@ -39,9 +38,6 @@ impl AnAssociativeReferent {
             referent: referent.id,
         };
         store.inter_an_associative_referent(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
