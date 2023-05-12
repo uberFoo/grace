@@ -300,7 +300,7 @@ impl<'a> DomainTarget<'a> {
                     ExternalGenerator::new()
                 } else if local_object_is_singleton(obj, &self.config, &self.domain) {
                     // Look for naked objects, and generate a singleton for them.
-                    display_output!(&obj, &types, Colour::Purple, "singleton");
+                    display_output!(&obj, &types, Colour::Purple, "constant");
 
                     log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
