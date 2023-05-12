@@ -423,6 +423,14 @@ fn backward_one(
         ),
         |buffer| {
             let is_uber = config.get_uber_store() && !config.is_imported(&r_obj.id);
+            let rhs = {
+                let cond = referrer.r11_conditionality(domain.sarzak())[0];
+                if let Conditionality::Conditional(_) = cond {
+                    format!("Some(self.{id})")
+                } else {
+                    format!("self.{id}")
+                }
+            };
 
             emit!(
                 buffer,
@@ -456,20 +464,16 @@ fn backward_one(
             if is_uber {
                 emit!(
                     buffer,
-                    ".find(|{}| {}.read().unwrap().{} == self.{}).unwrap()]",
-                    r_obj.as_ident(),
+                    ".find(|{0}| {0}.read().unwrap().{1} == {rhs}).unwrap()]",
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident(),
-                    id
                 );
             } else {
                 emit!(
                     buffer,
-                    ".find(|{}| {}.{} == self.{}).unwrap()]",
-                    r_obj.as_ident(),
+                    ".find(|{0}| {0}.{1} == {rhs}).unwrap()]",
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident(),
-                    id
                 );
             }
 
