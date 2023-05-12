@@ -66,8 +66,8 @@ impl NotImportant {
     pub fn new(name: Uuid, x_ref: &SuperT, store: &mut IsaStore) -> NotImportant {
         let id = Uuid::new_v4();
         let new = NotImportant {
-            id: id,
-            name: name,
+            id,
+            name,
             x_ref: x_ref.id,
         };
         store.inter_not_important(new.clone());

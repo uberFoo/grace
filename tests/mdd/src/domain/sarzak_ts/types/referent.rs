@@ -41,8 +41,8 @@ impl Referent {
     ) -> Referent {
         let id = Uuid::new_v4();
         let new = Referent {
-            description: description,
-            id: id,
+            description,
+            id,
             cardinality: cardinality.id(),
             conditionality: conditionality.id(),
             obj_id: obj_id.id,

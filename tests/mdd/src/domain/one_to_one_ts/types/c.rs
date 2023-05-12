@@ -30,8 +30,8 @@ impl C {
     pub fn new(like_water: f64, ptr: Option<&Referent>, store: &mut OneToOneTsStore) -> C {
         let id = Uuid::new_v4();
         let new = C {
-            id: id,
-            like_water: like_water,
+            id,
+            like_water,
             ptr: ptr.map(|referent| referent.id),
         };
         store.inter_c(new.clone());

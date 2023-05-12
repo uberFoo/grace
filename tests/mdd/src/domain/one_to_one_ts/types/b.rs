@@ -31,8 +31,8 @@ impl B {
     pub fn new(bit: bool, ptr: &Referent, store: &mut OneToOneTsStore) -> B {
         let id = Uuid::new_v4();
         let new = B {
-            bit: bit,
-            id: id,
+            bit,
+            id,
             ptr: ptr.id,
         };
         store.inter_b(new.clone());

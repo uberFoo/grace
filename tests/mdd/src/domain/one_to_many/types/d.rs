@@ -29,8 +29,8 @@ impl D {
     pub fn new(appellation: String, ptr: Option<&Referent>, store: &mut OneToManyStore) -> D {
         let id = Uuid::new_v4();
         let new = D {
-            appellation: appellation,
-            id: id,
+            appellation,
+            id,
             ptr: ptr.map(|referent| referent.id),
         };
         store.inter_d(new.clone());

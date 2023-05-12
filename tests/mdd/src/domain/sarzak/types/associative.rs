@@ -27,8 +27,8 @@ impl Associative {
     pub fn new(number: i64, from: &AssociativeReferrer, store: &mut SarzakStore) -> Associative {
         let id = Uuid::new_v4();
         let new = Associative {
-            id: id,
-            number: number,
+            id,
+            number,
             from: from.id,
         };
         store.inter_associative(new.clone());

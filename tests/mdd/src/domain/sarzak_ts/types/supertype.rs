@@ -30,7 +30,7 @@ impl Supertype {
     pub fn new(obj_id: &Object, store: &mut SarzakTsStore) -> Supertype {
         let id = Uuid::new_v4();
         let new = Supertype {
-            id: id,
+            id,
             obj_id: obj_id.id,
         };
         store.inter_supertype(new.clone());

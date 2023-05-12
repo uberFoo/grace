@@ -34,5 +34,11 @@ impl SUuid {
         S_UUID
     }
 }
+
+impl Default for SUuid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

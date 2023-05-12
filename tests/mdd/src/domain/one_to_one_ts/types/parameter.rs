@@ -32,8 +32,8 @@ impl Parameter {
     pub fn new(name: String, next: Option<&Parameter>, store: &mut OneToOneTsStore) -> Parameter {
         let id = Uuid::new_v4();
         let new = Parameter {
-            id: id,
-            name: name,
+            id,
+            name,
             next: next.map(|parameter| parameter.id),
         };
         store.inter_parameter(new.clone());

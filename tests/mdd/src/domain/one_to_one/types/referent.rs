@@ -31,7 +31,7 @@ impl Referent {
     /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToOneStore) -> Referent {
         let id = Uuid::new_v4();
-        let new = Referent { id: id, name: name };
+        let new = Referent { id, name };
         store.inter_referent(new.clone());
         new
     }

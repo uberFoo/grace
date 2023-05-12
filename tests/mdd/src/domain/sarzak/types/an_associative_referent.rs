@@ -33,8 +33,8 @@ impl AnAssociativeReferent {
     ) -> AnAssociativeReferent {
         let id = Uuid::new_v4();
         let new = AnAssociativeReferent {
-            id: id,
-            referential_attribute: referential_attribute,
+            id,
+            referential_attribute,
             associative: associative.id,
             referent: referent.id,
         };

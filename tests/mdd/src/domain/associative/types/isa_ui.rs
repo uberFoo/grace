@@ -26,10 +26,7 @@ impl IsaUi {
     /// Inter a new 'IsaUI' in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut AssociativeStore) -> IsaUi {
         let id = Uuid::new_v4();
-        let new = IsaUi {
-            id: id,
-            number: number,
-        };
+        let new = IsaUi { id, number };
         store.inter_isa_ui(new.clone());
         new
     }

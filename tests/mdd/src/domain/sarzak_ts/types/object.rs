@@ -52,10 +52,10 @@ impl Object {
     ) -> Object {
         let id = Uuid::new_v4();
         let new = Object {
-            description: description,
-            id: id,
-            key_letters: key_letters,
-            name: name,
+            description,
+            id,
+            key_letters,
+            name,
         };
         store.inter_object(new.clone());
         new
@@ -69,13 +69,7 @@ impl Object {
     ) -> Vec<&AssociativeReferent> {
         store
             .iter_associative_referent()
-            .filter_map(|associative_referent| {
-                if associative_referent.obj_id == self.id {
-                    Some(associative_referent)
-                } else {
-                    None
-                }
-            })
+            .filter(|associative_referent| associative_referent.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -87,13 +81,7 @@ impl Object {
     ) -> Vec<&AssociativeReferrer> {
         store
             .iter_associative_referrer()
-            .filter_map(|associative_referrer| {
-                if associative_referrer.obj_id == self.id {
-                    Some(associative_referrer)
-                } else {
-                    None
-                }
-            })
+            .filter(|associative_referrer| associative_referrer.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -102,13 +90,7 @@ impl Object {
     pub fn r1_attribute<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Attribute> {
         store
             .iter_attribute()
-            .filter_map(|attribute| {
-                if attribute.obj_id == self.id {
-                    Some(attribute)
-                } else {
-                    None
-                }
-            })
+            .filter(|attribute| attribute.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -117,13 +99,7 @@ impl Object {
     pub fn r19_event<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Event> {
         store
             .iter_event()
-            .filter_map(|event| {
-                if event.obj_id == self.id {
-                    Some(event)
-                } else {
-                    None
-                }
-            })
+            .filter(|event| event.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -132,13 +108,7 @@ impl Object {
     pub fn r16_referent<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Referent> {
         store
             .iter_referent()
-            .filter_map(|referent| {
-                if referent.obj_id == self.id {
-                    Some(referent)
-                } else {
-                    None
-                }
-            })
+            .filter(|referent| referent.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -147,13 +117,7 @@ impl Object {
     pub fn r17_referrer<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Referrer> {
         store
             .iter_referrer()
-            .filter_map(|referrer| {
-                if referrer.obj_id == self.id {
-                    Some(referrer)
-                } else {
-                    None
-                }
-            })
+            .filter(|referrer| referrer.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -162,13 +126,7 @@ impl Object {
     pub fn r18_state<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&State> {
         store
             .iter_state()
-            .filter_map(|state| {
-                if state.obj_id == self.id {
-                    Some(state)
-                } else {
-                    None
-                }
-            })
+            .filter(|state| state.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -177,13 +135,7 @@ impl Object {
     pub fn r15_subtype<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Subtype> {
         store
             .iter_subtype()
-            .filter_map(|subtype| {
-                if subtype.obj_id == self.id {
-                    Some(subtype)
-                } else {
-                    None
-                }
-            })
+            .filter(|subtype| subtype.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -192,13 +144,7 @@ impl Object {
     pub fn r14_supertype<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Supertype> {
         store
             .iter_supertype()
-            .filter_map(|supertype| {
-                if supertype.obj_id == self.id {
-                    Some(supertype)
-                } else {
-                    None
-                }
-            })
+            .filter(|supertype| supertype.obj_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

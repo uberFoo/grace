@@ -28,8 +28,8 @@ impl A {
     pub fn new(name: String, ptr: &Referent, store: &mut OneToManyStore) -> A {
         let id = Uuid::new_v4();
         let new = A {
-            id: id,
-            name: name,
+            id,
+            name,
             ptr: ptr.id,
         };
         store.inter_a(new.clone());

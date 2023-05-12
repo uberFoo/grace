@@ -25,8 +25,8 @@ impl Baz {
     pub fn new(insanity: f64, fugue: &SimpleSupertype, store: &mut IsaCloneStore) -> Baz {
         let id = Uuid::new_v4();
         let new = Baz {
-            id: id,
-            insanity: insanity,
+            id,
+            insanity,
             fugue: fugue.id,
         };
         store.inter_baz(new.clone());

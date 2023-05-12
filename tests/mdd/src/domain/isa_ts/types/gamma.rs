@@ -32,10 +32,7 @@ impl Gamma {
     /// Inter a new 'Gamma' in the store, and return it's `id`.
     pub fn new(value: f64, store: &mut IsaTsStore) -> Gamma {
         let id = Uuid::new_v4();
-        let new = Gamma {
-            id: id,
-            value: value,
-        };
+        let new = Gamma { id, value };
         store.inter_gamma(new.clone());
         new
     }

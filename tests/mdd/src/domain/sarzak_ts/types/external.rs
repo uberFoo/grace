@@ -46,10 +46,10 @@ impl External {
     pub fn new(ctor: String, name: String, path: String, store: &mut SarzakTsStore) -> External {
         let id = Uuid::new_v4();
         let new = External {
-            ctor: ctor,
-            id: id,
-            name: name,
-            path: path,
+            ctor,
+            id,
+            name,
+            path,
         };
         store.inter_external(new.clone());
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

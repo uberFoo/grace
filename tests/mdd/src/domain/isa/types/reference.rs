@@ -27,7 +27,7 @@ impl Reference {
     /// Inter a new 'Reference' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut IsaStore) -> Reference {
         let id = Uuid::new_v4();
-        let new = Reference { id: id, name: name };
+        let new = Reference { id, name };
         store.inter_reference(new.clone());
         new
     }

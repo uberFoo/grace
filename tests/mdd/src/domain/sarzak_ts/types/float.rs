@@ -28,5 +28,11 @@ impl Float {
         FLOAT
     }
 }
+
+impl Default for Float {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

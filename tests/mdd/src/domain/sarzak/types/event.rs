@@ -31,8 +31,8 @@ impl Event {
     pub fn new(name: String, obj_id: &Object, store: &mut SarzakStore) -> Event {
         let id = Uuid::new_v4();
         let new = Event {
-            id: id,
-            name: name,
+            id,
+            name,
             obj_id: obj_id.id,
         };
         store.inter_event(new.clone());

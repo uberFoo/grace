@@ -102,7 +102,7 @@ impl ObjectStore {
     /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
-        fs::create_dir_all(&path)?;
+        fs::create_dir_all(path)?;
 
         let bin_path = path.clone().join("everything.bin");
         let mut bin_file = fs::File::create(bin_path)?;
@@ -153,8 +153,8 @@ impl ObjectStore {
         // Load Everything.
         {
             let path = path.join("everything");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
@@ -167,8 +167,8 @@ impl ObjectStore {
         // Load Rando Object.
         {
             let path = path.join("rando_object");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;

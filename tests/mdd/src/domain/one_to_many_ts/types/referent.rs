@@ -31,7 +31,7 @@ impl Referent {
     /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToManyTsStore) -> Referent {
         let id = Uuid::new_v4();
-        let new = Referent { id: id, name: name };
+        let new = Referent { id, name };
         store.inter_referent(new.clone());
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
@@ -42,10 +42,7 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-a"}}}
     /// Navigate to [`A`] across R1(1-M)
     pub fn r1_a<'a>(&'a self, store: &'a OneToManyTsStore) -> Vec<&A> {
-        store
-            .iter_a()
-            .filter_map(|a| if a.ptr == self.id { Some(a) } else { None })
-            .collect()
+        store.iter_a().filter(|a| a.ptr == self.id).collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
@@ -66,10 +63,7 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-c"}}}
     /// Navigate to [`C`] across R3(1-M)
     pub fn r3_c<'a>(&'a self, store: &'a OneToManyTsStore) -> Vec<&C> {
-        store
-            .iter_c()
-            .filter_map(|c| if c.ptr == self.id { Some(c) } else { None })
-            .collect()
+        store.iter_c().filter(|c| c.ptr == self.id).collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}

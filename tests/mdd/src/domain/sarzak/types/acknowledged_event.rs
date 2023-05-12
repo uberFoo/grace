@@ -32,7 +32,7 @@ impl AcknowledgedEvent {
     pub fn new(event_id: &Event, state_id: &State, store: &mut SarzakStore) -> AcknowledgedEvent {
         let id = Uuid::new_v4();
         let new = AcknowledgedEvent {
-            id: id,
+            id,
             event_id: event_id.id,
             state_id: state_id.id,
         };

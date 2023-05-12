@@ -27,5 +27,11 @@ impl SimpleSubtypeB {
         SIMPLE_SUBTYPE_B
     }
 }
+
+impl Default for SimpleSubtypeB {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

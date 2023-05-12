@@ -39,11 +39,11 @@ impl Everything {
     ) -> Everything {
         let id = Uuid::new_v4();
         let new = Everything {
-            bool: bool,
-            float: float,
-            id: id,
-            int: int,
-            s_string: s_string,
+            bool,
+            float,
+            id,
+            int,
+            s_string,
             rando: rando.id,
         };
         store.inter_everything(new.clone());

@@ -41,7 +41,7 @@ impl AnotherObject {
     ) -> AnotherObject {
         let id = Uuid::new_v4();
         let new = AnotherObject {
-            id: id,
+            id,
             ptr: ptr.id,
             edge: edge.id,
         };

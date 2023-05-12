@@ -27,5 +27,11 @@ impl Mutable {
         MUTABLE
     }
 }
+
+impl Default for Mutable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

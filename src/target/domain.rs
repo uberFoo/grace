@@ -42,6 +42,18 @@ use crate::{
     RS_EXT, TYPES,
 };
 
+macro_rules! display_output {
+    ($obj:expr, $types:expr, $color:expr, $out:literal) => {
+        println!(
+            "Generating code for: {:<42} ({}) \t output: {}",
+            // This is goofy, and necessary.
+            format!("{}", Colour::Blue.paint(&$obj.name)),
+            $color.italic().paint($out),
+            Colour::White.dimmed().paint($types.display().to_string()),
+        );
+    };
+}
+
 const FROM: &str = "from";
 
 pub(crate) struct DomainTarget<'a> {
@@ -238,12 +250,7 @@ impl<'a> DomainTarget<'a> {
                     // Well, I don't have a use case for that at the moment, so they
                     // will be done in due time.
                     if local_object_is_hybrid(obj, &self.config, &self.domain) {
-                        println!(
-                            "Generating code for: {} ({}) ... output path: {}",
-                            Colour::Blue.paint(&obj.name),
-                            Colour::Cyan.italic().paint("hybrid"),
-                            Colour::White.dimmed().paint(types.display().to_string()),
-                        );
+                        display_output!(&obj, &types, Colour::Cyan, "hybrid");
 
                         DefaultStructBuilder::new()
                             .definition(Hybrid::new())
@@ -256,12 +263,7 @@ impl<'a> DomainTarget<'a> {
                             )
                             .build()?
                     } else {
-                        println!(
-                            "Generating code for: {} ({}) ... output path: {}",
-                            Colour::Blue.paint(&obj.name),
-                            Colour::Green.italic().paint("enum"),
-                            Colour::White.dimmed().paint(types.display().to_string()),
-                        );
+                        display_output!(&obj, &types, Colour::Green, "enumeration");
 
                         DefaultStructBuilder::new()
                             .definition(Enum::new())
@@ -293,34 +295,19 @@ impl<'a> DomainTarget<'a> {
                     NullGenerator::new()
                 } else if self.config.is_external(&obj.id) {
                     // If the object is external, we create a newtype to wrap it.
-                    println!(
-                        "Generating code for: {} ({}) ... output path: {}",
-                        Colour::Blue.paint(&obj.name),
-                        Colour::Red.italic().paint("external"),
-                        Colour::White.dimmed().paint(types.display().to_string()),
-                    );
+                    display_output!(&obj, &types, Colour::Red, "external");
 
                     ExternalGenerator::new()
                 } else if local_object_is_singleton(obj, &self.config, &self.domain) {
                     // Look for naked objects, and generate a singleton for them.
-                    println!(
-                        "Generating code for: {} ({}) ... output path: {}",
-                        Colour::Blue.paint(&obj.name),
-                        Colour::Purple.italic().paint("singleton"),
-                        Colour::White.dimmed().paint(types.display().to_string()),
-                    );
+                    display_output!(&obj, &types, Colour::Purple, "singleton");
 
                     log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
                         .definition(DomainConst::new())
                         .build()?
                 } else {
-                    println!(
-                        "Generating code for: {} ({}) ... output path: {}",
-                        Colour::Blue.paint(&obj.name),
-                        Colour::Yellow.italic().paint("struct"),
-                        Colour::White.dimmed().paint(types.display().to_string()),
-                    );
+                    display_output!(&obj, &types, Colour::Yellow, "struct");
 
                     DefaultStructBuilder::new()
                         .imports(Imports::new())

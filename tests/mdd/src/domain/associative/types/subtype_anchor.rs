@@ -38,7 +38,7 @@ impl SubtypeAnchor {
     ) -> SubtypeAnchor {
         let id = Uuid::new_v4();
         let new = SubtypeAnchor {
-            id: id,
+            id,
             anchor_id: anchor_id.id,
             isaui_id: isaui_id.id,
         };

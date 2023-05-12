@@ -26,8 +26,8 @@ impl Isa {
     pub fn new(number: i64, supertype: &Supertype, store: &mut SarzakStore) -> Isa {
         let id = Uuid::new_v4();
         let new = Isa {
-            id: id,
-            number: number,
+            id,
+            number,
             supertype: supertype.id,
         };
         store.inter_isa(new.clone());
@@ -45,13 +45,7 @@ impl Isa {
     pub fn r27_subtype<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Subtype> {
         store
             .iter_subtype()
-            .filter_map(|subtype| {
-                if subtype.isa == self.id {
-                    Some(subtype)
-                } else {
-                    None
-                }
-            })
+            .filter(|subtype| subtype.isa == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

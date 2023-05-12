@@ -24,8 +24,8 @@ impl Henry {
     pub fn new(last_name: String, bar: &SimpleSubtypeA, store: &mut IsaCloneStore) -> Henry {
         let id = Uuid::new_v4();
         let new = Henry {
-            id: id,
-            last_name: last_name,
+            id,
+            last_name,
             bar: bar.id(),
         };
         store.inter_henry(new.clone());

@@ -45,9 +45,9 @@ impl Referrer {
     ) -> Referrer {
         let id = Uuid::new_v4();
         let new = Referrer {
-            description: description,
-            id: id,
-            referential_attribute: referential_attribute,
+            description,
+            id,
+            referential_attribute,
             cardinality: cardinality.id(),
             conditionality: conditionality.id(),
             obj_id: obj_id.id,

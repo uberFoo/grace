@@ -44,8 +44,8 @@ impl AssociativeReferent {
     ) -> AssociativeReferent {
         let id = Uuid::new_v4();
         let new = AssociativeReferent {
-            description: description,
-            id: id,
+            description,
+            id,
             cardinality: cardinality.id(),
             conditionality: conditionality.id(),
             obj_id: obj_id.id,

@@ -39,7 +39,7 @@ impl AssociativeReferrer {
     ) -> AssociativeReferrer {
         let id = Uuid::new_v4();
         let new = AssociativeReferrer {
-            id: id,
+            id,
             cardinality: cardinality.id(),
             obj_id: obj_id.id,
         };

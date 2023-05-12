@@ -36,10 +36,7 @@ impl OhBoy {
     /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
     pub fn new(attribution: String, store: &mut IsaCloneStore) -> OhBoy {
         let id = Uuid::new_v4();
-        let new = OhBoy {
-            attribution: attribution,
-            id: id,
-        };
+        let new = OhBoy { attribution, id };
         store.inter_oh_boy(new.clone());
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}

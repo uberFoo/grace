@@ -34,8 +34,8 @@ impl Attribute {
     pub fn new(name: String, obj_id: &Object, ty: &Ty, store: &mut SarzakTsStore) -> Attribute {
         let id = Uuid::new_v4();
         let new = Attribute {
-            id: id,
-            name: name,
+            id,
+            name,
             obj_id: obj_id.id,
             ty: ty.id(),
         };

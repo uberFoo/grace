@@ -31,7 +31,7 @@ impl Subtype {
     pub fn new(isa: &Isa, obj_id: &Object, store: &mut SarzakStore) -> Subtype {
         let id = Uuid::new_v4();
         let new = Subtype {
-            id: id,
+            id,
             isa: isa.id,
             obj_id: obj_id.id,
         };

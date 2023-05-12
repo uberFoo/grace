@@ -27,7 +27,7 @@ impl Event {
     /// Inter a new 'Event' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut AssociativeStore) -> Event {
         let id = Uuid::new_v4();
-        let new = Event { id: id, name: name };
+        let new = Event { id, name };
         store.inter_event(new.clone());
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}

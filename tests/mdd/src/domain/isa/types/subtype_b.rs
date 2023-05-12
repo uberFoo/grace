@@ -29,10 +29,7 @@ impl SubtypeB {
     /// Inter a new 'Subtype B' in the store, and return it's `id`.
     pub fn new(number: i64, store: &mut IsaStore) -> SubtypeB {
         let id = Uuid::new_v4();
-        let new = SubtypeB {
-            id: id,
-            number: number,
-        };
+        let new = SubtypeB { id, number };
         store.inter_subtype_b(new.clone());
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-struct-impl-new"}}}

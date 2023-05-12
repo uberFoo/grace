@@ -31,8 +31,8 @@ impl B {
     pub fn new(baz: String, ptr: Option<&Referent>, store: &mut OneToManyTsStore) -> B {
         let id = Uuid::new_v4();
         let new = B {
-            baz: baz,
-            id: id,
+            baz,
+            id,
             ptr: ptr.map(|referent| referent.id),
         };
         store.inter_b(new.clone());
