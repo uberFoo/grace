@@ -984,6 +984,26 @@ fn generate_store_persistence(
             emit!(buffer, "///");
             emit!(
                 buffer,
+                "/// The store is persisted as a a bincode file."
+            );
+            emit!(
+                buffer,
+                "pub fn persist_bincode<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {{"
+            );
+            emit!(buffer, "let path = path.as_ref();");
+            emit!(buffer, "let mut bin_file = fs::File::create(path)?;");
+            emit!(
+                buffer,
+                "let encoded: Vec<u8> = bincode::serialize(&self).unwrap();"
+            );
+            emit!(buffer, "bin_file.write_all(&encoded)?;");
+            emit!(buffer, "Ok(())");
+            emit!(buffer, "}}\n");
+
+            emit!(buffer, "/// Persist the store.");
+            emit!(buffer, "///");
+            emit!(
+                buffer,
                 "/// The store is persisted as a directory of JSON files. The intention"
             );
             emit!(
@@ -1000,18 +1020,6 @@ fn generate_store_persistence(
             );
             emit!(buffer, "let path = path.as_ref();");
             emit!(buffer, "fs::create_dir_all(path)?;");
-            emit!(buffer, "");
-            emit!(
-                buffer,
-                "let bin_path = path.clone().join(\"{}.bin\");",
-                domain.name()
-            );
-            emit!(buffer, "let mut bin_file = fs::File::create(bin_path)?;");
-            emit!(
-                buffer,
-                "let encoded: Vec<u8> = bincode::serialize(&self).unwrap();"
-            );
-            emit!(buffer, "bin_file.write_all(&encoded)?;");
             emit!(buffer, "");
             // This is such a great joke! 🤣
             emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
@@ -1205,6 +1213,21 @@ fn generate_store_persistence(
             emit!(buffer, "Ok(())");
             emit!(buffer, "}}");
             emit!(buffer, "");
+
+            emit!(buffer, "/// Load the store.");
+            emit!(buffer, "///");
+            emit!(
+                buffer,
+                "/// The store is as a bincode file."
+            );
+            emit!(
+                buffer,
+                "pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {{"
+            );
+            emit!(buffer, "let path = path.as_ref();");
+            emit!(buffer, "let bin_file = fs::File::open(path)?;");
+            emit!(buffer, "Ok(bincode::deserialize_from(bin_file).unwrap())");
+            emit!(buffer, "}}\n");
 
             emit!(buffer, "/// Load the store.");
             emit!(buffer, "///");

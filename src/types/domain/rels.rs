@@ -1191,7 +1191,7 @@ fn subtype_to_supertype(
             };
             if is_hybrid {
                 if is_uber {
-                emit!(buffer, "vec![store.iter_{s_obj_ident}().find(|{s_obj_ident}| {{if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}.read().unwrap().subtype {{ id == self.{id} }} else {{ false }} }}).unwrap()] // 💥");
+                emit!(buffer, "vec![store.iter_{s_obj_ident}().find(|{s_obj_ident}| {{if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}.read().unwrap().subtype {{ id == self.{id} }} else {{ false }} }}).unwrap()]");
                 } else {
                 emit!(buffer, "vec![store.iter_{s_obj_ident}().find(|{s_obj_ident}| {{if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}.subtype {{ id == self.{id} }} else {{ false }} }}).unwrap()]");
                 }
