@@ -438,8 +438,6 @@ impl CodeWriter for ChaChaFile {
                 let attr_name = attr.name.as_ident();
                 let ty = value_type_to_string(&attr.ty, woog, domain).0;
 
-                dbg!(&ty, &attr);
-
                 if attr_name == "id" {
                     emit!(
                         buffer,

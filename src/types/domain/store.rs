@@ -170,7 +170,7 @@ impl DomainStore {
                     // Generate inter_ methods
                     emit!(
                         buffer,
-                        "/// Inter [`{}`] into the store.",
+                        "/// Inter (insert) [`{}`] into the store.",
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
@@ -318,7 +318,7 @@ impl DomainStore {
 
                     emit!(
                         buffer,
-                        "/// Exhume [`{}`] from the store.",
+                        "/// Exhume (get) [`{}`] from the store.",
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
@@ -364,11 +364,60 @@ impl DomainStore {
                     emit!(buffer, "");
 
                     // 🚦
+                    // Generate exorcise_ methods
+                    let thing = if is_uber {
+                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                    } else {
+                        format!("{}", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                    };
+
+                    emit!(
+                        buffer,
+                        "/// Exorcise (remove) [`{}`] from the store.",
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
+                    emit!(buffer, "///");
+                    emit!(
+                        buffer,
+                        "pub fn exorcise_{}(&mut self, id: &Uuid) -> Option<{}> {{",
+                        obj.as_ident(),
+                        thing
+                    );
+
+                    if is_uber {
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{0}.write().unwrap().remove(id).map(|{0}| {0}.0.clone())",
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "self.{0}.write().unwrap().remove(id).map(|{0}| {0}.clone())",
+                                obj.as_ident(),
+                            );
+                        }
+                    } else {
+                        if timestamp {
+                            emit!(
+                                buffer,
+                                "self.{0}.remove(id).map(|{0}| {0}.0)",
+                                obj.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "self.{}.remove(id)", obj.as_ident());
+                        }
+                    }
+                    emit!(buffer, "}}");
+                    emit!(buffer, "");
+
+                    // 🚦
                     // Generate mutable get -- I don't see this sticking around.
                     if !is_uber {
                         emit!(
                             buffer,
-                            "/// Exhume [`{}`] from the store — mutably.",
+                            "/// Exhume mut [`{}`] from the store — mutably.",
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         emit!(buffer, "///");
@@ -381,9 +430,7 @@ impl DomainStore {
                         if timestamp {
                             emit!(
                                 buffer,
-                                "self.{}.get_mut(id).map(|{}| &mut {}.0)",
-                                obj.as_ident(),
-                                obj.as_ident(),
+                                "self.{0}.get_mut(id).map(|{0}| &mut {0}.0)",
                                 obj.as_ident()
                             );
                         } else {
@@ -409,9 +456,7 @@ impl DomainStore {
                             if timestamp {
                                 emit!(
                                     buffer,
-                                    "self.{}_id_by_name.read().unwrap().get(name).map(|{}| {}.0)",
-                                    obj.as_ident(),
-                                    obj.as_ident(),
+                                    "self.{0}_id_by_name.read().unwrap().get(name).map(|{0}| {0}.0)",
                                     obj.as_ident()
                                 );
                             } else {
@@ -426,9 +471,7 @@ impl DomainStore {
                                 );
                                 emit!(
                                     buffer,
-                                    "self.{}_id_by_name.get(name).map(|{}| {}.0)",
-                                    obj.as_ident(),
-                                    obj.as_ident(),
+                                    "self.{0}_id_by_name.get(name).map(|{0}| {0}.0)",
                                     obj.as_ident()
                                 );
                             } else {
