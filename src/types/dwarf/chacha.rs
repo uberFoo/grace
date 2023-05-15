@@ -104,6 +104,7 @@ impl FileGenerator for ChaChaGenerator {
     }
 }
 
+#[derive(Debug)]
 struct Attribute {
     pub name: String,
     pub ty: Arc<RwLock<ValueType>>,
@@ -331,11 +332,14 @@ impl CodeWriter for ChaChaFile {
                 buffer,
                 "/// This method acts as the function call proxy for the type."
             );
-            emit!(buffer, "fn call(&mut self, method: &str, mut args: VecDeque<Value>) -> Result<(Value, Arc<RwLock<ValueType>>)> {{");
+            emit!(buffer, "fn call(&mut self, method: &str, args: &mut VecDeque<Arc<RwLock<Value>>>) -> Result<(Arc<RwLock<Value>>, Arc<RwLock<ValueType>>)> {{");
             emit!(buffer, "if let Some(self_) = &self.self_ {{");
             emit!(buffer, "match method {{");
             emit!(buffer, "\"id\" => Ok((");
-            emit!(buffer, "Value::Uuid(self_.read().unwrap().{id}),");
+            emit!(
+                buffer,
+                "Arc::new(RwLock::new(Value::Uuid(self_.read().unwrap().{id}))),"
+            );
             emit!(
                 buffer,
                 "self.lu_dog.read().unwrap().exhume_value_type(&SUuid::new().id()).unwrap(),)),"
@@ -343,7 +347,7 @@ impl CodeWriter for ChaChaFile {
             emit!(buffer, " 道 => Ok((");
             emit!(
                 buffer,
-                "Value::Error(format!(\"unknown method `{{}}`\", 道)),"
+                "Arc::new(RwLock::new(Value::Error(format!(\"unknown method `{{}}`\", 道)))),"
             );
             emit!(
                 buffer,
@@ -352,6 +356,8 @@ impl CodeWriter for ChaChaFile {
             emit!(buffer, ")),");
             emit!(buffer, "}}");
             emit!(buffer, "}} else {{");
+            emit!(buffer, "let arg = args.pop_front().unwrap();");
+            emit!(buffer, "let arg = arg.read().unwrap();");
             emit!(buffer, "match method {{");
 
             if !is_enum && !is_hybrid {
@@ -383,7 +389,7 @@ impl CodeWriter for ChaChaFile {
             emit!(buffer, "{obj_ident}_proxy.self_ = Some({obj_ident});");
             emit!(
                 buffer,
-                "Value::ProxyType(Arc::new(RwLock::new({obj_ident}_proxy)))",
+                "Arc::new(RwLock::new(Value::ProxyType(Arc::new(RwLock::new({obj_ident}_proxy)))))",
             );
             emit!(buffer, "}})");
             emit!(buffer, ".collect();");
@@ -397,12 +403,15 @@ impl CodeWriter for ChaChaFile {
                 "let ty = ValueType::new_list(&list, &mut self.lu_dog.write().unwrap());"
             );
             emit!(buffer, "");
-            emit!(buffer, "Ok((Value::Vector(instances), ty))");
+            emit!(
+                buffer,
+                "Ok((Arc::new(RwLock::new(Value::Vector(instances))), ty))"
+            );
             emit!(buffer, "}}");
             emit!(buffer, "道 => Ok((");
             emit!(
                 buffer,
-                "Value::Error(format!(\"unknown static method `{{}}`\", 道)),"
+                "Arc::new(RwLock::new(Value::Error(format!(\"unknown static method `{{}}`\", 道)))),"
             );
             emit!(
                 buffer,
@@ -420,7 +429,7 @@ impl CodeWriter for ChaChaFile {
             );
             emit!(
                 buffer,
-                "fn get_attr_value(&self, field: &str) -> Result<Value> {{"
+                "fn get_attr_value(&self, field: &str) -> Result<Arc<RwLock<Value>>> {{"
             );
             emit!(buffer, "if let Some(self_) = &self.self_ {{");
             emit!(buffer, "match field {{");
@@ -429,10 +438,12 @@ impl CodeWriter for ChaChaFile {
                 let attr_name = attr.name.as_ident();
                 let ty = value_type_to_string(&attr.ty, woog, domain).0;
 
+                dbg!(&ty, &attr);
+
                 if attr_name == "id" {
                     emit!(
                         buffer,
-                        "\"{attr_name}\" => Ok(Value::{ty}(self_.read().unwrap().{id})),",
+                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().unwrap().{id})))),",
                     );
                 } else {
                     if ty == "UserType" {
@@ -442,12 +453,20 @@ impl CodeWriter for ChaChaFile {
                             "let {attr_name} = MODEL.read().unwrap().exhume_{obj_ident}(&self_.read().unwrap().{attr_name}).unwrap();"
                         );
                         emit!(buffer, "");
-                        emit!(buffer, "Ok(({attr_name}, self.lu_dog.clone()).into())");
+                        emit!(
+                            buffer,
+                            "Ok(Arc::new(RwLock::new(({attr_name}, self.lu_dog.clone()).into())))"
+                        );
                         emit!(buffer, "}},");
+                    } else if ty == "String" {
+                        emit!(
+                            buffer,
+                            "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().unwrap().{attr_name}.to_owned())))),",
+                        );
                     } else {
                         emit!(
                         buffer,
-                        "\"{attr_name}\" => Ok(Value::{ty}(self_.read().unwrap().{attr_name})),",
+                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().unwrap().{attr_name})))),",
                     );
                     }
                 }
@@ -535,10 +554,10 @@ impl CodeWriter for ChaChaFile {
 
             //
             // Create a TryFrom Value for proxy.
-            emit!(buffer, "impl TryFrom<Value> for {obj_type}Proxy {{",);
+            emit!(buffer, "impl TryFrom<&Value> for {obj_type}Proxy {{",);
             emit!(buffer, "type Error = ChaChaError;");
             emit!(buffer, "");
-            emit!(buffer, "fn try_from(value: Value) -> Result<Self, <{obj_type}Proxy as TryFrom<Value>>::Error> {{");
+            emit!(buffer, "fn try_from(value: &Value) -> Result<Self, <{obj_type}Proxy as TryFrom<&Value>>::Error> {{");
             emit!(buffer, "match value {{");
             emit!(buffer, "Value::ProxyType(proxy) => {{");
             emit!(buffer, "let read_proxy = proxy.read().unwrap();");
@@ -604,15 +623,12 @@ fn render_ctor(
                 args.extend([format!("&{attr_ident}, ")]);
                 emit!(
                     buffer,
-                    "let {attr_ident}: {ref_name}Proxy = args.pop_front().unwrap().try_into()?;"
+                    "let {attr_ident}: {ref_name}Proxy = (&*arg).try_into()?;"
                 );
                 emit!(buffer, "let {attr_ident} = {attr_ident}.self_.unwrap();");
             } else {
                 args.extend([format!("{attr_ident}, ")]);
-                emit!(
-                    buffer,
-                    "let {attr_ident} = args.pop_front().unwrap().try_into()?;"
-                );
+                emit!(buffer, "let {attr_ident} = (*&arg).try_into()?;");
             }
         }
     }
@@ -638,7 +654,7 @@ fn render_ctor(
     emit!(buffer, "Ok((");
     emit!(
         buffer,
-        "Value::ProxyType(Arc::new(RwLock::new({obj_ident}_proxy))),"
+        "Arc::new(RwLock::new(Value::ProxyType(Arc::new(RwLock::new({obj_ident}_proxy))))),"
     );
     emit!(buffer, "self.type_.clone(),");
     emit!(buffer, "))");

@@ -1649,8 +1649,8 @@ where
         let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
         let mut lu_dog = lu_dog.write().unwrap();
         let ty = ValueType::new_ty(ty, &mut lu_dog);
-        // let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
-        // let ty = ValueType::new_reference(&ty, &mut lu_dog);
+        let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
+        let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
         // This determines how a reference is stored in the struct. In this
         // case a UUID.
@@ -1683,8 +1683,8 @@ where
             let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
             let mut lu_dog = lu_dog.write().unwrap();
             let ty = ValueType::new_ty(ty, &mut lu_dog);
-            // let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
-            // let ty = ValueType::new_reference(&ty, &mut lu_dog);
+            let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
+            let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
             let attr_name = an_ass.referential_attribute.as_ident();
 
