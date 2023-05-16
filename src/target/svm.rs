@@ -3,7 +3,6 @@ use std::{
     sync::RwLock,
 };
 
-
 use sarzak::{
     lu_dog::store::ObjectStore as LuDogStore,
     mc::{FileSnafu, ModelCompilerError, Result},
@@ -12,7 +11,7 @@ use sarzak::{
 use snafu::prelude::*;
 
 use crate::{
-    codegen::{render::RenderIdent},
+    codegen::render::RenderIdent,
     options::{GraceCompilerOptions, GraceConfig},
     target::Target,
     woog::init_woog,
@@ -60,7 +59,7 @@ impl<'a> SvmTarget<'a> {
 }
 
 impl<'a> Target for SvmTarget<'a> {
-    fn compile(&mut self) -> Result<(), ModelCompilerError> {
+    fn compile(&mut self) -> Result<usize, ModelCompilerError> {
         let mut lu_dog_path = PathBuf::from(self.src_path);
         lu_dog_path.pop();
         lu_dog_path.push(TARGET_DIR);
@@ -116,7 +115,7 @@ impl<'a> Target for SvmTarget<'a> {
         //     })
         //     .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(())
+        Ok(0)
     }
 
     fn domain(&self) -> &str {

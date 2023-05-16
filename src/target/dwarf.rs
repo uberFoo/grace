@@ -74,7 +74,7 @@ impl<'a> DwarfTarget<'a> {
 }
 
 impl<'a> Target for DwarfTarget<'a> {
-    fn compile(&mut self) -> Result<(), ModelCompilerError> {
+    fn compile(&mut self) -> Result<usize, ModelCompilerError> {
         let mut path = PathBuf::from(self.src_path);
         path.pop();
         path.push(TARGET_DIR);
@@ -97,7 +97,7 @@ impl<'a> Target for DwarfTarget<'a> {
         chacha_file.set_extension(RS_EXT);
 
         // Sort the objects -- I need to figure out how to do this automagically.
-        // let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
+        let objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
         // objects.sort_by(|a, b| a.name.cmp(&b.name));
 
         // objects
@@ -129,7 +129,7 @@ impl<'a> Target for DwarfTarget<'a> {
         // })
         // .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(())
+        Ok(objects.len())
     }
 
     fn domain(&self) -> &str {

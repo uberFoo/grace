@@ -38,7 +38,7 @@ impl SarzakModelCompiler for ModelCompiler {
         src_path: P,
         options: Box<&dyn ModelCompilerOptions>,
         test: bool,
-    ) -> Result<(), ModelCompilerError> {
+    ) -> Result<usize, ModelCompilerError> {
         // Extract our options
         let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
             Some(options) => options.clone(),
@@ -75,8 +75,6 @@ impl SarzakModelCompiler for ModelCompiler {
             test
         );
 
-        target.compile()?;
-
-        Ok(())
+        target.compile()
     }
 }

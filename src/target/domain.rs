@@ -200,7 +200,7 @@ impl<'a> DomainTarget<'a> {
         }))
     }
 
-    fn generate_types(&mut self) -> Result<(), ModelCompilerError> {
+    fn generate_types(&mut self) -> Result<usize, ModelCompilerError> {
         // Build a path to src/types
         let mut types = PathBuf::from(self.src_path);
         types.push(self.module);
@@ -357,7 +357,7 @@ impl<'a> DomainTarget<'a> {
 
         println!("Generated code for {} objects.", objects.len());
 
-        Ok(())
+        Ok(objects.len())
     }
 
     fn generate_store(&mut self) -> Result<(), ModelCompilerError> {
@@ -435,9 +435,9 @@ impl<'a> DomainTarget<'a> {
 }
 
 impl<'a> Target for DomainTarget<'a> {
-    fn compile(&mut self) -> Result<(), ModelCompilerError> {
+    fn compile(&mut self) -> Result<usize, ModelCompilerError> {
         // ✨Generate Types✨
-        self.generate_types()?;
+        let count = self.generate_types()?;
 
         // Generate the store.rs file
         self.generate_store()?;
@@ -454,7 +454,7 @@ impl<'a> Target for DomainTarget<'a> {
 
         // persist_woog(&self.woog, self.src_path, &self.domain)?;
 
-        Ok(())
+        Ok(count)
     }
 
     fn domain(&self) -> &str {

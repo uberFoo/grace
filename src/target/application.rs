@@ -61,7 +61,7 @@ impl<'a> ApplicationTarget<'a> {
 }
 
 impl<'a> Target for ApplicationTarget<'a> {
-    fn compile(&mut self) -> Result<(), ModelCompilerError> {
+    fn compile(&mut self) -> Result<usize, ModelCompilerError> {
         // ✨Generate Types✨
 
         // Build a path to src/types
@@ -79,7 +79,7 @@ impl<'a> Target for ApplicationTarget<'a> {
         objects.sort_by(|a, b| a.name.cmp(&b.name));
 
         // Iterate over the objects, generating an implementation for file each.
-        for obj in objects {
+        for obj in &objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
@@ -138,7 +138,7 @@ impl<'a> Target for ApplicationTarget<'a> {
             )
             .generate()?;
 
-        Ok(())
+        Ok(objects.len())
     }
 
     fn domain(&self) -> &str {

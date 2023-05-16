@@ -306,6 +306,7 @@ fn value_type_to_string(ty: &Arc<RwLock<ValueType>>, woog: &WoogStore, domain: &
             };
             format!("Vec<{}>", &value_type_to_string(&inner, woog, domain))
         }
+        ValueType::Range(_) => "<range>".to_string(),
         ValueType::Reference(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
