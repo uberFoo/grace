@@ -150,6 +150,9 @@ impl CodeWriter for ChaChaFile {
 
         let _lu_dog = &LU_DOG;
 
+        let domain_name = domain.name().as_ident();
+        let domain_type = domain.name().as_type(&Ownership::new_owned(), woog, domain);
+
         // buffer.block(
         //     DirectiveKind::IgnoreOrig,
         //     format!("{}-dwarf-output", module),
@@ -178,9 +181,9 @@ impl CodeWriter for ChaChaFile {
             .iter()
             .filter(|obj| {
                 // Don't include imported objects
-                !config.is_imported(&obj.id)
+                // !config.is_imported(&obj.id)
                 // 🚧 I'd love to figure out how to get rid of the unwrap().
-                && !object_is_singleton(obj, config, imports, domain).unwrap()
+                !object_is_singleton(obj, config, imports, domain).unwrap()
             })
             .collect::<Vec<_>>();
 
@@ -195,7 +198,10 @@ impl CodeWriter for ChaChaFile {
         emit!(buffer, "use sarzak::{{lu_dog::{{Empty, List, ObjectStore as LuDogStore, ValueType}},sarzak::SUuid}};");
         emit!(buffer, "use uuid::{{uuid, Uuid}};");
         emit!(buffer, "");
-        emit!(buffer, "use sarzak::merlin::{{ObjectStore as MerlinStore,");
+        emit!(
+            buffer,
+            "use sarzak::{domain_name}::{{ObjectStore as {domain_type}Store,"
+        );
         for object in &objects {
             emit!(
                 buffer,
@@ -213,18 +219,17 @@ impl CodeWriter for ChaChaFile {
 
         //
         // This is the static reference to our backing domain.
-        let domain_name = domain.name().as_type(&Ownership::new_owned(), woog, domain);
 
         emit!(buffer, "\nlazy_static! {{");
         emit!(
             buffer,
             "static ref MODEL: Arc<RwLock<{}Store>> = Arc::new(RwLock::new(",
-            domain_name
+            domain_type
         );
         emit!(
             buffer,
-            "{}Store::load(\"{}\").unwrap()));",
-            domain_name,
+            "{}Store::load_bincode(\"{}\").unwrap()));",
+            domain_type,
             config
                 .get_store_path()
                 .unwrap()
@@ -242,6 +247,8 @@ impl CodeWriter for ChaChaFile {
             let is_enum = object_is_enum(obj, config, imports, domain)?;
             let is_hybrid = object_is_hybrid(obj, config, imports, domain)?;
             let is_singleton = object_is_singleton(obj, config, imports, domain)?;
+            let is_imported = config.is_imported(&obj.id);
+
             let id = if is_enum || is_singleton {
                 "id()"
             } else {
@@ -356,8 +363,6 @@ impl CodeWriter for ChaChaFile {
             emit!(buffer, ")),");
             emit!(buffer, "}}");
             emit!(buffer, "}} else {{");
-            emit!(buffer, "let arg = args.pop_front().unwrap();");
-            emit!(buffer, "let arg = arg.read().unwrap();");
             emit!(buffer, "match method {{");
 
             if !is_enum && !is_hybrid {
@@ -365,7 +370,23 @@ impl CodeWriter for ChaChaFile {
                     "new", obj, None, &attrs, config, imports, woog, domain, buffer,
                 )?;
             } else {
-                for subtype in get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()) {
+                let (subtypes, domain) = if is_imported {
+                    let imported = config.get_imported(&obj.id).unwrap();
+
+                    let domain = imports.unwrap().get(&imported.domain).unwrap();
+
+                    (
+                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
+                        domain,
+                    )
+                } else {
+                    (
+                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
+                        domain,
+                    )
+                };
+
+                for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     render_ctor(
                         &format!("new_{}", s_obj.as_ident()),
@@ -456,6 +477,25 @@ impl CodeWriter for ChaChaFile {
                             "Ok(Arc::new(RwLock::new(({attr_name}, self.lu_dog.clone()).into())))"
                         );
                         emit!(buffer, "}},");
+                    } else if ty == "Option" {
+                        emit!(buffer, "\"{attr_name}\" => {{");
+                        emit!(
+                            buffer,
+                            "if let Some({attr_name}) = &self_.read().unwrap().{attr_name} {{"
+                        );
+                        emit!(
+                            buffer,
+                            "let {attr_name} = MODEL.read().unwrap().exhume_{obj_ident}({attr_name}).unwrap();"
+                        );
+                        emit!(buffer, "");
+                        emit!(
+                            buffer,
+                            "Ok(Arc::new(RwLock::new(Value::Option(Some(Arc::new(RwLock::new(({attr_name}, self.lu_dog.clone()).into())))))))"
+                        );
+                        emit!(buffer, "}} else {{");
+                        emit!(buffer, "Ok(Arc::new(RwLock::new(Value::Option(None))))");
+                        emit!(buffer, "}}");
+                        emit!(buffer, "}},");
                     } else if ty == "String" {
                         emit!(
                             buffer,
@@ -488,14 +528,36 @@ impl CodeWriter for ChaChaFile {
                 "fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {{"
             );
             emit!(buffer, "if let Some(self_) = &self.self_ {{");
-            emit!(
-                buffer,
-                "write!(f, \"{obj_type}Proxy({{}})\", self_.read().unwrap().{id})",
-            );
+            // write a line for each attribute
+            for (idx, attr) in attrs.iter().enumerate() {
+                let attr_name = attr.name.as_ident();
+
+                if idx == 0 {
+                    emit!(buffer, "writeln!(f, \"{obj_type}Proxy({{{{\")?;",);
+                } else {
+                    emit!(buffer, "?;");
+                }
+
+                if attr_name == "id" {
+                    write!(
+                        buffer,
+                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self_.read().unwrap().{id})",
+                    )
+                    .context(FormatSnafu)?;
+                } else {
+                    write!(
+                        buffer,
+                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self_.read().unwrap().{attr_name})",
+                    )
+                    .context(FormatSnafu)?;
+                }
+            }
+            emit!(buffer, "?;");
+            emit!(buffer, "writeln!(f, \"}}}})\")");
             emit!(buffer, "}} else {{");
             emit!(
                 buffer,
-                "write!(f, \"{{}} {obj_type}Proxy\", Colour::Yellow.underline().paint(\"Type\"))",
+                "writeln!(f, \"{{}} {obj_type}Proxy\", Colour::Yellow.underline().paint(\"Type\"))",
             );
             emit!(buffer, "}}");
             emit!(buffer, "}}");
@@ -517,7 +579,23 @@ impl CodeWriter for ChaChaFile {
                     "let read_{obj_ident} = {obj_ident}.read().unwrap();\n",
                 );
                 emit!(buffer, "match *read_{obj_ident} {{");
-                for subtype in get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()) {
+                let (subtypes, domain) = if is_imported {
+                    let imported = config.get_imported(&obj.id).unwrap();
+
+                    let domain = imports.unwrap().get(&imported.domain).unwrap();
+
+                    (
+                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
+                        domain,
+                    )
+                } else {
+                    (
+                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
+                        domain,
+                    )
+                };
+
+                for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     let s_obj_type = s_obj.as_type(&Ownership::new_owned(), woog, domain);
 
@@ -613,6 +691,8 @@ fn render_ctor(
     emit!(buffer, "\"{}\" => {{", method_name);
     for attr in attrs {
         if attr.name != "id" {
+            emit!(buffer, "let arg = args.pop_front().unwrap();");
+            emit!(buffer, "let arg = arg.read().unwrap();");
             let attr_ident = attr.name.as_ident();
             let ty = value_type_to_string(&attr.ty, woog, domain);
             let ref_name = ty.1;
@@ -624,12 +704,38 @@ fn render_ctor(
                     "let {attr_ident}: {ref_name}Proxy = (&*arg).try_into()?;"
                 );
                 emit!(buffer, "let {attr_ident} = {attr_ident}.self_.unwrap();");
+            } else if ty.0 == "Option" {
+                args.extend([format!("{attr_ident}.as_ref(), ")]);
+                emit!(
+                    buffer,
+                    "let {attr_ident}: {ref_name}Proxy = (&*arg).try_into()?;"
+                );
+                emit!(buffer, "let {attr_ident} = {attr_ident}.self_;");
+            } else if ty.0 == "Uuid" || ty.0 == "String" {
+                args.extend([format!("{attr_ident}.to_owned(), ")]);
+                emit!(
+                    buffer,
+                    "let {attr_ident}: &{} = &(*arg).clone().try_into()?;",
+                    ty.0
+                );
             } else {
                 args.extend([format!("{attr_ident}, ")]);
-                emit!(buffer, "let {attr_ident} = (*&arg).try_into()?;");
+                emit!(buffer, "let {attr_ident} = (&*arg).try_into()?;");
             }
         }
     }
+
+    if parent_obj.is_some() && !is_singleton {
+        emit!(buffer, "let arg = args.pop_front().unwrap();");
+        emit!(buffer, "let arg = arg.read().unwrap();");
+        emit!(
+            buffer,
+            "let subtype: {obj_type}Proxy = (&*arg).try_into()?;"
+        );
+        emit!(buffer, "let subtype = subtype.self_.unwrap();");
+        args.extend([format!("&subtype, ")]);
+    }
+
     emit!(buffer, "");
     emit!(buffer, "let mut model = MODEL.write().unwrap();");
 
@@ -641,8 +747,14 @@ fn render_ctor(
     emit!(buffer, "let mut {obj_ident}_proxy = self.clone();");
 
     let thing = if let Some(supertype) = parent_obj {
+        let is_singleton = object_is_singleton(supertype, config, imports, domain)?;
         let supertype = supertype.as_type(&Ownership::new_owned(), woog, domain);
-        format!("{supertype}::{method_name}({args}&mut model)",)
+
+        if is_singleton {
+            format!("{supertype}::{method_name}({args})",)
+        } else {
+            format!("{supertype}::{method_name}({args}&mut model)",)
+        }
     } else {
         obj_ident.clone()
     };
@@ -693,7 +805,19 @@ fn value_type_to_string<'a>(
                 Ty::External(_) => ("ext_what_to_do", "".to_owned()),
             }
         }
-        ValueType::WoogOption(_) => ("Option", "".to_owned()),
+        ValueType::WoogOption(ref id) => {
+            let inner = {
+                let lu_dog = lu_dog.read().unwrap();
+                let option = lu_dog
+                    .exhume_woog_option(id)
+                    .unwrap()
+                    .read()
+                    .unwrap()
+                    .clone();
+                option.r2_value_type(&lu_dog)[0].clone()
+            };
+            ("Option", value_type_to_string(&inner, woog, domain).1)
+        }
         ValueType::WoogStruct(ref id) => {
             let lu_dog = lu_dog.read().unwrap();
             let woog_struct = lu_dog

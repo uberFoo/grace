@@ -10,7 +10,7 @@ clap = { version = "4.1.4", features = ["derive"] }
 serde = { version = "1.0.152", features = ["derive"] }
 sarzak = { path = "../sarzak" }
 # sarzak = { git = "https://gitlab-runner:7kzem8nVeizSJQnLPWFY@git.uberfoo.com/sarzak/sarzak.git", branch = "develop" }
-snafu = { version = "0.7.4", features = [] }
+snafu = { version = "0.7.4", features = ["backtraces"] }
 log = "0.4.17"
 heck = "0.4.0"
 uuid = { version = "1.2.2", features = ["v5"] }

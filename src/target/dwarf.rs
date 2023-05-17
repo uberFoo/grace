@@ -5,8 +5,10 @@ use std::{
 };
 
 use lazy_static::lazy_static;
-use rayon::prelude::*;
+// use rayon::prelude::*;
+use fnv::FnvHashMap as HashMap;
 use sarzak::{
+    domain::DomainBuilder,
     lu_dog::store::ObjectStore as LuDogStore,
     mc::{FileSnafu, ModelCompilerError, Result},
     sarzak::types::Object,
@@ -23,7 +25,8 @@ use crate::{
     BUILD_DIR, RS_EXT, TARGET_DIR,
 };
 
-pub(crate) const DWARF_EXT: &str = "道";
+// pub(crate) const DWARF_EXT: &str = "道";
+pub(crate) const DWARF_EXT: &str = "tao";
 
 lazy_static! {
     //
@@ -100,6 +103,26 @@ impl<'a> Target for DwarfTarget<'a> {
         let objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
         // objects.sort_by(|a, b| a.name.cmp(&b.name));
 
+        let mut imported_domains = HashMap::default();
+        for obj in &objects {
+            if self.config.is_imported(&obj.id) {
+                let io = self.config.get_imported(&obj.id).unwrap();
+                // Only import the domain once.
+                if !imported_domains.contains_key(&io.domain) {
+                    let domain = DomainBuilder::new()
+                        .cuckoo_model(&io.model_file)
+                        .expect(
+                            format!("Failed to load domain {}", io.model_file.display()).as_str(),
+                        )
+                        .build_v2()
+                        .expect("Failed to build domain");
+
+                    log::debug!("Loaded imported domain {}", io.domain);
+                    imported_domains.insert(io.domain.clone(), domain);
+                }
+            }
+        }
+
         // objects
         // .par_iter()
         // .map(|_obj| {
@@ -123,6 +146,7 @@ impl<'a> Target for DwarfTarget<'a> {
             .module(self.module)
             .woog(&mut woog)
             .generator(ChaChaBuilder::new().definition(ChaChaFile::new()).build()?)
+            .imports(&imported_domains)
             .generate()?;
 
         // Ok(())

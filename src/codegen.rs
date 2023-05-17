@@ -973,6 +973,7 @@ pub(crate) fn render_new_instance_new(
         let f = field.r27_field(woog)[0];
         let ty = f.r29_grace_type(woog)[0];
         let rval_string = typecheck_and_coerce(ty, rval, config, imports, woog, domain)?;
+        // Stupid clippy...
         if f.as_ident() == rval_string {
             emit!(buffer, "{rval_string},");
         } else {
@@ -1026,7 +1027,8 @@ fn typecheck_and_coerce(
                                 "id"
                             };
 
-                            if is_uber && !imported {
+                            if is_uber {
+                                // if is_uber && !imported {
                                 format!(
                                     "{}.map(|{}| {}.read().unwrap().{id})",
                                     rhs.as_ident(),
@@ -1092,7 +1094,8 @@ fn typecheck_and_coerce(
                                 "id"
                             };
 
-                            if is_uber && !is_imported {
+                            if is_uber {
+                                // if is_uber && !is_imported {
                                 format!("{}.read().unwrap().{id}", rhs.as_ident())
                             } else {
                                 format!("{}.{id}", rhs.as_ident())
@@ -1629,7 +1632,8 @@ where
     for attr in attrs {
         let ty = attr.r2_ty(domain.sarzak())[0];
         let mut lu_dog = lu_dog.write().unwrap();
-        let ty = ValueType::new_ty(ty, &mut lu_dog);
+        // let ty = ValueType::new_ty(ty, &mut lu_dog);
+        let ty = ValueType::new_ty(&Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
 
         let attr = A::new(attr.as_ident(), ty.clone());
         result.push(attr);
@@ -1648,7 +1652,8 @@ where
 
         let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
         let mut lu_dog = lu_dog.write().unwrap();
-        let ty = ValueType::new_ty(ty, &mut lu_dog);
+        // let ty = ValueType::new_ty(ty, &mut lu_dog);
+        let ty = ValueType::new_ty(&Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
         let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
         let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
@@ -1682,7 +1687,8 @@ where
 
             let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
             let mut lu_dog = lu_dog.write().unwrap();
-            let ty = ValueType::new_ty(ty, &mut lu_dog);
+            // let ty = ValueType::new_ty(ty, &mut lu_dog);
+            let ty = ValueType::new_ty(&Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
             let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
             let ty = ValueType::new_reference(&ty, &mut lu_dog);
 

@@ -169,7 +169,8 @@ impl ForStore for GraceType {
                     (inner, false)
                 };
 
-                if is_uber && !imported {
+                if is_uber {
+                    // if is_uber && !imported {
                     format!(
                         "Option<&Arc<RwLock<{}>>>",
                         inner.as_type(mutability, woog, domain)
@@ -427,6 +428,8 @@ impl Sanitize for &str {
             "Let" => "x_let".to_owned(),
             "macro" => "x_macro".to_owned(),
             "Macro" => "x_macro".to_owned(),
+            "model" => "x_model".to_owned(),
+            "Model" => "x_model".to_owned(),
             "None" => "z_none".to_owned(),
             "Object Store" => "z_object_store".to_owned(),
             "option" => "woog_option".to_owned(),
@@ -448,6 +451,8 @@ impl Sanitize for &str {
             "uuid" => "z_uuid".to_owned(),
             "Uuid" => "z_uuid".to_owned(),
             "UUID" => "z_uuid".to_owned(),
+            "value" => "x_value".to_owned(),
+            "Value" => "x_value".to_owned(),
             _ => self.to_string(),
         };
 
@@ -477,6 +482,8 @@ impl Sanitize for String {
             "Let" => "x_let".to_owned(),
             "macro" => "x_macro".to_owned(),
             "Macro" => "x_macro".to_owned(),
+            "model" => "x_model".to_owned(),
+            "Model" => "x_model".to_owned(),
             "None" => "z_none".to_owned(),
             "Object Store" => "z_object_store".to_owned(),
             "option" => "woog_option".to_owned(),
@@ -498,6 +505,8 @@ impl Sanitize for String {
             "uuid" => "s_uuid".to_owned(),
             "Uuid" => "s_uuid".to_owned(),
             "UUID" => "s_uuid".to_owned(),
+            "value" => "x_value".to_owned(),
+            "Value" => "x_value".to_owned(),
             _ => self.to_owned(),
         };
 

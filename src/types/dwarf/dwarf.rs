@@ -221,19 +221,14 @@ impl CodeWriter for DwarfFile {
                     None => break,
                 }
             }
-            writeln!(buffer, ") -> {} {{", obj_type).context(FormatSnafu)?;
+            writeln!(buffer, ") -> {obj_type} {{").context(FormatSnafu)?;
             emit!(buffer, "        let id = Uuid::new();");
-            emit!(buffer, "        {} {{", obj_type);
+            emit!(buffer, "        {obj_type} {{");
             for attr in &attrs {
                 emit!(buffer, "            {}: {},", attr.name, attr.name);
             }
 
-            emit!(
-                buffer,
-                "            proxy: {}::new({}),",
-                obj.as_const(),
-                args
-            );
+            emit!(buffer, "            proxy: {obj_type}Proxy::new({args}),",);
 
             emit!(buffer, "        }}");
             emit!(buffer, "    }}");
@@ -245,6 +240,9 @@ impl CodeWriter for DwarfFile {
             emit!(buffer, "    fn help() -> () {{");
             emit_object_comments(
                 // What a cheat!
+                // Oh, man, what did I do? This was for the original parser,
+                // whatever it's for.
+                // 🚧 Fix this.
                 &obj.description.replace("\"", "\u{201d}"),
                 "        print(\"",
                 "\\n\");",
@@ -314,7 +312,7 @@ fn value_type_to_string(ty: &Arc<RwLock<ValueType>>, woog: &WoogStore, domain: &
                 reference.r35_value_type(&lu_dog)[0].clone()
             };
 
-            format!("&{}", &value_type_to_string(&inner, woog, domain))
+            format!("{}", &value_type_to_string(&inner, woog, domain))
         }
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
