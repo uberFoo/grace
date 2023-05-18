@@ -608,6 +608,7 @@ pub(crate) fn render_new_instance(
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -684,7 +685,7 @@ pub(crate) fn render_new_instance(
                             }
                             GType::Reference(r_obj) => {
                                 let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
-                                let id = if local_object_is_enum(r_obj, config, domain) {
+                                let id = if object_is_enum(r_obj, config, imports, domain)? {
                                     "id()"
                                 } else {
                                     "id"

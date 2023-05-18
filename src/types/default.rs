@@ -422,7 +422,7 @@ impl CodeWriter for DefaultNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         _module: &str,
         obj_id: Option<&Uuid>,
@@ -571,7 +571,9 @@ impl CodeWriter for DefaultNewImpl {
                 render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance
-                render_new_instance(buffer, obj, None, &fields, &rvals, config, woog, domain)?;
+                render_new_instance(
+                    buffer, obj, None, &fields, &rvals, config, imports, woog, domain,
+                )?;
 
                 emit!(buffer, "}}");
 

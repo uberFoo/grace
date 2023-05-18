@@ -660,6 +660,7 @@ impl CodeWriter for HybridNewImpl {
                         &fields_,
                         &rvals,
                         config,
+                        imports,
                         woog,
                         domain,
                     )?;
