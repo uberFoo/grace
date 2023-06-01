@@ -180,7 +180,7 @@ impl CodeWriter for Imports {
                     }
                 }
 
-                // Add the use statements, plus the use for any imported objects.
+                // Add the use statements.
                 for use_path in uses {
                     emit!(buffer, "{}", use_path);
                 }

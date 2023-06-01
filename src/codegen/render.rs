@@ -414,6 +414,7 @@ impl Sanitize for &str {
         let result = match *self {
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
+            "break" => "x_break".to_owned(),
             "crate" => "krate".to_owned(),
             "Crate" => "krate".to_owned(),
             "const" => "woog_const".to_owned(),
@@ -468,6 +469,7 @@ impl Sanitize for String {
         let result = match self.as_str() {
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
+            "break" => "x_break".to_owned(),
             "crate" => "krate".to_owned(),
             "Crate" => "krate".to_owned(),
             "const" => "woog_const".to_owned(),
