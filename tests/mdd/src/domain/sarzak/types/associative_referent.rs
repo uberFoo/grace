@@ -15,7 +15,7 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 /// The other objects in an Associative Relationship
 ///
 /// This represents one of the two objects that are related in an [`Associative`] relationhip
-///.
+/// .
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-definition"}}}
@@ -34,7 +34,6 @@ pub struct AssociativeReferent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-implementation"}}}
 impl AssociativeReferent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new_"}}}
     /// Inter a new 'Associative Referent' in the store, and return it's `id`.
     pub fn new(
         description: String,
@@ -45,33 +44,13 @@ impl AssociativeReferent {
     ) -> AssociativeReferent {
         let id = Uuid::new_v4();
         let new = AssociativeReferent {
-            description: description,
-            id: id,
+            description,
+            id,
             cardinality: cardinality.id(),
             conditionality: conditionality.id(),
             obj_id: obj_id.id,
         };
         store.inter_associative_referent(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-new_"}}}
-    /// Inter a new 'Associative Referent' in the store, and return it's `id`.
-    pub fn new_(
-        description: String,
-        cardinality: &Cardinality,
-        conditionality: &Conditionality,
-        obj_id: &Object,
-    ) -> AssociativeReferent {
-        let id = Uuid::new_v4();
-        let new = AssociativeReferent {
-            description: description,
-            id: id,
-            cardinality: cardinality.id(),
-            conditionality: conditionality.id(),
-            obj_id: obj_id.id,
-        };
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -93,11 +72,6 @@ impl AssociativeReferent {
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-cond-to-associative"}}}
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-one-to-associative"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-cond-to-associative"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-backward-assoc-one-to-an_associative_referent"}}}
     /// Navigate to [`AnAssociativeReferent`] across R22(1-1)
     pub fn r22_an_associative_referent<'a>(

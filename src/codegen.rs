@@ -6,32 +6,39 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{fmt::Write, iter::zip};
+use std::{fmt::Write, iter::zip, sync::Arc};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
+    lu_dog::{
+        types::{ValueType, WoogOption},
+        Reference,
+    },
     mc::{CompilerSnafu, FormatSnafu, Result},
-    sarzak::types::{External, Object, Ty},
+    sarzak::types::{Conditionality, External, Object, Ty},
     v2::domain::Domain,
     woog::{
         store::ObjectStore as WoogStore,
         types::{
             GraceType, Item, Local, ObjectMethod as WoogObjectMethod, Ownership, StatementEnum,
-            Structure, SymbolTable, Variable, VariableEnum, OWNED,
+            Structure, SymbolTable, Variable, VariableEnum,
         },
     },
 };
 use snafu::prelude::*;
 use unicode_segmentation::UnicodeSegmentation;
+use uuid::Uuid;
 
 use crate::{
     codegen::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
-        render::{RenderIdent, RenderType},
+        render::{ForStore, RenderIdent, RenderType},
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
+    target::dwarf::LU_DOG,
     todo::{GType, LValue, ObjectMethod, RValue},
+    Lock,
 };
 
 macro_rules! get_subtypes_sorted {
@@ -207,9 +214,12 @@ pub(crate) use get_binary_referents_sorted;
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
     method: &ObjectMethod,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let is_uber = config.is_uber_store();
+
     // Write the beginning of the definition
     write!(buffer, "pub fn {}(", method.name).context(FormatSnafu)?;
 
@@ -217,36 +227,80 @@ pub(crate) fn render_method_definition(
     // TODO: This is so clumsy! I should clean it up.
     if let Some(mut param) = method.param {
         let mutability = woog.exhume_ownership(&param.mutability).unwrap();
-        write!(
-            buffer,
-            "{}: {},",
-            param.as_ident(),
-            param.ty.as_type(&mutability, woog, domain),
-        )
-        .context(FormatSnafu)?;
 
-        while let Some(next_param) = param.next {
-            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
+        if is_uber {
             write!(
                 buffer,
                 "{}: {},",
-                // Why do I need to drill down to name?
-                next_param.name.as_ident(),
-                next_param.ty.as_type(&mutability, woog, domain),
+                param.as_ident(),
+                param.ty.for_store(&mutability, config, woog, domain),
             )
             .context(FormatSnafu)?;
+        } else {
+            write!(
+                buffer,
+                "{}: {},",
+                param.as_ident(),
+                param.ty.as_type(&mutability, woog, domain),
+            )
+            .context(FormatSnafu)?;
+        }
+
+        while let Some(next_param) = param.next {
+            let mutability = woog.exhume_ownership(&next_param.mutability).unwrap();
+
+            if is_uber {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    // Why do I need to drill down to name?
+                    next_param.name.as_ident(),
+                    next_param.ty.for_store(&mutability, config, woog, domain),
+                )
+                .context(FormatSnafu)?;
+            } else {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    // Why do I need to drill down to name?
+                    next_param.name.as_ident(),
+                    next_param.ty.as_type(&mutability, woog, domain),
+                )
+                .context(FormatSnafu)?;
+            }
 
             param = &next_param;
         }
     }
 
     // Finish the first line of the definition
-    writeln!(
-        buffer,
-        ") -> {} {{",
-        method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
-    )
-    .context(FormatSnafu)?;
+    if is_uber {
+        use UberStoreOptions::*;
+        let store_type = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc<RefCell<{}>>",
+                method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc<RwLock<{}>>",
+                method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc<Mutex<{}>>",
+                method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+
+        writeln!(buffer, ") -> {store_type} {{",).context(FormatSnafu)?;
+    } else {
+        writeln!(
+            buffer,
+            ") -> {} {{",
+            method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+        )
+        .context(FormatSnafu)?;
+    }
 
     Ok(())
 }
@@ -254,10 +308,12 @@ pub(crate) fn render_method_definition(
 pub(crate) fn render_method_definition_new(
     buffer: &mut Buffer,
     method: &WoogObjectMethod,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     let object = domain.sarzak().exhume_object(&method.object).unwrap();
+    let is_uber = config.is_uber_store();
 
     log::debug!("Rendering new method definition for {}", object.as_ident());
 
@@ -282,42 +338,46 @@ pub(crate) fn render_method_definition_new(
         }
     });
 
-    ensure!(
-        param.is_some(),
-        CompilerSnafu {
-            description: format!(
-                "No parameter found for {}::{}",
-                object.as_type(&Ownership::Owned(OWNED), woog, domain),
-                method.r25_function(woog).pop().unwrap().as_ident()
-            )
-        }
-    );
-    let mut param = param.unwrap();
+    if param.is_some() {
+        let mut param = param.unwrap();
 
-    loop {
-        let value = param
-            .r8_variable(woog)
-            .pop()
-            .unwrap()
-            .r7_value(woog)
-            .pop()
-            .unwrap();
-        let ty = value.r3_grace_type(woog)[0];
-        let access = value.r16_access(woog)[0];
-        let mutability = access.r15_ownership(woog)[0];
+        loop {
+            let value = param
+                .r8_variable(woog)
+                .pop()
+                .unwrap()
+                .r7_value(woog)
+                .pop()
+                .unwrap();
+            let ty = value.r3_grace_type(woog)[0];
+            let access = value.r16_access(woog)[0];
+            let mutability = access.r15_ownership(woog)[0];
 
-        write!(
-            buffer,
-            "{}: {},",
-            param.r8_variable(woog)[0].name.as_ident(),
-            ty.as_type(&mutability, woog, domain)
-        )
-        .context(FormatSnafu)?;
+            let param_name = param.r8_variable(woog)[0].name.as_ident();
 
-        if let Some(next_param) = param.r1_parameter(woog).pop() {
-            param = next_param;
-        } else {
-            break;
+            if is_uber && param_name != "store" {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    param_name,
+                    ty.for_store(&mutability, config, woog, domain)
+                )
+                .context(FormatSnafu)?;
+            } else {
+                write!(
+                    buffer,
+                    "{}: {},",
+                    param_name,
+                    ty.as_type(&mutability, woog, domain)
+                )
+                .context(FormatSnafu)?;
+            }
+
+            if let Some(next_param) = param.r1_parameter(woog).pop() {
+                param = next_param;
+            } else {
+                break;
+            }
         }
     }
 
@@ -325,12 +385,33 @@ pub(crate) fn render_method_definition_new(
     // I think it may be that we need to trace method -> call, and use the
     // type of call as the return type.
     // Finish the first line of the definition
-    writeln!(
-        buffer,
-        ") -> {} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
-    )
-    .context(FormatSnafu)?;
+    if is_uber {
+        use UberStoreOptions::*;
+        let store_type = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc<RefCell<{}>>",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc<RwLock<{}>>",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc<Mutex<{}>>",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+
+        writeln!(buffer, ") -> {store_type} {{",).context(FormatSnafu)?;
+    } else {
+        writeln!(
+            buffer,
+            ") -> {} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        )
+        .context(FormatSnafu)?;
+    }
 
     Ok(())
 }
@@ -429,7 +510,7 @@ pub(crate) fn render_make_uuid_new(
             GraceType::Ty(id) => {
                 let sty = domain.sarzak().exhume_ty(id).unwrap();
                 match sty {
-                    Ty::Uuid(_) => true,
+                    Ty::SUuid(_) => true,
                     _ => false,
                 }
             }
@@ -440,7 +521,7 @@ pub(crate) fn render_make_uuid_new(
         }
     );
 
-    let object = domain.sarzak().exhume_object(&method.object).unwrap();
+    let _object = domain.sarzak().exhume_object(&method.object).unwrap();
 
     // We want to render a UUID made up of all of the parameters to the function.
     // So we do the cheap thing and just use the parameter list.
@@ -453,82 +534,76 @@ pub(crate) fn render_make_uuid_new(
         }
     });
 
-    ensure!(
-        param.is_some(),
-        CompilerSnafu {
-            description: format!(
-                "No parameter found for {}::{}",
-                object.as_type(&Ownership::Owned(OWNED), woog, domain),
-                method.r25_function(woog).pop().unwrap().as_ident()
-            )
-        }
-    );
+    if param.is_some() {
+        let mut param = param.unwrap();
 
-    let mut param = param.unwrap();
+        let mut format_string = String::new();
+        let mut args = String::new();
 
-    let mut format_string = String::new();
-    let mut args = String::new();
+        loop {
+            let value = param
+                .r8_variable(woog)
+                .pop()
+                .unwrap()
+                .r7_value(woog)
+                .pop()
+                .unwrap();
+            let ty = value.r3_grace_type(woog)[0];
 
-    loop {
-        let value = param
-            .r8_variable(woog)
-            .pop()
-            .unwrap()
-            .r7_value(woog)
-            .pop()
-            .unwrap();
-        let ty = value.r3_grace_type(woog)[0];
-
-        match &ty {
-            GraceType::Reference(_) => {
-                format_string.extend(["{:?}:"]);
-                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
-            }
-            GraceType::WoogOption(_) => {
-                format_string.extend(["{:?}:"]);
-                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
-            }
-            GraceType::Ty(id) => {
-                let ty = domain.sarzak().exhume_ty(id).unwrap();
-                match &ty {
-                    // This is really about the store, and we don't want to include that.
-                    // However, I don't think we'd want to try printing anything external,
-                    // so this here is generally a Good Thing.
-                    Ty::External(e) => {
-                        let ext = domain.sarzak().exhume_external(e).unwrap();
-                        // 🚧 This is lame. I need something better, and nothing comes
-                        // immediately to mind.
-                        if ext.name == "SystemTime" {
-                            format_string.extend(["{:?}:"]);
+            match &ty {
+                GraceType::Reference(_) => {
+                    format_string.extend(["{:?}:"]);
+                    args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
+                }
+                GraceType::WoogOption(_) => {
+                    format_string.extend(["{:?}:"]);
+                    args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
+                }
+                GraceType::Ty(id) => {
+                    let ty = domain.sarzak().exhume_ty(id).unwrap();
+                    match &ty {
+                        // This is really about the store, and we don't want to include that.
+                        // However, I don't think we'd want to try printing anything external,
+                        // so this here is generally a Good Thing.
+                        Ty::External(e) => {
+                            let ext = domain.sarzak().exhume_external(e).unwrap();
+                            // 🚧 This is lame. I need something better, and nothing comes
+                            // immediately to mind.
+                            if ext.name == "SystemTime" {
+                                format_string.extend(["{:?}:"]);
+                                args.extend([
+                                    param.r8_variable(woog)[0].name.as_ident(),
+                                    ",".to_owned(),
+                                ]);
+                            }
+                        }
+                        _ => {
+                            format_string.extend(["{}:"]);
                             args.extend([
                                 param.r8_variable(woog)[0].name.as_ident(),
                                 ",".to_owned(),
                             ]);
                         }
                     }
-                    _ => {
-                        format_string.extend(["{}:"]);
-                        args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
-                    }
+                }
+                _ => {
+                    format_string.extend(["{}:"]);
+                    args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
                 }
             }
-            _ => {
-                format_string.extend(["{}:"]);
-                args.extend([param.r8_variable(woog)[0].name.as_ident(), ",".to_owned()]);
+
+            if let Some(next_param) = param.r1_parameter(woog).pop() {
+                param = next_param;
+            } else {
+                break;
             }
         }
 
-        if let Some(next_param) = param.r1_parameter(woog).pop() {
-            param = next_param;
-        } else {
-            break;
-        }
+        // Remove the trailing ":"
+        format_string.pop();
+        // And the trailining ","
+        args.pop();
     }
-
-    // Remove the trailing ":"
-    format_string.pop();
-    // And the trailining ","
-    args.pop();
 
     // emit!(
     //     buffer,
@@ -554,6 +629,7 @@ pub(crate) fn render_new_instance(
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
     config: &GraceConfig,
+    imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -561,11 +637,34 @@ pub(crate) fn render_new_instance(
         assert!(lval.ty == GType::Reference(object.id));
         write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
     }
-    emit!(
-        buffer,
-        "{} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
-    );
+
+    if config.is_uber_store() {
+        use UberStoreOptions::*;
+        let store_ctor = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc::new(RefCell::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc::new(RwLock::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc::new(Mutex::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+        emit!(buffer, "{store_ctor}");
+    } else {
+        emit!(
+            buffer,
+            "{} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        );
+    }
+
+    let is_uber = config.is_uber_store();
 
     let tuples = zip(fields, rvals);
 
@@ -605,7 +704,6 @@ pub(crate) fn render_new_instance(
                         (local_object_is_hybrid(super_obj, config, domain), None)
                     };
 
-                    // if local_object_is_hybrid(super_obj, config, domain) {
                     if is_hybrid {
                         match rval.ty {
                             GType::Uuid => {
@@ -620,19 +718,38 @@ pub(crate) fn render_new_instance(
                             }
                             GType::Reference(r_obj) => {
                                 let r_obj = domain.sarzak().exhume_object(&r_obj).unwrap();
-                                if local_object_is_enum(r_obj, config, domain) {
+                                let id = if object_is_enum(r_obj, config, imports, domain)? {
+                                    "id()"
+                                } else {
+                                    "id"
+                                };
+
+                                if is_uber {
+                                    use UberStoreOptions::*;
+                                    let read = match config.get_uber_store().unwrap() {
+                                        Disabled => unreachable!(),
+                                        Single => ".borrow()",
+                                        StdRwLock => ".read().unwrap()",
+                                        StdMutex => ".lock().unwrap()",
+                                        ParkingLotRwLock => ".read()",
+                                        ParkingLotMutex => ".lock()",
+                                    };
                                     emit!(
                                         buffer,
-                                        "{}: {}Enum::{}({}.id()),",
+                                        "{}: {}Enum::{}({}{read}.{id}),",
                                         field.name,
-                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        foo_super_obj.unwrap().as_type(
+                                            &Ownership::new_borrowed(),
+                                            woog,
+                                            domain
+                                        ),
+                                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         rval.name
                                     )
                                 } else {
                                     emit!(
                                         buffer,
-                                        "{}: {}Enum::{}({}.id),",
+                                        "{}: {}Enum::{}({}.{id}),",
                                         field.name,
                                         foo_super_obj.unwrap().as_type(
                                             &Ownership::new_borrowed(),
@@ -645,14 +762,34 @@ pub(crate) fn render_new_instance(
                                 }
                             }
                             _ => {
-                                emit!(
-                                    buffer,
-                                    "{}: {}Enum::{}({}.id),",
-                                    field.name,
-                                    super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    rval.name
-                                )
+                                if is_uber {
+                                    use UberStoreOptions::*;
+                                    let read = match config.get_uber_store().unwrap() {
+                                        Disabled => unreachable!(),
+                                        Single => ".borrow()",
+                                        StdRwLock => ".read().unwrap()",
+                                        StdMutex => ".lock().unwrap()",
+                                        ParkingLotRwLock => ".read()",
+                                        ParkingLotMutex => ".lock()",
+                                    };
+                                    emit!(
+                                        buffer,
+                                        "{}: {}Enum::{}({}{read}.id),",
+                                        field.name,
+                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        rval.name
+                                    )
+                                } else {
+                                    emit!(
+                                        buffer,
+                                        "{}: {}Enum::{}({}.id),",
+                                        field.name,
+                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                        rval.name
+                                    )
+                                }
                             }
                         }
                     } else {
@@ -669,10 +806,25 @@ pub(crate) fn render_new_instance(
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                    if local_object_is_enum(obj, config, domain) {
-                        emit!(buffer, "{}: {}.id(),", field.name, rval.name)
+                    let id = if local_object_is_enum(obj, config, domain) {
+                        "id()"
                     } else {
-                        emit!(buffer, "{}: {}.id,", field.name, rval.name)
+                        "id"
+                    };
+
+                    if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        emit!(buffer, "{}: {}{read}.{id},", field.name, rval.name)
+                    } else {
+                        emit!(buffer, "{}: {}.{id},", field.name, rval.name)
                     }
                 }
                 _ => ensure!(
@@ -692,10 +844,25 @@ pub(crate) fn render_new_instance(
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
 
-                        if local_object_is_enum(obj, config, domain) {
+                        let id = if local_object_is_enum(obj, config, domain) {
+                            "id()"
+                        } else {
+                            "id"
+                        };
+
+                        if is_uber {
+                            use UberStoreOptions::*;
+                            let read = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow()",
+                                StdRwLock => ".read().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".read()",
+                                ParkingLotMutex => ".lock()",
+                            };
                             emit!(
                                 buffer,
-                                "{}: {}.map(|{}| {}.id()),",
+                                "{}: {}.map(|{}| {}{read}.{id}),",
                                 field.name,
                                 rval.name,
                                 obj.as_ident(),
@@ -704,7 +871,7 @@ pub(crate) fn render_new_instance(
                         } else {
                             emit!(
                                 buffer,
-                                "{}: {}.map(|{}| {}.id),",
+                                "{}: {}.map(|{}| {}.{id}),",
                                 field.name,
                                 rval.name,
                                 obj.as_ident(),
@@ -751,11 +918,15 @@ pub(crate) fn render_new_instance(
 
     emit!(buffer, "id");
 
-    if lval.is_some() {
-        emit!(buffer, "}};");
+    if is_uber {
+        emit!(buffer, "}}))");
     } else {
-        emit!(buffer, "}}")
-    };
+        write!(buffer, "}}").context(FormatSnafu)?;
+    }
+
+    if lval.is_some() {
+        emit!(buffer, ";");
+    }
 
     Ok(())
 }
@@ -810,6 +981,8 @@ pub(crate) fn render_new_instance_new(
         }
     );
 
+    let is_uber = config.is_uber_store();
+
     let mut first = structure
         .r27_structure_field(woog)
         .iter()
@@ -829,11 +1002,31 @@ pub(crate) fn render_new_instance_new(
 
     write!(buffer, "let {} = ", var.r8_variable(woog)[0].name).context(FormatSnafu)?;
 
-    emit!(
-        buffer,
-        "{} {{",
-        object.as_type(&Ownership::new_borrowed(), woog, domain)
-    );
+    if is_uber {
+        use UberStoreOptions::*;
+        let store_ctor = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc::new(RefCell::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc::new(RwLock::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc::new(Mutex::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+        emit!(buffer, "{store_ctor}");
+    } else {
+        emit!(
+            buffer,
+            "{} {{",
+            object.as_type(&Ownership::new_borrowed(), woog, domain)
+        );
+    }
 
     // Now we need to extract the values for the fields from the symbol table.
     // Except that it's not so simple since it's not a map. So really, it needs
@@ -857,10 +1050,19 @@ pub(crate) fn render_new_instance_new(
         let f = field.r27_field(woog)[0];
         let ty = f.r29_grace_type(woog)[0];
         let rval_string = typecheck_and_coerce(ty, rval, config, imports, woog, domain)?;
-        emit!(buffer, "{}: {},", f.as_ident(), rval_string);
+        // Stupid clippy...
+        if f.as_ident() == rval_string {
+            emit!(buffer, "{rval_string},");
+        } else {
+            emit!(buffer, "{}: {rval_string},", f.as_ident());
+        }
     }
 
-    emit!(buffer, "}};");
+    if is_uber {
+        emit!(buffer, "}}));");
+    } else {
+        emit!(buffer, "}};");
+    }
 
     Ok(())
 }
@@ -879,9 +1081,9 @@ fn typecheck_and_coerce(
     domain: &Domain,
 ) -> Result<String> {
     let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
+    let is_uber = config.is_uber_store();
 
     Ok(match &lhs_ty {
-        // GraceType::Reference(id) => {}
         GraceType::WoogOption(_) => {
             // ✨ Until this comment changes, i.e., until this is used by more than
             // rendering a new Self item, the type of the lhs option is uuid.
@@ -894,16 +1096,33 @@ fn typecheck_and_coerce(
                             let reference = woog.exhume_reference(&id).unwrap();
                             let object = reference.r13_object(domain.sarzak())[0];
 
-                            if local_object_is_enum(object, config, domain) {
+                            let imported = config.is_imported(&object.id);
+
+                            let id = if object_is_enum(object, config, imports, domain)? {
+                                "id()"
+                            } else {
+                                "id"
+                            };
+
+                            if is_uber {
+                                use UberStoreOptions::*;
+                                let read = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow()",
+                                    StdRwLock => ".read().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".read()",
+                                    ParkingLotMutex => ".lock()",
+                                };
                                 format!(
-                                    "{}.map(|{}| {}.id())",
+                                    "{}.map(|{}| {}{read}.{id})",
                                     rhs.as_ident(),
                                     object.as_ident(),
                                     object.as_ident()
                                 )
                             } else {
                                 format!(
-                                    "{}.map(|{}| {}.id)",
+                                    "{}.map(|{}| {}.{id})",
                                     rhs.as_ident(),
                                     object.as_ident(),
                                     object.as_ident()
@@ -942,7 +1161,7 @@ fn typecheck_and_coerce(
         GraceType::Ty(id) => {
             let ty = domain.sarzak().exhume_ty(&id).unwrap();
             match ty {
-                Ty::Uuid(_) => {
+                Ty::SUuid(_) => {
                     // If the lhs is a uuid, and the rhs is a reference, we need to
                     // pull it's id.
                     match &rhs_ty {
@@ -952,10 +1171,27 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            if object_is_enum(obj, config, imports, domain)? {
-                                format!("{}.id()", rhs.as_ident())
+                            let is_imported = config.is_imported(&obj.id);
+
+                            let id = if object_is_enum(obj, config, imports, domain)? {
+                                "id()"
                             } else {
-                                format!("{}.id", rhs.as_ident())
+                                "id"
+                            };
+
+                            if is_uber {
+                                use UberStoreOptions::*;
+                                let read = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow()",
+                                    StdRwLock => ".read().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".read()",
+                                    ParkingLotMutex => ".lock()",
+                                };
+                                format!("{}{read}.{id}", rhs.as_ident())
+                            } else {
+                                format!("{}.{id}", rhs.as_ident())
                             }
                         }
                         _ => {
@@ -996,7 +1232,21 @@ fn typecheck_and_coerce(
                     )
                 }
             );
-            rhs.as_ident()
+
+            if is_uber {
+                use UberStoreOptions::*;
+                let read = match config.get_uber_store().unwrap() {
+                    Disabled => unreachable!(),
+                    Single => ".borrow()",
+                    StdRwLock => ".read().unwrap()",
+                    StdMutex => ".lock().unwrap()",
+                    ParkingLotRwLock => ".read()",
+                    ParkingLotMutex => ".lock()",
+                };
+                format!("{}{read}.to_owned()", rhs.as_ident())
+            } else {
+                rhs.as_ident()
+            }
         }
     })
 }
@@ -1032,7 +1282,7 @@ pub(crate) fn render_methods(
 
                 // This renders the method signature.
                 // It's probably ok as it is.
-                render_method_definition_new(buffer, &method, woog, domain)?;
+                render_method_definition_new(buffer, &method, config, woog, domain)?;
 
                 // Find the properly scoped variable named `id`.
                 let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
@@ -1207,7 +1457,7 @@ pub(crate) fn local_object_is_hybrid(
     domain: &Domain,
 ) -> bool {
     let attrs = object.r1_attribute(domain.sarzak());
-    log::debug!("attrs: {:?}", attrs);
+    log::debug!("{} is_hybrid attrs: {:?}", object.name, attrs);
 
     local_object_is_supertype(object, config, domain)
         && (attrs.len() > 1 || local_object_is_referrer(object, config, domain))
@@ -1226,7 +1476,7 @@ pub(crate) fn local_object_is_supertype(
     domain: &Domain,
 ) -> bool {
     let is_super = object.r14_supertype(domain.sarzak());
-    log::debug!("is_super: {:?}", is_super);
+    log::debug!("{} is_super: {:?}", object.name, is_super);
 
     is_super.len() > 0
 }
@@ -1238,7 +1488,7 @@ pub(crate) fn local_object_is_subtype(
     domain: &Domain,
 ) -> bool {
     let is_sub = object.r15_subtype(domain.sarzak());
-    log::debug!("is_sub: {:?}", is_sub);
+    log::debug!("{} is_sub: {:?}", object.name, is_sub);
 
     is_sub.len() > 0
 }
@@ -1254,7 +1504,7 @@ pub(crate) fn local_object_is_singleton(
     }
 
     let attrs = object.r1_attribute(domain.sarzak());
-    log::debug!("attrs: {:?}", attrs);
+    log::debug!("{} is_singleton attrs: {:?}", object.name, attrs);
 
     attrs.len() < 2
         && !local_object_is_referrer(object, config, domain)
@@ -1265,8 +1515,12 @@ pub(crate) fn local_object_is_singleton(
 fn local_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Domain) -> bool {
     let referrers = object.r17_referrer(domain.sarzak());
     let assoc_referrers = object.r26_associative_referrer(domain.sarzak());
-    log::debug!("referrers: {:?}", referrers);
-    log::debug!("assoc_referrers: {:?}", assoc_referrers);
+    log::debug!("{} is_referrer referrers: {:?}", object.name, referrers);
+    log::debug!(
+        "{} is_referrer assoc_referrers: {:?}",
+        object.name,
+        assoc_referrers
+    );
 
     referrers.len() > 0 || assoc_referrers.len() > 0
 }
@@ -1284,12 +1538,17 @@ fn local_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Dom
 ///
 /// This is still pretty cool compared to before. The long strings really got
 /// to me.
-pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buffer) -> Result<()> {
+pub(crate) fn emit_object_comments(
+    input: &str,
+    prefix: &str,
+    suffix: &str,
+    context: &mut Buffer,
+) -> Result<()> {
     const MAX_LEN: usize = 90;
 
     if input.len() > 0 {
         for line in input.split('\n') {
-            write!(context, "{} ", comment).context(FormatSnafu)?;
+            write!(context, "{}", prefix).context(FormatSnafu)?;
             let mut length = 4;
 
             // Split the string by words, and append a word until we run out
@@ -1305,21 +1564,26 @@ pub(crate) fn emit_object_comments(input: &str, comment: &str, context: &mut Buf
                         // be there, but I'll be cautious anyway. Oh, but I can't
                         // because I don't own the buffer. Shit.
 
+                        // No clue what I was going on about up there.
+                        write!(context, "{}", suffix).context(FormatSnafu)?;
+
                         // Add a newline
                         emit!(context, "");
                         length = 0;
 
-                        write!(context, "{}{}", comment, word).context(FormatSnafu)?;
+                        write!(context, "{}{}", prefix, word).context(FormatSnafu)?;
                         length += word.len() + 3;
                     }
                 }
             }
 
+            write!(context, "{}", suffix).context(FormatSnafu)?;
+
             // Add a trailing newline
             emit!(context, "");
         }
 
-        emit!(context, "{}", comment);
+        emit!(context, "{}{}", prefix, suffix);
     }
 
     Ok(())
@@ -1448,16 +1712,20 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
 }
 
 pub(crate) trait AttributeBuilder<A> {
-    fn new(name: String, ty: Ty) -> A;
+    fn new(name: String, ty: Arc<Lock<ValueType>>) -> A;
 }
 
 /// Walk the object hierarchy to collect attributes for an object
 ///
 /// The attributes are generated in a stable order.
+///
+/// This is only applicable to generating dwarf code, and I think it should be
+/// moved.
 pub(crate) fn collect_attributes<A>(obj: &Object, domain: &Domain) -> Vec<A>
 where
     A: AttributeBuilder<A>,
 {
+    let lu_dog = &LU_DOG;
     let mut result: Vec<A> = Vec::new();
 
     // Collect the local attributes
@@ -1465,67 +1733,73 @@ where
     attrs.sort_by(|a, b| a.name.cmp(&b.name));
     for attr in attrs {
         let ty = attr.r2_ty(domain.sarzak())[0];
+        let mut lu_dog = lu_dog.write().unwrap();
+        // let ty = ValueType::new_ty(ty, &mut lu_dog);
+        let ty = ValueType::new_ty(&Arc::new(Lock::new(ty.to_owned())), &mut lu_dog);
 
         let attr = A::new(attr.as_ident(), ty.clone());
         result.push(attr);
     }
 
     // These are more attributes on our object, and they should be sorted.
-    // let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
+    let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
     // And the referential attributes
-    // for referrer in &referrers {
-    //     let binary = referrer.r6_binary(domain.sarzak())[0];
-    //     let referent = binary.r5_referent(domain.sarzak())[0];
-    //     let r_obj = referent.r16_object(domain.sarzak())[0];
-    //     let cond = referrer.r11_conditionality(domain.sarzak())[0];
+    for referrer in &referrers {
+        let binary = referrer.r6_binary(domain.sarzak())[0];
+        let referent = binary.r5_referent(domain.sarzak())[0];
+        let r_obj = referent.r16_object(domain.sarzak())[0];
+        let cond = referrer.r11_conditionality(domain.sarzak())[0];
 
-    //     let ty = Ty::new_object(&r_obj, domain.sarzak_mut());
+        let attr_name = referrer.referential_attribute.as_ident();
 
-    //     // This determines how a reference is stored in the struct. In this
-    //     // case a UUID.
-    //     match cond {
-    //         // If it's conditional build a parameter that's an optional reference
-    //         // to the referent.
-    //         Conditionality::Conditional(_) => {
-    //             let option = WoogOption::new(&ty, woog);
-    //             let ty = GraceType::new_woog_option(Uuid::new_v4(), &option, woog);
+        let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
+        let mut lu_dog = lu_dog.write().unwrap();
+        // let ty = ValueType::new_ty(ty, &mut lu_dog);
+        let ty = ValueType::new_ty(&Arc::new(Lock::new(ty.to_owned())), &mut lu_dog);
+        let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
+        let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
-    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+        // This determines how a reference is stored in the struct. In this
+        // case a UUID.
+        match cond {
+            // If it's conditional build a parameter that's an optional reference
+            // to the referent.
+            Conditionality::Conditional(_) => {
+                let option = WoogOption::new_z_none(&ty, &mut lu_dog);
+                let ty = ValueType::new_woog_option(&option, &mut lu_dog);
 
-    //             last_field = link_field!(last_field, field, woog);
+                let attr = A::new(attr_name, ty.clone());
+                result.push(attr);
+            }
+            // An unconditional reference translates into a reference to the referent.
+            Conditionality::Unconditional(_) => {
+                let attr = A::new(attr_name, ty.clone());
+                result.push(attr);
+            }
+        }
+    }
 
-    //             let _field = StructureField::new(&field, &structure, woog);
-    //         }
-    //         // An unconditional reference translates into a reference to the referent.
-    //         Conditionality::Unconditional(_) => {
-    //             let field = Field::new(referrer.referential_attribute.as_ident(), None, &ty, woog);
+    // And the associative attributes
+    for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+        let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
 
-    //             last_field = link_field!(last_field, field, woog);
+        for referent in referents {
+            let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+            let obj = referent.r25_object(domain.sarzak())[0];
 
-    //             let _field = StructureField::new(&field, &structure, woog);
-    //         }
-    //     }
-    // }
+            let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
+            let mut lu_dog = lu_dog.write().unwrap();
+            // let ty = ValueType::new_ty(ty, &mut lu_dog);
+            let ty = ValueType::new_ty(&Arc::new(Lock::new(ty.to_owned())), &mut lu_dog);
+            let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
+            let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
-    // // And the associative attributes
-    // for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
-    //     let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
+            let attr_name = an_ass.referential_attribute.as_ident();
 
-    //     for referent in referents {
-    //         let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
-
-    //         let field = Field::new(an_ass.referential_attribute.as_ident(), None, &uuid, woog);
-
-    //         last_field = link_field!(last_field, field, woog);
-
-    //         let _field = StructureField::new(&field, &structure, woog);
-    //     }
-    // }
-
-    // // Add the zeroth field
-    // debug_assert!(field_zero.is_some());
-    // structure.field_zero = field_zero;
-    // woog.inter_structure(structure);
+            let attr = A::new(attr_name, ty.clone());
+            result.push(attr);
+        }
+    }
 
     result
 }

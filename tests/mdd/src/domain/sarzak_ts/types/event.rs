@@ -11,7 +11,7 @@ use crate::domain::sarzak_ts::store::ObjectStore as SarzakTsStore;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-documentation"}}}
 /// An event is sent to an object, and processed by the current state. Assuming it accepts the
-/// event. Otherwise it’s dropped on the floor.
+///  event. Otherwise it’s dropped on the floor.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-definition"}}}
@@ -31,24 +31,14 @@ impl Event {
     pub fn new(name: String, obj_id: &Object, store: &mut SarzakTsStore) -> Event {
         let id = Uuid::new_v4();
         let new = Event {
-            id: id,
-            name: name,
+            id,
+            name,
             obj_id: obj_id.id,
         };
         store.inter_event(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
-    /// Inter a new 'Event' in the store, and return it's `id`.
-    pub fn new_(name: String, obj_id: &Object) -> Event {
-        let id = Uuid::new_v4();
-        let new = Event {
-            id: id,
-            name: name,
-            obj_id: obj_id.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -59,6 +49,7 @@ impl Event {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-backward-assoc_many-to-acknowledged_event"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-backward-assoc-many-to-acknowledged_event"}}}
     /// Navigate to [`AcknowledgedEvent`] across R20(1-M)
     pub fn r20_acknowledged_event<'a>(
         &'a self,

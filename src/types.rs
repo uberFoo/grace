@@ -9,6 +9,7 @@ pub(crate) mod domain;
 pub(crate) mod dwarf;
 pub(crate) mod external;
 pub(crate) mod null;
+pub(crate) mod svm;
 
 /// Type Imports Trait
 ///
@@ -41,5 +42,7 @@ pub(crate) trait MethodImplementation: CodeWriter {}
 pub(crate) trait ModuleDefinition: CodeWriter {}
 
 pub(crate) trait DwarfDefinition: CodeWriter {}
+
+pub(crate) trait ChaChaDefinition: CodeWriter {}
 
 pub(crate) trait ObjectStoreDefinition: CodeWriter {}

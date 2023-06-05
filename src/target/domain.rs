@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use ansi_term::Colour;
 use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use heck::ToUpperCamelCase;
 use rayon::prelude::*;
@@ -19,11 +20,11 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, is_object_stale, local_object_is_hybrid,
-        local_object_is_singleton, local_object_is_supertype, render::RenderIdent,
+        generator::GeneratorBuilder, local_object_is_hybrid, local_object_is_singleton,
+        local_object_is_supertype, render::RenderIdent,
     },
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
-    targets::Target,
+    target::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
         domain::{
@@ -37,9 +38,21 @@ use crate::{
         external::ExternalGenerator,
         null::NullGenerator,
     },
-    woog::{init_woog, persist_woog, populate_woog},
-    DWARF_EXT, RS_EXT, TYPES,
+    woog::{init_woog, populate_woog},
+    RS_EXT, TYPES,
 };
+
+macro_rules! display_output {
+    ($obj:expr, $types:expr, $color:expr, $out:literal) => {
+        println!(
+            "Generating code for: {:<42} ({}) \t output: {}",
+            // This is goofy, and necessary.
+            format!("{}", Colour::Blue.paint(&$obj.name)),
+            $color.italic().paint($out),
+            Colour::White.dimmed().paint($types.display().to_string()),
+        );
+    };
+}
 
 const FROM: &str = "from";
 
@@ -187,7 +200,7 @@ impl<'a> DomainTarget<'a> {
         }))
     }
 
-    fn generate_types(&mut self) -> Result<(), ModelCompilerError> {
+    fn generate_types(&mut self) -> Result<usize, ModelCompilerError> {
         // Build a path to src/types
         let mut types = PathBuf::from(self.src_path);
         types.push(self.module);
@@ -224,11 +237,11 @@ impl<'a> DomainTarget<'a> {
                 types.set_file_name(obj.as_ident());
                 types.set_extension(RS_EXT);
 
-                println!(
-                    "Generating code for: {} ... output path: {}",
-                    obj.name,
-                    types.display(),
-                );
+                // println!(
+                //     "Generating code for: {} ... output path: {}",
+                //     Colour::Blue.paint(&obj.name),
+                //     Colour::White.dimmed().paint(types.display().to_string()),
+                // );
 
                 // Test if the object is a supertype. For those we generate as enums.
                 let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
@@ -237,6 +250,8 @@ impl<'a> DomainTarget<'a> {
                     // Well, I don't have a use case for that at the moment, so they
                     // will be done in due time.
                     if local_object_is_hybrid(obj, &self.config, &self.domain) {
+                        display_output!(&obj, &types, Colour::Cyan, "hybrid");
+
                         DefaultStructBuilder::new()
                             .definition(Hybrid::new())
                             .implementation(
@@ -248,6 +263,8 @@ impl<'a> DomainTarget<'a> {
                             )
                             .build()?
                     } else {
+                        display_output!(&obj, &types, Colour::Green, "enumeration");
+
                         DefaultStructBuilder::new()
                             .definition(Enum::new())
                             .implementation(
@@ -278,16 +295,20 @@ impl<'a> DomainTarget<'a> {
                     NullGenerator::new()
                 } else if self.config.is_external(&obj.id) {
                     // If the object is external, we create a newtype to wrap it.
+                    display_output!(&obj, &types, Colour::Red, "external");
 
                     ExternalGenerator::new()
                 } else if local_object_is_singleton(obj, &self.config, &self.domain) {
                     // Look for naked objects, and generate a singleton for them.
+                    display_output!(&obj, &types, Colour::Purple, "constant");
 
                     log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
                         .definition(DomainConst::new())
                         .build()?
                 } else {
+                    display_output!(&obj, &types, Colour::Yellow, "struct");
+
                     DefaultStructBuilder::new()
                         .imports(Imports::new())
                         // Definition type
@@ -315,7 +336,7 @@ impl<'a> DomainTarget<'a> {
                     // Domain/Store
                     .domain(&self.domain)
                     // Compiler Domain
-                    .compiler_domain(&mut woog)
+                    .woog(&mut woog)
                     // Imported domains
                     .imports(&self.imports)
                     // Module name
@@ -334,7 +355,9 @@ impl<'a> DomainTarget<'a> {
             })
             .collect::<Result<Vec<_>, ModelCompilerError>>()?;
 
-        Ok(())
+        println!("Generated code for {} objects.", objects.len());
+
+        Ok(objects.len())
     }
 
     fn generate_store(&mut self) -> Result<(), ModelCompilerError> {
@@ -348,7 +371,7 @@ impl<'a> DomainTarget<'a> {
             .path(&store)?
             .domain(&self.domain)
             .module(self.module)
-            .compiler_domain(&mut self.woog)
+            .woog(&mut self.woog)
             .generator(
                 // 🚧 I should have a store that's persistent, and one that isn't.
                 DomainStoreBuilder::new()
@@ -373,7 +396,7 @@ impl<'a> DomainTarget<'a> {
             .path(&types)?
             .domain(&self.domain)
             .module(self.module)
-            .compiler_domain(&mut self.woog)
+            .woog(&mut self.woog)
             .generator(
                 DefaultModuleBuilder::new()
                     .definition(DefaultModule::new())
@@ -398,33 +421,7 @@ impl<'a> DomainTarget<'a> {
             .domain(&self.domain)
             .module(self.module)
             .imports(&self.imports)
-            .compiler_domain(&mut self.woog)
-            .generator(
-                DomainFromBuilder::new()
-                    .domain(domain.clone())
-                    .definition(DomainFromImpl::new())
-                    .build()?,
-            )
-            .generate()?;
-
-        Ok(())
-    }
-
-    fn generate_dwarf(&mut self, domain: &FromDomain) -> Result<(), ModelCompilerError> {
-        let mut from = PathBuf::from(self.src_path);
-        from.push(self.module);
-        from.push("discard");
-        from.set_file_name(self.domain.name().as_ident());
-        from.set_extension(DWARF_EXT);
-
-        GeneratorBuilder::new()
-            .package(&self.package)
-            .config(&self.config)
-            .path(&from)?
-            .domain(&self.domain)
-            .module(self.module)
-            .imports(&self.imports)
-            .compiler_domain(&mut self.woog)
+            .woog(&mut self.woog)
             .generator(
                 DomainFromBuilder::new()
                     .domain(domain.clone())
@@ -438,9 +435,9 @@ impl<'a> DomainTarget<'a> {
 }
 
 impl<'a> Target for DomainTarget<'a> {
-    fn compile(&mut self) -> Result<(), ModelCompilerError> {
+    fn compile(&mut self) -> Result<usize, ModelCompilerError> {
         // ✨Generate Types✨
-        self.generate_types()?;
+        let count = self.generate_types()?;
 
         // Generate the store.rs file
         self.generate_store()?;
@@ -457,7 +454,7 @@ impl<'a> Target for DomainTarget<'a> {
 
         // persist_woog(&self.woog, self.src_path, &self.domain)?;
 
-        Ok(())
+        Ok(count)
     }
 
     fn domain(&self) -> &str {

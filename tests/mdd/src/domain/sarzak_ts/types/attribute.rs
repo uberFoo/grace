@@ -34,8 +34,8 @@ impl Attribute {
     pub fn new(name: String, obj_id: &Object, ty: &Ty, store: &mut SarzakTsStore) -> Attribute {
         let id = Uuid::new_v4();
         let new = Attribute {
-            id: id,
-            name: name,
+            id,
+            name,
             obj_id: obj_id.id,
             ty: ty.id(),
         };
@@ -45,17 +45,6 @@ impl Attribute {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-new_"}}}
-    /// Inter a new 'Attribute' in the store, and return it's `id`.
-    pub fn new_(name: String, obj_id: &Object, ty: &Ty) -> Attribute {
-        let id = Uuid::new_v4();
-        let new = Attribute {
-            id: id,
-            name: name,
-            obj_id: obj_id.id,
-            ty: ty.id(),
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-cond-to-obj_id"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"attribute-struct-impl-nav-forward-to-obj_id"}}}

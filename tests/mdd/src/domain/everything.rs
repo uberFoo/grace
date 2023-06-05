@@ -34,7 +34,7 @@ mod tests {
         // Test struct creation ✅
         let e = Everything {
             id: Uuid::new_v5(&UUID_NS, b"everything"),
-            string: "everything".to_owned(),
+            s_string: "everything".to_owned(),
             float: 42.0,
             bool: true,
             int: 42,
@@ -52,7 +52,7 @@ mod tests {
         let r = RandoObject::new("rando".to_owned(), &mut store);
         let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r, &mut store);
 
-        assert_eq!(e.string, "string".to_owned());
+        assert_eq!(e.s_string, "string".to_owned());
         assert_eq!(e.float, 42.0);
         assert_eq!(e.bool, true);
         assert_eq!(e.int, 42);

@@ -21,7 +21,6 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
-use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -33,9 +32,7 @@ pub struct ObjectStore {
     b: HashMap<Uuid, (B, SystemTime)>,
     c: HashMap<Uuid, (C, SystemTime)>,
     parameter: HashMap<Uuid, (Parameter, SystemTime)>,
-    parameter_by_name: HashMap<String, (Parameter, SystemTime)>,
     referent: HashMap<Uuid, (Referent, SystemTime)>,
-    referent_by_name: HashMap<String, (Referent, SystemTime)>,
 }
 
 impl ObjectStore {
@@ -45,12 +42,13 @@ impl ObjectStore {
             b: HashMap::default(),
             c: HashMap::default(),
             parameter: HashMap::default(),
-            parameter_by_name: HashMap::default(),
             referent: HashMap::default(),
-            referent_by_name: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
 
         store
     }
@@ -149,10 +147,8 @@ impl ObjectStore {
     /// Inter [`Parameter`] into the store.
     ///
     pub fn inter_parameter(&mut self, parameter: Parameter) {
-        let value = (parameter, SystemTime::now());
-        self.parameter.insert(value.0.id, value.clone());
-        self.parameter_by_name
-            .insert(value.0.name.to_upper_camel_case(), value);
+        self.parameter
+            .insert(parameter.id, (parameter, SystemTime::now()));
     }
 
     /// Exhume [`Parameter`] from the store.
@@ -165,14 +161,6 @@ impl ObjectStore {
     ///
     pub fn exhume_parameter_mut(&mut self, id: &Uuid) -> Option<&mut Parameter> {
         self.parameter.get_mut(id).map(|parameter| &mut parameter.0)
-    }
-
-    /// Exhume [`Parameter`] from the store by name.
-    ///
-    pub fn exhume_parameter_by_name(&self, name: &str) -> Option<&Parameter> {
-        self.parameter_by_name
-            .get(name)
-            .map(|parameter| &parameter.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Parameter>`.
@@ -193,10 +181,8 @@ impl ObjectStore {
     /// Inter [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
-        let value = (referent, SystemTime::now());
-        self.referent.insert(value.0.id, value.clone());
-        self.referent_by_name
-            .insert(value.0.name.to_upper_camel_case(), value);
+        self.referent
+            .insert(referent.id, (referent, SystemTime::now()));
     }
 
     /// Exhume [`Referent`] from the store.
@@ -209,12 +195,6 @@ impl ObjectStore {
     ///
     pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
         self.referent.get_mut(id).map(|referent| &mut referent.0)
-    }
-
-    /// Exhume [`Referent`] from the store by name.
-    ///
-    pub fn exhume_referent_by_name(&self, name: &str) -> Option<&Referent> {
-        self.referent_by_name.get(name).map(|referent| &referent.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
@@ -239,10 +219,10 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
-        fs::create_dir_all(&path)?;
+        fs::create_dir_all(path)?;
 
         let bin_path = path.clone().join("one_to_one.bin");
         let mut bin_file = fs::File::create(bin_path)?;
@@ -277,7 +257,7 @@ impl ObjectStore {
                 let file = file?;
                 let path = file.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                let id = file_name.split(".").next().unwrap();
+                let id = file_name.split('.').next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.a.contains_key(&id) {
                         fs::remove_file(path)?;
@@ -311,7 +291,7 @@ impl ObjectStore {
                 let file = file?;
                 let path = file.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                let id = file_name.split(".").next().unwrap();
+                let id = file_name.split('.').next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.b.contains_key(&id) {
                         fs::remove_file(path)?;
@@ -345,7 +325,7 @@ impl ObjectStore {
                 let file = file?;
                 let path = file.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                let id = file_name.split(".").next().unwrap();
+                let id = file_name.split('.').next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.c.contains_key(&id) {
                         fs::remove_file(path)?;
@@ -379,7 +359,7 @@ impl ObjectStore {
                 let file = file?;
                 let path = file.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                let id = file_name.split(".").next().unwrap();
+                let id = file_name.split('.').next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.parameter.contains_key(&id) {
                         fs::remove_file(path)?;
@@ -413,7 +393,7 @@ impl ObjectStore {
                 let file = file?;
                 let path = file.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                let id = file_name.split(".").next().unwrap();
+                let id = file_name.split('.').next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.referent.contains_key(&id) {
                         fs::remove_file(path)?;
@@ -429,7 +409,7 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
         let path = path.join("one_to_one.json");
@@ -439,8 +419,8 @@ impl ObjectStore {
         // Load A.
         {
             let path = path.join("a");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
@@ -453,8 +433,8 @@ impl ObjectStore {
         // Load B.
         {
             let path = path.join("b");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
@@ -467,8 +447,8 @@ impl ObjectStore {
         // Load C.
         {
             let path = path.join("c");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
@@ -481,16 +461,13 @@ impl ObjectStore {
         // Load Parameter.
         {
             let path = path.join("parameter");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let parameter: (Parameter, SystemTime) = serde_json::from_reader(reader)?;
-                store
-                    .parameter_by_name
-                    .insert(parameter.0.name.to_upper_camel_case(), parameter.clone());
                 store.parameter.insert(parameter.0.id, parameter);
             }
         }
@@ -498,16 +475,13 @@ impl ObjectStore {
         // Load Referent.
         {
             let path = path.join("referent");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referent: (Referent, SystemTime) = serde_json::from_reader(reader)?;
-                store
-                    .referent_by_name
-                    .insert(referent.0.name.to_upper_camel_case(), referent.clone());
                 store.referent.insert(referent.0.id, referent);
             }
         }

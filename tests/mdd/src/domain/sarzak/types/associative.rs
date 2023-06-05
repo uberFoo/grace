@@ -27,29 +27,19 @@ impl Associative {
     pub fn new(number: i64, from: &AssociativeReferrer, store: &mut SarzakStore) -> Associative {
         let id = Uuid::new_v4();
         let new = Associative {
-            id: id,
-            number: number,
+            id,
+            number,
             from: from.id,
         };
         store.inter_associative(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
-    /// Inter a new 'Associative' in the store, and return it's `id`.
-    pub fn new_(number: i64, from: &AssociativeReferrer) -> Associative {
-        let id = Uuid::new_v4();
-        let new = Associative {
-            id: id,
-            number: number,
-            from: from.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-other"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-forward-to-one"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -63,6 +53,7 @@ impl Associative {
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-backward-assoc_many-to-an_associative_referent"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-impl-nav-backward-assoc-many-to-an_associative_referent"}}}
     /// Navigate to [`AnAssociativeReferent`] across R22(1-M)
     pub fn r22_an_associative_referent<'a>(
         &'a self,

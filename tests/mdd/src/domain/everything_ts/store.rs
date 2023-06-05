@@ -18,7 +18,6 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
-use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -28,7 +27,6 @@ use crate::domain::everything_ts::types::{Everything, RandoObject};
 pub struct ObjectStore {
     everything: HashMap<Uuid, (Everything, SystemTime)>,
     rando_object: HashMap<Uuid, (RandoObject, SystemTime)>,
-    rando_object_by_name: HashMap<String, (RandoObject, SystemTime)>,
 }
 
 impl ObjectStore {
@@ -36,10 +34,12 @@ impl ObjectStore {
         let store = Self {
             everything: HashMap::default(),
             rando_object: HashMap::default(),
-            rando_object_by_name: HashMap::default(),
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
 
         store
     }
@@ -84,10 +84,8 @@ impl ObjectStore {
     /// Inter [`RandoObject`] into the store.
     ///
     pub fn inter_rando_object(&mut self, rando_object: RandoObject) {
-        let value = (rando_object, SystemTime::now());
-        self.rando_object.insert(value.0.id, value.clone());
-        self.rando_object_by_name
-            .insert(value.0.name.to_upper_camel_case(), value);
+        self.rando_object
+            .insert(rando_object.id, (rando_object, SystemTime::now()));
     }
 
     /// Exhume [`RandoObject`] from the store.
@@ -104,14 +102,6 @@ impl ObjectStore {
         self.rando_object
             .get_mut(id)
             .map(|rando_object| &mut rando_object.0)
-    }
-
-    /// Exhume [`RandoObject`] from the store by name.
-    ///
-    pub fn exhume_rando_object_by_name(&self, name: &str) -> Option<&RandoObject> {
-        self.rando_object_by_name
-            .get(name)
-            .map(|rando_object| &rando_object.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
@@ -138,10 +128,10 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
-        fs::create_dir_all(&path)?;
+        fs::create_dir_all(path)?;
 
         let bin_path = path.clone().join("everything.bin");
         let mut bin_file = fs::File::create(bin_path)?;
@@ -176,7 +166,7 @@ impl ObjectStore {
                 let file = file?;
                 let path = file.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                let id = file_name.split(".").next().unwrap();
+                let id = file_name.split('.').next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.everything.contains_key(&id) {
                         fs::remove_file(path)?;
@@ -210,7 +200,7 @@ impl ObjectStore {
                 let file = file?;
                 let path = file.path();
                 let file_name = path.file_name().unwrap().to_str().unwrap();
-                let id = file_name.split(".").next().unwrap();
+                let id = file_name.split('.').next().unwrap();
                 if let Ok(id) = Uuid::parse_str(id) {
                     if !self.rando_object.contains_key(&id) {
                         fs::remove_file(path)?;
@@ -226,7 +216,7 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
         let path = path.join("everything.json");
@@ -236,8 +226,8 @@ impl ObjectStore {
         // Load Everything.
         {
             let path = path.join("everything");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
@@ -250,17 +240,13 @@ impl ObjectStore {
         // Load Rando Object.
         {
             let path = path.join("rando_object");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let rando_object: (RandoObject, SystemTime) = serde_json::from_reader(reader)?;
-                store.rando_object_by_name.insert(
-                    rando_object.0.name.to_upper_camel_case(),
-                    rando_object.clone(),
-                );
                 store.rando_object.insert(rando_object.0.id, rando_object);
             }
         }

@@ -12,9 +12,9 @@ use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;
 /// A: Referrer with Conditional [`Referent`]
 ///
 /// This type is related to the [`Referent`] across a conditional relationship. This is 1-1c
-///, and given that I am the referrer, I have the referential attribute/I am formalizing the
-/// relationship. I think I prefer the latter language, but the former is very descriptive.
-///..
+/// , and given that I am the referrer, I have the referential attribute/I am formalizing the
+///  relationship. I think I prefer the latter language, but the former is very descriptive.
+/// ..
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-definition"}}}
@@ -34,24 +34,14 @@ impl A {
     pub fn new(number: i64, ptr: &Referent, store: &mut OneToOneStore) -> A {
         let id = Uuid::new_v4();
         let new = A {
-            id: id,
-            number: number,
+            id,
+            number,
             ptr: ptr.id,
         };
         store.inter_a(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new_"}}}
-    /// Inter a new 'A' in the store, and return it's `id`.
-    pub fn new_(number: i64, ptr: &Referent) -> A {
-        let id = Uuid::new_v4();
-        let new = A {
-            id: id,
-            number: number,
-            ptr: ptr.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

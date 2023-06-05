@@ -151,7 +151,7 @@ impl FileGenerator for DefaultStructGenerator {
             },
         )?;
 
-        Ok(GenerationAction::Write)
+        Ok(GenerationAction::FormatWrite)
     }
 }
 
@@ -249,7 +249,7 @@ impl CodeWriter for DefaultStruct {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
-            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(obj.description.as_str(), "/// ", "", buffer),
         )?;
 
         buffer.block(
@@ -422,7 +422,7 @@ impl CodeWriter for DefaultNewImpl {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         _module: &str,
         obj_id: Option<&Uuid>,
@@ -564,14 +564,16 @@ impl CodeWriter for DefaultNewImpl {
                 );
 
                 // Output the top of the function definition
-                render_method_definition(buffer, &method, woog, domain)?;
+                render_method_definition(buffer, &method, config, woog, domain)?;
 
                 // Output the code to create the `id`.
                 let id = LValue::new("id", GType::Uuid, None);
                 render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance
-                render_new_instance(buffer, obj, None, &fields, &rvals, config, woog, domain)?;
+                render_new_instance(
+                    buffer, obj, None, &fields, &rvals, config, imports, woog, domain,
+                )?;
 
                 emit!(buffer, "}}");
 
@@ -652,7 +654,7 @@ impl FileGenerator for DefaultModuleGenerator {
             },
         )?;
 
-        Ok(GenerationAction::Write)
+        Ok(GenerationAction::FormatWrite)
     }
 }
 
@@ -689,58 +691,65 @@ impl CodeWriter for DefaultModule {
         );
         let woog = woog.as_ref().unwrap();
 
-        buffer.block(
-            DirectiveKind::IgnoreOrig,
-            format!("{}-module-definition", module),
-            |buffer| {
-                let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
-                objects.sort_by(|a, b| a.name.cmp(&b.name));
-                let objects = objects
-                    .iter()
-                    .filter(|obj| {
-                        // Don't include imported objects
-                        !config.is_imported(&obj.id)
-                    })
-                    .collect::<Vec<_>>();
+        // buffer.block(
+        // DirectiveKind::IgnoreOrig,
+        // format!("{}-module-definition", module),
+        // |buffer| {
+        let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.name.cmp(&b.name));
+        let objects = objects
+            .iter()
+            .filter(|obj| {
+                // Don't include imported objects
+                !config.is_imported(&obj.id)
+            })
+            .collect::<Vec<_>>();
 
-                for obj in &objects {
-                    emit!(buffer, "pub mod {};", obj.as_ident());
+        for obj in &objects {
+            emit!(buffer, "pub mod {};", obj.as_ident());
+        }
+        emit!(buffer, "");
+        for obj in &objects {
+            if object_is_singleton(obj, config, imports, domain)?
+                && !object_is_supertype(obj, config, imports, domain)?
+            {
+                emit!(
+                    buffer,
+                    "pub use crate::{}::{}::{};",
+                    module,
+                    obj.as_ident(),
+                    obj.as_const()
+                );
+                emit!(
+                    buffer,
+                    "pub use crate::{}::{}::{};",
+                    module,
+                    obj.as_ident(),
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+            } else {
+                emit!(
+                    buffer,
+                    "pub use crate::{}::{}::{};",
+                    module,
+                    obj.as_ident(),
+                    obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                );
+                if object_is_hybrid(obj, config, imports, domain)? {
+                    emit!(
+                        buffer,
+                        "pub use crate::{}::{}::{}Enum;",
+                        module,
+                        obj.as_ident(),
+                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
                 }
-                emit!(buffer, "");
-                for obj in &objects {
-                    if object_is_singleton(obj, config, imports, domain)?
-                        && !object_is_supertype(obj, config, imports, domain)?
-                    {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_const()
-                        );
-                    } else {
-                        emit!(
-                            buffer,
-                            "pub use crate::{}::{}::{};",
-                            module,
-                            obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                        );
-                        if object_is_hybrid(obj, config, imports, domain)? {
-                            emit!(
-                                buffer,
-                                "pub use crate::{}::{}::{}Enum;",
-                                module,
-                                obj.as_ident(),
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            );
-                        }
-                    }
-                }
+            }
+        }
 
-                Ok(())
-            },
-        )?;
+        // Ok(())
+        // },
+        // )?;
 
         Ok(())
     }

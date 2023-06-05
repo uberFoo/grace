@@ -35,9 +35,7 @@ impl Beta {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-struct-impl-new_gamma"}}}
     /// Inter a new Beta in the store, and return it's `id`.
     pub fn new_gamma(name: String, subtype: &Gamma, store: &mut IsaStore) -> Beta {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id;
+        let id = Uuid::new_v4();
         let new = Beta {
             name: name,
             subtype: BetaEnum::Gamma(subtype.id),
@@ -50,47 +48,21 @@ impl Beta {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-get-id-impl"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-struct-impl-new_gamma_"}}}
-    /// Inter a new Beta in the store, and return it's `id`.
-    pub fn new_gamma_(name: String, subtype: &Gamma) -> Beta {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id;
-        let new = Beta {
-            name: name,
-            subtype: BetaEnum::Gamma(subtype.id),
-            id,
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-struct-impl-new_super_bar"}}}
     /// Inter a new Beta in the store, and return it's `id`.
     pub fn new_super_bar(name: String, subtype: &SuperBar, store: &mut IsaStore) -> Beta {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id();
+        let id = Uuid::new_v4();
         let new = Beta {
             name: name,
             subtype: BetaEnum::SuperBar(subtype.id()),
             id,
         };
         store.inter_beta(new.clone());
-        new
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
         // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-get-id-impl"}}}
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-struct-impl-new_super_bar_"}}}
-    /// Inter a new Beta in the store, and return it's `id`.
-    pub fn new_super_bar_(name: String, subtype: &SuperBar) -> Beta {
-        // 🚧 I'm not using id below with subtype because that's rendered where it doesn't know
-        // about this local. This should be fixed in the near future.
-        let id = subtype.id();
-        let new = Beta {
-            name: name,
-            subtype: BetaEnum::SuperBar(subtype.id()),
-            id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-struct-impl-new_super_bar_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

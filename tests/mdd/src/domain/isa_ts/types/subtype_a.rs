@@ -3,6 +3,7 @@
 use uuid::Uuid;
 
 use crate::domain::isa_ts::types::super_t::SuperT;
+use crate::domain::isa_ts::types::super_t::SuperTEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_ts::store::ObjectStore as IsaTsStore;
@@ -29,24 +30,27 @@ impl SubtypeA {
     /// Inter a new 'Subtype A' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut IsaTsStore) -> SubtypeA {
         let id = Uuid::new_v4();
-        let new = SubtypeA { id: id, name: name };
+        let new = SubtypeA { id, name };
         store.inter_subtype_a(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new_"}}}
-    /// Inter a new 'Subtype A' in the store, and return it's `id`.
-    pub fn new_(name: String) -> SubtypeA {
-        let id = Uuid::new_v4();
-        let new = SubtypeA { id: id, name: name };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-impl-nav-subtype-to-supertype-super_t"}}}
     // Navigate to [`SuperT`] across R2(isa)
     pub fn r2_super_t<'a>(&'a self, store: &'a IsaTsStore) -> Vec<&SuperT> {
-        vec![store.exhume_super_t(&self.id).unwrap()]
+        vec![store
+            .iter_super_t()
+            .find(|super_t| {
+                if let SuperTEnum::SubtypeA(id) = super_t.subtype {
+                    id == self.id
+                } else {
+                    false
+                }
+            })
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

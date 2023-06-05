@@ -24,7 +24,7 @@ use crate::{
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
-        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_enum,
+        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid,
         object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
@@ -32,7 +32,7 @@ use crate::{
         },
         render_method_definition, render_new_instance,
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{CodeWriter, MethodImplementation, TypeDefinition},
 };
@@ -113,6 +113,34 @@ impl CodeWriter for Hybrid {
             |buffer| {
                 let mut imported_domains = HashSet::default();
                 let mut uses = HashSet::default();
+
+                if config.is_uber_store() {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => {
+                            emit!(buffer, "use std::cell::RefCell;");
+                            emit!(buffer, "use std::rc::Rc;")
+                        }
+                        StdRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::RwLock;")
+                        }
+                        StdMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::Mutex;")
+                        }
+                        ParkingLotRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::RwLock;")
+                        }
+                        ParkingLotMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::Mutex;")
+                        }
+                    };
+                    emit!(buffer, "use tracy_client::span;");
+                }
 
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
@@ -204,6 +232,15 @@ impl CodeWriter for Hybrid {
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
 
+                    if object_is_hybrid(s_obj, config, imports, domain)? {
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{}Enum;",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    }
+
                     uses.insert(format!(
                         "use crate::{}::types::{}::{};",
                         module,
@@ -232,7 +269,7 @@ impl CodeWriter for Hybrid {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-hybrid-documentation", obj.as_ident()),
-            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(obj.description.as_str(), "/// ", "", buffer),
         )?;
 
         log::debug!("writing Struct Definition for {}", obj.name);
@@ -358,6 +395,8 @@ impl CodeWriter for HybridNewImpl {
         };
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+
+        let is_uber = config.is_uber_store();
 
         let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
@@ -519,7 +558,7 @@ impl CodeWriter for HybridNewImpl {
 
             // Fuck me. I'm starting to regret not merging feature/recurse. Although, it probably
             // would be more work than this. It's just that this is ugly.
-            let mut params_no_store = params_.clone();
+            let _params_no_store = params_.clone();
 
             // Add the store to the end of the  input parameters
             let store = find_store(module, woog, domain);
@@ -607,24 +646,34 @@ impl CodeWriter for HybridNewImpl {
                     // }
 
                     // Output the top of the function definition
-                    render_method_definition(buffer, &method, woog, domain)?;
+                    render_method_definition(buffer, &method, config, woog, domain)?;
 
                     // Take the ID from the subtype
                     // We shouldn't be doing this sort of thing here -- getting the testing
                     // stuff working will allow this to be done in a uniform manner.
-                    emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
-                    emit!(buffer,"// about this local. This should be fixed in the near future.");
-                    if object_is_enum(s_obj, config, imports, domain)? {
-                        emit!(buffer, "let id = subtype.id();");
-                    } else if object_is_singleton(s_obj, config, imports, domain)? {
-                        if !object_is_supertype(s_obj, config, imports, domain)? {
-                            emit!(buffer, "let id = {};", rvals.last().unwrap().name);
-                        } else {
-                            emit!(buffer, "let id = subtype;");
-                        }
-                    } else {
-                        emit!(buffer, "let id = subtype.id;");
-                    }
+                    // emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
+                    // emit!(buffer,"// about this local. This should be fixed in the near future.");
+                    // if object_is_enum(s_obj, config, imports, domain)? {
+                    //     if is_uber {
+                    //         emit!(buffer, "let id = {}.read().id();", SUBTYPE_ATTR);
+                    //     } else {
+                    //         emit!(buffer, "let id = {}.id();", SUBTYPE_ATTR);
+                    //     }
+                    // } else if object_is_singleton(s_obj, config, imports, domain)? {
+                    //     if !object_is_supertype(s_obj, config, imports, domain)? {
+                    //         emit!(buffer, "let id = {};", rvals.last().unwrap().name);
+                    //     } else {
+                    //         emit!(buffer, "let id = {};", SUBTYPE_ATTR);
+                    //     }
+                    // } else {
+                    //     if is_uber {
+                    //         emit!(buffer, "let id = {}.read().id;", SUBTYPE_ATTR);
+                    //     } else {
+                    //         emit!(buffer, "let id = {}.id;", SUBTYPE_ATTR);
+                    //     }
+                    // }
+
+                    emit!(buffer, "let id = Uuid::new_v4();");
 
                     // Output code to create the instance
                     let new = LValue::new("new", GType::Reference(obj.id), None);
@@ -635,6 +684,7 @@ impl CodeWriter for HybridNewImpl {
                         &fields_,
                         &rvals,
                         config,
+                        imports,
                         woog,
                         domain,
                     )?;
@@ -647,120 +697,120 @@ impl CodeWriter for HybridNewImpl {
                 },
             )?;
 
-            // Link the params. The result is the head of the list.
-            let param = if params_no_store.len() > 0 {
-                let mut iter = params_no_store.iter_mut().rev();
-                let mut last = iter.next().unwrap();
-                loop {
-                    match iter.next() {
-                        Some(param) => {
-                            param.next = Some(last);
-                            last = param;
-                        }
-                        None => break,
-                    }
-                }
-                log::trace!("param: {:?}", last);
-                Some(last.clone())
-            } else {
-                None
-            };
+            //     // Link the params. The result is the head of the list.
+            //     let param = if params_no_store.len() > 0 {
+            //         let mut iter = params_no_store.iter_mut().rev();
+            //         let mut last = iter.next().unwrap();
+            //         loop {
+            //             match iter.next() {
+            //                 Some(param) => {
+            //                     param.next = Some(last);
+            //                     last = param;
+            //                 }
+            //                 None => break,
+            //             }
+            //         }
+            //         log::trace!("param: {:?}", last);
+            //         Some(last.clone())
+            //     } else {
+            //         None
+            //     };
 
-            let method_name = format!("new_{}_", s_obj.as_ident());
+            //     let method_name = format!("new_{}_", s_obj.as_ident());
 
-            // Create an ObjectMethod
-            // The uniqueness of this instance depends on the inputs to it's
-            // new method. Param can be None, and two methods on the same
-            // object will have the same obj. So it comes down to a unique
-            // name for each object. So just "new" should suffice for name,
-            // because it's scoped by obj already.
-            let method = ObjectMethod::new(
-                param.as_ref(),
-                obj.id,
-                GType::Object(obj.id),
-                PUBLIC,
-                method_name.clone(),
-                "Create a new instance".to_owned(),
-            );
+            //     // Create an ObjectMethod
+            //     // The uniqueness of this instance depends on the inputs to it's
+            //     // new method. Param can be None, and two methods on the same
+            //     // object will have the same obj. So it comes down to a unique
+            //     // name for each object. So just "new" should suffice for name,
+            //     // because it's scoped by obj already.
+            //     let method = ObjectMethod::new(
+            //         param.as_ref(),
+            //         obj.id,
+            //         GType::Object(obj.id),
+            //         PUBLIC,
+            //         method_name.clone(),
+            //         "Create a new instance".to_owned(),
+            //     );
 
-            buffer.block(
-                DirectiveKind::IgnoreOrig,
-                format!("{}-struct-impl-{}", obj.as_ident(), method_name),
-                |buffer| {
-                    // Output a docstring
-                    emit!(
-                        buffer,
-                        "/// Inter a new {} in the store, and return it's `id`.",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
+            //     buffer.block(
+            //         DirectiveKind::IgnoreOrig,
+            //         format!("{}-struct-impl-{}", obj.as_ident(), method_name),
+            //         |buffer| {
+            //             // Output a docstring
+            //             emit!(
+            //                 buffer,
+            //                 "/// Inter a new {} in the store, and return it's `id`.",
+            //                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
+            //             );
 
-                    // 🚧 Put this back in once I'm done moving to v2.
-                    // if options.get_doc_test() {
-                    //     buffer.block(
-                    //         DirectiveKind::IgnoreGenerated,
-                    //         format!("{}-struct-test-new", obj.as_ident()),
-                    //         |buffer| {
-                    //             let mut uses = HashSet::new();
-                    //             let stmts =
-                    //                 method.as_statement(package, module, woog, domain, &mut uses);
-                    //             emit!(buffer, "/// # Example");
-                    //             emit!(buffer, "///");
-                    //             emit!(buffer, "///```ignore");
-                    //             // for s in use_stmts.split_terminator('\n') {
-                    //             for s in uses.iter() {
-                    //                 emit!(buffer, "/// {}", s);
-                    //             }
-                    //             emit!(buffer, "///");
-                    //             // for s in stmts.split_terminator('\n') {
-                    //             for s in stmts.iter() {
-                    //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
-                    //             }
-                    //             emit!(buffer, "///```");
+            //             // 🚧 Put this back in once I'm done moving to v2.
+            //             // if options.get_doc_test() {
+            //             //     buffer.block(
+            //             //         DirectiveKind::IgnoreGenerated,
+            //             //         format!("{}-struct-test-new", obj.as_ident()),
+            //             //         |buffer| {
+            //             //             let mut uses = HashSet::new();
+            //             //             let stmts =
+            //             //                 method.as_statement(package, module, woog, domain, &mut uses);
+            //             //             emit!(buffer, "/// # Example");
+            //             //             emit!(buffer, "///");
+            //             //             emit!(buffer, "///```ignore");
+            //             //             // for s in use_stmts.split_terminator('\n') {
+            //             //             for s in uses.iter() {
+            //             //                 emit!(buffer, "/// {}", s);
+            //             //             }
+            //             //             emit!(buffer, "///");
+            //             //             // for s in stmts.split_terminator('\n') {
+            //             //             for s in stmts.iter() {
+            //             //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
+            //             //             }
+            //             //             emit!(buffer, "///```");
 
-                    //             Ok(())
-                    //         },
-                    //     )?;
-                    // }
+            //             //             Ok(())
+            //             //         },
+            //             //     )?;
+            //             // }
 
-                    // Output the top of the function definition
-                    render_method_definition(buffer, &method, woog, domain)?;
+            //             // Output the top of the function definition
+            //             render_method_definition(buffer, &method, config, woog, domain)?;
 
-                    // Take the ID from the subtype
-                    // We shouldn't be doing this sort of thing here -- getting the testing
-                    // stuff working will allow this to be done in a uniform manner.
-                    emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
-                    emit!(buffer,"// about this local. This should be fixed in the near future.");
-                    if object_is_enum(s_obj, config, imports, domain)? {
-                        emit!(buffer, "let id = subtype.id();");
-                    } else if object_is_singleton(s_obj, config, imports, domain)? {
-                        if !object_is_supertype(s_obj, config, imports, domain)? {
-                            emit!(buffer, "let id = {};", rvals.last().unwrap().name);
-                        } else {
-                            emit!(buffer, "let id = subtype;");
-                        }
-                    } else {
-                        emit!(buffer, "let id = subtype.id;");
-                    }
+            //             // Take the ID from the subtype
+            //             // We shouldn't be doing this sort of thing here -- getting the testing
+            //             // stuff working will allow this to be done in a uniform manner.
+            //             emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
+            //             emit!(buffer,"// about this local. This should be fixed in the near future.");
+            //             if object_is_enum(s_obj, config, imports, domain)? {
+            //                 emit!(buffer, "let id = subtype.id();");
+            //             } else if object_is_singleton(s_obj, config, imports, domain)? {
+            //                 if !object_is_supertype(s_obj, config, imports, domain)? {
+            //                     emit!(buffer, "let id = {};", rvals.last().unwrap().name);
+            //                 } else {
+            //                     emit!(buffer, "let id = subtype;");
+            //                 }
+            //             } else {
+            //                 emit!(buffer, "let id = subtype.id;");
+            //             }
 
-                    // Output code to create the instance
-                    let new = LValue::new("new", GType::Reference(obj.id), None);
-                    render_new_instance(
-                        buffer,
-                        obj,
-                        Some(&new),
-                        &fields_,
-                        &rvals,
-                        config,
-                        woog,
-                        domain,
-                    )?;
+            //             // Output code to create the instance
+            //             let new = LValue::new("new", GType::Reference(obj.id), None);
+            //             render_new_instance(
+            //                 buffer,
+            //                 obj,
+            //                 Some(&new),
+            //                 &fields_,
+            //                 &rvals,
+            //                 config,
+            //                 woog,
+            //                 domain,
+            //             )?;
 
-                    emit!(buffer, "new");
-                    emit!(buffer, "}}");
+            //             emit!(buffer, "new");
+            //             emit!(buffer, "}}");
 
-                    Ok(())
-                },
-            )?;
+            //             Ok(())
+            //         },
+            //     )?;
         }
 
         Ok(())

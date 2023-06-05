@@ -152,8 +152,8 @@ impl From<&Ty> for GType {
             Ty::Integer(_) => Self::Integer,
             Ty::Boolean(_) => Self::Boolean,
             Ty::Float(_) => Self::Float,
-            Ty::String(_) => Self::String,
-            Ty::Uuid(_) => Self::Uuid,
+            Ty::SString(_) => Self::String,
+            Ty::SUuid(_) => Self::Uuid,
             Ty::Object(uuid) => Self::Object(uuid.clone()),
             _ => unimplemented!(),
         }

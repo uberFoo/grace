@@ -14,7 +14,7 @@ use crate::domain::one_to_one::store::ObjectStore as OneToOneStore;
 /// The target of our relationship tests.
 ///
 /// It is conditionally related to [`OneToOneConditional`] across _R2_, and it is unconditionally
-/// related to [`OneToOneUnconditional`] across _R1_.
+///  related to [`OneToOneUnconditional`] across _R1_.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-definition"}}}
@@ -31,19 +31,13 @@ impl Referent {
     /// Inter a new 'Referent' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut OneToOneStore) -> Referent {
         let id = Uuid::new_v4();
-        let new = Referent { id: id, name: name };
+        let new = Referent { id, name };
         store.inter_referent(new.clone());
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-new_"}}}
-    /// Inter a new 'Referent' in the store, and return it's `id`.
-    pub fn new_(name: String) -> Referent {
-        let id = Uuid::new_v4();
-        let new = Referent { id: id, name: name };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-cond-to-a"}}}
     /// Navigate to [`A`] across R1(1-1c)

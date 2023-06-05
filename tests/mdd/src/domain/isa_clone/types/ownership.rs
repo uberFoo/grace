@@ -11,7 +11,7 @@ use uuid::Uuid;
 /// Type Ownership
 ///
 /// This is tied closely with Rust. There are tthree possible options: owned, mutable and borrowed
-///.
+/// .
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-enum-definition"}}}
@@ -28,11 +28,6 @@ impl Ownership {
     pub fn new_borrowed(borrowed: &Borrowed, store: &mut IsaCloneStore) -> Self {
         let new = Self::Borrowed(borrowed.id());
         store.inter_ownership(new.clone());
-        new
-    }
-
-    pub fn new_borrowed_(borrowed: &Borrowed) -> Self {
-        let new = Self::Borrowed(borrowed.id());
         new
     }
 

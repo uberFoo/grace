@@ -16,7 +16,7 @@ pub struct Everything<'a> {
     pub float: f64,
     pub id: Uuid,
     pub int: i64,
-    pub string: String,
+    pub s_string: String,
     /// R1: [`Everything`] 'points at' [`RandoObject`]
     pub rando: &'a RandoObject,
 }
@@ -39,7 +39,8 @@ impl<'a> Everything<'a> {
         bool: bool,
         float: f64,
         int: i64,
-        string: String,
+        //         string: String,
+        s_string: String,
         rando: &RandoObject,
     ) -> Everything {
         //         let id = Uuid::new_v5(
@@ -51,7 +52,8 @@ impl<'a> Everything<'a> {
             bool: bool,
             float: float,
             int: int,
-            string: string,
+            //             string: string,
+            s_string: s_string,
             rando: rando,
             id,
         }

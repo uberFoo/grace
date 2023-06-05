@@ -16,7 +16,6 @@ use std::{
 };
 
 use fnv::FnvHashMap as HashMap;
-use heck::ToUpperCamelCase;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -34,6 +33,9 @@ impl ObjectStore {
         };
 
         // Initialize Singleton Subtypes
+        // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
+        // I remember having a bit of a struggle making it work. It's recursive, with
+        // a lot of special cases, and I think it calls other recursive functions...💥
 
         store
     }
@@ -71,10 +73,10 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
-        fs::create_dir_all(&path)?;
+        fs::create_dir_all(path)?;
 
         let bin_path = path.clone().join("imported_object.bin");
         let mut bin_file = fs::File::create(bin_path)?;
@@ -103,7 +105,7 @@ impl ObjectStore {
     ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
-    /// In fact, I intend to add automaagic git integration as an option.
+    /// In fact, I intend to add automagic git integration as an option.
     pub fn load<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
         let path = path.join("imported_object.json");
@@ -113,8 +115,8 @@ impl ObjectStore {
         // Load Another Object.
         {
             let path = path.join("another_object");
-            let mut entries = fs::read_dir(path)?;
-            while let Some(entry) = entries.next() {
+            let entries = fs::read_dir(path)?;
+            for entry in entries {
                 let entry = entry?;
                 let path = entry.path();
                 let file = fs::File::open(path)?;

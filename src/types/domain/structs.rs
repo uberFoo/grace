@@ -22,14 +22,14 @@ use crate::{
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
-        get_subtypes_sorted,
+        get_subtypes_sorted, object_is_hybrid,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
             RenderIdent, RenderType,
         },
         render_methods,
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     types::{
         domain::rels::{
             generate_assoc_referent_rels, generate_assoc_referrer_rels,
@@ -55,7 +55,7 @@ impl CodeWriter for Imports {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
@@ -108,8 +108,36 @@ impl CodeWriter for Imports {
             DirectiveKind::IgnoreOrig,
             format!("{}-use-statements", obj.as_ident()),
             |buffer| {
-                let mut imports = HashSet::default();
+                let mut imported_obj = HashSet::default();
                 let mut uses = HashSet::default();
+
+                if config.is_uber_store() {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => {
+                            emit!(buffer, "use std::cell::RefCell;");
+                            emit!(buffer, "use std::rc::Rc;")
+                        }
+                        StdRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::RwLock;")
+                        }
+                        StdMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::Mutex;")
+                        }
+                        ParkingLotRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::RwLock;")
+                        }
+                        ParkingLotMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::Mutex;")
+                        }
+                    };
+                    emit!(buffer, "use tracy_client::span;");
+                }
 
                 // Everything has an `id`, everything needs this.
                 emit!(buffer, "use uuid::Uuid;");
@@ -126,7 +154,7 @@ impl CodeWriter for Imports {
                 for r_obj in &referrer_objs {
                     if config.is_imported(&r_obj.id) {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
-                        imports.insert(imported_object.domain.as_str());
+                        imported_obj.insert(imported_object.domain.as_str());
                         uses.insert(format!(
                             "use crate::{}::types::{}::{};",
                             imported_object.domain,
@@ -165,17 +193,26 @@ impl CodeWriter for Imports {
                         s_obj.as_ident(),
                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     ));
+
+                    if object_is_hybrid(s_obj, config, imports, domain)? {
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{}Enum;",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    }
                 }
 
-                // Add the use statements, plus the use for any imported objects.
+                // Add the use statements.
                 for use_path in uses {
                     emit!(buffer, "{}", use_path);
                 }
 
                 // Add the ObjectStore, plus the store for any imported objects.
-                imports.insert(module);
+                imported_obj.insert(module);
                 emit!(buffer, "");
-                for import in imports {
+                for import in imported_obj {
                     let store = find_store(import, woog, domain);
                     emit!(buffer, "use {} as {};", store.path, store.name);
                 }
@@ -236,7 +273,7 @@ impl CodeWriter for Struct {
         buffer.block(
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-documentation", obj.as_ident()),
-            |buffer| emit_object_comments(obj.description.as_str(), "///", buffer),
+            |buffer| emit_object_comments(obj.description.as_str(), "/// ", "", buffer),
         )?;
 
         buffer.block(

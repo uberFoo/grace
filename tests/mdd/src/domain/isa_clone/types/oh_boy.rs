@@ -12,14 +12,14 @@ use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 /// This should break all sorts of shit.
 ///
 /// The only purpose of this is to make [`SimpleSubtypeA`] a supertype. Then I got crafty with
-/// the name. One of these days I'm going to throw an emoji in there...😝
+///  the name. One of these days I'm going to throw an emoji in there...😝
 ///
 /// So, more testing. Grace as of this moment (1677427948) doesn't properly recognize when
-///a subtype, that's also a supertype, has a subtype that isn't const... when rendering the
-/// subtype code in the supertype. Whew, parsing that someday will be a nightmare.
+/// a subtype, that's also a supertype, has a subtype that isn't const... when rendering the
+///  subtype code in the supertype. Whew, parsing that someday will be a nightmare.
 ///
 /// Basically, [`SimpleSupertype`] thinks this object is a const. And it was (no attributes
-/// besides id) until this moment.
+///  besides id) until this moment.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-definition"}}}
@@ -36,23 +36,11 @@ impl OhBoy {
     /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
     pub fn new(attribution: String, store: &mut IsaCloneStore) -> OhBoy {
         let id = Uuid::new_v4();
-        let new = OhBoy {
-            attribution: attribution,
-            id: id,
-        };
+        let new = OhBoy { attribution, id };
         store.inter_oh_boy(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new_"}}}
-    /// Inter a new 'Oh Boy!' in the store, and return it's `id`.
-    pub fn new_(attribution: String) -> OhBoy {
-        let id = Uuid::new_v4();
-        let new = OhBoy {
-            attribution: attribution,
-            id: id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

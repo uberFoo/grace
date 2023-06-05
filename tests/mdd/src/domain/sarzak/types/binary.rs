@@ -42,26 +42,15 @@ impl Binary {
     pub fn new(number: i64, to: &Referent, from: &Referrer, store: &mut SarzakStore) -> Binary {
         let id = Uuid::new_v4();
         let new = Binary {
-            id: id,
-            number: number,
+            id,
+            number,
             to: to.id,
             from: from.id,
         };
         store.inter_binary(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new_"}}}
-    /// Inter a new 'Binary' in the store, and return it's `id`.
-    pub fn new_(number: i64, to: &Referent, from: &Referrer) -> Binary {
-        let id = Uuid::new_v4();
-        let new = Binary {
-            id: id,
-            number: number,
-            to: to.id,
-            from: from.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

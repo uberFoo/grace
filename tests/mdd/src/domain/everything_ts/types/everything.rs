@@ -19,7 +19,7 @@ pub struct Everything {
     pub float: f64,
     pub id: Uuid,
     pub int: i64,
-    pub string: String,
+    pub s_string: String,
     /// R1: [`Everything`] 'points at' [`RandoObject`]
     pub rando: Uuid,
 }
@@ -33,42 +33,23 @@ impl Everything {
         bool: bool,
         float: f64,
         int: i64,
-        string: String,
+        s_string: String,
         rando: &RandoObject,
         store: &mut EverythingTsStore,
     ) -> Everything {
         let id = Uuid::new_v4();
         let new = Everything {
-            bool: bool,
-            float: float,
-            id: id,
-            int: int,
-            string: string,
+            bool,
+            float,
+            id,
+            int,
+            s_string,
             rando: rando.id,
         };
         store.inter_everything(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new_"}}}
-    /// Inter a new 'Everything' in the store, and return it's `id`.
-    pub fn new_(
-        bool: bool,
-        float: f64,
-        int: i64,
-        string: String,
-        rando: &RandoObject,
-    ) -> Everything {
-        let id = Uuid::new_v4();
-        let new = Everything {
-            bool: bool,
-            float: float,
-            id: id,
-            int: int,
-            string: string,
-            rando: rando.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -50,13 +50,7 @@ impl Cardinality {
     ) -> Vec<&AssociativeReferent> {
         store
             .iter_associative_referent()
-            .filter_map(|associative_referent| {
-                if associative_referent.cardinality == self.id() {
-                    Some(associative_referent)
-                } else {
-                    None
-                }
-            })
+            .filter(|associative_referent| associative_referent.cardinality == self.id())
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -68,13 +62,7 @@ impl Cardinality {
     ) -> Vec<&AssociativeReferrer> {
         store
             .iter_associative_referrer()
-            .filter_map(|associative_referrer| {
-                if associative_referrer.cardinality == self.id() {
-                    Some(associative_referrer)
-                } else {
-                    None
-                }
-            })
+            .filter(|associative_referrer| associative_referrer.cardinality == self.id())
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -83,13 +71,7 @@ impl Cardinality {
     pub fn r8_referent<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referent> {
         store
             .iter_referent()
-            .filter_map(|referent| {
-                if referent.cardinality == self.id() {
-                    Some(referent)
-                } else {
-                    None
-                }
-            })
+            .filter(|referent| referent.cardinality == self.id())
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -98,13 +80,7 @@ impl Cardinality {
     pub fn r9_referrer<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referrer> {
         store
             .iter_referrer()
-            .filter_map(|referrer| {
-                if referrer.cardinality == self.id() {
-                    Some(referrer)
-                } else {
-                    None
-                }
-            })
+            .filter(|referrer| referrer.cardinality == self.id())
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

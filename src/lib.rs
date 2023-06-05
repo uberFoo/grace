@@ -4,24 +4,44 @@ use sarzak::mc::ModelCompilerOptions;
 
 mod codegen;
 pub mod options;
-mod targets;
+mod target;
 mod todo;
 mod types;
 mod woog;
 
-pub use options::{DomainConfig, GraceCompilerOptions, Target};
+pub use options::{DomainConfig, DwarfConfig, GraceCompilerOptions, Target};
 pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
-use targets::{application::ApplicationTarget, domain::DomainTarget};
+use target::{
+    application::ApplicationTarget, domain::DomainTarget, dwarf::DwarfTarget, svm::SvmTarget,
+};
+
+type Lock<T> = std::sync::RwLock<T>;
+// type Lock<T> = parking_lot::Mutex<T>;
+
+#[macro_export]
+macro_rules! s_read {
+    ($arg:expr) => {
+        $arg.read().unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! s_write {
+    ($arg:expr) => {
+        $arg.write().unwrap()
+    };
+}
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const BUILD_TIME: &str = include!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
 
-pub(crate) const DWARF_EXT: &str = "道";
 pub(crate) const RS_EXT: &str = "rs";
 pub(crate) const TYPES: &str = "types";
 pub(crate) const TARGET_DIR: &str = "target";
 pub(crate) const BUILD_DIR: &str = "sarzak";
+pub(crate) const SVM: &str = "svm";
+pub(crate) const BIN: &str = "bin";
 
 #[derive(Default)]
 pub struct ModelCompiler {}
@@ -35,7 +55,7 @@ impl SarzakModelCompiler for ModelCompiler {
         src_path: P,
         options: Box<&dyn ModelCompilerOptions>,
         test: bool,
-    ) -> Result<(), ModelCompilerError> {
+    ) -> Result<usize, ModelCompilerError> {
         // Extract our options
         let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
             Some(options) => options.clone(),
@@ -48,6 +68,12 @@ impl SarzakModelCompiler for ModelCompiler {
             }
             Target::Application => {
                 ApplicationTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
+            }
+            Target::Dwarf(_) => {
+                DwarfTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
+            }
+            Target::Svm => {
+                SvmTarget::new(&options, package, module, src_path.as_ref(), domain, test)?
             }
         };
 
@@ -66,8 +92,6 @@ impl SarzakModelCompiler for ModelCompiler {
             test
         );
 
-        target.compile()?;
-
-        Ok(())
+        target.compile()
     }
 }

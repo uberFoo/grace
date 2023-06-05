@@ -6,6 +6,7 @@ use std::fmt::Write;
 
 use heck::{ToShoutySnakeCase, ToSnakeCase, ToUpperCamelCase};
 // use names::Generator;
+use log::debug;
 use sarzak::{
     mc::{FormatSnafu, Result},
     sarzak::types::{
@@ -24,6 +25,7 @@ use crate::{
         buffer::{emit, Buffer},
         get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
     },
+    options::{GraceConfig, UberStoreOptions},
     todo::{External, GType, ObjectMethod, Parameter as todoP},
 };
 
@@ -124,255 +126,187 @@ impl RenderRval for bool {
         format!("{}", self)
     }
 }
-
-// 🚧 Put this back in once I'm done moving to v2.
-/*/
-pub(crate) trait RenderStatement {
-    fn as_statement(
+pub(crate) trait ForStore {
+    fn for_store(
         &self,
-        package: &str,
-        module: &str,
+        mutability: &Ownership,
+        config: &GraceConfig,
         woog: &WoogStore,
         domain: &Domain,
-        uses: &mut HashSet<String>,
-    ) -> Vec<Statement>;
+    ) -> String;
 }
 
-impl RenderStatement for GType {
-    fn as_statement(
+impl ForStore for GraceType {
+    fn for_store(
         &self,
-        package: &str,
-        module: &str,
+        mutability: &Ownership,
+        config: &GraceConfig,
         woog: &WoogStore,
         domain: &Domain,
-        uses: &mut HashSet<String>,
-    ) -> Vec<Statement> {
+    ) -> String {
+        let is_uber = config.is_uber_store();
+
         match self {
-            Self::Option(o) => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), self.clone()),
-                    // 🚧  We should put defaults someplace where they are easy
-                    // to get to.
-                    RValue::new("None".to_owned(), self.clone()),
-                );
-                vec![stmt]
+            Self::Ty(t) => {
+                let ty = domain.sarzak().exhume_ty(&t).unwrap();
+                ty.as_type(mutability, woog, domain)
             }
-            Self::Boolean => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), self.clone()),
-                    // 🚧  We should put defaults someplace where they are easy
-                    // to get to.
-                    RValue::new("true".to_owned(), self.clone()),
-                );
-                vec![stmt]
-            }
-            Self::Object(o) => {
-                let object = domain.sarzak().exhume_object(&o).unwrap();
-                // 🚧 I don't currently have these. I am going to create what I
-                // know that I need, and then later when I'm integrating woog,
-                // I'll fix this.
-                //
-                // Shit. I can't, because I don't know what the parameters are.
-                // I guess this whole mess is going to be put on hold untl later.
-                //
-                // let mut iter = woog.iter_object_method();
-                // let method = loop {
-                //     match iter.next() {
-                //         Some((_, method)) => {
-                //             if method.object == object.id && method.name == "new" {
-                //                 break method;
-                //             }
-                //         }
-                //         None => {
-                //             panic!("Unable to find the new method for {}", object.name);
-                //         }
-                //     }
-                // };
+            Self::WoogOption(o) => {
+                let o = woog.exhume_woog_option(&o).unwrap();
+                let inner = o.r20_grace_type(woog)[0];
 
-                let store = find_store(module, woog, domain);
-                uses.insert(format!(
-                    // 🚧  Oh, man, I was getting desperate here. I've solved this
-                    // problem in the interim.
-                    "use mdd::{}::types::{};",
-                    module,
-                    object.as_type(&Ownership::new_borrowed(), woog, domain)
-                ));
+                let (inner, imported) = if let GraceType::Reference(ref id) = inner {
+                    let reference = woog.exhume_reference(&id).unwrap();
+                    let object = reference.r13_object(domain.sarzak())[0];
 
-                // Recurse into the method
-                method.as_statement(package, module, woog, domain.sarzak(), uses)
-            }
-            Self::Reference(r) => {
-                // If the type is a reference, we want to create a new object?
-                let object = domain.sarzak().exhume_object(&r).unwrap();
-                let mut iter = woog.iter_object_method();
-                let method = loop {
-                    match iter.next() {
-                        Some((_, method)) => {
-                            if method.object == object.id && method.name == "new" {
-                                break method;
-                            }
-                        }
-                        None => {
-                            panic!("Unable to find the new method for {}", object.name);
-                        }
-                    }
+                    // Here we swizzle the type from a reference to just an object, as
+                    // we don't want it to output as a reference.
+                    let ty = domain.sarzak().exhume_ty(&object.id).unwrap();
+                    let ty = woog.exhume_grace_type(&ty.id()).unwrap();
+
+                    (ty, config.is_imported(&object.id))
+                } else {
+                    (inner, false)
                 };
 
-                uses.insert(format!(
-                    "use mdd::{}::types::{};",
-                    module,
-                    object.as_type(&Ownership::new_borrowed(), woog, domain)
-                ));
-
-                // Recurse into the method
-                method.as_statement(package, module, woog, domain.sarzak(), uses)
-            }
-            Self::String => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), self.clone()),
-                    RValue::new(Generator::default().next().unwrap(), self.clone()),
-                );
-
-                vec![stmt]
-            }
-            Self::Uuid => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), self.clone()),
-                    RValue::new(
-                        format!(
-                            "Uuid::new_v5(&UUID_NS, \"{}\")",
-                            Generator::default().next().unwrap().to_snake_case()
+                if is_uber {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "Option<&Rc<RefCell<{}>>>",
+                            inner.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
-                        self.clone(),
-                    ),
-                );
-                uses.insert("use uuid::Uuid;".to_owned());
-                vec![stmt]
-            }
-            Self::External(e) => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let store = find_store(module, woog, domain);
-                uses.insert(format!("use {} as {};", store.path, store.name));
-
-                let stmt = Statement::new(
-                    LValue::new(var, self.clone()),
-                    RValue::new(
-                        format!(
-                            "{}::{};",
-                            e.as_type(&Ownership::new_borrowed(), woog, domain),
-                            // 🚧  Oops. I don't have this any longer, and I'm not putting
-                            // it back until I'm on v2. So here's the hack.
-                            // ext.initialization,
-                            "new()", // 🚧  This is a hack.
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "Option<&Arc<RwLock<{}>>>",
+                            inner.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
-                        self.clone(),
-                    ),
-                );
-                vec![stmt]
+                        StdMutex | ParkingLotMutex => format!(
+                            "Option<&Arc<Mutex<{}>>>",
+                            inner.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
+                } else {
+                    format!("Option<{}>", inner.as_type(mutability, woog, domain))
+                }
             }
-            Self::Float => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), self.clone()),
-                    RValue::new("42.0".to_owned(), self.clone()),
-                );
-                vec![stmt]
+            Self::Reference(r) => {
+                let reference = woog.exhume_reference(&r).unwrap();
+                let object = reference.r13_object(domain.sarzak())[0];
+                let imported = config.is_imported(&object.id);
+
+                if is_uber && !imported {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "&Rc<RefCell<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "&Arc<RwLock<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "&Arc<Mutex<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
+                } else {
+                    format!("&{}", object.as_type(mutability, woog, domain))
+                }
             }
-            Self::Integer => {
-                let var = Generator::default().next().unwrap().to_snake_case();
-                let stmt = Statement::new(
-                    LValue::new(var.clone(), self.clone()),
-                    RValue::new("42".to_owned(), self.clone()),
-                );
-                vec![stmt]
-            }
+            Self::TimeStamp(_) => "SystemTime".to_owned(),
         }
     }
 }
 
-/// Render a Parameter as an Rval
-///
-/// This function is recursive.
-impl<'a> RenderStatement for Parameter<'a> {
-    fn as_statement(
+impl ForStore for GType {
+    fn for_store(
         &self,
-        package: &str,
-        module: &str,
+        mutability: &Ownership,
+        config: &GraceConfig,
         woog: &WoogStore,
         domain: &Domain,
-        uses: &mut HashSet<String>,
-    ) -> Vec<Statement> {
-        log::trace!("{} as rval, next: {:?}", self.name, self.next);
-        let mut statements = Vec::new();
+    ) -> String {
+        let is_uber = config.is_uber_store();
+        debug_assert!(is_uber);
 
-        // Get an instance of our type
-        let stmt = self.ty.as_statement(package, module, woog, domain, uses);
-        statements.push(stmt);
-
-        match self.next {
-            Some(param) => {
-                // let param = woog.exhume_parameter(&p).unwrap();
-                log::trace!("invoking next: {}", param.name);
-                // Recurse
-                let stmt = param.as_statement(package, module, woog, domain, uses);
-                statements.push(stmt);
+        match self {
+            GType::Boolean => "bool".to_owned(),
+            GType::Object(o) => {
+                let object = domain.sarzak().exhume_object(&o).unwrap();
+                format!("{}", object.as_type(mutability, woog, domain))
             }
-            _ => {}
-        };
+            GType::Reference(r) => {
+                let object = domain.sarzak().exhume_object(&r).unwrap();
 
-        statements.into_iter().flatten().collect()
-    }
-}
-
-impl<'a> RenderStatement for ObjectMethod<'a> {
-    fn as_statement(
-        &self,
-        package: &str,
-        module: &str,
-        woog: &WoogStore,
-        domain: &Domain,
-        uses: &mut HashSet<String>,
-    ) -> Vec<Statement> {
-        log::trace!("{} as rval", self.name);
-        let mut use_statements = String::new();
-        let mut statements = Vec::new();
-
-        let obj = domain.sarzak().exhume_object(&self.object).unwrap();
-        let mut param = self.param;
-        match param {
-            Some(p) => {
-                // Recurse
-                let stmt = p.as_statement(package, module, woog, domain, uses);
-                statements.push(stmt);
+                if is_uber {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "&Rc<RefCell<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "&Arc<RwLock<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "&Arc<Mutex<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
+                } else {
+                    format!("&{}", object.as_type(mutability, woog, domain))
+                }
             }
-            _ => {}
+            GType::Option(o) => {
+                let (o, imported) = if let GType::Reference(id) = **o {
+                    let object = domain.sarzak().exhume_object(&id).unwrap();
+
+                    // Here we swizzle the type from a reference to just an object, as
+                    // we don't want it to output as a reference.
+                    let _ty = domain.sarzak().exhume_ty(&object.id).unwrap();
+
+                    (Box::new(GType::Object(id)), config.is_imported(&object.id))
+                } else {
+                    (o.clone(), false)
+                };
+
+                if is_uber && !imported {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "Option<&Rc<RefCell<{}>>>",
+                            o.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "Option<&Arc<RwLock<{}>>>",
+                            o.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "Option<&Arc<Mutex<{}>>>",
+                            o.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
+                } else {
+                    format!("Option<{}>", o.as_type(mutability, woog, domain))
+                }
+            }
+            GType::External(e) => {
+                format!("&{}", e.as_type(mutability, woog, domain))
+            }
+            GType::String => "String".to_owned(),
+            GType::Uuid => "Uuid".to_owned(),
+            GType::Float => "f64".to_owned(),
+            GType::Integer => "i64".to_owned(),
         }
-
-        // Add the method call
-        let var = Generator::default().next().unwrap().to_snake_case();
-        // I let copilot write the following code. It's what I had after the
-        // for loop, before it was here. I don't love the forced return, or the
-        // panic at the end (which I added), but it does work.
-        let ty = GType::Reference(obj.id);
-        statements.push(vec![Statement::new(
-            LValue::new(var.clone(), ty),
-            RValue::new(
-                format!(
-                    "{}::{}()",
-                    obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                    self.name.as_ident(),
-                ),
-                ty,
-            ),
-        )]);
-        statements.into_iter().flatten().collect()
     }
 }
-*/
+
 /// Trait for rendering type as a Type
 ///
 /// This trait represents the sanitization of an unknown string, into one
@@ -421,8 +355,8 @@ impl RenderType for Ty {
                 let object = domain.sarzak().exhume_object(&o).unwrap();
                 format!("{}", object.as_type(mutability, woog, domain))
             }
-            Self::String(_) => "String".to_owned(),
-            Self::Uuid(_) => "Uuid".to_owned(),
+            Self::SString(_) => "String".to_owned(),
+            Self::SUuid(_) => "Uuid".to_owned(),
             Self::External(e) => {
                 let ext = domain.sarzak().exhume_external(&e).unwrap();
                 // format!("&{}", ext.as_type(mutability, woog, domain))
@@ -531,71 +465,111 @@ trait Sanitize {
 
 impl Sanitize for &str {
     fn sanitize(&self) -> String {
-        match *self {
-            "type" => "ty".to_owned(),
-            "Type" => "ty".to_owned(),
-            "crate" => "krate".to_owned(),
-            "Crate" => "krate".to_owned(),
-            "ref" => "x_ref".to_owned(),
-            "macro" => "x_macro".to_owned(),
-            "Macro" => "x_macro".to_owned(),
-            "let" => "x_let".to_owned(),
-            "Let" => "x_let".to_owned(),
-            "option" => "woog_option".to_owned(),
-            "Option" => "woog_option".to_owned(),
-            "enum" => "woog_enum".to_owned(),
-            "Enum" => "woog_enum".to_owned(),
-            "struct" => "woog_struct".to_owned(),
-            "Struct" => "woog_struct".to_owned(),
-            "const" => "woog_const".to_owned(),
-            "Const" => "woog_const".to_owned(),
-            "true" => "true_literal".to_owned(),
-            "True" => "true_literal".to_owned(),
-            "false" => "false_literal".to_owned(),
-            "False" => "false_literal".to_owned(),
-            "uuid" => "woog_uuid".to_owned(),
-            "Uuid" => "woog_uuid".to_owned(),
+        let result = match *self {
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
-            "super" => "x_super".to_owned(),
-            "Super" => "x_super".to_owned(),
+            "break" => "x_break".to_owned(),
+            "crate" => "krate".to_owned(),
+            "Crate" => "krate".to_owned(),
+            "const" => "woog_const".to_owned(),
+            "Const" => "woog_const".to_owned(),
+            "enum" => "woog_enum".to_owned(),
+            "Enum" => "woog_enum".to_owned(),
+            "false" => "false_literal".to_owned(),
+            "False" => "false_literal".to_owned(),
+            "if" => "x_if".to_owned(),
+            "If" => "x_if".to_owned(),
+            "let" => "x_let".to_owned(),
+            "Let" => "x_let".to_owned(),
+            "macro" => "x_macro".to_owned(),
+            "Macro" => "x_macro".to_owned(),
+            "model" => "x_model".to_owned(),
+            "Model" => "x_model".to_owned(),
+            "None" => "z_none".to_owned(),
+            "Object Store" => "z_object_store".to_owned(),
+            "option" => "woog_option".to_owned(),
+            "Option" => "woog_option".to_owned(),
+            "ref" => "x_ref".to_owned(),
+            "return" => "x_return".to_owned(),
+            "Return" => "x_return".to_owned(),
+            "Some" => "z_some".to_owned(),
+            "string" => "z_string".to_owned(),
+            "String" => "z_string".to_owned(),
+            "struct" => "woog_struct".to_owned(),
+            "Struct" => "woog_struct".to_owned(),
+            "super" => "z_super".to_owned(),
+            "Super" => "z_super".to_owned(),
+            "true" => "true_literal".to_owned(),
+            "True" => "true_literal".to_owned(),
+            "type" => "ty".to_owned(),
+            "Type" => "ty".to_owned(),
+            "uuid" => "z_uuid".to_owned(),
+            "Uuid" => "z_uuid".to_owned(),
+            "UUID" => "z_uuid".to_owned(),
+            "value" => "x_value".to_owned(),
+            "Value" => "x_value".to_owned(),
             _ => self.to_string(),
+        };
+
+        if self != &result {
+            debug!("sanitized: {} -> {}", self, result);
         }
+        result
     }
 }
 
 impl Sanitize for String {
     fn sanitize(&self) -> String {
-        match self.as_str() {
-            "type" => "ty".to_owned(),
-            "Type" => "ty".to_owned(),
-            "crate" => "krate".to_owned(),
-            "Crate" => "krate".to_owned(),
-            "ref" => "x_ref".to_owned(),
-            "macro" => "x_macro".to_owned(),
-            "Macro" => "x_macro".to_owned(),
-            "let" => "x_let".to_owned(),
-            "Let" => "x_let".to_owned(),
-            "option" => "woog_option".to_owned(),
-            "Option" => "woog_option".to_owned(),
-            "enum" => "woog_enum".to_owned(),
-            "Enum" => "woog_enum".to_owned(),
-            "struct" => "woog_struct".to_owned(),
-            "Struct" => "woog_struct".to_owned(),
-            "const" => "woog_const".to_owned(),
-            "Const" => "woog_const".to_owned(),
-            "true" => "true_literal".to_owned(),
-            "True" => "true_literal".to_owned(),
-            "false" => "false_literal".to_owned(),
-            "False" => "false_literal".to_owned(),
-            "uuid" => "woog_uuid".to_owned(),
-            "Uuid" => "woog_uuid".to_owned(),
+        let result = match self.as_str() {
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
+            "break" => "x_break".to_owned(),
+            "crate" => "krate".to_owned(),
+            "Crate" => "krate".to_owned(),
+            "const" => "woog_const".to_owned(),
+            "Const" => "woog_const".to_owned(),
+            "enum" => "woog_enum".to_owned(),
+            "Enum" => "woog_enum".to_owned(),
+            "false" => "false_literal".to_owned(),
+            "False" => "false_literal".to_owned(),
+            "if" => "x_if".to_owned(),
+            "If" => "x_if".to_owned(),
+            "let" => "x_let".to_owned(),
+            "Let" => "x_let".to_owned(),
+            "macro" => "x_macro".to_owned(),
+            "Macro" => "x_macro".to_owned(),
+            "model" => "x_model".to_owned(),
+            "Model" => "x_model".to_owned(),
+            "None" => "z_none".to_owned(),
+            "Object Store" => "z_object_store".to_owned(),
+            "option" => "woog_option".to_owned(),
+            "Option" => "woog_option".to_owned(),
+            "ref" => "x_ref".to_owned(),
+            "return" => "x_return".to_owned(),
+            "Return" => "x_return".to_owned(),
+            "Some" => "z_some".to_owned(),
+            "String" => "s_string".to_owned(),
+            "string" => "s_string".to_owned(),
+            "struct" => "woog_struct".to_owned(),
+            "Struct" => "woog_struct".to_owned(),
             "super" => "x_super".to_owned(),
             "Super" => "x_super".to_owned(),
+            "true" => "true_literal".to_owned(),
+            "True" => "true_literal".to_owned(),
+            "type" => "ty".to_owned(),
+            "Type" => "ty".to_owned(),
+            "uuid" => "s_uuid".to_owned(),
+            "Uuid" => "s_uuid".to_owned(),
+            "UUID" => "s_uuid".to_owned(),
+            "value" => "x_value".to_owned(),
+            "Value" => "x_value".to_owned(),
             _ => self.to_owned(),
+        };
+
+        if self != &result {
+            debug!("sanitized: {} -> {}", self, result);
         }
+        result
     }
 }
 

@@ -29,24 +29,14 @@ impl C {
     pub fn new(jackpot: f64, ptr: &Referent, store: &mut OneToManyStore) -> C {
         let id = Uuid::new_v4();
         let new = C {
-            id: id,
-            jackpot: jackpot,
+            id,
+            jackpot,
             ptr: ptr.id,
         };
         store.inter_c(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new_"}}}
-    /// Inter a new 'C' in the store, and return it's `id`.
-    pub fn new_(jackpot: f64, ptr: &Referent) -> C {
-        let id = Uuid::new_v4();
-        let new = C {
-            id: id,
-            jackpot: jackpot,
-            ptr: ptr.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

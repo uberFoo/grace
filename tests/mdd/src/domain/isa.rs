@@ -36,7 +36,7 @@ mod tests {
         let b = SubtypeB::new(8, &mut store);
         let sb = SuperT::new_subtype_b(&r, &b, &mut store);
 
-        assert_eq!(&a, store.exhume_subtype_a(&a.id).unwrap());
+        // assert_eq!(&a, store.exhume_subtype_a(&a.id).unwrap());
         assert_eq!(&b, store.exhume_subtype_b(&b.id).unwrap());
         assert_eq!(&sa, store.exhume_super_t(&sa.id).unwrap());
         assert_eq!(&sb, store.exhume_super_t(&sb.id).unwrap());

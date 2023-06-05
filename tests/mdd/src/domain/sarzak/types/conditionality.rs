@@ -49,13 +49,7 @@ impl Conditionality {
     ) -> Vec<&AssociativeReferent> {
         store
             .iter_associative_referent()
-            .filter_map(|associative_referent| {
-                if associative_referent.conditionality == self.id() {
-                    Some(associative_referent)
-                } else {
-                    None
-                }
-            })
+            .filter(|associative_referent| associative_referent.conditionality == self.id())
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -64,13 +58,7 @@ impl Conditionality {
     pub fn r12_referent<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referent> {
         store
             .iter_referent()
-            .filter_map(|referent| {
-                if referent.conditionality == self.id() {
-                    Some(referent)
-                } else {
-                    None
-                }
-            })
+            .filter(|referent| referent.conditionality == self.id())
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -79,13 +67,7 @@ impl Conditionality {
     pub fn r11_referrer<'a>(&'a self, store: &'a SarzakStore) -> Vec<&Referrer> {
         store
             .iter_referrer()
-            .filter_map(|referrer| {
-                if referrer.conditionality == self.id() {
-                    Some(referrer)
-                } else {
-                    None
-                }
-            })
+            .filter(|referrer| referrer.conditionality == self.id())
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

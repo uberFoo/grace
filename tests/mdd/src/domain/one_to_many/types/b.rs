@@ -30,8 +30,8 @@ impl B {
     pub fn new(baz: String, ptr: Option<&Referent>, store: &mut OneToManyStore) -> B {
         let id = Uuid::new_v4();
         let new = B {
-            baz: baz,
-            id: id,
+            baz,
+            id,
             ptr: ptr.map(|referent| referent.id),
         };
         store.inter_b(new.clone());
@@ -40,16 +40,6 @@ impl B {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-new_"}}}
-    /// Inter a new 'B' in the store, and return it's `id`.
-    pub fn new_(baz: String, ptr: Option<&Referent>) -> B {
-        let id = Uuid::new_v4();
-        let new = B {
-            baz: baz,
-            id: id,
-            ptr: ptr.map(|referent| referent.id),
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R2(1-*c)

@@ -15,7 +15,7 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 /// This is another object, but different.
 ///
 /// As a side effect, this is going to test being able to collapse a type with a space. It will
-/// break, and I’ll have a new feature.
+///  break, and I’ll have a new feature.
 ///
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -41,24 +41,14 @@ impl AnotherObject {
     ) -> AnotherObject {
         let id = Uuid::new_v4();
         let new = AnotherObject {
-            id: id,
+            id,
             ptr: ptr.id,
             edge: edge.id,
         };
         store.inter_another_object(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new_"}}}
-    /// Inter a new 'Another Object' in the store, and return it's `id`.
-    pub fn new_(ptr: &Object, edge: &SimpleSupertype) -> AnotherObject {
-        let id = Uuid::new_v4();
-        let new = AnotherObject {
-            id: id,
-            ptr: ptr.id,
-            edge: edge.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

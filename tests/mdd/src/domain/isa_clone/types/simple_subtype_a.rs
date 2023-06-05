@@ -4,6 +4,7 @@ use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 use crate::domain::isa_clone::types::henry::Henry;
 use crate::domain::isa_clone::types::oh_boy::OhBoy;
 use crate::domain::isa_clone::types::simple_supertype::SimpleSupertype;
+use crate::domain::isa_clone::types::simple_supertype::SimpleSupertypeEnum;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -34,11 +35,6 @@ impl SimpleSubtypeA {
         new
     }
 
-    pub fn new_oh_boy_(oh_boy: &OhBoy) -> Self {
-        let new = Self::OhBoy(oh_boy.id);
-        new
-    }
-
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
@@ -59,7 +55,16 @@ impl SimpleSubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-impl-nav-subtype-to-supertype-simple_supertype"}}}
     // Navigate to [`SimpleSupertype`] across R1(isa)
     pub fn r1_simple_supertype<'a>(&'a self, store: &'a IsaCloneStore) -> Vec<&SimpleSupertype> {
-        vec![store.exhume_simple_supertype(&self.id()).unwrap()]
+        vec![store
+            .iter_simple_supertype()
+            .find(|simple_supertype| {
+                if let SimpleSupertypeEnum::SimpleSubtypeA(id) = simple_supertype.subtype {
+                    id == self.id()
+                } else {
+                    false
+                }
+            })
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

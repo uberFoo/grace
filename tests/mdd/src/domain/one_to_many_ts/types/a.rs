@@ -29,24 +29,14 @@ impl A {
     pub fn new(name: String, ptr: &Referent, store: &mut OneToManyTsStore) -> A {
         let id = Uuid::new_v4();
         let new = A {
-            id: id,
-            name: name,
+            id,
+            name,
             ptr: ptr.id,
         };
         store.inter_a(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new_"}}}
-    /// Inter a new 'A' in the store, and return it's `id`.
-    pub fn new_(name: String, ptr: &Referent) -> A {
-        let id = Uuid::new_v4();
-        let new = A {
-            id: id,
-            name: name,
-            ptr: ptr.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

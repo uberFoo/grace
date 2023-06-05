@@ -14,7 +14,7 @@ use crate::domain::sarzak_ts::store::ObjectStore as SarzakTsStore;
 /// Associative Object
 ///
 /// This is used in an [`Associative`] relationship to point to the Associative object itself
-///. It's the box with the line pointing at another line.
+/// . It's the box with the line pointing at another line.
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-definition"}}}
@@ -39,24 +39,14 @@ impl AssociativeReferrer {
     ) -> AssociativeReferrer {
         let id = Uuid::new_v4();
         let new = AssociativeReferrer {
-            id: id,
+            id,
             cardinality: cardinality.id(),
             obj_id: obj_id.id,
         };
         store.inter_associative_referrer(new.clone());
-        new
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new_"}}}
-    /// Inter a new 'Associative Referrer' in the store, and return it's `id`.
-    pub fn new_(cardinality: &Cardinality, obj_id: &Object) -> AssociativeReferrer {
-        let id = Uuid::new_v4();
-        let new = AssociativeReferrer {
-            id: id,
-            cardinality: cardinality.id(),
-            obj_id: obj_id.id,
-        };
+        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new"}}}
+        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

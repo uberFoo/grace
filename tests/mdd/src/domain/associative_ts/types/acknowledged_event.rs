@@ -36,7 +36,7 @@ impl AcknowledgedEvent {
     ) -> AcknowledgedEvent {
         let id = Uuid::new_v4();
         let new = AcknowledgedEvent {
-            id: id,
+            id,
             event_id: event_id.id,
             state_id: state_id.id,
         };
@@ -46,16 +46,6 @@ impl AcknowledgedEvent {
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new_"}}}
-    /// Inter a new 'Acknowledged Event' in the store, and return it's `id`.
-    pub fn new_(event_id: &Event, state_id: &State) -> AcknowledgedEvent {
-        let id = Uuid::new_v4();
-        let new = AcknowledgedEvent {
-            id: id,
-            event_id: event_id.id,
-            state_id: state_id.id,
-        };
-        new
-    }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-event_id"}}}
     /// Navigate to [`Event`] across R20(1-*)

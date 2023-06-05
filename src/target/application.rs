@@ -13,7 +13,7 @@ use snafu::prelude::*;
 use crate::{
     codegen::{generator::GeneratorBuilder, render::RenderIdent},
     options::{GraceCompilerOptions, GraceConfig},
-    targets::Target,
+    target::Target,
     types::default::{
         DefaultImplBuilder, DefaultModule, DefaultModuleBuilder, DefaultNewImpl, DefaultStruct,
         DefaultStructBuilder,
@@ -61,7 +61,7 @@ impl<'a> ApplicationTarget<'a> {
 }
 
 impl<'a> Target for ApplicationTarget<'a> {
-    fn compile(&mut self) -> Result<(), ModelCompilerError> {
+    fn compile(&mut self) -> Result<usize, ModelCompilerError> {
         // ✨Generate Types✨
 
         // Build a path to src/types
@@ -79,7 +79,7 @@ impl<'a> Target for ApplicationTarget<'a> {
         objects.sort_by(|a, b| a.name.cmp(&b.name));
 
         // Iterate over the objects, generating an implementation for file each.
-        for obj in objects {
+        for obj in &objects {
             types.set_file_name(obj.as_ident());
             types.set_extension(RS_EXT);
 
@@ -92,7 +92,7 @@ impl<'a> Target for ApplicationTarget<'a> {
                 // Domain/Store
                 .domain(&self.domain)
                 // Compiler Domain
-                .compiler_domain(&mut self.woog)
+                .woog(&mut self.woog)
                 // Module name
                 .module(self.module)
                 .obj_id(&obj.id)
@@ -129,7 +129,7 @@ impl<'a> Target for ApplicationTarget<'a> {
             .config(&self.config)
             .path(&types)?
             .domain(&self.domain)
-            .compiler_domain(&mut self.woog)
+            .woog(&mut self.woog)
             .module(self.module)
             .generator(
                 DefaultModuleBuilder::new()
@@ -138,7 +138,7 @@ impl<'a> Target for ApplicationTarget<'a> {
             )
             .generate()?;
 
-        Ok(())
+        Ok(objects.len())
     }
 
     fn domain(&self) -> &str {
