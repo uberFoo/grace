@@ -32,7 +32,7 @@ use crate::{
         },
         render_method_definition, render_new_instance,
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{CodeWriter, MethodImplementation, TypeDefinition},
 };
@@ -114,8 +114,32 @@ impl CodeWriter for Hybrid {
                 let mut imported_domains = HashSet::default();
                 let mut uses = HashSet::default();
 
-                if config.get_uber_store() {
-                    emit!(buffer, "use std::sync::{{Arc, RwLock}};\n")
+                if config.is_uber_store() {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => {
+                            emit!(buffer, "use std::cell::RefCell;");
+                            emit!(buffer, "use std::rc::Rc;")
+                        }
+                        StdRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::RwLock;")
+                        }
+                        StdMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::Mutex;")
+                        }
+                        ParkingLotRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::RwLock;")
+                        }
+                        ParkingLotMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::Mutex;")
+                        }
+                    };
+                    emit!(buffer, "use tracy_client::span;");
                 }
 
                 // Everything has an `id`, everything needs this.
@@ -372,7 +396,7 @@ impl CodeWriter for HybridNewImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        let is_uber = config.get_uber_store();
+        let is_uber = config.is_uber_store();
 
         let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
@@ -631,7 +655,7 @@ impl CodeWriter for HybridNewImpl {
                     // emit!(buffer,"// about this local. This should be fixed in the near future.");
                     // if object_is_enum(s_obj, config, imports, domain)? {
                     //     if is_uber {
-                    //         emit!(buffer, "let id = {}.read().unwrap().id();", SUBTYPE_ATTR);
+                    //         emit!(buffer, "let id = {}.read().id();", SUBTYPE_ATTR);
                     //     } else {
                     //         emit!(buffer, "let id = {}.id();", SUBTYPE_ATTR);
                     //     }
@@ -643,7 +667,7 @@ impl CodeWriter for HybridNewImpl {
                     //     }
                     // } else {
                     //     if is_uber {
-                    //         emit!(buffer, "let id = {}.read().unwrap().id;", SUBTYPE_ATTR);
+                    //         emit!(buffer, "let id = {}.read().id;", SUBTYPE_ATTR);
                     //     } else {
                     //         emit!(buffer, "let id = {}.id;", SUBTYPE_ATTR);
                     //     }

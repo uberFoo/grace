@@ -24,7 +24,7 @@ use crate::{
         local_object_is_singleton, local_object_is_subtype, local_object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     types::ObjectStoreDefinition,
 };
 
@@ -157,11 +157,26 @@ impl DomainStore {
             DirectiveKind::IgnoreOrig,
             format!("{}-object-store-methods", module),
             |buffer| {
-                let is_uber = config.get_uber_store();
+                let is_uber = config.is_uber_store();
 
                 for obj in objects {
                     let thing = if is_uber {
-                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Rc<RefCell<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdRwLock | ParkingLotRwLock => format!(
+                                "Arc<RwLock<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Arc<Mutex<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                        }
                     } else {
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     };
@@ -188,7 +203,16 @@ impl DomainStore {
                     };
 
                     if is_uber {
-                        emit!(buffer, "let read = {}.read().unwrap();", obj.as_ident());
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        emit!(buffer, "let read = {}{read};", obj.as_ident());
                     }
 
                     if timestamp {
@@ -209,14 +233,23 @@ impl DomainStore {
                             }
 
                             if is_uber {
+                                use UberStoreOptions::*;
+                                let write = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow_mut()",
+                                    StdRwLock => ".write().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".write()",
+                                    ParkingLotMutex => ".lock()",
+                                };
                                 emit!(
                                     buffer,
-                                    "self.{}_id_by_name.write().unwrap().insert(read.name.to_upper_camel_case(), (read.{id}, value.1));",
+                                    "self.{}_id_by_name{write}.insert(read.name.to_upper_camel_case(), (read.{id}, value.1));",
                                     obj.as_ident(),
                                 );
                                 emit!(
                                     buffer,
-                                    "self.{}.write().unwrap().insert(read.{id}, value);",
+                                    "self.{}{write}.insert(read.{id}, value);",
                                     obj.as_ident(),
                                 );
                             } else {
@@ -235,9 +268,18 @@ impl DomainStore {
                         } else {
 
                              if is_uber {
+                                use UberStoreOptions::*;
+                                let write = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow_mut()",
+                                    StdRwLock => ".write().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".write()",
+                                    ParkingLotMutex => ".lock()",
+                                };
                                 emit!(
                                     buffer,
-                                    "self.{}.write().unwrap().insert(read.{id}, ({}.clone(), SystemTime::now()));",
+                                    "self.{}{write}.insert(read.{id}, ({}.clone(), SystemTime::now()));",
                                     obj.as_ident(),
                                     obj.as_ident()
                                 );
@@ -256,14 +298,23 @@ impl DomainStore {
                         if object_has_name(obj, domain) {
 
                             if is_uber {
+                                use UberStoreOptions::*;
+                                let write = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow_mut()",
+                                    StdRwLock => ".write().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".write()",
+                                    ParkingLotMutex => ".lock()",
+                                };
                                 emit!(
                                     buffer,
-                                    "self.{}_id_by_name.write().unwrap().insert(read.name.to_upper_camel_case(), read.{id});",
+                                    "self.{}_id_by_name{write}.insert(read.name.to_upper_camel_case(), read.{id});",
                                     obj.as_ident(),
                                 );
                                 emit!(
                                     buffer,
-                                    "self.{}.write().unwrap().insert(read.{id}, {}.clone());",
+                                    "self.{}{write}.insert(read.{id}, {}.clone());",
                                     obj.as_ident(),
                                     obj.as_ident()
                                 );
@@ -287,9 +338,18 @@ impl DomainStore {
                         } else {
 
                             if is_uber {
+                                use UberStoreOptions::*;
+                                let write = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow_mut()",
+                                    StdRwLock => ".write().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".write()",
+                                    ParkingLotMutex => ".lock()",
+                                };
                                 emit!(
                                     buffer,
-                                    "self.{}.write().unwrap().insert(read.{id}, {}.clone());",
+                                    "self.{}{write}.insert(read.{id}, {}.clone());",
                                     obj.as_ident(),
                                     obj.as_ident()
                                 );
@@ -311,7 +371,22 @@ impl DomainStore {
                     // 🚦
                     // Generate exhume_ methods
                     let thing = if is_uber {
-                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Rc<RefCell<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdRwLock | ParkingLotRwLock => format!(
+                                "Arc<RwLock<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Arc<Mutex<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                        }
                     } else {
                         format!("&{}", obj.as_type(&Ownership::new_borrowed(), woog, domain))
                     };
@@ -330,10 +405,19 @@ impl DomainStore {
                     );
 
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         if timestamp {
                             emit!(
                                 buffer,
-                                "self.{}.read().unwrap().get(id).map(|{}| {}.0.clone())",
+                                "self.{}{read}.get(id).map(|{}| {}.0.clone())",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -341,7 +425,7 @@ impl DomainStore {
                         } else {
                             emit!(
                                 buffer,
-                                "self.{}.read().unwrap().get(id).map(|{}| {}.clone())",
+                                "self.{}{read}.get(id).map(|{}| {}.clone())",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident(),
@@ -366,7 +450,22 @@ impl DomainStore {
                     // 🚦
                     // Generate exorcise_ methods
                     let thing = if is_uber {
-                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Rc<RefCell<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdRwLock | ParkingLotRwLock => format!(
+                                "Arc<RwLock<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Arc<Mutex<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                        }
                     } else {
                         format!("{}", obj.as_type(&Ownership::new_borrowed(), woog, domain))
                     };
@@ -385,16 +484,25 @@ impl DomainStore {
                     );
 
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let write = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow_mut()",
+                            StdRwLock => ".write().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".write()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         if timestamp {
                             emit!(
                                 buffer,
-                                "self.{0}.write().unwrap().remove(id).map(|{0}| {0}.0.clone())",
+                                "self.{0}{write}.remove(id).map(|{0}| {0}.0.clone())",
                                 obj.as_ident()
                             );
                         } else {
                             emit!(
                                 buffer,
-                                "self.{0}.write().unwrap().remove(id).map(|{0}| {0}.clone())",
+                                "self.{0}{write}.remove(id).map(|{0}| {0}.clone())",
                                 obj.as_ident(),
                             );
                         }
@@ -448,6 +556,15 @@ impl DomainStore {
                         );
                         emit!(buffer, "///");
                         if is_uber {
+                            use UberStoreOptions::*;
+                            let read = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow()",
+                                StdRwLock => ".read().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".read()",
+                                ParkingLotMutex => ".lock()",
+                            };
                             emit!(
                                 buffer,
                                 "pub fn exhume_{}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
@@ -456,11 +573,11 @@ impl DomainStore {
                             if timestamp {
                                 emit!(
                                     buffer,
-                                    "self.{0}_id_by_name.read().unwrap().get(name).map(|{0}| {0}.0)",
+                                    "self.{0}_id_by_name{read}.get(name).map(|{0}| {0}.0)",
                                     obj.as_ident()
                                 );
                             } else {
-                                emit!(buffer, "self.{}_id_by_name.read().unwrap().get(name)", obj.as_ident());
+                                emit!(buffer, "self.{0}_id_by_name{read}.get(name).map(|{0}| *{0})", obj.as_ident());
                             }
                         } else {
                             if timestamp {
@@ -499,11 +616,26 @@ impl DomainStore {
                     emit!(buffer, "///");
 
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let store_type = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Rc<RefCell<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdRwLock | ParkingLotRwLock => format!(
+                                "Arc<RwLock<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Arc<Mutex<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                        };
                         emit!(
                             buffer,
-                            "pub fn iter_{}(&self) -> impl Iterator<Item = Arc<RwLock<{}>>> + '_ {{",
+                            "pub fn iter_{}(&self) -> impl Iterator<Item = {store_type}> + '_ {{",
                             obj.as_ident(),
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                     } else {
                         emit!(
@@ -515,11 +647,34 @@ impl DomainStore {
                     }
 
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        let store_type = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Vec<Rc<RefCell<{}>>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdRwLock | ParkingLotRwLock => format!(
+                                "Vec<Arc<RwLock<{}>>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Vec<Arc<Mutex<{}>>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                        };
                         if timestamp {
                             emit!(
                                 buffer,
-                                "let values: Vec<Arc<RwLock<{}>>> = self.{}.read().unwrap().values().map(|{}| {}.0.clone()).collect();",
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                "let values: {store_type} = self.{}{read}.values().map(|{}| {}.0.clone()).collect();",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -535,8 +690,7 @@ impl DomainStore {
                         } else {
                             emit!(
                                 buffer,
-                                "let values: Vec<Arc<RwLock<{}>>> = self.{}.read().unwrap().values().map(|{}| {}.clone()).collect();",
-                                obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                "let values: {store_type} = self.{}{read}.values().map(|{}| {}.clone()).collect();",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -584,9 +738,18 @@ impl DomainStore {
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         let verb = if is_uber {
-                            ".read().unwrap().get"
+                            use UberStoreOptions::*;
+                            let read = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow()",
+                                StdRwLock => ".read().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".read()",
+                                ParkingLotMutex => ".lock()",
+                            };
+                            format!("{read}.get")
                         } else {
-                            ".get"
+                            ".get".to_owned()
                         };
 
                         if local_object_is_enum(obj, config, domain) {
@@ -786,7 +949,7 @@ impl CodeWriter for DomainStore {
             .map(|obj| object_has_name(obj, domain))
             .find(|x| *x)
             .is_some();
-        let is_uber = config.get_uber_store();
+        let is_uber = config.is_uber_store();
 
         buffer.block(
             DirectiveKind::IgnoreOrig,
@@ -802,7 +965,30 @@ impl CodeWriter for DomainStore {
                     }
                 }
                 if is_uber {
-                    emit!(buffer, "use std::sync::{{Arc, RwLock}};")
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => {
+                            emit!(buffer, "use std::cell::RefCell;");
+                            emit!(buffer, "use std::rc::Rc;")
+                        },
+                        StdRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::RwLock;")
+                        }
+                        StdMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::Mutex;")
+                        }
+                        ParkingLotRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::RwLock;")
+                        }
+                        ParkingLotMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::Mutex;")
+                        }
+                    };
                 }
                 emit!(buffer, "");
                 emit!(buffer, "use fnv::FnvHashMap as HashMap;");
@@ -837,23 +1023,60 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "pub struct ObjectStore {{");
                 for obj in &objects {
                     let value_type = if is_uber {
-                        format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Rc<RefCell<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdRwLock | ParkingLotRwLock => format!(
+                                "Arc<RwLock<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Arc<Mutex<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                        }
                     } else {
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     };
 
                     if timestamp {
                         if is_uber {
+                            use UberStoreOptions::*;
+                            let mother_of_all_types = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => format!(
+                                    "Rc<RefCell<HashMap<Uuid, ({}, SystemTime)>>>",
+                                    value_type
+                                ),
+                                StdRwLock | ParkingLotRwLock => format!(
+                                    "Arc<RwLock<HashMap<Uuid, ({}, SystemTime)>>>",
+                                    value_type
+                                ),
+                                StdMutex | ParkingLotMutex => format!(
+                                    "Arc<Mutex<HashMap<Uuid, ({}, SystemTime)>>>",
+                                    value_type
+                                ),
+                            };
                             emit!(
                                 buffer,
-                                "{}: Arc<RwLock<HashMap<Uuid, ({}, SystemTime)>>>,",
-                                obj.as_ident(),
-                                value_type
+                                "{}: {mother_of_all_types},",
+                                obj.as_ident()
                             );
                             if object_has_name(obj, domain) {
+                                use UberStoreOptions::*;
+                                let by_name_type = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => "Rc<RefCell<HashMap<String, (Uuid, SystemTime)>>>",
+                                    StdRwLock | ParkingLotRwLock => "Arc<RwLock<HashMap<String, (Uuid, SystemTime)>>>",
+                                    StdMutex | ParkingLotMutex => "Arc<Mutex<HashMap<String, (Uuid, SystemTime)>>>",
+                                };
                                 emit!(
                                     buffer,
-                                    "{}_id_by_name: Arc<RwLock<HashMap<String, (Uuid, SystemTime)>>>,",
+                                    "{}_id_by_name: {by_name_type},",
                                     obj.as_ident()
                                 );
                             }
@@ -874,16 +1097,38 @@ impl CodeWriter for DomainStore {
                         }
                     } else {
                         if is_uber {
+                            use UberStoreOptions::*;
+                            let mother_of_all_types = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => format!(
+                                    "Rc<RefCell<HashMap<Uuid, {}>>>",
+                                    value_type
+                                ),
+                                StdRwLock | ParkingLotRwLock => format!(
+                                    "Arc<RwLock<HashMap<Uuid, {}>>>",
+                                    value_type
+                                ),
+                                StdMutex | ParkingLotMutex => format!(
+                                    "Arc<Mutex<HashMap<Uuid, {}>>>",
+                                    value_type
+                                ),
+                            };
                             emit!(
                                 buffer,
-                                "{}: Arc<RwLock<HashMap<Uuid, {}>>>,",
+                                "{}: {mother_of_all_types},",
                                 obj.as_ident(),
-                                value_type
                             );
                             if object_has_name(obj, domain) {
+                                use UberStoreOptions::*;
+                                let by_name_type = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => "Rc<RefCell<HashMap<String, Uuid>>>",
+                                    StdRwLock | ParkingLotRwLock => "Arc<RwLock<HashMap<String, Uuid>>>",
+                                    StdMutex | ParkingLotMutex => "Arc<Mutex<HashMap<Uuid, Uuid>>>",
+                                };
                                 emit!(
                                     buffer,
-                                    "{}_id_by_name: Arc<RwLock<HashMap<String, Uuid>>>,",
+                                    "{}_id_by_name: {by_name_type},",
                                     obj.as_ident(),
                                 );
                             }
@@ -915,9 +1160,16 @@ impl CodeWriter for DomainStore {
                 }
                 for obj in &objects {
                     if is_uber {
-                        emit!(buffer, "{}: Arc::new(RwLock::new(HashMap::default())),", obj.as_ident());
+                        use UberStoreOptions::*;
+                        let ctor = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => "Rc::new(RefCell::new(HashMap::default()))",
+                            StdRwLock | ParkingLotRwLock => "Arc::new(RwLock::new(HashMap::default()))",
+                            StdMutex | ParkingLotMutex => "Arc::new(Mutex::new(HashMap::default()))",
+                        };
+                        emit!(buffer, "{}: {ctor},", obj.as_ident());
                         if object_has_name(obj, domain) {
-                            emit!(buffer, "{}_id_by_name: Arc::new(RwLock::new(HashMap::default())),", obj.as_ident());
+                            emit!(buffer, "{}_id_by_name: {ctor},", obj.as_ident());
                         }
                     } else {
                         emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
@@ -934,10 +1186,17 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "// a lot of special cases, and I think it calls other recursive functions...💥");
                 for obj in &supertypes {
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let (ctor, tail) = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ("Rc::new(RefCell::new(", ")));"),
+                            StdRwLock | ParkingLotRwLock => ("Arc::new(RwLock::new(", ")));"),
+                            StdMutex | ParkingLotMutex => ("Arc::new(Mutex::new(", ")));"),
+                        };
                         emit_singleton_subtype_instances(
                             obj,
-                            &format!("store.inter_{}(Arc::new(RwLock::new(", obj.as_ident()),
-                            &")));",
+                            &format!("store.inter_{}({ctor}", obj.as_ident()),
+                            &tail,
                             config,
                             domain,
                             woog,
@@ -989,8 +1248,13 @@ impl CodeWriter for DomainStore {
 /// seem to need it for `Object` so far.
 ///
 /// So I'm short-circuiting this now.
+///
+/// What a hack. These really need to be colored, or marked, or whatever.
+/// // 🚧 This needs to return the type of string manipulation to use on the
+/// name. Or maybe we don't do one at all, and let the end user sort it out.
+/// I sort of like that option better. I wonder how many errors will ensue...
 fn object_has_name(obj: &Object, _domain: &Domain) -> bool {
-    obj.name == "Object" || obj.name == "Struct"
+    obj.name == "Object" || obj.name == "Struct" || obj.name == "Function" || obj.name == "Field"
     // obj.r1_attribute(domain.sarzak())
     //     .iter()
     //     .find(|attr| {
@@ -1021,7 +1285,7 @@ fn generate_store_persistence(
         DirectiveKind::IgnoreOrig,
         format!("{}-object-store-persistence", module),
         |buffer| {
-            let is_uber = config.get_uber_store();
+            let is_uber = config.is_uber_store();
 
             emit!(buffer, "/// Persist the store.");
             emit!(buffer, "///");
@@ -1076,9 +1340,18 @@ fn generate_store_persistence(
                 emit!(buffer, "fs::create_dir_all(&path)?;");
                 if timestamp {
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         emit!(
                             buffer,
-                            "for {}_tuple in self.{}.read().unwrap().values() {{",
+                            "for {}_tuple in self.{}{read}.values() {{",
                             obj.as_ident(),
                             obj.as_ident()
                         );
@@ -1097,9 +1370,18 @@ fn generate_store_persistence(
                     };
 
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         emit!(
                             buffer,
-                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0.read().unwrap().{id}));",
+                            "let path = path.join(format!(\"{{}}.json\", {}_tuple.0{read}.{id}));",
                             obj.as_ident()
                         );
                     } else {
@@ -1115,10 +1397,25 @@ fn generate_store_persistence(
                     emit!(buffer, "let reader = io::BufReader::new(file);");
 
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let store_type = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Rc<RefCell<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdRwLock | ParkingLotRwLock => format!(
+                                "Arc<RwLock<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Arc<Mutex<{}>>",
+                                obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            ),
+                        };
                         emit!(
                             buffer,
-                            "let on_disk: (Arc<RwLock<{}>>, SystemTime) = serde_json::from_reader(reader)?;",
-                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                            "let on_disk: ({store_type}, SystemTime) = serde_json::from_reader(reader)?;"
                         );
                     } else {
                         emit!(
@@ -1129,7 +1426,16 @@ fn generate_store_persistence(
                     }
 
                     if is_uber {
-                        emit!(buffer, "if on_disk.0.read().unwrap().to_owned() != {}_tuple.0.read().unwrap().to_owned() {{", obj.as_ident());
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        emit!(buffer, "if on_disk.0{read}.to_owned() != {}_tuple.0{read}.to_owned() {{", obj.as_ident());
                     } else {
                         emit!(buffer, "if on_disk.0 != {}_tuple.0 {{", obj.as_ident());
                     }
@@ -1168,7 +1474,16 @@ fn generate_store_persistence(
                     emit!(buffer, "let id = file_name.split('.').next().unwrap();");
                     emit!(buffer, "if let Ok(id) = Uuid::parse_str(id) {{");
                     if is_uber {
-                        emit!(buffer, "if !self.{}.read().unwrap().contains_key(&id) {{", obj.as_ident());
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        emit!(buffer, "if !self.{}{read}.contains_key(&id) {{", obj.as_ident());
                     } else {
                         emit!(buffer, "if !self.{}.contains_key(&id) {{", obj.as_ident());
                     }
@@ -1198,9 +1513,18 @@ fn generate_store_persistence(
                     emit!(buffer, "}}");
                 } else {
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         emit!(
                             buffer,
-                            "for {} in self.{}.read().unwrap().values() {{",
+                            "for {} in self.{}{read}.values() {{",
                             obj.as_ident(),
                             obj.as_ident()
                         );
@@ -1213,16 +1537,25 @@ fn generate_store_persistence(
                         );
                     }
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         if local_object_is_enum(obj, config, domain) {
                             emit!(
                                 buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {}.read().unwrap().id()));",
+                                "let path = path.join(format!(\"{{}}.json\", {}{read}.id()));",
                                 obj.as_ident()
                             );
                         } else {
                             emit!(
                                 buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {}.read().unwrap().id));",
+                                "let path = path.join(format!(\"{{}}.json\", {}{read}.id));",
                                 obj.as_ident()
                             );
                         }
@@ -1313,7 +1646,22 @@ fn generate_store_persistence(
                 };
 
                 let thing = if is_uber {
-                    format!("Arc<RwLock<{}>>", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "Rc<RefCell<{}>>",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "Arc<RwLock<{}>>",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "Arc<Mutex<{}>>",
+                            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
                 } else {
                     obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 };
@@ -1327,9 +1675,26 @@ fn generate_store_persistence(
                     );
                     if object_has_name(obj, domain) {
                         if is_uber {
+                            use UberStoreOptions::*;
+                            let write = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow_mut()",
+                                StdRwLock => ".write().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".write()",
+                                ParkingLotMutex => ".lock()",
+                            };
+                            let read = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow()",
+                                StdRwLock => ".read().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".read()",
+                                ParkingLotMutex => ".lock()",
+                            };
                             emit!(
                                 buffer,
-                                "store.{}_id_by_name.write().unwrap().insert({}.0.read().unwrap().name.to_upper_camel_case(), ({}.0.read().unwrap().{id}, {}.1));",
+                                "store.{}_id_by_name{write}.insert({}.0{read}.name.to_upper_camel_case(), ({}.0{read}.{id}, {}.1));",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident(),
@@ -1347,9 +1712,26 @@ fn generate_store_persistence(
                         }
                     }
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        let write = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow_mut()",
+                            StdRwLock => ".write().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".write()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         emit!(
                             buffer,
-                            "store.{}.write().unwrap().insert({}.0.read().unwrap().{id}, {}.clone());",
+                            "store.{}{write}.insert({}.0{read}.{id}, {}.clone());",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()
@@ -1372,9 +1754,26 @@ fn generate_store_persistence(
                     );
                     if object_has_name(obj, domain) {
                         if is_uber {
+                            use UberStoreOptions::*;
+                            let write = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow_mut()",
+                                StdRwLock => ".write().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".write()",
+                                ParkingLotMutex => ".lock()",
+                            };
+                            let read = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow()",
+                                StdRwLock => ".read().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".read()",
+                                ParkingLotMutex => ".lock()",
+                            };
                             emit!(
                                 buffer,
-                                "store.{}_id_by_name.write().unwrap().insert({}.read().unwrap().name.to_upper_camel_case(), {}.read().unwrap().{id});",
+                                "store.{}_id_by_name{write}.insert({}{read}.name.to_upper_camel_case(), {}{read}.{id});",
                                 obj.as_ident(),
                                 obj.as_ident(),
                                 obj.as_ident()
@@ -1390,9 +1789,26 @@ fn generate_store_persistence(
                         }
                     }
                     if is_uber {
+                        use UberStoreOptions::*;
+                        let write = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow_mut()",
+                            StdRwLock => ".write().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".write()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
                         emit!(
                             buffer,
-                            "store.{}.write().unwrap().insert({}.read().unwrap().{id}, {}.clone());",
+                            "store.{}{write}.insert({}{read}.{id}, {}.clone());",
                             obj.as_ident(),
                             obj.as_ident(),
                             obj.as_ident()

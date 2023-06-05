@@ -8,12 +8,14 @@ use grace::{
 };
 use log;
 use sarzak::domain::DomainBuilder;
+use tracy_client::Client;
 
 macro_rules! test_target_domain {
     ($name:ident, $domain:literal, $path:literal) => {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -75,6 +77,7 @@ macro_rules! test_target_domain {
         /// This one handles imports
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -144,6 +147,7 @@ macro_rules! test_target_domain_timestamps {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -207,6 +211,7 @@ macro_rules! test_target_domain_timestamps {
         /// This one handles imports
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -277,6 +282,7 @@ macro_rules! test_target_application {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.always_process = Some(true);
@@ -330,6 +336,7 @@ macro_rules! test_target_dwarf {
         #[test]
         fn $name() -> Result<(), std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Dwarf(DwarfConfig {
@@ -479,6 +486,7 @@ test_target_application!(
 #[test]
 fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
     let _ = env_logger::builder().is_test(true).try_init();
+    let _ = Client::start();
 
     let mut options = GraceCompilerOptions::default();
     options.target = Target::Domain(DomainConfig {

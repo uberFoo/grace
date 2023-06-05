@@ -16,6 +16,23 @@ use target::{
     application::ApplicationTarget, domain::DomainTarget, dwarf::DwarfTarget, svm::SvmTarget,
 };
 
+type Lock<T> = std::sync::RwLock<T>;
+// type Lock<T> = parking_lot::Mutex<T>;
+
+#[macro_export]
+macro_rules! s_read {
+    ($arg:expr) => {
+        $arg.read().unwrap()
+    };
+}
+
+#[macro_export]
+macro_rules! s_write {
+    ($arg:expr) => {
+        $arg.write().unwrap()
+    };
+}
+
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const BUILD_TIME: &str = include!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
 

@@ -24,7 +24,7 @@ use crate::{
         object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     types::{
         domain::rels::{
             generate_assoc_referent_rels, generate_assoc_referrer_rels,
@@ -111,8 +111,32 @@ impl CodeWriter for Enum {
                 let mut uses = HashSet::default();
                 let mut import_store = false;
 
-                if config.get_uber_store() {
-                    emit!(buffer, "use std::sync::{{Arc, RwLock}};\n")
+                if config.is_uber_store() {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => {
+                            emit!(buffer, "use std::cell::RefCell;");
+                            emit!(buffer, "use std::rc::Rc;")
+                        }
+                        StdRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::RwLock;")
+                        }
+                        StdMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::Mutex;")
+                        }
+                        ParkingLotRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::RwLock;")
+                        }
+                        ParkingLotMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::Mutex;")
+                        }
+                    };
+                    uses.insert("use tracy_client::span;".to_owned());
                 }
 
                 // Everything has an `id`, everything needs this.
@@ -453,8 +477,7 @@ impl CodeWriter for EnumNewImpl {
             DirectiveKind::IgnoreOrig,
             format!("{}-new-impl", obj.as_ident()),
             |buffer| {
-                // let is_uber = config.get_uber_store();
-                let is_uber = config.get_uber_store() && !config.is_imported(&obj.id);
+                let is_uber = config.is_uber_store() && !config.is_imported(&obj.id);
 
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
@@ -471,9 +494,16 @@ impl CodeWriter for EnumNewImpl {
 
                     if is_singleton && !is_supertype {
                         if is_uber {
+                            use UberStoreOptions::*;
+                            let ret_type = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => "Rc<RefCell<Self>>",
+                                StdRwLock | ParkingLotRwLock => "Arc<RwLock<Self>>",
+                                StdMutex | ParkingLotMutex => "Arc<Mutex<Self>>",
+                            };
                             emit!(
                                 buffer,
-                                "pub fn new_{}(store: &{}) -> Arc<RwLock<Self>> {{",
+                                "pub fn new_{}(store: &{}) -> {ret_type} {{",
                                 s_obj.as_ident(),
                                 store.name
                             );
@@ -514,12 +544,33 @@ impl CodeWriter for EnumNewImpl {
                             //         store.name
                             //     );
                             // } else {
+                                use UberStoreOptions::*;
+                                let ret_type = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => "Rc<RefCell<Self>>",
+                                    StdRwLock | ParkingLotRwLock => "Arc<RwLock<Self>>",
+                                    StdMutex | ParkingLotMutex => "Arc<Mutex<Self>>",
+                                };
+                                let store_type = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => format!(
+                                        "Rc<RefCell<{}>>",
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                    ),
+                                    StdRwLock | ParkingLotRwLock => format!(
+                                        "Arc<RwLock<{}>>",
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                    ),
+                                    StdMutex | ParkingLotMutex => format!(
+                                        "Arc<Mutex<{}>>",
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                    ),
+                                };
                                 emit!(
                                     buffer,
-                                    "pub fn new_{}({}: &Arc<RwLock<{}>>, store: &mut {}) -> Arc<RwLock<Self>> {{",
+                                    "pub fn new_{}({}: &{store_type}, store: &mut {}) -> {ret_type} {{",
                                     s_obj.as_ident(),
                                     s_obj.as_ident(),
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     store.name
                                 );
                             // }
@@ -567,19 +618,42 @@ impl CodeWriter for EnumNewImpl {
                             //     emit!(buffer, "new");
                             //     emit!(buffer, "}}");
                             // } else {
+                                use UberStoreOptions::*;
+                                let read = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow()",
+                                    StdRwLock => ".read().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".read()",
+                                    ParkingLotMutex => ".lock()",
+                                };
+                                let (ctor, tail) = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => (format!(
+                                        "Rc::new(RefCell::new(Self::{}",
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                    ), "))"),
+                                    StdRwLock | ParkingLotRwLock => (format!(
+                                        "Arc::new(RwLock::new(Self::{}",
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                    ), "))"),
+                                    StdMutex | ParkingLotMutex => (format!(
+                                        "Arc::new(Mutex::new(Self::{}",
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                                    ), "))"),
+                                };
+
+                                emit!(buffer, "let id = {}{read}.{id};", s_obj.as_ident());
                                 emit!(
-                                    buffer, "if let Some({}) = store.exhume_{}(&{}.read().unwrap().{id}) {{",
+                                    buffer, "if let Some({}) = store.exhume_{}(&id) {{",
                                     s_obj.as_ident(),
                                     obj.as_ident(),
-                                    s_obj.as_ident()
                                 );
                                 emit!(buffer, "{}", s_obj.as_ident());
                                 emit!(buffer, "}} else {{");
                                 emit!(
                                     buffer,
-                                    "let new = Arc::new(RwLock::new(Self::{}({}.read().unwrap().{id})));",
-                                    s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                    s_obj.as_ident()
+                                    "let new = {ctor}(id){tail};"
                                 );
                                 emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                                 emit!(buffer, "new");

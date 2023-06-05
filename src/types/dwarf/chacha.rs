@@ -1,10 +1,7 @@
 //! ChaCha File Generation
 //!
 //! This is where we generate code for use in the next stage of the compiler.
-use std::{
-    fmt::Write,
-    sync::{Arc, RwLock},
-};
+use std::{fmt::Write, sync::Arc};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
@@ -27,8 +24,10 @@ use crate::{
         AttributeBuilder,
     },
     options::GraceConfig,
+    s_read,
     target::dwarf::LU_DOG,
     types::ChaChaDefinition,
+    Lock,
 };
 
 pub(crate) struct ChaChaBuilder {
@@ -107,11 +106,11 @@ impl FileGenerator for ChaChaGenerator {
 #[derive(Debug)]
 struct Attribute {
     pub name: String,
-    pub ty: Arc<RwLock<ValueType>>,
+    pub ty: Arc<Lock<ValueType>>,
 }
 
 impl AttributeBuilder<Attribute> for Attribute {
-    fn new(name: String, ty: Arc<RwLock<ValueType>>) -> Self {
+    fn new(name: String, ty: Arc<Lock<ValueType>>) -> Self {
         Attribute { name, ty }
     }
 }
@@ -289,7 +288,7 @@ impl CodeWriter for ChaChaFile {
             );
             emit!(
                 buffer,
-                "let type_ = lu_dog.read().unwrap().exhume_value_type(&{obj_const}_STORE_TYPE_UUID).unwrap();\n",
+                "let type_ = lu_dog.read().exhume_value_type(&{obj_const}_STORE_TYPE_UUID).unwrap();\n",
             );
             emit!(buffer, "Self {{");
             emit!(buffer, "self_: None,");
@@ -345,11 +344,11 @@ impl CodeWriter for ChaChaFile {
             emit!(buffer, "\"id\" => Ok((");
             emit!(
                 buffer,
-                "Arc::new(RwLock::new(Value::Uuid(self_.read().unwrap().{id}))),"
+                "Arc::new(RwLock::new(Value::Uuid(self_.read().{id}))),"
             );
             emit!(
                 buffer,
-                "self.lu_dog.read().unwrap().exhume_value_type(&SUuid::new().id()).unwrap(),)),"
+                "self.lu_dog.read().exhume_value_type(&SUuid::new().id()).unwrap(),)),"
             );
             emit!(buffer, " 道 => Ok((");
             emit!(
@@ -404,7 +403,7 @@ impl CodeWriter for ChaChaFile {
             emit!(buffer, "\"instances\" => {{");
             emit!(
                 buffer,
-                "let instances = MODEL.read().unwrap().iter_{obj_ident}().map(|{obj_ident}| {{",
+                "let instances = MODEL.read().iter_{obj_ident}().map(|{obj_ident}| {{",
             );
             emit!(buffer, "let mut {obj_ident}_proxy = self.clone();");
             emit!(buffer, "{obj_ident}_proxy.self_ = Some({obj_ident});");
@@ -462,14 +461,14 @@ impl CodeWriter for ChaChaFile {
                 if attr_name == "id" {
                     emit!(
                         buffer,
-                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().unwrap().{id})))),",
+                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{id})))),",
                     );
                 } else {
                     if ty == "UserType" {
                         emit!(buffer, "\"{attr_name}\" => {{");
                         emit!(
                             buffer,
-                            "let {attr_name} = MODEL.read().unwrap().exhume_{obj_ident}(&self_.read().unwrap().{attr_name}).unwrap();"
+                            "let {attr_name} = MODEL.read().exhume_{obj_ident}(&self_.read().{attr_name}).unwrap();"
                         );
                         emit!(buffer, "");
                         emit!(
@@ -481,11 +480,11 @@ impl CodeWriter for ChaChaFile {
                         emit!(buffer, "\"{attr_name}\" => {{");
                         emit!(
                             buffer,
-                            "if let Some({attr_name}) = &self_.read().unwrap().{attr_name} {{"
+                            "if let Some({attr_name}) = &self_.read().{attr_name} {{"
                         );
                         emit!(
                             buffer,
-                            "let {attr_name} = MODEL.read().unwrap().exhume_{obj_ident}({attr_name}).unwrap();"
+                            "let {attr_name} = MODEL.read().exhume_{obj_ident}({attr_name}).unwrap();"
                         );
                         emit!(buffer, "");
                         emit!(
@@ -499,12 +498,12 @@ impl CodeWriter for ChaChaFile {
                     } else if ty == "String" {
                         emit!(
                             buffer,
-                            "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().unwrap().{attr_name}.to_owned())))),",
+                            "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{attr_name}.to_owned())))),",
                         );
                     } else {
                         emit!(
                         buffer,
-                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().unwrap().{attr_name})))),",
+                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{attr_name})))),",
                     );
                     }
                 }
@@ -541,13 +540,13 @@ impl CodeWriter for ChaChaFile {
                 if attr_name == "id" {
                     write!(
                         buffer,
-                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self_.read().unwrap().{id})",
+                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self_.read().{id})",
                     )
                     .context(FormatSnafu)?;
                 } else {
                     write!(
                         buffer,
-                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self_.read().unwrap().{attr_name})",
+                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self_.read().{attr_name})",
                     )
                     .context(FormatSnafu)?;
                 }
@@ -574,10 +573,7 @@ impl CodeWriter for ChaChaFile {
                     "fn from(({obj_ident}, store): (Arc<RwLock<{obj_type}>>, Arc<RwLock<LuDogStore>>)) -> Self {{"
                 );
             if is_enum {
-                emit!(
-                    buffer,
-                    "let read_{obj_ident} = {obj_ident}.read().unwrap();\n",
-                );
+                emit!(buffer, "let read_{obj_ident} = {obj_ident}.read();\n",);
                 emit!(buffer, "match *read_{obj_ident} {{");
                 let (subtypes, domain) = if is_imported {
                     let imported = config.get_imported(&obj.id).unwrap();
@@ -621,7 +617,10 @@ impl CodeWriter for ChaChaFile {
                     "Value::ProxyType(Arc::new(RwLock::new({obj_type}Proxy {{"
                 );
                 emit!(buffer, "self_: Some({obj_ident}),");
-                emit!(buffer, "type_: store.read().unwrap().exhume_value_type(&{obj_const}_STORE_TYPE_UUID).unwrap(),");
+                emit!(
+                    buffer,
+                    "type_: store.read().exhume_value_type(&{obj_const}_STORE_TYPE_UUID).unwrap(),"
+                );
                 emit!(buffer, "lu_dog: store.clone(),");
                 emit!(buffer, "}})))");
             }
@@ -636,7 +635,7 @@ impl CodeWriter for ChaChaFile {
             emit!(buffer, "fn try_from(value: &Value) -> Result<Self, <{obj_type}Proxy as TryFrom<&Value>>::Error> {{");
             emit!(buffer, "match value {{");
             emit!(buffer, "Value::ProxyType(proxy) => {{");
-            emit!(buffer, "let read_proxy = proxy.read().unwrap();");
+            emit!(buffer, "let read_proxy = proxy.read();");
             emit!(buffer, "");
             emit!(
                 buffer,
@@ -692,7 +691,7 @@ fn render_ctor(
     for attr in attrs {
         if attr.name != "id" {
             emit!(buffer, "let arg = args.pop_front().unwrap();");
-            emit!(buffer, "let arg = arg.read().unwrap();");
+            emit!(buffer, "let arg = arg.read();");
             let attr_ident = attr.name.as_ident();
             let ty = value_type_to_string(&attr.ty, woog, domain);
             let ref_name = ty.1;
@@ -727,7 +726,7 @@ fn render_ctor(
 
     if parent_obj.is_some() && !is_singleton {
         emit!(buffer, "let arg = args.pop_front().unwrap();");
-        emit!(buffer, "let arg = arg.read().unwrap();");
+        emit!(buffer, "let arg = arg.read();");
         emit!(
             buffer,
             "let subtype: {obj_type}Proxy = (&*arg).try_into()?;"
@@ -774,17 +773,18 @@ fn render_ctor(
 }
 
 fn value_type_to_string<'a>(
-    ty: &Arc<RwLock<ValueType>>,
+    ty: &Arc<Lock<ValueType>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> (&'a str, String) {
     let lu_dog = &LU_DOG;
 
-    match ty.read().unwrap().clone() {
+    match &*s_read!(ty) {
         ValueType::Reference(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
-                let reference = lu_dog.exhume_reference(id).unwrap().read().unwrap().clone();
+                let reference = lu_dog.exhume_reference(id).unwrap();
+                let reference = s_read!(reference);
                 reference.r35_value_type(&lu_dog)[0].clone()
             };
 
@@ -808,24 +808,16 @@ fn value_type_to_string<'a>(
         ValueType::WoogOption(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
-                let option = lu_dog
-                    .exhume_woog_option(id)
-                    .unwrap()
-                    .read()
-                    .unwrap()
-                    .clone();
+                let option = lu_dog.exhume_woog_option(id).unwrap();
+                let option = s_read!(option);
                 option.r2_value_type(&lu_dog)[0].clone()
             };
             ("Option", value_type_to_string(&inner, woog, domain).1)
         }
         ValueType::WoogStruct(ref id) => {
             let lu_dog = lu_dog.read().unwrap();
-            let woog_struct = lu_dog
-                .exhume_woog_struct(id)
-                .unwrap()
-                .read()
-                .unwrap()
-                .clone();
+            let woog_struct = lu_dog.exhume_woog_struct(id).unwrap();
+            let woog_struct = s_read!(woog_struct);
             (
                 "WoogStruct",
                 woog_struct

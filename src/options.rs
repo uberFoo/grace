@@ -16,7 +16,7 @@
 //! I should solve early.
 use std::{any::Any, path::PathBuf};
 
-use clap::{ArgAction, Args, Subcommand};
+use clap::{ArgAction, Args, Subcommand, ValueEnum};
 use fnv::FnvHashMap as HashMap;
 use sarzak::{mc::ModelCompilerOptions, v2::domain::Domain};
 use serde::{Deserialize, Serialize};
@@ -53,6 +53,25 @@ pub enum Target {
     ///
     /// This is a second-stage target.
     Svm,
+}
+
+/// Uber Store Options
+///
+/// I think all of this store stuff needs to be focused into a single place.
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, ValueEnum)]
+pub enum UberStoreOptions {
+    /// Disable the uber store
+    Disabled,
+    /// No threading
+    Single,
+    /// Use the standard library RwLock
+    StdRwLock,
+    /// Use the standard library Mutex
+    StdMutex,
+    /// Use the parking_lot RwLock
+    ParkingLotRwLock,
+    /// Use the parking_lot Mutex
+    ParkingLotMutex,
 }
 
 /// Domain Target Configuration
@@ -115,8 +134,12 @@ pub struct DomainConfig {
     /// Eventually this option will go away in favor of making it the default.
     /// That requires rewriting big chunks of the compiler, so I'm going to
     /// do it piecemeal.
-    #[arg(long, action=ArgAction::SetTrue)]
-    pub uber_store: bool,
+    ///
+    /// Things change. I want to optionally enable threading, and I want to be
+    /// able to change the RwLock between std and parking_lot. Heck, let's also
+    /// add Mutex, from both crates.
+    #[arg(short, long, value_enum, default_value_t=UberStoreOptions::Disabled)]
+    pub uber_store: UberStoreOptions,
     /// This Domain is Sarzak
     ///
     /// There can be only one! 💥😱🤣
@@ -135,7 +158,7 @@ const DOMAIN_FROM_MODULE: Option<String> = None;
 const DOMAIN_FROM_PATH: Option<PathBuf> = None;
 const DOMAIN_PERSIST: bool = true;
 const DOMAIN_PERSIST_TIMESTAMPS: bool = false;
-const DOMAIN_UBER_STORE: bool = false;
+const DOMAIN_UBER_STORE: UberStoreOptions = UberStoreOptions::Disabled;
 const DOMAIN_IS_SARZAK: bool = false;
 const DOMAIN_IS_META_MODEL: bool = false;
 
@@ -358,10 +381,17 @@ impl GraceConfig {
         }
     }
 
-    pub(crate) fn get_uber_store(&self) -> bool {
+    pub(crate) fn is_uber_store(&self) -> bool {
         match self.get_target() {
-            Target::Domain(config) => config.uber_store,
+            Target::Domain(config) => config.uber_store != UberStoreOptions::Disabled,
             _ => false,
+        }
+    }
+
+    pub(crate) fn get_uber_store(&self) -> Option<&UberStoreOptions> {
+        match self.get_target() {
+            Target::Domain(config) => Some(&config.uber_store),
+            _ => None,
         }
     }
 

@@ -25,7 +25,7 @@ use crate::{
         buffer::{emit, Buffer},
         get_assoc_referent_from_referrer_sorted, get_binary_referrers_sorted,
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     todo::{External, GType, ObjectMethod, Parameter as todoP},
 };
 
@@ -144,7 +144,7 @@ impl ForStore for GraceType {
         woog: &WoogStore,
         domain: &Domain,
     ) -> String {
-        let is_uber = config.get_uber_store();
+        let is_uber = config.is_uber_store();
 
         match self {
             Self::Ty(t) => {
@@ -170,11 +170,22 @@ impl ForStore for GraceType {
                 };
 
                 if is_uber {
-                    // if is_uber && !imported {
-                    format!(
-                        "Option<&Arc<RwLock<{}>>>",
-                        inner.as_type(mutability, woog, domain)
-                    )
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "Option<&Rc<RefCell<{}>>>",
+                            inner.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "Option<&Arc<RwLock<{}>>>",
+                            inner.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "Option<&Arc<Mutex<{}>>>",
+                            inner.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
                 } else {
                     format!("Option<{}>", inner.as_type(mutability, woog, domain))
                 }
@@ -185,7 +196,22 @@ impl ForStore for GraceType {
                 let imported = config.is_imported(&object.id);
 
                 if is_uber && !imported {
-                    format!("&Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "&Rc<RefCell<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "&Arc<RwLock<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "&Arc<Mutex<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
                 } else {
                     format!("&{}", object.as_type(mutability, woog, domain))
                 }
@@ -203,7 +229,8 @@ impl ForStore for GType {
         woog: &WoogStore,
         domain: &Domain,
     ) -> String {
-        let is_uber = config.get_uber_store();
+        let is_uber = config.is_uber_store();
+        debug_assert!(is_uber);
 
         match self {
             GType::Boolean => "bool".to_owned(),
@@ -215,7 +242,22 @@ impl ForStore for GType {
                 let object = domain.sarzak().exhume_object(&r).unwrap();
 
                 if is_uber {
-                    format!("&Arc<RwLock<{}>>", object.as_type(mutability, woog, domain))
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "&Rc<RefCell<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "&Arc<RwLock<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "&Arc<Mutex<{}>>",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
                 } else {
                     format!("&{}", object.as_type(mutability, woog, domain))
                 }
@@ -234,10 +276,22 @@ impl ForStore for GType {
                 };
 
                 if is_uber && !imported {
-                    format!(
-                        "Option<&Arc<RwLock<{}>>>",
-                        o.as_type(mutability, woog, domain)
-                    )
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => format!(
+                            "Option<&Rc<RefCell<{}>>>",
+                            o.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdRwLock | ParkingLotRwLock => format!(
+                            "Option<&Arc<RwLock<{}>>>",
+                            o.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                        StdMutex | ParkingLotMutex => format!(
+                            "Option<&Arc<Mutex<{}>>>",
+                            o.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ),
+                    }
                 } else {
                     format!("Option<{}>", o.as_type(mutability, woog, domain))
                 }

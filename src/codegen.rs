@@ -6,11 +6,7 @@ pub(crate) mod generator;
 pub(crate) mod render;
 mod rustfmt;
 
-use std::{
-    fmt::Write,
-    iter::zip,
-    sync::{Arc, RwLock},
-};
+use std::{fmt::Write, iter::zip, sync::Arc};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
@@ -39,9 +35,10 @@ use crate::{
         diff_engine::DirectiveKind,
         render::{ForStore, RenderIdent, RenderType},
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     target::dwarf::LU_DOG,
     todo::{GType, LValue, ObjectMethod, RValue},
+    Lock,
 };
 
 macro_rules! get_subtypes_sorted {
@@ -221,7 +218,7 @@ pub(crate) fn render_method_definition(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    let is_uber = config.get_uber_store();
+    let is_uber = config.is_uber_store();
 
     // Write the beginning of the definition
     write!(buffer, "pub fn {}(", method.name).context(FormatSnafu)?;
@@ -277,13 +274,25 @@ pub(crate) fn render_method_definition(
     }
 
     // Finish the first line of the definition
-    if config.get_uber_store() {
-        writeln!(
-            buffer,
-            ") -> Arc<RwLock<{}>> {{",
-            method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
-        )
-        .context(FormatSnafu)?;
+    if is_uber {
+        use UberStoreOptions::*;
+        let store_type = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc<RefCell<{}>>",
+                method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc<RwLock<{}>>",
+                method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc<Mutex<{}>>",
+                method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+
+        writeln!(buffer, ") -> {store_type} {{",).context(FormatSnafu)?;
     } else {
         writeln!(
             buffer,
@@ -304,7 +313,7 @@ pub(crate) fn render_method_definition_new(
     domain: &Domain,
 ) -> Result<()> {
     let object = domain.sarzak().exhume_object(&method.object).unwrap();
-    let is_uber = config.get_uber_store();
+    let is_uber = config.is_uber_store();
 
     log::debug!("Rendering new method definition for {}", object.as_ident());
 
@@ -377,12 +386,24 @@ pub(crate) fn render_method_definition_new(
     // type of call as the return type.
     // Finish the first line of the definition
     if is_uber {
-        writeln!(
-            buffer,
-            ") -> Arc<RwLock<{}>> {{",
-            object.as_type(&Ownership::new_borrowed(), woog, domain)
-        )
-        .context(FormatSnafu)?;
+        use UberStoreOptions::*;
+        let store_type = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc<RefCell<{}>>",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc<RwLock<{}>>",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc<Mutex<{}>>",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+
+        writeln!(buffer, ") -> {store_type} {{",).context(FormatSnafu)?;
     } else {
         writeln!(
             buffer,
@@ -617,12 +638,24 @@ pub(crate) fn render_new_instance(
         write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
     }
 
-    if config.get_uber_store() {
-        emit!(
-            buffer,
-            "Arc::new(RwLock::new({} {{",
-            object.as_type(&Ownership::new_borrowed(), woog, domain)
-        );
+    if config.is_uber_store() {
+        use UberStoreOptions::*;
+        let store_ctor = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc::new(RefCell::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc::new(RwLock::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc::new(Mutex::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+        emit!(buffer, "{store_ctor}");
     } else {
         emit!(
             buffer,
@@ -631,7 +664,7 @@ pub(crate) fn render_new_instance(
         );
     }
 
-    let is_uber = config.get_uber_store();
+    let is_uber = config.is_uber_store();
 
     let tuples = zip(fields, rvals);
 
@@ -692,9 +725,18 @@ pub(crate) fn render_new_instance(
                                 };
 
                                 if is_uber {
+                                    use UberStoreOptions::*;
+                                    let read = match config.get_uber_store().unwrap() {
+                                        Disabled => unreachable!(),
+                                        Single => ".borrow()",
+                                        StdRwLock => ".read().unwrap()",
+                                        StdMutex => ".lock().unwrap()",
+                                        ParkingLotRwLock => ".read()",
+                                        ParkingLotMutex => ".lock()",
+                                    };
                                     emit!(
                                         buffer,
-                                        "{}: {}Enum::{}({}.read().unwrap().{id}),",
+                                        "{}: {}Enum::{}({}{read}.{id}),",
                                         field.name,
                                         foo_super_obj.unwrap().as_type(
                                             &Ownership::new_borrowed(),
@@ -721,9 +763,18 @@ pub(crate) fn render_new_instance(
                             }
                             _ => {
                                 if is_uber {
+                                    use UberStoreOptions::*;
+                                    let read = match config.get_uber_store().unwrap() {
+                                        Disabled => unreachable!(),
+                                        Single => ".borrow()",
+                                        StdRwLock => ".read().unwrap()",
+                                        StdMutex => ".lock().unwrap()",
+                                        ParkingLotRwLock => ".read()",
+                                        ParkingLotMutex => ".lock()",
+                                    };
                                     emit!(
                                         buffer,
-                                        "{}: {}Enum::{}({}.read().unwrap().id),",
+                                        "{}: {}Enum::{}({}{read}.id),",
                                         field.name,
                                         super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                         obj.as_type(&Ownership::new_borrowed(), woog, domain),
@@ -762,12 +813,16 @@ pub(crate) fn render_new_instance(
                     };
 
                     if is_uber {
-                        emit!(
-                            buffer,
-                            "{}: {}.read().unwrap().{id},",
-                            field.name,
-                            rval.name
-                        )
+                        use UberStoreOptions::*;
+                        let read = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => ".borrow()",
+                            StdRwLock => ".read().unwrap()",
+                            StdMutex => ".lock().unwrap()",
+                            ParkingLotRwLock => ".read()",
+                            ParkingLotMutex => ".lock()",
+                        };
+                        emit!(buffer, "{}: {}{read}.{id},", field.name, rval.name)
                     } else {
                         emit!(buffer, "{}: {}.{id},", field.name, rval.name)
                     }
@@ -796,9 +851,18 @@ pub(crate) fn render_new_instance(
                         };
 
                         if is_uber {
+                            use UberStoreOptions::*;
+                            let read = match config.get_uber_store().unwrap() {
+                                Disabled => unreachable!(),
+                                Single => ".borrow()",
+                                StdRwLock => ".read().unwrap()",
+                                StdMutex => ".lock().unwrap()",
+                                ParkingLotRwLock => ".read()",
+                                ParkingLotMutex => ".lock()",
+                            };
                             emit!(
                                 buffer,
-                                "{}: {}.map(|{}| {}.read().unwrap().{id}),",
+                                "{}: {}.map(|{}| {}{read}.{id}),",
                                 field.name,
                                 rval.name,
                                 obj.as_ident(),
@@ -854,8 +918,8 @@ pub(crate) fn render_new_instance(
 
     emit!(buffer, "id");
 
-    if config.get_uber_store() {
-        write!(buffer, "}}))").context(FormatSnafu)?;
+    if is_uber {
+        emit!(buffer, "}}))");
     } else {
         write!(buffer, "}}").context(FormatSnafu)?;
     }
@@ -917,7 +981,7 @@ pub(crate) fn render_new_instance_new(
         }
     );
 
-    let is_uber = config.get_uber_store();
+    let is_uber = config.is_uber_store();
 
     let mut first = structure
         .r27_structure_field(woog)
@@ -939,11 +1003,23 @@ pub(crate) fn render_new_instance_new(
     write!(buffer, "let {} = ", var.r8_variable(woog)[0].name).context(FormatSnafu)?;
 
     if is_uber {
-        emit!(
-            buffer,
-            "Arc::new(RwLock::new({} {{",
-            object.as_type(&Ownership::new_borrowed(), woog, domain)
-        );
+        use UberStoreOptions::*;
+        let store_ctor = match config.get_uber_store().unwrap() {
+            Disabled => unreachable!(),
+            Single => format!(
+                "Rc::new(RefCell::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdRwLock | ParkingLotRwLock => format!(
+                "Arc::new(RwLock::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+            StdMutex | ParkingLotMutex => format!(
+                "Arc::new(Mutex::new({} {{",
+                object.as_type(&Ownership::new_borrowed(), woog, domain)
+            ),
+        };
+        emit!(buffer, "{store_ctor}");
     } else {
         emit!(
             buffer,
@@ -1005,7 +1081,7 @@ fn typecheck_and_coerce(
     domain: &Domain,
 ) -> Result<String> {
     let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
-    let is_uber = config.get_uber_store();
+    let is_uber = config.is_uber_store();
 
     Ok(match &lhs_ty {
         GraceType::WoogOption(_) => {
@@ -1029,9 +1105,17 @@ fn typecheck_and_coerce(
                             };
 
                             if is_uber {
-                                // if is_uber && !imported {
+                                use UberStoreOptions::*;
+                                let read = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow()",
+                                    StdRwLock => ".read().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".read()",
+                                    ParkingLotMutex => ".lock()",
+                                };
                                 format!(
-                                    "{}.map(|{}| {}.read().unwrap().{id})",
+                                    "{}.map(|{}| {}{read}.{id})",
                                     rhs.as_ident(),
                                     object.as_ident(),
                                     object.as_ident()
@@ -1096,8 +1180,16 @@ fn typecheck_and_coerce(
                             };
 
                             if is_uber {
-                                // if is_uber && !is_imported {
-                                format!("{}.read().unwrap().{id}", rhs.as_ident())
+                                use UberStoreOptions::*;
+                                let read = match config.get_uber_store().unwrap() {
+                                    Disabled => unreachable!(),
+                                    Single => ".borrow()",
+                                    StdRwLock => ".read().unwrap()",
+                                    StdMutex => ".lock().unwrap()",
+                                    ParkingLotRwLock => ".read()",
+                                    ParkingLotMutex => ".lock()",
+                                };
+                                format!("{}{read}.{id}", rhs.as_ident())
                             } else {
                                 format!("{}.{id}", rhs.as_ident())
                             }
@@ -1142,7 +1234,16 @@ fn typecheck_and_coerce(
             );
 
             if is_uber {
-                format!("{}.read().unwrap().to_owned()", rhs.as_ident())
+                use UberStoreOptions::*;
+                let read = match config.get_uber_store().unwrap() {
+                    Disabled => unreachable!(),
+                    Single => ".borrow()",
+                    StdRwLock => ".read().unwrap()",
+                    StdMutex => ".lock().unwrap()",
+                    ParkingLotRwLock => ".read()",
+                    ParkingLotMutex => ".lock()",
+                };
+                format!("{}{read}.to_owned()", rhs.as_ident())
             } else {
                 rhs.as_ident()
             }
@@ -1611,7 +1712,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
 }
 
 pub(crate) trait AttributeBuilder<A> {
-    fn new(name: String, ty: Arc<RwLock<ValueType>>) -> A;
+    fn new(name: String, ty: Arc<Lock<ValueType>>) -> A;
 }
 
 /// Walk the object hierarchy to collect attributes for an object
@@ -1634,7 +1735,7 @@ where
         let ty = attr.r2_ty(domain.sarzak())[0];
         let mut lu_dog = lu_dog.write().unwrap();
         // let ty = ValueType::new_ty(ty, &mut lu_dog);
-        let ty = ValueType::new_ty(&Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
+        let ty = ValueType::new_ty(&Arc::new(Lock::new(ty.to_owned())), &mut lu_dog);
 
         let attr = A::new(attr.as_ident(), ty.clone());
         result.push(attr);
@@ -1654,7 +1755,7 @@ where
         let ty = domain.sarzak().exhume_ty(&r_obj.id).unwrap();
         let mut lu_dog = lu_dog.write().unwrap();
         // let ty = ValueType::new_ty(ty, &mut lu_dog);
-        let ty = ValueType::new_ty(&Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
+        let ty = ValueType::new_ty(&Arc::new(Lock::new(ty.to_owned())), &mut lu_dog);
         let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
         let ty = ValueType::new_reference(&ty, &mut lu_dog);
 
@@ -1689,7 +1790,7 @@ where
             let ty = domain.sarzak().exhume_ty(&obj.id).unwrap();
             let mut lu_dog = lu_dog.write().unwrap();
             // let ty = ValueType::new_ty(ty, &mut lu_dog);
-            let ty = ValueType::new_ty(&Arc::new(RwLock::new(ty.to_owned())), &mut lu_dog);
+            let ty = ValueType::new_ty(&Arc::new(Lock::new(ty.to_owned())), &mut lu_dog);
             let ty = Reference::new(Uuid::new_v4(), false, &ty, &mut lu_dog);
             let ty = ValueType::new_reference(&ty, &mut lu_dog);
 

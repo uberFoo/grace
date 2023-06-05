@@ -29,7 +29,7 @@ use crate::{
         },
         render_methods,
     },
-    options::GraceConfig,
+    options::{GraceConfig, UberStoreOptions},
     types::{
         domain::rels::{
             generate_assoc_referent_rels, generate_assoc_referrer_rels,
@@ -111,8 +111,32 @@ impl CodeWriter for Imports {
                 let mut imported_obj = HashSet::default();
                 let mut uses = HashSet::default();
 
-                if config.get_uber_store() {
-                    emit!(buffer, "use std::sync::{{Arc, RwLock}};\n")
+                if config.is_uber_store() {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => {
+                            emit!(buffer, "use std::cell::RefCell;");
+                            emit!(buffer, "use std::rc::Rc;")
+                        }
+                        StdRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::RwLock;")
+                        }
+                        StdMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use std::sync::Mutex;")
+                        }
+                        ParkingLotRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::RwLock;")
+                        }
+                        ParkingLotMutex => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use parking_lot::Mutex;")
+                        }
+                    };
+                    emit!(buffer, "use tracy_client::span;");
                 }
 
                 // Everything has an `id`, everything needs this.
