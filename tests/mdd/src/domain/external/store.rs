@@ -44,19 +44,25 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::external-object-store-methods"}}}
-    /// Inter [`Nunchuck`] into the store.
+    /// Inter (insert) [`Nunchuck`] into the store.
     ///
     pub fn inter_nunchuck(&mut self, nunchuck: Nunchuck) {
         self.nunchuck.insert(nunchuck.id, nunchuck);
     }
 
-    /// Exhume [`Nunchuck`] from the store.
+    /// Exhume (get) [`Nunchuck`] from the store.
     ///
     pub fn exhume_nunchuck(&self, id: &Uuid) -> Option<&Nunchuck> {
         self.nunchuck.get(id)
     }
 
-    /// Exhume [`Nunchuck`] from the store — mutably.
+    /// Exorcise (remove) [`Nunchuck`] from the store.
+    ///
+    pub fn exorcise_nunchuck(&mut self, id: &Uuid) -> Option<Nunchuck> {
+        self.nunchuck.remove(id)
+    }
+
+    /// Exhume mut [`Nunchuck`] from the store — mutably.
     ///
     pub fn exhume_nunchuck_mut(&mut self, id: &Uuid) -> Option<&mut Nunchuck> {
         self.nunchuck.get_mut(id)
@@ -68,19 +74,25 @@ impl ObjectStore {
         self.nunchuck.values()
     }
 
-    /// Inter [`Timestamp`] into the store.
+    /// Inter (insert) [`Timestamp`] into the store.
     ///
     pub fn inter_timestamp(&mut self, timestamp: Timestamp) {
         self.timestamp.insert(timestamp.id, timestamp);
     }
 
-    /// Exhume [`Timestamp`] from the store.
+    /// Exhume (get) [`Timestamp`] from the store.
     ///
     pub fn exhume_timestamp(&self, id: &Uuid) -> Option<&Timestamp> {
         self.timestamp.get(id)
     }
 
-    /// Exhume [`Timestamp`] from the store — mutably.
+    /// Exorcise (remove) [`Timestamp`] from the store.
+    ///
+    pub fn exorcise_timestamp(&mut self, id: &Uuid) -> Option<Timestamp> {
+        self.timestamp.remove(id)
+    }
+
+    /// Exhume mut [`Timestamp`] from the store — mutably.
     ///
     pub fn exhume_timestamp_mut(&mut self, id: &Uuid) -> Option<&mut Timestamp> {
         self.timestamp.get_mut(id)
@@ -97,17 +109,23 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::external-object-store-persistence"}}}
     /// Persist the store.
     ///
+    /// The store is persisted as a a bincode file.
+    pub fn persist_bincode<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let path = path.as_ref();
+        let mut bin_file = fs::File::create(path)?;
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        bin_file.write_all(&encoded)?;
+        Ok(())
+    }
+
+    /// Persist the store.
+    ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
     /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
         fs::create_dir_all(path)?;
-
-        let bin_path = path.clone().join("External Entity.bin");
-        let mut bin_file = fs::File::create(bin_path)?;
-        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        bin_file.write_all(&encoded)?;
 
         let path = path.join("External Entity.json");
         fs::create_dir_all(&path)?;
@@ -137,6 +155,15 @@ impl ObjectStore {
         }
 
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is as a bincode file.
+    pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let bin_file = fs::File::open(path)?;
+        Ok(bincode::deserialize_from(bin_file).unwrap())
     }
 
     /// Load the store.

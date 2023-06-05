@@ -54,19 +54,25 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_many_ts-object-store-methods"}}}
-    /// Inter [`A`] into the store.
+    /// Inter (insert) [`A`] into the store.
     ///
     pub fn inter_a(&mut self, a: A) {
         self.a.insert(a.id, (a, SystemTime::now()));
     }
 
-    /// Exhume [`A`] from the store.
+    /// Exhume (get) [`A`] from the store.
     ///
     pub fn exhume_a(&self, id: &Uuid) -> Option<&A> {
         self.a.get(id).map(|a| &a.0)
     }
 
-    /// Exhume [`A`] from the store — mutably.
+    /// Exorcise (remove) [`A`] from the store.
+    ///
+    pub fn exorcise_a(&mut self, id: &Uuid) -> Option<A> {
+        self.a.remove(id).map(|a| a.0)
+    }
+
+    /// Exhume mut [`A`] from the store — mutably.
     ///
     pub fn exhume_a_mut(&mut self, id: &Uuid) -> Option<&mut A> {
         self.a.get_mut(id).map(|a| &mut a.0)
@@ -84,19 +90,25 @@ impl ObjectStore {
         self.a.get(&a.id).map(|a| a.1).unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`B`] into the store.
+    /// Inter (insert) [`B`] into the store.
     ///
     pub fn inter_b(&mut self, b: B) {
         self.b.insert(b.id, (b, SystemTime::now()));
     }
 
-    /// Exhume [`B`] from the store.
+    /// Exhume (get) [`B`] from the store.
     ///
     pub fn exhume_b(&self, id: &Uuid) -> Option<&B> {
         self.b.get(id).map(|b| &b.0)
     }
 
-    /// Exhume [`B`] from the store — mutably.
+    /// Exorcise (remove) [`B`] from the store.
+    ///
+    pub fn exorcise_b(&mut self, id: &Uuid) -> Option<B> {
+        self.b.remove(id).map(|b| b.0)
+    }
+
+    /// Exhume mut [`B`] from the store — mutably.
     ///
     pub fn exhume_b_mut(&mut self, id: &Uuid) -> Option<&mut B> {
         self.b.get_mut(id).map(|b| &mut b.0)
@@ -114,19 +126,25 @@ impl ObjectStore {
         self.b.get(&b.id).map(|b| b.1).unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`C`] into the store.
+    /// Inter (insert) [`C`] into the store.
     ///
     pub fn inter_c(&mut self, c: C) {
         self.c.insert(c.id, (c, SystemTime::now()));
     }
 
-    /// Exhume [`C`] from the store.
+    /// Exhume (get) [`C`] from the store.
     ///
     pub fn exhume_c(&self, id: &Uuid) -> Option<&C> {
         self.c.get(id).map(|c| &c.0)
     }
 
-    /// Exhume [`C`] from the store — mutably.
+    /// Exorcise (remove) [`C`] from the store.
+    ///
+    pub fn exorcise_c(&mut self, id: &Uuid) -> Option<C> {
+        self.c.remove(id).map(|c| c.0)
+    }
+
+    /// Exhume mut [`C`] from the store — mutably.
     ///
     pub fn exhume_c_mut(&mut self, id: &Uuid) -> Option<&mut C> {
         self.c.get_mut(id).map(|c| &mut c.0)
@@ -144,19 +162,25 @@ impl ObjectStore {
         self.c.get(&c.id).map(|c| c.1).unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`D`] into the store.
+    /// Inter (insert) [`D`] into the store.
     ///
     pub fn inter_d(&mut self, d: D) {
         self.d.insert(d.id, (d, SystemTime::now()));
     }
 
-    /// Exhume [`D`] from the store.
+    /// Exhume (get) [`D`] from the store.
     ///
     pub fn exhume_d(&self, id: &Uuid) -> Option<&D> {
         self.d.get(id).map(|d| &d.0)
     }
 
-    /// Exhume [`D`] from the store — mutably.
+    /// Exorcise (remove) [`D`] from the store.
+    ///
+    pub fn exorcise_d(&mut self, id: &Uuid) -> Option<D> {
+        self.d.remove(id).map(|d| d.0)
+    }
+
+    /// Exhume mut [`D`] from the store — mutably.
     ///
     pub fn exhume_d_mut(&mut self, id: &Uuid) -> Option<&mut D> {
         self.d.get_mut(id).map(|d| &mut d.0)
@@ -174,20 +198,26 @@ impl ObjectStore {
         self.d.get(&d.id).map(|d| d.1).unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`Referent`] into the store.
+    /// Inter (insert) [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
         self.referent
             .insert(referent.id, (referent, SystemTime::now()));
     }
 
-    /// Exhume [`Referent`] from the store.
+    /// Exhume (get) [`Referent`] from the store.
     ///
     pub fn exhume_referent(&self, id: &Uuid) -> Option<&Referent> {
         self.referent.get(id).map(|referent| &referent.0)
     }
 
-    /// Exhume [`Referent`] from the store — mutably.
+    /// Exorcise (remove) [`Referent`] from the store.
+    ///
+    pub fn exorcise_referent(&mut self, id: &Uuid) -> Option<Referent> {
+        self.referent.remove(id).map(|referent| referent.0)
+    }
+
+    /// Exhume mut [`Referent`] from the store — mutably.
     ///
     pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
         self.referent.get_mut(id).map(|referent| &mut referent.0)
@@ -213,17 +243,23 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::one_to_many_ts-object-store-persistence"}}}
     /// Persist the store.
     ///
+    /// The store is persisted as a a bincode file.
+    pub fn persist_bincode<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let path = path.as_ref();
+        let mut bin_file = fs::File::create(path)?;
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        bin_file.write_all(&encoded)?;
+        Ok(())
+    }
+
+    /// Persist the store.
+    ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
     /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
         fs::create_dir_all(path)?;
-
-        let bin_path = path.clone().join("one_to_many.bin");
-        let mut bin_file = fs::File::create(bin_path)?;
-        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        bin_file.write_all(&encoded)?;
 
         let path = path.join("one_to_many.json");
         fs::create_dir_all(&path)?;
@@ -399,6 +435,15 @@ impl ObjectStore {
         }
 
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is as a bincode file.
+    pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let bin_file = fs::File::open(path)?;
+        Ok(bincode::deserialize_from(bin_file).unwrap())
     }
 
     /// Load the store.

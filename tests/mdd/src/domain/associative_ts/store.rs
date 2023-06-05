@@ -59,7 +59,7 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative_ts-object-store-methods"}}}
-    /// Inter [`AcknowledgedEvent`] into the store.
+    /// Inter (insert) [`AcknowledgedEvent`] into the store.
     ///
     pub fn inter_acknowledged_event(&mut self, acknowledged_event: AcknowledgedEvent) {
         self.acknowledged_event.insert(
@@ -68,7 +68,7 @@ impl ObjectStore {
         );
     }
 
-    /// Exhume [`AcknowledgedEvent`] from the store.
+    /// Exhume (get) [`AcknowledgedEvent`] from the store.
     ///
     pub fn exhume_acknowledged_event(&self, id: &Uuid) -> Option<&AcknowledgedEvent> {
         self.acknowledged_event
@@ -76,7 +76,15 @@ impl ObjectStore {
             .map(|acknowledged_event| &acknowledged_event.0)
     }
 
-    /// Exhume [`AcknowledgedEvent`] from the store — mutably.
+    /// Exorcise (remove) [`AcknowledgedEvent`] from the store.
+    ///
+    pub fn exorcise_acknowledged_event(&mut self, id: &Uuid) -> Option<AcknowledgedEvent> {
+        self.acknowledged_event
+            .remove(id)
+            .map(|acknowledged_event| acknowledged_event.0)
+    }
+
+    /// Exhume mut [`AcknowledgedEvent`] from the store — mutably.
     ///
     pub fn exhume_acknowledged_event_mut(&mut self, id: &Uuid) -> Option<&mut AcknowledgedEvent> {
         self.acknowledged_event
@@ -104,19 +112,25 @@ impl ObjectStore {
             .unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`Anchor`] into the store.
+    /// Inter (insert) [`Anchor`] into the store.
     ///
     pub fn inter_anchor(&mut self, anchor: Anchor) {
         self.anchor.insert(anchor.id, (anchor, SystemTime::now()));
     }
 
-    /// Exhume [`Anchor`] from the store.
+    /// Exhume (get) [`Anchor`] from the store.
     ///
     pub fn exhume_anchor(&self, id: &Uuid) -> Option<&Anchor> {
         self.anchor.get(id).map(|anchor| &anchor.0)
     }
 
-    /// Exhume [`Anchor`] from the store — mutably.
+    /// Exorcise (remove) [`Anchor`] from the store.
+    ///
+    pub fn exorcise_anchor(&mut self, id: &Uuid) -> Option<Anchor> {
+        self.anchor.remove(id).map(|anchor| anchor.0)
+    }
+
+    /// Exhume mut [`Anchor`] from the store — mutably.
     ///
     pub fn exhume_anchor_mut(&mut self, id: &Uuid) -> Option<&mut Anchor> {
         self.anchor.get_mut(id).map(|anchor| &mut anchor.0)
@@ -137,19 +151,25 @@ impl ObjectStore {
             .unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`Event`] into the store.
+    /// Inter (insert) [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
         self.event.insert(event.id, (event, SystemTime::now()));
     }
 
-    /// Exhume [`Event`] from the store.
+    /// Exhume (get) [`Event`] from the store.
     ///
     pub fn exhume_event(&self, id: &Uuid) -> Option<&Event> {
         self.event.get(id).map(|event| &event.0)
     }
 
-    /// Exhume [`Event`] from the store — mutably.
+    /// Exorcise (remove) [`Event`] from the store.
+    ///
+    pub fn exorcise_event(&mut self, id: &Uuid) -> Option<Event> {
+        self.event.remove(id).map(|event| event.0)
+    }
+
+    /// Exhume mut [`Event`] from the store — mutably.
     ///
     pub fn exhume_event_mut(&mut self, id: &Uuid) -> Option<&mut Event> {
         self.event.get_mut(id).map(|event| &mut event.0)
@@ -170,19 +190,25 @@ impl ObjectStore {
             .unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`IsaUi`] into the store.
+    /// Inter (insert) [`IsaUi`] into the store.
     ///
     pub fn inter_isa_ui(&mut self, isa_ui: IsaUi) {
         self.isa_ui.insert(isa_ui.id, (isa_ui, SystemTime::now()));
     }
 
-    /// Exhume [`IsaUi`] from the store.
+    /// Exhume (get) [`IsaUi`] from the store.
     ///
     pub fn exhume_isa_ui(&self, id: &Uuid) -> Option<&IsaUi> {
         self.isa_ui.get(id).map(|isa_ui| &isa_ui.0)
     }
 
-    /// Exhume [`IsaUi`] from the store — mutably.
+    /// Exorcise (remove) [`IsaUi`] from the store.
+    ///
+    pub fn exorcise_isa_ui(&mut self, id: &Uuid) -> Option<IsaUi> {
+        self.isa_ui.remove(id).map(|isa_ui| isa_ui.0)
+    }
+
+    /// Exhume mut [`IsaUi`] from the store — mutably.
     ///
     pub fn exhume_isa_ui_mut(&mut self, id: &Uuid) -> Option<&mut IsaUi> {
         self.isa_ui.get_mut(id).map(|isa_ui| &mut isa_ui.0)
@@ -203,19 +229,25 @@ impl ObjectStore {
             .unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`State`] into the store.
+    /// Inter (insert) [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
         self.state.insert(state.id, (state, SystemTime::now()));
     }
 
-    /// Exhume [`State`] from the store.
+    /// Exhume (get) [`State`] from the store.
     ///
     pub fn exhume_state(&self, id: &Uuid) -> Option<&State> {
         self.state.get(id).map(|state| &state.0)
     }
 
-    /// Exhume [`State`] from the store — mutably.
+    /// Exorcise (remove) [`State`] from the store.
+    ///
+    pub fn exorcise_state(&mut self, id: &Uuid) -> Option<State> {
+        self.state.remove(id).map(|state| state.0)
+    }
+
+    /// Exhume mut [`State`] from the store — mutably.
     ///
     pub fn exhume_state_mut(&mut self, id: &Uuid) -> Option<&mut State> {
         self.state.get_mut(id).map(|state| &mut state.0)
@@ -236,14 +268,14 @@ impl ObjectStore {
             .unwrap_or(SystemTime::now())
     }
 
-    /// Inter [`SubtypeAnchor`] into the store.
+    /// Inter (insert) [`SubtypeAnchor`] into the store.
     ///
     pub fn inter_subtype_anchor(&mut self, subtype_anchor: SubtypeAnchor) {
         self.subtype_anchor
             .insert(subtype_anchor.id, (subtype_anchor, SystemTime::now()));
     }
 
-    /// Exhume [`SubtypeAnchor`] from the store.
+    /// Exhume (get) [`SubtypeAnchor`] from the store.
     ///
     pub fn exhume_subtype_anchor(&self, id: &Uuid) -> Option<&SubtypeAnchor> {
         self.subtype_anchor
@@ -251,7 +283,15 @@ impl ObjectStore {
             .map(|subtype_anchor| &subtype_anchor.0)
     }
 
-    /// Exhume [`SubtypeAnchor`] from the store — mutably.
+    /// Exorcise (remove) [`SubtypeAnchor`] from the store.
+    ///
+    pub fn exorcise_subtype_anchor(&mut self, id: &Uuid) -> Option<SubtypeAnchor> {
+        self.subtype_anchor
+            .remove(id)
+            .map(|subtype_anchor| subtype_anchor.0)
+    }
+
+    /// Exhume mut [`SubtypeAnchor`] from the store — mutably.
     ///
     pub fn exhume_subtype_anchor_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeAnchor> {
         self.subtype_anchor
@@ -281,17 +321,23 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative_ts-object-store-persistence"}}}
     /// Persist the store.
     ///
+    /// The store is persisted as a a bincode file.
+    pub fn persist_bincode<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let path = path.as_ref();
+        let mut bin_file = fs::File::create(path)?;
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        bin_file.write_all(&encoded)?;
+        Ok(())
+    }
+
+    /// Persist the store.
+    ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
     /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
         fs::create_dir_all(path)?;
-
-        let bin_path = path.clone().join("associative.bin");
-        let mut bin_file = fs::File::create(bin_path)?;
-        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        bin_file.write_all(&encoded)?;
 
         let path = path.join("associative.json");
         fs::create_dir_all(&path)?;
@@ -501,6 +547,15 @@ impl ObjectStore {
         }
 
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is as a bincode file.
+    pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let bin_file = fs::File::open(path)?;
+        Ok(bincode::deserialize_from(bin_file).unwrap())
     }
 
     /// Load the store.

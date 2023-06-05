@@ -115,20 +115,26 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-methods"}}}
-    /// Inter [`AcknowledgedEvent`] into the store.
+    /// Inter (insert) [`AcknowledgedEvent`] into the store.
     ///
     pub fn inter_acknowledged_event(&mut self, acknowledged_event: AcknowledgedEvent) {
         self.acknowledged_event
             .insert(acknowledged_event.id, acknowledged_event);
     }
 
-    /// Exhume [`AcknowledgedEvent`] from the store.
+    /// Exhume (get) [`AcknowledgedEvent`] from the store.
     ///
     pub fn exhume_acknowledged_event(&self, id: &Uuid) -> Option<&AcknowledgedEvent> {
         self.acknowledged_event.get(id)
     }
 
-    /// Exhume [`AcknowledgedEvent`] from the store — mutably.
+    /// Exorcise (remove) [`AcknowledgedEvent`] from the store.
+    ///
+    pub fn exorcise_acknowledged_event(&mut self, id: &Uuid) -> Option<AcknowledgedEvent> {
+        self.acknowledged_event.remove(id)
+    }
+
+    /// Exhume mut [`AcknowledgedEvent`] from the store — mutably.
     ///
     pub fn exhume_acknowledged_event_mut(&mut self, id: &Uuid) -> Option<&mut AcknowledgedEvent> {
         self.acknowledged_event.get_mut(id)
@@ -140,7 +146,7 @@ impl ObjectStore {
         self.acknowledged_event.values()
     }
 
-    /// Inter [`AnAssociativeReferent`] into the store.
+    /// Inter (insert) [`AnAssociativeReferent`] into the store.
     ///
     pub fn inter_an_associative_referent(
         &mut self,
@@ -150,13 +156,19 @@ impl ObjectStore {
             .insert(an_associative_referent.id, an_associative_referent);
     }
 
-    /// Exhume [`AnAssociativeReferent`] from the store.
+    /// Exhume (get) [`AnAssociativeReferent`] from the store.
     ///
     pub fn exhume_an_associative_referent(&self, id: &Uuid) -> Option<&AnAssociativeReferent> {
         self.an_associative_referent.get(id)
     }
 
-    /// Exhume [`AnAssociativeReferent`] from the store — mutably.
+    /// Exorcise (remove) [`AnAssociativeReferent`] from the store.
+    ///
+    pub fn exorcise_an_associative_referent(&mut self, id: &Uuid) -> Option<AnAssociativeReferent> {
+        self.an_associative_referent.remove(id)
+    }
+
+    /// Exhume mut [`AnAssociativeReferent`] from the store — mutably.
     ///
     pub fn exhume_an_associative_referent_mut(
         &mut self,
@@ -171,19 +183,25 @@ impl ObjectStore {
         self.an_associative_referent.values()
     }
 
-    /// Inter [`Associative`] into the store.
+    /// Inter (insert) [`Associative`] into the store.
     ///
     pub fn inter_associative(&mut self, associative: Associative) {
         self.associative.insert(associative.id, associative);
     }
 
-    /// Exhume [`Associative`] from the store.
+    /// Exhume (get) [`Associative`] from the store.
     ///
     pub fn exhume_associative(&self, id: &Uuid) -> Option<&Associative> {
         self.associative.get(id)
     }
 
-    /// Exhume [`Associative`] from the store — mutably.
+    /// Exorcise (remove) [`Associative`] from the store.
+    ///
+    pub fn exorcise_associative(&mut self, id: &Uuid) -> Option<Associative> {
+        self.associative.remove(id)
+    }
+
+    /// Exhume mut [`Associative`] from the store — mutably.
     ///
     pub fn exhume_associative_mut(&mut self, id: &Uuid) -> Option<&mut Associative> {
         self.associative.get_mut(id)
@@ -195,20 +213,26 @@ impl ObjectStore {
         self.associative.values()
     }
 
-    /// Inter [`AssociativeReferent`] into the store.
+    /// Inter (insert) [`AssociativeReferent`] into the store.
     ///
     pub fn inter_associative_referent(&mut self, associative_referent: AssociativeReferent) {
         self.associative_referent
             .insert(associative_referent.id, associative_referent);
     }
 
-    /// Exhume [`AssociativeReferent`] from the store.
+    /// Exhume (get) [`AssociativeReferent`] from the store.
     ///
     pub fn exhume_associative_referent(&self, id: &Uuid) -> Option<&AssociativeReferent> {
         self.associative_referent.get(id)
     }
 
-    /// Exhume [`AssociativeReferent`] from the store — mutably.
+    /// Exorcise (remove) [`AssociativeReferent`] from the store.
+    ///
+    pub fn exorcise_associative_referent(&mut self, id: &Uuid) -> Option<AssociativeReferent> {
+        self.associative_referent.remove(id)
+    }
+
+    /// Exhume mut [`AssociativeReferent`] from the store — mutably.
     ///
     pub fn exhume_associative_referent_mut(
         &mut self,
@@ -223,20 +247,26 @@ impl ObjectStore {
         self.associative_referent.values()
     }
 
-    /// Inter [`AssociativeReferrer`] into the store.
+    /// Inter (insert) [`AssociativeReferrer`] into the store.
     ///
     pub fn inter_associative_referrer(&mut self, associative_referrer: AssociativeReferrer) {
         self.associative_referrer
             .insert(associative_referrer.id, associative_referrer);
     }
 
-    /// Exhume [`AssociativeReferrer`] from the store.
+    /// Exhume (get) [`AssociativeReferrer`] from the store.
     ///
     pub fn exhume_associative_referrer(&self, id: &Uuid) -> Option<&AssociativeReferrer> {
         self.associative_referrer.get(id)
     }
 
-    /// Exhume [`AssociativeReferrer`] from the store — mutably.
+    /// Exorcise (remove) [`AssociativeReferrer`] from the store.
+    ///
+    pub fn exorcise_associative_referrer(&mut self, id: &Uuid) -> Option<AssociativeReferrer> {
+        self.associative_referrer.remove(id)
+    }
+
+    /// Exhume mut [`AssociativeReferrer`] from the store — mutably.
     ///
     pub fn exhume_associative_referrer_mut(
         &mut self,
@@ -251,19 +281,25 @@ impl ObjectStore {
         self.associative_referrer.values()
     }
 
-    /// Inter [`Attribute`] into the store.
+    /// Inter (insert) [`Attribute`] into the store.
     ///
     pub fn inter_attribute(&mut self, attribute: Attribute) {
         self.attribute.insert(attribute.id, attribute);
     }
 
-    /// Exhume [`Attribute`] from the store.
+    /// Exhume (get) [`Attribute`] from the store.
     ///
     pub fn exhume_attribute(&self, id: &Uuid) -> Option<&Attribute> {
         self.attribute.get(id)
     }
 
-    /// Exhume [`Attribute`] from the store — mutably.
+    /// Exorcise (remove) [`Attribute`] from the store.
+    ///
+    pub fn exorcise_attribute(&mut self, id: &Uuid) -> Option<Attribute> {
+        self.attribute.remove(id)
+    }
+
+    /// Exhume mut [`Attribute`] from the store — mutably.
     ///
     pub fn exhume_attribute_mut(&mut self, id: &Uuid) -> Option<&mut Attribute> {
         self.attribute.get_mut(id)
@@ -275,19 +311,25 @@ impl ObjectStore {
         self.attribute.values()
     }
 
-    /// Inter [`Binary`] into the store.
+    /// Inter (insert) [`Binary`] into the store.
     ///
     pub fn inter_binary(&mut self, binary: Binary) {
         self.binary.insert(binary.id, binary);
     }
 
-    /// Exhume [`Binary`] from the store.
+    /// Exhume (get) [`Binary`] from the store.
     ///
     pub fn exhume_binary(&self, id: &Uuid) -> Option<&Binary> {
         self.binary.get(id)
     }
 
-    /// Exhume [`Binary`] from the store — mutably.
+    /// Exorcise (remove) [`Binary`] from the store.
+    ///
+    pub fn exorcise_binary(&mut self, id: &Uuid) -> Option<Binary> {
+        self.binary.remove(id)
+    }
+
+    /// Exhume mut [`Binary`] from the store — mutably.
     ///
     pub fn exhume_binary_mut(&mut self, id: &Uuid) -> Option<&mut Binary> {
         self.binary.get_mut(id)
@@ -299,19 +341,25 @@ impl ObjectStore {
         self.binary.values()
     }
 
-    /// Inter [`Cardinality`] into the store.
+    /// Inter (insert) [`Cardinality`] into the store.
     ///
     pub fn inter_cardinality(&mut self, cardinality: Cardinality) {
         self.cardinality.insert(cardinality.id(), cardinality);
     }
 
-    /// Exhume [`Cardinality`] from the store.
+    /// Exhume (get) [`Cardinality`] from the store.
     ///
     pub fn exhume_cardinality(&self, id: &Uuid) -> Option<&Cardinality> {
         self.cardinality.get(id)
     }
 
-    /// Exhume [`Cardinality`] from the store — mutably.
+    /// Exorcise (remove) [`Cardinality`] from the store.
+    ///
+    pub fn exorcise_cardinality(&mut self, id: &Uuid) -> Option<Cardinality> {
+        self.cardinality.remove(id)
+    }
+
+    /// Exhume mut [`Cardinality`] from the store — mutably.
     ///
     pub fn exhume_cardinality_mut(&mut self, id: &Uuid) -> Option<&mut Cardinality> {
         self.cardinality.get_mut(id)
@@ -323,20 +371,26 @@ impl ObjectStore {
         self.cardinality.values()
     }
 
-    /// Inter [`Conditionality`] into the store.
+    /// Inter (insert) [`Conditionality`] into the store.
     ///
     pub fn inter_conditionality(&mut self, conditionality: Conditionality) {
         self.conditionality
             .insert(conditionality.id(), conditionality);
     }
 
-    /// Exhume [`Conditionality`] from the store.
+    /// Exhume (get) [`Conditionality`] from the store.
     ///
     pub fn exhume_conditionality(&self, id: &Uuid) -> Option<&Conditionality> {
         self.conditionality.get(id)
     }
 
-    /// Exhume [`Conditionality`] from the store — mutably.
+    /// Exorcise (remove) [`Conditionality`] from the store.
+    ///
+    pub fn exorcise_conditionality(&mut self, id: &Uuid) -> Option<Conditionality> {
+        self.conditionality.remove(id)
+    }
+
+    /// Exhume mut [`Conditionality`] from the store — mutably.
     ///
     pub fn exhume_conditionality_mut(&mut self, id: &Uuid) -> Option<&mut Conditionality> {
         self.conditionality.get_mut(id)
@@ -348,19 +402,25 @@ impl ObjectStore {
         self.conditionality.values()
     }
 
-    /// Inter [`Event`] into the store.
+    /// Inter (insert) [`Event`] into the store.
     ///
     pub fn inter_event(&mut self, event: Event) {
         self.event.insert(event.id, event);
     }
 
-    /// Exhume [`Event`] from the store.
+    /// Exhume (get) [`Event`] from the store.
     ///
     pub fn exhume_event(&self, id: &Uuid) -> Option<&Event> {
         self.event.get(id)
     }
 
-    /// Exhume [`Event`] from the store — mutably.
+    /// Exorcise (remove) [`Event`] from the store.
+    ///
+    pub fn exorcise_event(&mut self, id: &Uuid) -> Option<Event> {
+        self.event.remove(id)
+    }
+
+    /// Exhume mut [`Event`] from the store — mutably.
     ///
     pub fn exhume_event_mut(&mut self, id: &Uuid) -> Option<&mut Event> {
         self.event.get_mut(id)
@@ -372,19 +432,25 @@ impl ObjectStore {
         self.event.values()
     }
 
-    /// Inter [`External`] into the store.
+    /// Inter (insert) [`External`] into the store.
     ///
     pub fn inter_external(&mut self, external: External) {
         self.external.insert(external.id, external);
     }
 
-    /// Exhume [`External`] from the store.
+    /// Exhume (get) [`External`] from the store.
     ///
     pub fn exhume_external(&self, id: &Uuid) -> Option<&External> {
         self.external.get(id)
     }
 
-    /// Exhume [`External`] from the store — mutably.
+    /// Exorcise (remove) [`External`] from the store.
+    ///
+    pub fn exorcise_external(&mut self, id: &Uuid) -> Option<External> {
+        self.external.remove(id)
+    }
+
+    /// Exhume mut [`External`] from the store — mutably.
     ///
     pub fn exhume_external_mut(&mut self, id: &Uuid) -> Option<&mut External> {
         self.external.get_mut(id)
@@ -396,19 +462,25 @@ impl ObjectStore {
         self.external.values()
     }
 
-    /// Inter [`Isa`] into the store.
+    /// Inter (insert) [`Isa`] into the store.
     ///
     pub fn inter_isa(&mut self, isa: Isa) {
         self.isa.insert(isa.id, isa);
     }
 
-    /// Exhume [`Isa`] from the store.
+    /// Exhume (get) [`Isa`] from the store.
     ///
     pub fn exhume_isa(&self, id: &Uuid) -> Option<&Isa> {
         self.isa.get(id)
     }
 
-    /// Exhume [`Isa`] from the store — mutably.
+    /// Exorcise (remove) [`Isa`] from the store.
+    ///
+    pub fn exorcise_isa(&mut self, id: &Uuid) -> Option<Isa> {
+        self.isa.remove(id)
+    }
+
+    /// Exhume mut [`Isa`] from the store — mutably.
     ///
     pub fn exhume_isa_mut(&mut self, id: &Uuid) -> Option<&mut Isa> {
         self.isa.get_mut(id)
@@ -420,7 +492,7 @@ impl ObjectStore {
         self.isa.values()
     }
 
-    /// Inter [`Object`] into the store.
+    /// Inter (insert) [`Object`] into the store.
     ///
     pub fn inter_object(&mut self, object: Object) {
         self.object_id_by_name
@@ -428,13 +500,19 @@ impl ObjectStore {
         self.object.insert(object.id, object);
     }
 
-    /// Exhume [`Object`] from the store.
+    /// Exhume (get) [`Object`] from the store.
     ///
     pub fn exhume_object(&self, id: &Uuid) -> Option<&Object> {
         self.object.get(id)
     }
 
-    /// Exhume [`Object`] from the store — mutably.
+    /// Exorcise (remove) [`Object`] from the store.
+    ///
+    pub fn exorcise_object(&mut self, id: &Uuid) -> Option<Object> {
+        self.object.remove(id)
+    }
+
+    /// Exhume mut [`Object`] from the store — mutably.
     ///
     pub fn exhume_object_mut(&mut self, id: &Uuid) -> Option<&mut Object> {
         self.object.get_mut(id)
@@ -452,19 +530,25 @@ impl ObjectStore {
         self.object.values()
     }
 
-    /// Inter [`Referent`] into the store.
+    /// Inter (insert) [`Referent`] into the store.
     ///
     pub fn inter_referent(&mut self, referent: Referent) {
         self.referent.insert(referent.id, referent);
     }
 
-    /// Exhume [`Referent`] from the store.
+    /// Exhume (get) [`Referent`] from the store.
     ///
     pub fn exhume_referent(&self, id: &Uuid) -> Option<&Referent> {
         self.referent.get(id)
     }
 
-    /// Exhume [`Referent`] from the store — mutably.
+    /// Exorcise (remove) [`Referent`] from the store.
+    ///
+    pub fn exorcise_referent(&mut self, id: &Uuid) -> Option<Referent> {
+        self.referent.remove(id)
+    }
+
+    /// Exhume mut [`Referent`] from the store — mutably.
     ///
     pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
         self.referent.get_mut(id)
@@ -476,19 +560,25 @@ impl ObjectStore {
         self.referent.values()
     }
 
-    /// Inter [`Referrer`] into the store.
+    /// Inter (insert) [`Referrer`] into the store.
     ///
     pub fn inter_referrer(&mut self, referrer: Referrer) {
         self.referrer.insert(referrer.id, referrer);
     }
 
-    /// Exhume [`Referrer`] from the store.
+    /// Exhume (get) [`Referrer`] from the store.
     ///
     pub fn exhume_referrer(&self, id: &Uuid) -> Option<&Referrer> {
         self.referrer.get(id)
     }
 
-    /// Exhume [`Referrer`] from the store — mutably.
+    /// Exorcise (remove) [`Referrer`] from the store.
+    ///
+    pub fn exorcise_referrer(&mut self, id: &Uuid) -> Option<Referrer> {
+        self.referrer.remove(id)
+    }
+
+    /// Exhume mut [`Referrer`] from the store — mutably.
     ///
     pub fn exhume_referrer_mut(&mut self, id: &Uuid) -> Option<&mut Referrer> {
         self.referrer.get_mut(id)
@@ -500,19 +590,25 @@ impl ObjectStore {
         self.referrer.values()
     }
 
-    /// Inter [`Relationship`] into the store.
+    /// Inter (insert) [`Relationship`] into the store.
     ///
     pub fn inter_relationship(&mut self, relationship: Relationship) {
         self.relationship.insert(relationship.id(), relationship);
     }
 
-    /// Exhume [`Relationship`] from the store.
+    /// Exhume (get) [`Relationship`] from the store.
     ///
     pub fn exhume_relationship(&self, id: &Uuid) -> Option<&Relationship> {
         self.relationship.get(id)
     }
 
-    /// Exhume [`Relationship`] from the store — mutably.
+    /// Exorcise (remove) [`Relationship`] from the store.
+    ///
+    pub fn exorcise_relationship(&mut self, id: &Uuid) -> Option<Relationship> {
+        self.relationship.remove(id)
+    }
+
+    /// Exhume mut [`Relationship`] from the store — mutably.
     ///
     pub fn exhume_relationship_mut(&mut self, id: &Uuid) -> Option<&mut Relationship> {
         self.relationship.get_mut(id)
@@ -524,19 +620,25 @@ impl ObjectStore {
         self.relationship.values()
     }
 
-    /// Inter [`State`] into the store.
+    /// Inter (insert) [`State`] into the store.
     ///
     pub fn inter_state(&mut self, state: State) {
         self.state.insert(state.id, state);
     }
 
-    /// Exhume [`State`] from the store.
+    /// Exhume (get) [`State`] from the store.
     ///
     pub fn exhume_state(&self, id: &Uuid) -> Option<&State> {
         self.state.get(id)
     }
 
-    /// Exhume [`State`] from the store — mutably.
+    /// Exorcise (remove) [`State`] from the store.
+    ///
+    pub fn exorcise_state(&mut self, id: &Uuid) -> Option<State> {
+        self.state.remove(id)
+    }
+
+    /// Exhume mut [`State`] from the store — mutably.
     ///
     pub fn exhume_state_mut(&mut self, id: &Uuid) -> Option<&mut State> {
         self.state.get_mut(id)
@@ -548,19 +650,25 @@ impl ObjectStore {
         self.state.values()
     }
 
-    /// Inter [`Subtype`] into the store.
+    /// Inter (insert) [`Subtype`] into the store.
     ///
     pub fn inter_subtype(&mut self, subtype: Subtype) {
         self.subtype.insert(subtype.id, subtype);
     }
 
-    /// Exhume [`Subtype`] from the store.
+    /// Exhume (get) [`Subtype`] from the store.
     ///
     pub fn exhume_subtype(&self, id: &Uuid) -> Option<&Subtype> {
         self.subtype.get(id)
     }
 
-    /// Exhume [`Subtype`] from the store — mutably.
+    /// Exorcise (remove) [`Subtype`] from the store.
+    ///
+    pub fn exorcise_subtype(&mut self, id: &Uuid) -> Option<Subtype> {
+        self.subtype.remove(id)
+    }
+
+    /// Exhume mut [`Subtype`] from the store — mutably.
     ///
     pub fn exhume_subtype_mut(&mut self, id: &Uuid) -> Option<&mut Subtype> {
         self.subtype.get_mut(id)
@@ -572,19 +680,25 @@ impl ObjectStore {
         self.subtype.values()
     }
 
-    /// Inter [`Supertype`] into the store.
+    /// Inter (insert) [`Supertype`] into the store.
     ///
     pub fn inter_supertype(&mut self, supertype: Supertype) {
         self.supertype.insert(supertype.id, supertype);
     }
 
-    /// Exhume [`Supertype`] from the store.
+    /// Exhume (get) [`Supertype`] from the store.
     ///
     pub fn exhume_supertype(&self, id: &Uuid) -> Option<&Supertype> {
         self.supertype.get(id)
     }
 
-    /// Exhume [`Supertype`] from the store — mutably.
+    /// Exorcise (remove) [`Supertype`] from the store.
+    ///
+    pub fn exorcise_supertype(&mut self, id: &Uuid) -> Option<Supertype> {
+        self.supertype.remove(id)
+    }
+
+    /// Exhume mut [`Supertype`] from the store — mutably.
     ///
     pub fn exhume_supertype_mut(&mut self, id: &Uuid) -> Option<&mut Supertype> {
         self.supertype.get_mut(id)
@@ -596,19 +710,25 @@ impl ObjectStore {
         self.supertype.values()
     }
 
-    /// Inter [`Ty`] into the store.
+    /// Inter (insert) [`Ty`] into the store.
     ///
     pub fn inter_ty(&mut self, ty: Ty) {
         self.ty.insert(ty.id(), ty);
     }
 
-    /// Exhume [`Ty`] from the store.
+    /// Exhume (get) [`Ty`] from the store.
     ///
     pub fn exhume_ty(&self, id: &Uuid) -> Option<&Ty> {
         self.ty.get(id)
     }
 
-    /// Exhume [`Ty`] from the store — mutably.
+    /// Exorcise (remove) [`Ty`] from the store.
+    ///
+    pub fn exorcise_ty(&mut self, id: &Uuid) -> Option<Ty> {
+        self.ty.remove(id)
+    }
+
+    /// Exhume mut [`Ty`] from the store — mutably.
     ///
     pub fn exhume_ty_mut(&mut self, id: &Uuid) -> Option<&mut Ty> {
         self.ty.get_mut(id)
@@ -625,17 +745,23 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::sarzak-object-store-persistence"}}}
     /// Persist the store.
     ///
+    /// The store is persisted as a a bincode file.
+    pub fn persist_bincode<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let path = path.as_ref();
+        let mut bin_file = fs::File::create(path)?;
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        bin_file.write_all(&encoded)?;
+        Ok(())
+    }
+
+    /// Persist the store.
+    ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
     /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
         fs::create_dir_all(path)?;
-
-        let bin_path = path.clone().join("sarzak.bin");
-        let mut bin_file = fs::File::create(bin_path)?;
-        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        bin_file.write_all(&encoded)?;
 
         let path = path.join("sarzak.json");
         fs::create_dir_all(&path)?;
@@ -881,6 +1007,15 @@ impl ObjectStore {
         }
 
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is as a bincode file.
+    pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let bin_file = fs::File::open(path)?;
+        Ok(bincode::deserialize_from(bin_file).unwrap())
     }
 
     /// Load the store.

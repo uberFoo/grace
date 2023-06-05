@@ -44,19 +44,25 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything-object-store-methods"}}}
-    /// Inter [`Everything`] into the store.
+    /// Inter (insert) [`Everything`] into the store.
     ///
     pub fn inter_everything(&mut self, everything: Everything) {
         self.everything.insert(everything.id, everything);
     }
 
-    /// Exhume [`Everything`] from the store.
+    /// Exhume (get) [`Everything`] from the store.
     ///
     pub fn exhume_everything(&self, id: &Uuid) -> Option<&Everything> {
         self.everything.get(id)
     }
 
-    /// Exhume [`Everything`] from the store — mutably.
+    /// Exorcise (remove) [`Everything`] from the store.
+    ///
+    pub fn exorcise_everything(&mut self, id: &Uuid) -> Option<Everything> {
+        self.everything.remove(id)
+    }
+
+    /// Exhume mut [`Everything`] from the store — mutably.
     ///
     pub fn exhume_everything_mut(&mut self, id: &Uuid) -> Option<&mut Everything> {
         self.everything.get_mut(id)
@@ -68,19 +74,25 @@ impl ObjectStore {
         self.everything.values()
     }
 
-    /// Inter [`RandoObject`] into the store.
+    /// Inter (insert) [`RandoObject`] into the store.
     ///
     pub fn inter_rando_object(&mut self, rando_object: RandoObject) {
         self.rando_object.insert(rando_object.id, rando_object);
     }
 
-    /// Exhume [`RandoObject`] from the store.
+    /// Exhume (get) [`RandoObject`] from the store.
     ///
     pub fn exhume_rando_object(&self, id: &Uuid) -> Option<&RandoObject> {
         self.rando_object.get(id)
     }
 
-    /// Exhume [`RandoObject`] from the store — mutably.
+    /// Exorcise (remove) [`RandoObject`] from the store.
+    ///
+    pub fn exorcise_rando_object(&mut self, id: &Uuid) -> Option<RandoObject> {
+        self.rando_object.remove(id)
+    }
+
+    /// Exhume mut [`RandoObject`] from the store — mutably.
     ///
     pub fn exhume_rando_object_mut(&mut self, id: &Uuid) -> Option<&mut RandoObject> {
         self.rando_object.get_mut(id)
@@ -97,17 +109,23 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything-object-store-persistence"}}}
     /// Persist the store.
     ///
+    /// The store is persisted as a a bincode file.
+    pub fn persist_bincode<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let path = path.as_ref();
+        let mut bin_file = fs::File::create(path)?;
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        bin_file.write_all(&encoded)?;
+        Ok(())
+    }
+
+    /// Persist the store.
+    ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
     /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
         fs::create_dir_all(path)?;
-
-        let bin_path = path.clone().join("everything.bin");
-        let mut bin_file = fs::File::create(bin_path)?;
-        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        bin_file.write_all(&encoded)?;
 
         let path = path.join("everything.json");
         fs::create_dir_all(&path)?;
@@ -137,6 +155,15 @@ impl ObjectStore {
         }
 
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is as a bincode file.
+    pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let bin_file = fs::File::open(path)?;
+        Ok(bincode::deserialize_from(bin_file).unwrap())
     }
 
     /// Load the store.

@@ -41,20 +41,26 @@ impl ObjectStore {
     }
 
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-methods"}}}
-    /// Inter [`AnotherObject`] into the store.
+    /// Inter (insert) [`AnotherObject`] into the store.
     ///
     pub fn inter_another_object(&mut self, another_object: AnotherObject) {
         self.another_object
             .insert(another_object.id, another_object);
     }
 
-    /// Exhume [`AnotherObject`] from the store.
+    /// Exhume (get) [`AnotherObject`] from the store.
     ///
     pub fn exhume_another_object(&self, id: &Uuid) -> Option<&AnotherObject> {
         self.another_object.get(id)
     }
 
-    /// Exhume [`AnotherObject`] from the store — mutably.
+    /// Exorcise (remove) [`AnotherObject`] from the store.
+    ///
+    pub fn exorcise_another_object(&mut self, id: &Uuid) -> Option<AnotherObject> {
+        self.another_object.remove(id)
+    }
+
+    /// Exhume mut [`AnotherObject`] from the store — mutably.
     ///
     pub fn exhume_another_object_mut(&mut self, id: &Uuid) -> Option<&mut AnotherObject> {
         self.another_object.get_mut(id)
@@ -71,17 +77,23 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::imported_object-object-store-persistence"}}}
     /// Persist the store.
     ///
+    /// The store is persisted as a a bincode file.
+    pub fn persist_bincode<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
+        let path = path.as_ref();
+        let mut bin_file = fs::File::create(path)?;
+        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
+        bin_file.write_all(&encoded)?;
+        Ok(())
+    }
+
+    /// Persist the store.
+    ///
     /// The store is persisted as a directory of JSON files. The intention
     /// is that this directory can be checked into version control.
     /// In fact, I intend to add automagic git integration as an option.
     pub fn persist<P: AsRef<Path>>(&self, path: P) -> io::Result<()> {
         let path = path.as_ref();
         fs::create_dir_all(path)?;
-
-        let bin_path = path.clone().join("imported_object.bin");
-        let mut bin_file = fs::File::create(bin_path)?;
-        let encoded: Vec<u8> = bincode::serialize(&self).unwrap();
-        bin_file.write_all(&encoded)?;
 
         let path = path.join("imported_object.json");
         fs::create_dir_all(&path)?;
@@ -99,6 +111,15 @@ impl ObjectStore {
         }
 
         Ok(())
+    }
+
+    /// Load the store.
+    ///
+    /// The store is as a bincode file.
+    pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let path = path.as_ref();
+        let bin_file = fs::File::open(path)?;
+        Ok(bincode::deserialize_from(bin_file).unwrap())
     }
 
     /// Load the store.

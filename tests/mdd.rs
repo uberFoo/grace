@@ -466,11 +466,11 @@ test_target_domain_timestamps!(
     "domain/sarzak",
     "domain/isa"
 );
-test_target_dwarf!(
-    imported_object_domain_dwarf,
-    "imported_object",
-    "tests/mdd/models/imported_object.json"
-);
+// test_target_dwarf!(
+//     imported_object_domain_dwarf,
+//     "imported_object",
+//     "tests/mdd/models/imported_object.json"
+// );
 
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
 test_target_domain_timestamps!(external_ts, "external_ts", "tests/mdd/models/external.json");

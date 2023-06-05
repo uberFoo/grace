@@ -23,16 +23,16 @@ use crate::domain::isa_ts::store::ObjectStore as IsaTsStore;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Gamma {
     pub id: Uuid,
-    pub value: f64,
+    pub x_value: f64,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-implementation"}}}
 impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-struct-impl-new"}}}
     /// Inter a new 'Gamma' in the store, and return it's `id`.
-    pub fn new(value: f64, store: &mut IsaTsStore) -> Gamma {
+    pub fn new(x_value: f64, store: &mut IsaTsStore) -> Gamma {
         let id = Uuid::new_v4();
-        let new = Gamma { id, value };
+        let new = Gamma { id, x_value };
         store.inter_gamma(new.clone());
         new
     }
