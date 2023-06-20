@@ -115,6 +115,15 @@ impl CodeWriter for Enum {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
                         Disabled => unreachable!(),
+                        AsyncRwLock => {
+                            emit!(buffer, "use async_std::sync::Arc;");
+                            emit!(buffer, "use async_std::sync::RwLock;");
+                            // emit!(buffer, "use futures::{{future::OptionFuture, stream::{{self, StreamExt}}}};");
+                        }
+                        NDRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use no_deadlocks::RwLock;");
+                        }
                         Single => {
                             emit!(buffer, "use std::cell::RefCell;");
                             emit!(buffer, "use std::rc::Rc;")
@@ -462,6 +471,8 @@ impl CodeWriter for EnumNewImpl {
         );
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        let obj_ident = obj.as_ident();
+
         ensure!(
             woog.is_some(),
             CompilerSnafu {
@@ -481,6 +492,8 @@ impl CodeWriter for EnumNewImpl {
 
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
+                    let s_obj_ident = s_obj.as_ident();
+
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
                     let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
                     let is_imported = config.is_imported(&s_obj.id);
@@ -498,27 +511,46 @@ impl CodeWriter for EnumNewImpl {
                             let ret_type = match config.get_uber_store().unwrap() {
                                 Disabled => unreachable!(),
                                 Single => "Rc<RefCell<Self>>",
-                                StdRwLock | ParkingLotRwLock => "Arc<RwLock<Self>>",
+                                StdRwLock |
+                                ParkingLotRwLock |
+                                AsyncRwLock |
+                                NDRwLock => "Arc<RwLock<Self>>",
                                 StdMutex | ParkingLotMutex => "Arc<Mutex<Self>>",
                             };
-                            emit!(
-                                buffer,
-                                "pub fn new_{}(store: &{}) -> {ret_type} {{",
-                                s_obj.as_ident(),
-                                store.name
-                            );
-                            emit!(
-                                buffer,
-                                "// This is already in the store."
-                            );
-                            emit!(
-                                buffer,
-                                "store.exhume_{}(&{}).unwrap()",
-                                obj.as_ident(),
-                                s_obj.as_const()
-                            );
+                            if let AsyncRwLock = config.get_uber_store().unwrap() {
+                                emit!(
+                                    buffer,
+                                    "pub async fn new_{s_obj_ident}(store: &{}) -> {ret_type} {{",
+                                    store.name
+                                );
+                                emit!(
+                                    buffer,
+                                    "// This is already in the store."
+                                );
+                                emit!(
+                                    buffer,
+                                    "store.exhume_{obj_ident}(&{}).await.unwrap()",
+                                    s_obj.as_const()
+                                );
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "pub fn new_{s_obj_ident}(store: &{}) -> {ret_type} {{",
+                                    store.name
+                                );
+                                emit!(
+                                    buffer,
+                                    "// This is already in the store."
+                                );
+                                emit!(
+                                    buffer,
+                                    "store.exhume_{obj_ident}(&{}).unwrap()",
+                                    s_obj.as_const()
+                                );
+                            }
+
                         } else {
-                            emit!(buffer, "pub fn new_{}() -> Self {{", s_obj.as_ident());
+                            emit!(buffer, "pub fn new_{s_obj_ident}() -> Self {{");
                             emit!(
                                 buffer,
                                 "// This is already in the store, see associated function `new` above."
@@ -548,7 +580,10 @@ impl CodeWriter for EnumNewImpl {
                                 let ret_type = match config.get_uber_store().unwrap() {
                                     Disabled => unreachable!(),
                                     Single => "Rc<RefCell<Self>>",
-                                    StdRwLock | ParkingLotRwLock => "Arc<RwLock<Self>>",
+                                    StdRwLock |
+                                    ParkingLotRwLock |
+                                    AsyncRwLock |
+                                    NDRwLock => "Arc<RwLock<Self>>",
                                     StdMutex | ParkingLotMutex => "Arc<Mutex<Self>>",
                                 };
                                 let store_type = match config.get_uber_store().unwrap() {
@@ -557,7 +592,10 @@ impl CodeWriter for EnumNewImpl {
                                         "Rc<RefCell<{}>>",
                                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                                     ),
-                                    StdRwLock | ParkingLotRwLock => format!(
+                                    StdRwLock |
+                                    ParkingLotRwLock |
+                                    AsyncRwLock |
+                                    NDRwLock => format!(
                                         "Arc<RwLock<{}>>",
                                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                                     ),
@@ -566,20 +604,25 @@ impl CodeWriter for EnumNewImpl {
                                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                                     ),
                                 };
-                                emit!(
-                                    buffer,
-                                    "pub fn new_{}({}: &{store_type}, store: &mut {}) -> {ret_type} {{",
-                                    s_obj.as_ident(),
-                                    s_obj.as_ident(),
-                                    store.name
-                                );
+                                if let AsyncRwLock = config.get_uber_store().unwrap() {
+                                    emit!(
+                                        buffer,
+                                        "pub async fn new_{s_obj_ident}({s_obj_ident}: &{store_type}, store: &mut {}) -> {ret_type} {{",
+                                        store.name
+                                    );
+                                } else {
+                                    emit!(
+                                        buffer,
+                                        "pub fn new_{s_obj_ident}({s_obj_ident}: &{store_type}, store: &mut {}) -> {ret_type} {{",
+                                        store.name
+                                    );
+                                }
+
                             // }
                         } else {
                             emit!(
                                 buffer,
-                                "pub fn new_{}({}: &{}, store: &mut {}) -> Self {{",
-                                s_obj.as_ident(),
-                                s_obj.as_ident(),
+                                "pub fn new_{s_obj_ident}({s_obj_ident}: &{}, store: &mut {}) -> Self {{",
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                 store.name
                             );
@@ -621,6 +664,8 @@ impl CodeWriter for EnumNewImpl {
                                 use UberStoreOptions::*;
                                 let read = match config.get_uber_store().unwrap() {
                                     Disabled => unreachable!(),
+                                    AsyncRwLock => ".read().await",
+                                    NDRwLock => ".read().unwrap()",
                                     Single => ".borrow()",
                                     StdRwLock => ".read().unwrap()",
                                     StdMutex => ".lock().unwrap()",
@@ -633,7 +678,10 @@ impl CodeWriter for EnumNewImpl {
                                         "Rc::new(RefCell::new(Self::{}",
                                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                                     ), "))"),
-                                    StdRwLock | ParkingLotRwLock => (format!(
+                                    StdRwLock |
+                                    ParkingLotRwLock |
+                                    AsyncRwLock |
+                                    NDRwLock => (format!(
                                         "Arc::new(RwLock::new(Self::{}",
                                         s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                                     ), "))"),
@@ -643,28 +691,40 @@ impl CodeWriter for EnumNewImpl {
                                     ), "))"),
                                 };
 
-                                emit!(buffer, "let id = {}{read}.{id};", s_obj.as_ident());
-                                emit!(
-                                    buffer, "if let Some({}) = store.exhume_{}(&id) {{",
-                                    s_obj.as_ident(),
-                                    obj.as_ident(),
-                                );
-                                emit!(buffer, "{}", s_obj.as_ident());
-                                emit!(buffer, "}} else {{");
-                                emit!(
-                                    buffer,
-                                    "let new = {ctor}(id){tail};"
-                                );
-                                emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                                emit!(buffer, "let id = {s_obj_ident}{read}.{id};");
+
+                                if let AsyncRwLock = config.get_uber_store().unwrap() {
+                                    emit!(
+                                        buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(&id).await {{"
+                                    );
+                                    emit!(buffer, "{s_obj_ident}");
+                                    emit!(buffer, "}} else {{");
+                                    emit!(
+                                        buffer,
+                                        "let new = {ctor}(id){tail};"
+                                    );
+                                    emit!(buffer, "store.inter_{obj_ident}(new.clone()).await;");
+                                } else {
+                                    emit!(
+                                        buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(&id) {{"
+                                    );
+                                    emit!(buffer, "{s_obj_ident}");
+                                    emit!(buffer, "}} else {{");
+                                    emit!(
+                                        buffer,
+                                        "let new = {ctor}(id){tail};"
+                                    );
+                                    emit!(buffer, "store.inter_{obj_ident}(new.clone());");
+                                }
+
                                 emit!(buffer, "new");
                                 emit!(buffer, "}}");
                             // }
                         } else {
                             emit!(
                                 buffer,
-                                "let new = Self::{}({}.{id});",
+                                "let new = Self::{}({s_obj_ident}.{id});",
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                s_obj.as_ident()
                             );
                         emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                         emit!(buffer, "new");

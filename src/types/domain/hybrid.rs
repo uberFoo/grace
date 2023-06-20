@@ -118,6 +118,15 @@ impl CodeWriter for Hybrid {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
                         Disabled => unreachable!(),
+                        AsyncRwLock => {
+                            emit!(buffer, "use async_std::sync::Arc;");
+                            emit!(buffer, "use async_std::sync::RwLock;");
+                            // emit!(buffer, "use futures::{{future::OptionFuture}};");
+                        }
+                        NDRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use no_deadlocks::RwLock;");
+                        }
                         Single => {
                             emit!(buffer, "use std::cell::RefCell;");
                             emit!(buffer, "use std::rc::Rc;")
@@ -689,7 +698,15 @@ impl CodeWriter for HybridNewImpl {
                         domain,
                     )?;
 
-                    emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                    if config.is_uber_store() {
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            emit!(buffer, "store.inter_{}(new.clone()).await;", obj.as_ident());
+                        } else {
+                            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                        }
+                    } else {
+                        emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                    }
                     emit!(buffer, "new");
                     emit!(buffer, "}}");
 

@@ -16,7 +16,13 @@ pub(crate) fn format(path: &Path, display_err: bool) -> Result<()> {
     // Run rustfmt on the file
     let child = process::Command::new("rustfmt")
         // .arg(&path.to_str().expect("this is a pain in the dick"))
-        .args(["--emit", "files", format!("{}", path.display()).as_str()])
+        .args([
+            "--edition",
+            "2021",
+            "--emit",
+            "files",
+            format!("{}", path.display()).as_str(),
+        ])
         .stderr(process::Stdio::piped())
         .spawn()
         .context(IOSnafu {

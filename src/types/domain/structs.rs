@@ -115,6 +115,14 @@ impl CodeWriter for Imports {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
                         Disabled => unreachable!(),
+                        AsyncRwLock => {
+                            emit!(buffer, "use async_std::sync::Arc;");
+                            emit!(buffer, "use async_std::sync::RwLock;");
+                        }
+                        NDRwLock => {
+                            emit!(buffer, "use std::sync::Arc;");
+                            emit!(buffer, "use no_deadlocks::RwLock;");
+                        }
                         Single => {
                             emit!(buffer, "use std::cell::RefCell;");
                             emit!(buffer, "use std::rc::Rc;")

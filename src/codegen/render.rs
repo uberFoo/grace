@@ -177,7 +177,7 @@ impl ForStore for GraceType {
                             "Option<&Rc<RefCell<{}>>>",
                             inner.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
-                        StdRwLock | ParkingLotRwLock => format!(
+                        StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                             "Option<&Arc<RwLock<{}>>>",
                             inner.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
@@ -203,7 +203,7 @@ impl ForStore for GraceType {
                             "&Rc<RefCell<{}>>",
                             object.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
-                        StdRwLock | ParkingLotRwLock => format!(
+                        StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                             "&Arc<RwLock<{}>>",
                             object.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
@@ -249,7 +249,7 @@ impl ForStore for GType {
                             "&Rc<RefCell<{}>>",
                             object.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
-                        StdRwLock | ParkingLotRwLock => format!(
+                        StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                             "&Arc<RwLock<{}>>",
                             object.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
@@ -283,7 +283,7 @@ impl ForStore for GType {
                             "Option<&Rc<RefCell<{}>>>",
                             o.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),
-                        StdRwLock | ParkingLotRwLock => format!(
+                        StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                             "Option<&Arc<RwLock<{}>>>",
                             o.as_type(&Ownership::new_borrowed(), woog, domain)
                         ),

@@ -221,7 +221,15 @@ pub(crate) fn render_method_definition(
     let is_uber = config.is_uber_store();
 
     // Write the beginning of the definition
-    write!(buffer, "pub fn {}(", method.name).context(FormatSnafu)?;
+    if is_uber {
+        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+            write!(buffer, "pub async fn {}(", method.name).context(FormatSnafu)?;
+        } else {
+            write!(buffer, "pub fn {}(", method.name).context(FormatSnafu)?;
+        }
+    } else {
+        write!(buffer, "pub fn {}(", method.name).context(FormatSnafu)?;
+    }
 
     // Write the parameter list.
     // TODO: This is so clumsy! I should clean it up.
@@ -282,7 +290,7 @@ pub(crate) fn render_method_definition(
                 "Rc<RefCell<{}>>",
                 method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
-            StdRwLock | ParkingLotRwLock => format!(
+            StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                 "Arc<RwLock<{}>>",
                 method.ty.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
@@ -318,12 +326,30 @@ pub(crate) fn render_method_definition_new(
     log::debug!("Rendering new method definition for {}", object.as_ident());
 
     // Write the beginning of the definition
-    write!(
-        buffer,
-        "pub fn {}(",
-        method.r25_function(woog).pop().unwrap().name
-    )
-    .context(FormatSnafu)?;
+    if is_uber {
+        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+            write!(
+                buffer,
+                "pub async fn {}(",
+                method.r25_function(woog).pop().unwrap().name
+            )
+            .context(FormatSnafu)?;
+        } else {
+            write!(
+                buffer,
+                "pub fn {}(",
+                method.r25_function(woog).pop().unwrap().name
+            )
+            .context(FormatSnafu)?;
+        }
+    } else {
+        write!(
+            buffer,
+            "pub fn {}(",
+            method.r25_function(woog).pop().unwrap().name
+        )
+        .context(FormatSnafu)?;
+    }
 
     // By my calculations this should grab the first parameter in the list.
     // Not a very slick way of doing it.
@@ -393,7 +419,7 @@ pub(crate) fn render_method_definition_new(
                 "Rc<RefCell<{}>>",
                 object.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
-            StdRwLock | ParkingLotRwLock => format!(
+            StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                 "Arc<RwLock<{}>>",
                 object.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
@@ -646,7 +672,7 @@ pub(crate) fn render_new_instance(
                 "Rc::new(RefCell::new({} {{",
                 object.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
-            StdRwLock | ParkingLotRwLock => format!(
+            StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                 "Arc::new(RwLock::new({} {{",
                 object.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
@@ -726,14 +752,7 @@ pub(crate) fn render_new_instance(
 
                                 if is_uber {
                                     use UberStoreOptions::*;
-                                    let read = match config.get_uber_store().unwrap() {
-                                        Disabled => unreachable!(),
-                                        Single => ".borrow()",
-                                        StdRwLock => ".read().unwrap()",
-                                        StdMutex => ".lock().unwrap()",
-                                        ParkingLotRwLock => ".read()",
-                                        ParkingLotMutex => ".lock()",
-                                    };
+                                    let (read, _write) = get_uber_read_write(config);
                                     emit!(
                                         buffer,
                                         "{}: {}Enum::{}({}{read}.{id}),",
@@ -764,14 +783,7 @@ pub(crate) fn render_new_instance(
                             _ => {
                                 if is_uber {
                                     use UberStoreOptions::*;
-                                    let read = match config.get_uber_store().unwrap() {
-                                        Disabled => unreachable!(),
-                                        Single => ".borrow()",
-                                        StdRwLock => ".read().unwrap()",
-                                        StdMutex => ".lock().unwrap()",
-                                        ParkingLotRwLock => ".read()",
-                                        ParkingLotMutex => ".lock()",
-                                    };
+                                    let (read, _write) = get_uber_read_write(config);
                                     emit!(
                                         buffer,
                                         "{}: {}Enum::{}({}{read}.id),",
@@ -813,15 +825,7 @@ pub(crate) fn render_new_instance(
                     };
 
                     if is_uber {
-                        use UberStoreOptions::*;
-                        let read = match config.get_uber_store().unwrap() {
-                            Disabled => unreachable!(),
-                            Single => ".borrow()",
-                            StdRwLock => ".read().unwrap()",
-                            StdMutex => ".lock().unwrap()",
-                            ParkingLotRwLock => ".read()",
-                            ParkingLotMutex => ".lock()",
-                        };
+                        let (read, _write) = get_uber_read_write(config);
                         emit!(buffer, "{}: {}{read}.{id},", field.name, rval.name)
                     } else {
                         emit!(buffer, "{}: {}.{id},", field.name, rval.name)
@@ -843,6 +847,7 @@ pub(crate) fn render_new_instance(
                 GType::Option(right) => match **right {
                     GType::Reference(obj_id) => {
                         let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
+                        let obj_ident = obj.as_ident();
 
                         let id = if local_object_is_enum(obj, config, domain) {
                             "id()"
@@ -851,31 +856,29 @@ pub(crate) fn render_new_instance(
                         };
 
                         if is_uber {
-                            use UberStoreOptions::*;
-                            let read = match config.get_uber_store().unwrap() {
-                                Disabled => unreachable!(),
-                                Single => ".borrow()",
-                                StdRwLock => ".read().unwrap()",
-                                StdMutex => ".lock().unwrap()",
-                                ParkingLotRwLock => ".read()",
-                                ParkingLotMutex => ".lock()",
-                            };
-                            emit!(
-                                buffer,
-                                "{}: {}.map(|{}| {}{read}.{id}),",
-                                field.name,
-                                rval.name,
-                                obj.as_ident(),
-                                obj.as_ident()
-                            )
+                            let (read, _write) = get_uber_read_write(config);
+                            if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap()
+                            {
+                                emit!(
+                                    buffer,
+                                    "{}: futures::future::OptionFuture::from({}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await,",
+                                    field.name,
+                                    rval.name,
+                                )
+                            } else {
+                                emit!(
+                                    buffer,
+                                    "{}: {}.map(|{obj_ident}| {obj_ident}{read}.{id}),",
+                                    field.name,
+                                    rval.name,
+                                )
+                            }
                         } else {
                             emit!(
                                 buffer,
-                                "{}: {}.map(|{}| {}.{id}),",
+                                "{}: {}.map(|{obj_ident}| {obj_ident}.{id}),",
                                 field.name,
                                 rval.name,
-                                obj.as_ident(),
-                                obj.as_ident()
                             )
                         }
                     }
@@ -1010,7 +1013,7 @@ pub(crate) fn render_new_instance_new(
                 "Rc::new(RefCell::new({} {{",
                 object.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
-            StdRwLock | ParkingLotRwLock => format!(
+            StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
                 "Arc::new(RwLock::new({} {{",
                 object.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
@@ -1082,6 +1085,7 @@ fn typecheck_and_coerce(
 ) -> Result<String> {
     let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
     let is_uber = config.is_uber_store();
+    let rhs_ident = rhs.as_ident();
 
     Ok(match &lhs_ty {
         GraceType::WoogOption(_) => {
@@ -1095,6 +1099,7 @@ fn typecheck_and_coerce(
                         GraceType::Reference(id) => {
                             let reference = woog.exhume_reference(&id).unwrap();
                             let object = reference.r13_object(domain.sarzak())[0];
+                            let obj_ident = object.as_ident();
 
                             let imported = config.is_imported(&object.id);
 
@@ -1105,28 +1110,18 @@ fn typecheck_and_coerce(
                             };
 
                             if is_uber {
-                                use UberStoreOptions::*;
-                                let read = match config.get_uber_store().unwrap() {
-                                    Disabled => unreachable!(),
-                                    Single => ".borrow()",
-                                    StdRwLock => ".read().unwrap()",
-                                    StdMutex => ".lock().unwrap()",
-                                    ParkingLotRwLock => ".read()",
-                                    ParkingLotMutex => ".lock()",
-                                };
-                                format!(
-                                    "{}.map(|{}| {}{read}.{id})",
-                                    rhs.as_ident(),
-                                    object.as_ident(),
-                                    object.as_ident()
+                                let (read, _write) = get_uber_read_write(config);
+                                if let UberStoreOptions::AsyncRwLock =
+                                    config.get_uber_store().unwrap()
+                                {
+                                    format!(
+                                    "futures::future::OptionFuture::from({rhs_ident}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await"
                                 )
+                                } else {
+                                    format!("{rhs_ident}.map(|{obj_ident}| {obj_ident}{read}.{id})")
+                                }
                             } else {
-                                format!(
-                                    "{}.map(|{}| {}.{id})",
-                                    rhs.as_ident(),
-                                    object.as_ident(),
-                                    object.as_ident()
-                                )
+                                format!("{rhs_ident}.map(|{obj_ident}| {obj_ident}.{id})")
                             }
                         }
                         _ => {
@@ -1180,15 +1175,7 @@ fn typecheck_and_coerce(
                             };
 
                             if is_uber {
-                                use UberStoreOptions::*;
-                                let read = match config.get_uber_store().unwrap() {
-                                    Disabled => unreachable!(),
-                                    Single => ".borrow()",
-                                    StdRwLock => ".read().unwrap()",
-                                    StdMutex => ".lock().unwrap()",
-                                    ParkingLotRwLock => ".read()",
-                                    ParkingLotMutex => ".lock()",
-                                };
+                                let (read, _write) = get_uber_read_write(config);
                                 format!("{}{read}.{id}", rhs.as_ident())
                             } else {
                                 format!("{}.{id}", rhs.as_ident())
@@ -1234,15 +1221,7 @@ fn typecheck_and_coerce(
             );
 
             if is_uber {
-                use UberStoreOptions::*;
-                let read = match config.get_uber_store().unwrap() {
-                    Disabled => unreachable!(),
-                    Single => ".borrow()",
-                    StdRwLock => ".read().unwrap()",
-                    StdMutex => ".lock().unwrap()",
-                    ParkingLotRwLock => ".read()",
-                    ParkingLotMutex => ".lock()",
-                };
+                let (read, _write) = get_uber_read_write(config);
                 format!("{}{read}.to_owned()", rhs.as_ident())
             } else {
                 rhs.as_ident()
@@ -1364,7 +1343,15 @@ pub(crate) fn render_methods(
                 )?;
 
                 if func.name == "new" {
-                    emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                    if config.is_uber_store() {
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            emit!(buffer, "store.inter_{}(new.clone()).await;", obj.as_ident());
+                        } else {
+                            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                        }
+                    } else {
+                        emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                    }
                 }
                 emit!(buffer, "new");
                 emit!(buffer, "}}");
@@ -1802,4 +1789,30 @@ where
     }
 
     result
+}
+
+fn get_uber_read_write(config: &GraceConfig) -> (&str, &str) {
+    use UberStoreOptions::*;
+    let write = match config.get_uber_store().unwrap() {
+        Disabled => unreachable!(),
+        AsyncRwLock => ".write().await",
+        NDRwLock => ".write().unwrap()",
+        Single => ".borrow_mut()",
+        StdRwLock => ".write().unwrap()",
+        StdMutex => ".lock().unwrap()",
+        ParkingLotRwLock => ".write()",
+        ParkingLotMutex => ".lock()",
+    };
+    let read = match config.get_uber_store().unwrap() {
+        Disabled => unreachable!(),
+        AsyncRwLock => ".read().await",
+        NDRwLock => ".read().unwrap()",
+        Single => ".borrow()",
+        StdRwLock => ".read().unwrap()",
+        StdMutex => ".lock().unwrap()",
+        ParkingLotRwLock => ".read()",
+        ParkingLotMutex => ".lock()",
+    };
+
+    (read, write)
 }

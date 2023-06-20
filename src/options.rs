@@ -62,7 +62,11 @@ pub enum Target {
 pub enum UberStoreOptions {
     /// Disable the uber store
     Disabled,
-    /// No threading
+    /// Async store
+    AsyncRwLock,
+    /// Build with no_deadlocks RwLock
+    NDRwLock,
+    /// No threading -- Rc<RefCell<T>>
     Single,
     /// Use the standard library RwLock
     StdRwLock,

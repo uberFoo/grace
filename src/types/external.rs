@@ -164,7 +164,21 @@ impl FileGenerator for ExternalGenerator {
                 emit!(buffer, "id: id,");
                 emit!(buffer, "inner: inner,");
                 emit!(buffer, "}};");
-                emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
+                if config.is_uber_store() {
+                    if let crate::options::UberStoreOptions::AsyncRwLock =
+                        config.get_uber_store().unwrap()
+                    {
+                        emit!(
+                            buffer,
+                            "store.inter_{}(new.clone()).await;",
+                            object.as_ident()
+                        );
+                    } else {
+                        emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
+                    }
+                } else {
+                    emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
+                }
                 emit!(buffer, "new");
                 // Darn. So I need to insert a local here. And hybrid has similar needs.
                 // render_method_new(buffer, object, config, imports, woog, domain)?;
