@@ -61,13 +61,7 @@ impl Associative {
     ) -> Vec<&AnAssociativeReferent> {
         store
             .iter_an_associative_referent()
-            .filter_map(|an_associative_referent| {
-                if an_associative_referent.associative == self.id {
-                    Some(an_associative_referent)
-                } else {
-                    None
-                }
-            })
+            .filter(|an_associative_referent| an_associative_referent.associative == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

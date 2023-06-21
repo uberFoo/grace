@@ -53,13 +53,7 @@ impl State {
     pub fn r20_acknowledged_event<'a>(&'a self, store: &'a SarzakStore) -> Vec<&AcknowledgedEvent> {
         store
             .iter_acknowledged_event()
-            .filter_map(|acknowledged_event| {
-                if acknowledged_event.state_id == self.id {
-                    Some(acknowledged_event)
-                } else {
-                    None
-                }
-            })
+            .filter(|acknowledged_event| acknowledged_event.state_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

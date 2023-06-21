@@ -64,14 +64,6 @@ impl ObjectStore {
         self.everything.remove(id).map(|everything| everything.0)
     }
 
-    /// Exhume mut [`Everything`] from the store — mutably.
-    ///
-    pub fn exhume_everything_mut(&mut self, id: &Uuid) -> Option<&mut Everything> {
-        self.everything
-            .get_mut(id)
-            .map(|everything| &mut everything.0)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Everything>`.
     ///
     pub fn iter_everything(&self) -> impl Iterator<Item = &Everything> {
@@ -108,14 +100,6 @@ impl ObjectStore {
         self.rando_object
             .remove(id)
             .map(|rando_object| rando_object.0)
-    }
-
-    /// Exhume mut [`RandoObject`] from the store — mutably.
-    ///
-    pub fn exhume_rando_object_mut(&mut self, id: &Uuid) -> Option<&mut RandoObject> {
-        self.rando_object
-            .get_mut(id)
-            .map(|rando_object| &mut rando_object.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
@@ -234,6 +218,10 @@ impl ObjectStore {
 
     /// Load the store.
     ///
+    pub fn from_bincode(code: &[u8]) -> io::Result<Self> {
+        Ok(bincode::deserialize(code).unwrap())
+    }
+
     /// The store is as a bincode file.
     pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();

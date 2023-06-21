@@ -41,13 +41,7 @@ impl IsaUi {
     pub fn r10_subtype_anchor<'a>(&'a self, store: &'a AssociativeTsStore) -> Vec<&SubtypeAnchor> {
         store
             .iter_subtype_anchor()
-            .filter_map(|subtype_anchor| {
-                if subtype_anchor.isaui_id == self.id {
-                    Some(subtype_anchor)
-                } else {
-                    None
-                }
-            })
+            .filter(|subtype_anchor| subtype_anchor.isaui_id == self.id)
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

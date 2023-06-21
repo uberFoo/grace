@@ -47,16 +47,7 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-b"}}}
     /// Navigate to [`B`] across R2(1-Mc)
     pub fn r2_b<'a>(&'a self, store: &'a OneToManyStore) -> Vec<&B> {
-        store
-            .iter_b()
-            .filter_map(|b| {
-                if b.ptr == Some(self.id) {
-                    Some(b)
-                } else {
-                    None
-                }
-            })
-            .collect()
+        store.iter_b().filter(|b| b.ptr == Some(self.id)).collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_M-to-c"}}}
@@ -68,16 +59,7 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-1_Mc-to-d"}}}
     /// Navigate to [`D`] across R4(1-Mc)
     pub fn r4_d<'a>(&'a self, store: &'a OneToManyStore) -> Vec<&D> {
-        store
-            .iter_d()
-            .filter_map(|d| {
-                if d.ptr == Some(self.id) {
-                    Some(d)
-                } else {
-                    None
-                }
-            })
-            .collect()
+        store.iter_d().filter(|d| d.ptr == Some(self.id)).collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

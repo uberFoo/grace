@@ -71,12 +71,6 @@ impl ObjectStore {
         self.a.remove(id)
     }
 
-    /// Exhume mut [`A`] from the store — mutably.
-    ///
-    pub fn exhume_a_mut(&mut self, id: &Uuid) -> Option<&mut A> {
-        self.a.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, A>`.
     ///
     pub fn iter_a(&self) -> impl Iterator<Item = &A> {
@@ -99,12 +93,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_b(&mut self, id: &Uuid) -> Option<B> {
         self.b.remove(id)
-    }
-
-    /// Exhume mut [`B`] from the store — mutably.
-    ///
-    pub fn exhume_b_mut(&mut self, id: &Uuid) -> Option<&mut B> {
-        self.b.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, B>`.
@@ -131,12 +119,6 @@ impl ObjectStore {
         self.c.remove(id)
     }
 
-    /// Exhume mut [`C`] from the store — mutably.
-    ///
-    pub fn exhume_c_mut(&mut self, id: &Uuid) -> Option<&mut C> {
-        self.c.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, C>`.
     ///
     pub fn iter_c(&self) -> impl Iterator<Item = &C> {
@@ -161,12 +143,6 @@ impl ObjectStore {
         self.d.remove(id)
     }
 
-    /// Exhume mut [`D`] from the store — mutably.
-    ///
-    pub fn exhume_d_mut(&mut self, id: &Uuid) -> Option<&mut D> {
-        self.d.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, D>`.
     ///
     pub fn iter_d(&self) -> impl Iterator<Item = &D> {
@@ -189,12 +165,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_referent(&mut self, id: &Uuid) -> Option<Referent> {
         self.referent.remove(id)
-    }
-
-    /// Exhume mut [`Referent`] from the store — mutably.
-    ///
-    pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
-        self.referent.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
@@ -294,6 +264,10 @@ impl ObjectStore {
 
     /// Load the store.
     ///
+    pub fn from_bincode(code: &[u8]) -> io::Result<Self> {
+        Ok(bincode::deserialize(code).unwrap())
+    }
+
     /// The store is as a bincode file.
     pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();

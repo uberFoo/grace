@@ -7,7 +7,7 @@ use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SuperFoo {
     Gamma(Uuid),
 }

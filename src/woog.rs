@@ -2,9 +2,7 @@
 //!
 //! This involves creating instances in Woog that the compiler stages depend
 //! upon.
-use std::{
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use fnv::FnvHashMap as HashMap;
 use sarzak::{
@@ -15,8 +13,8 @@ use sarzak::{
         store::ObjectStore as WoogStore,
         types::{
             Access, Block, Field, Function, GraceType, Item, Local, ObjectMethod, Ownership,
-            Parameter, Reference, Statement, Structure, StructureField, SymbolTable, Value,
-            Variable, Visibility, WoogOption, PUBLIC,
+            Parameter, Reference, Statement, Structure, StructureField, SymbolTable, Variable,
+            Visibility, WoogOption, XValue as Value, PUBLIC,
         },
     },
 };

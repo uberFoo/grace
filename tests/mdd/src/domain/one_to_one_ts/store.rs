@@ -72,12 +72,6 @@ impl ObjectStore {
         self.a.remove(id).map(|a| a.0)
     }
 
-    /// Exhume mut [`A`] from the store — mutably.
-    ///
-    pub fn exhume_a_mut(&mut self, id: &Uuid) -> Option<&mut A> {
-        self.a.get_mut(id).map(|a| &mut a.0)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, A>`.
     ///
     pub fn iter_a(&self) -> impl Iterator<Item = &A> {
@@ -106,12 +100,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_b(&mut self, id: &Uuid) -> Option<B> {
         self.b.remove(id).map(|b| b.0)
-    }
-
-    /// Exhume mut [`B`] from the store — mutably.
-    ///
-    pub fn exhume_b_mut(&mut self, id: &Uuid) -> Option<&mut B> {
-        self.b.get_mut(id).map(|b| &mut b.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, B>`.
@@ -144,12 +132,6 @@ impl ObjectStore {
         self.c.remove(id).map(|c| c.0)
     }
 
-    /// Exhume mut [`C`] from the store — mutably.
-    ///
-    pub fn exhume_c_mut(&mut self, id: &Uuid) -> Option<&mut C> {
-        self.c.get_mut(id).map(|c| &mut c.0)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, C>`.
     ///
     pub fn iter_c(&self) -> impl Iterator<Item = &C> {
@@ -179,12 +161,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_parameter(&mut self, id: &Uuid) -> Option<Parameter> {
         self.parameter.remove(id).map(|parameter| parameter.0)
-    }
-
-    /// Exhume mut [`Parameter`] from the store — mutably.
-    ///
-    pub fn exhume_parameter_mut(&mut self, id: &Uuid) -> Option<&mut Parameter> {
-        self.parameter.get_mut(id).map(|parameter| &mut parameter.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Parameter>`.
@@ -219,12 +195,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_referent(&mut self, id: &Uuid) -> Option<Referent> {
         self.referent.remove(id).map(|referent| referent.0)
-    }
-
-    /// Exhume mut [`Referent`] from the store — mutably.
-    ///
-    pub fn exhume_referent_mut(&mut self, id: &Uuid) -> Option<&mut Referent> {
-        self.referent.get_mut(id).map(|referent| &mut referent.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Referent>`.
@@ -443,6 +413,10 @@ impl ObjectStore {
 
     /// Load the store.
     ///
+    pub fn from_bincode(code: &[u8]) -> io::Result<Self> {
+        Ok(bincode::deserialize(code).unwrap())
+    }
+
     /// The store is as a bincode file.
     pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();

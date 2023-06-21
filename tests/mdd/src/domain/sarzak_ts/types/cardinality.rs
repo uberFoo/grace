@@ -12,7 +12,7 @@ use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"cardinality-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum Cardinality {
     Many(Uuid),
     One(Uuid),

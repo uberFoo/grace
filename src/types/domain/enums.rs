@@ -299,7 +299,10 @@ impl CodeWriter for Enum {
             format!("{}-enum-definition", obj.as_ident()),
             |buffer| {
                 if let Some(derives) = config.get_derives(&obj.id) {
-                    write!(buffer, "#[derive(").context(FormatSnafu)?;
+                    // So our enums are Copy, which is sweet. I just wish I'd
+                    // noticed earlier. Probably I wasn't as good as I am now,
+                    // and it never even crossed my event horizon.
+                    write!(buffer, "#[derive(Copy, ").context(FormatSnafu)?;
                     for d in derives {
                         write!(buffer, "{},", d).context(FormatSnafu)?;
                     }

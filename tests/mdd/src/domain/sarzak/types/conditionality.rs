@@ -11,7 +11,7 @@ use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditionality-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum Conditionality {
     Conditional(Uuid),
     Unconditional(Uuid),

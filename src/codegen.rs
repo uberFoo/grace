@@ -372,7 +372,7 @@ pub(crate) fn render_method_definition_new(
                 .r8_variable(woog)
                 .pop()
                 .unwrap()
-                .r7_value(woog)
+                .r7_x_value(woog)
                 .pop()
                 .unwrap();
             let ty = value.r3_grace_type(woog)[0];
@@ -526,7 +526,7 @@ pub(crate) fn render_make_uuid_new(
         .r8_variable(woog)
         .pop()
         .unwrap()
-        .r7_value(woog)
+        .r7_x_value(woog)
         .pop()
         .unwrap()
         .r3_grace_type(woog)[0];
@@ -571,7 +571,7 @@ pub(crate) fn render_make_uuid_new(
                 .r8_variable(woog)
                 .pop()
                 .unwrap()
-                .r7_value(woog)
+                .r7_x_value(woog)
                 .pop()
                 .unwrap();
             let ty = value.r3_grace_type(woog)[0];
@@ -737,7 +737,11 @@ pub(crate) fn render_new_instance(
                                     buffer,
                                     "{}: {}Enum::{}({}),",
                                     field.name,
-                                    super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    foo_super_obj.unwrap().as_type(
+                                        &Ownership::new_borrowed(),
+                                        woog,
+                                        domain
+                                    ),
                                     obj.as_type(&Ownership::new_borrowed(), woog, domain),
                                     rval.name
                                 )
@@ -949,7 +953,7 @@ pub(crate) fn render_new_instance_new(
         .r8_variable(woog)
         .pop()
         .unwrap()
-        .r7_value(woog)
+        .r7_x_value(woog)
         .pop()
         .unwrap()
         .r3_grace_type(woog)[0];
@@ -1083,7 +1087,7 @@ fn typecheck_and_coerce(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<String> {
-    let rhs_ty = rhs.r7_value(woog)[0].r3_grace_type(woog)[0];
+    let rhs_ty = rhs.r7_x_value(woog)[0].r3_grace_type(woog)[0];
     let is_uber = config.is_uber_store();
     let rhs_ident = rhs.as_ident();
 

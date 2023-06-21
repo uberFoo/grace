@@ -235,7 +235,7 @@ impl CodeWriter for Hybrid {
                     ));
                 }
 
-                // Ad use statements for supertypes.
+                // Add use statements for supertypes.
                 for subtype in get_subtypes_sorted!(obj, domain.sarzak()) {
                     let isa = subtype.r27_isa(domain.sarzak())[0];
                     let supertype = isa.r13_supertype(domain.sarzak())[0];

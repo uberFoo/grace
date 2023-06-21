@@ -334,7 +334,7 @@ let (read, _write) = get_uber_read_write(config);
                     } else {
                         emit!(
                             buffer,
-                            "pub fn exhume_{obj_ident}(&self, id: &Uuid) -> Option<{thing}> {{",
+                            "pub fn exhume_{obj_ident}(&self, id: &Uuid) -> Option<&{thing}> {{",
                         );
                     }
 
@@ -615,7 +615,7 @@ let (read, _write) = get_uber_read_write(config);
                                 AsyncRwLock => {
                                     emit!(
                                         buffer,
-                                        "pub asinc fn {obj_ident}_timestamp(&self, {obj_ident}: &{obj_type}) -> SystemTime {{",
+                                        "pub async fn {obj_ident}_timestamp(&self, {obj_ident}: &{obj_type}) -> SystemTime {{",
                                     );
                                 }
                                 _ => {

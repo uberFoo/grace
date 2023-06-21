@@ -84,14 +84,6 @@ impl ObjectStore {
             .map(|acknowledged_event| acknowledged_event.0)
     }
 
-    /// Exhume mut [`AcknowledgedEvent`] from the store — mutably.
-    ///
-    pub fn exhume_acknowledged_event_mut(&mut self, id: &Uuid) -> Option<&mut AcknowledgedEvent> {
-        self.acknowledged_event
-            .get_mut(id)
-            .map(|acknowledged_event| &mut acknowledged_event.0)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, AcknowledgedEvent>`.
     ///
     pub fn iter_acknowledged_event(&self) -> impl Iterator<Item = &AcknowledgedEvent> {
@@ -130,12 +122,6 @@ impl ObjectStore {
         self.anchor.remove(id).map(|anchor| anchor.0)
     }
 
-    /// Exhume mut [`Anchor`] from the store — mutably.
-    ///
-    pub fn exhume_anchor_mut(&mut self, id: &Uuid) -> Option<&mut Anchor> {
-        self.anchor.get_mut(id).map(|anchor| &mut anchor.0)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Anchor>`.
     ///
     pub fn iter_anchor(&self) -> impl Iterator<Item = &Anchor> {
@@ -167,12 +153,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_event(&mut self, id: &Uuid) -> Option<Event> {
         self.event.remove(id).map(|event| event.0)
-    }
-
-    /// Exhume mut [`Event`] from the store — mutably.
-    ///
-    pub fn exhume_event_mut(&mut self, id: &Uuid) -> Option<&mut Event> {
-        self.event.get_mut(id).map(|event| &mut event.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
@@ -208,12 +188,6 @@ impl ObjectStore {
         self.isa_ui.remove(id).map(|isa_ui| isa_ui.0)
     }
 
-    /// Exhume mut [`IsaUi`] from the store — mutably.
-    ///
-    pub fn exhume_isa_ui_mut(&mut self, id: &Uuid) -> Option<&mut IsaUi> {
-        self.isa_ui.get_mut(id).map(|isa_ui| &mut isa_ui.0)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, IsaUi>`.
     ///
     pub fn iter_isa_ui(&self) -> impl Iterator<Item = &IsaUi> {
@@ -245,12 +219,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_state(&mut self, id: &Uuid) -> Option<State> {
         self.state.remove(id).map(|state| state.0)
-    }
-
-    /// Exhume mut [`State`] from the store — mutably.
-    ///
-    pub fn exhume_state_mut(&mut self, id: &Uuid) -> Option<&mut State> {
-        self.state.get_mut(id).map(|state| &mut state.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.
@@ -289,14 +257,6 @@ impl ObjectStore {
         self.subtype_anchor
             .remove(id)
             .map(|subtype_anchor| subtype_anchor.0)
-    }
-
-    /// Exhume mut [`SubtypeAnchor`] from the store — mutably.
-    ///
-    pub fn exhume_subtype_anchor_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeAnchor> {
-        self.subtype_anchor
-            .get_mut(id)
-            .map(|subtype_anchor| &mut subtype_anchor.0)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeAnchor>`.
@@ -551,6 +511,10 @@ impl ObjectStore {
 
     /// Load the store.
     ///
+    pub fn from_bincode(code: &[u8]) -> io::Result<Self> {
+        Ok(bincode::deserialize(code).unwrap())
+    }
+
     /// The store is as a bincode file.
     pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();

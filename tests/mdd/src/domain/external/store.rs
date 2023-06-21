@@ -62,12 +62,6 @@ impl ObjectStore {
         self.nunchuck.remove(id)
     }
 
-    /// Exhume mut [`Nunchuck`] from the store — mutably.
-    ///
-    pub fn exhume_nunchuck_mut(&mut self, id: &Uuid) -> Option<&mut Nunchuck> {
-        self.nunchuck.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Nunchuck>`.
     ///
     pub fn iter_nunchuck(&self) -> impl Iterator<Item = &Nunchuck> {
@@ -90,12 +84,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_timestamp(&mut self, id: &Uuid) -> Option<Timestamp> {
         self.timestamp.remove(id)
-    }
-
-    /// Exhume mut [`Timestamp`] from the store — mutably.
-    ///
-    pub fn exhume_timestamp_mut(&mut self, id: &Uuid) -> Option<&mut Timestamp> {
-        self.timestamp.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Timestamp>`.
@@ -159,6 +147,10 @@ impl ObjectStore {
 
     /// Load the store.
     ///
+    pub fn from_bincode(code: &[u8]) -> io::Result<Self> {
+        Ok(bincode::deserialize(code).unwrap())
+    }
+
     /// The store is as a bincode file.
     pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();

@@ -65,14 +65,6 @@ impl ObjectStore {
             .map(|another_object| another_object.0)
     }
 
-    /// Exhume mut [`AnotherObject`] from the store — mutably.
-    ///
-    pub fn exhume_another_object_mut(&mut self, id: &Uuid) -> Option<&mut AnotherObject> {
-        self.another_object
-            .get_mut(id)
-            .map(|another_object| &mut another_object.0)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, AnotherObject>`.
     ///
     pub fn iter_another_object(&self) -> impl Iterator<Item = &AnotherObject> {
@@ -155,6 +147,10 @@ impl ObjectStore {
 
     /// Load the store.
     ///
+    pub fn from_bincode(code: &[u8]) -> io::Result<Self> {
+        Ok(bincode::deserialize(code).unwrap())
+    }
+
     /// The store is as a bincode file.
     pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();

@@ -884,14 +884,12 @@ fn backward_1_m(
                         binary.number,
                         r_obj.as_ident()
                     );
-                    emit!(buffer, "store.iter_{}()", r_obj.as_ident());
-                    emit!(buffer, ".filter(|{}| {{", r_obj.as_ident(),);
+                    emit!(buffer, "store.iter_{obj_ident}()");
+                    emit!(buffer, ".filter(|{obj_ident}| {{");
                     emit!(
                         buffer,
-                        "{}{read}.{} == self.{}",
-                        r_obj.as_ident(),
+                        "{obj_ident}{read}.{} == self.{id}",
                         referrer.referential_attribute.as_ident(),
-                        id,
                     );
                     emit!(buffer, "}})");
                     emit!(buffer, ".collect()");
@@ -991,11 +989,11 @@ fn backward_1_mc(
                     );
                     emit!(
                         buffer,
-                        ".filter_map(|{obj_ident}: Arc<RwLock<{}>>| async move {{",
+                        ".filter(|{obj_ident}: Arc<RwLock<{}>>| async move {{",
                         r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
-                    emit!(buffer, "if {obj_ident}.read().await.{ref_ident} == Some(self.{id}) {{");
-                    emit!(buffer, "Some({obj_ident}.clone()) }} else {{ None }}}}).collect().await");
+                    emit!(buffer, "{obj_ident}.read().await.{ref_ident} == Some(self.{id}).collect().await}})",
+                    );
                 } else {
                     emit!(
                         buffer,
@@ -1011,7 +1009,7 @@ fn backward_1_mc(
                     emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                     emit!(
                         buffer,
-                        ".filter_map(|{obj_ident}| if {obj_ident}{read}.{ref_ident} == Some(self.{id}) {{ Some({obj_ident}) }} else {{ None }}).collect()",
+                        ".filter(|{obj_ident}| {obj_ident}{read}.{ref_ident} == Some(self.{id})).collect()",
                     );
                 }
             } else {
@@ -1025,7 +1023,7 @@ fn backward_1_mc(
                 emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                 emit!(
                     buffer,
-                    ".filter_map(|{obj_ident}| if {obj_ident}.{ref_ident} == Some(self.{id}) {{ Some({obj_ident}) }} else {{ None }}).collect()",
+                    ".filter(|{obj_ident}| {obj_ident}.{ref_ident} == Some(self.{id})).collect()",
                 );
             }
             emit!(buffer, "}}");
@@ -1355,11 +1353,8 @@ fn backward_assoc_many(
 
             emit!(
                 buffer,
-                ".filter_map(|{}| if {} == self.{} {{ Some({}) }} else {{ None }})",
-                r_obj.as_ident(),
-                lhs,
-                id,
-                r_obj.as_ident(),
+                ".filter(|{}| {lhs} == self.{id})",
+                r_obj.as_ident()
             );
             emit!(buffer, ".collect()");
             emit!(buffer, "}}");

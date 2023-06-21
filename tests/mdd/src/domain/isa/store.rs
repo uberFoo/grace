@@ -116,12 +116,6 @@ impl ObjectStore {
         self.alpha.remove(id)
     }
 
-    /// Exhume mut [`Alpha`] from the store — mutably.
-    ///
-    pub fn exhume_alpha_mut(&mut self, id: &Uuid) -> Option<&mut Alpha> {
-        self.alpha.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Alpha>`.
     ///
     pub fn iter_alpha(&self) -> impl Iterator<Item = &Alpha> {
@@ -144,12 +138,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_baz(&mut self, id: &Uuid) -> Option<Baz> {
         self.baz.remove(id)
-    }
-
-    /// Exhume mut [`Baz`] from the store — mutably.
-    ///
-    pub fn exhume_baz_mut(&mut self, id: &Uuid) -> Option<&mut Baz> {
-        self.baz.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Baz>`.
@@ -176,12 +164,6 @@ impl ObjectStore {
         self.beta.remove(id)
     }
 
-    /// Exhume mut [`Beta`] from the store — mutably.
-    ///
-    pub fn exhume_beta_mut(&mut self, id: &Uuid) -> Option<&mut Beta> {
-        self.beta.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Beta>`.
     ///
     pub fn iter_beta(&self) -> impl Iterator<Item = &Beta> {
@@ -204,12 +186,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_borrowed(&mut self, id: &Uuid) -> Option<Borrowed> {
         self.borrowed.remove(id)
-    }
-
-    /// Exhume mut [`Borrowed`] from the store — mutably.
-    ///
-    pub fn exhume_borrowed_mut(&mut self, id: &Uuid) -> Option<&mut Borrowed> {
-        self.borrowed.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Borrowed>`.
@@ -236,12 +212,6 @@ impl ObjectStore {
         self.gamma.remove(id)
     }
 
-    /// Exhume mut [`Gamma`] from the store — mutably.
-    ///
-    pub fn exhume_gamma_mut(&mut self, id: &Uuid) -> Option<&mut Gamma> {
-        self.gamma.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Gamma>`.
     ///
     pub fn iter_gamma(&self) -> impl Iterator<Item = &Gamma> {
@@ -264,12 +234,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_henry(&mut self, id: &Uuid) -> Option<Henry> {
         self.henry.remove(id)
-    }
-
-    /// Exhume mut [`Henry`] from the store — mutably.
-    ///
-    pub fn exhume_henry_mut(&mut self, id: &Uuid) -> Option<&mut Henry> {
-        self.henry.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Henry>`.
@@ -296,12 +260,6 @@ impl ObjectStore {
         self.not_important.remove(id)
     }
 
-    /// Exhume mut [`NotImportant`] from the store — mutably.
-    ///
-    pub fn exhume_not_important_mut(&mut self, id: &Uuid) -> Option<&mut NotImportant> {
-        self.not_important.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, NotImportant>`.
     ///
     pub fn iter_not_important(&self) -> impl Iterator<Item = &NotImportant> {
@@ -324,12 +282,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_oh_boy(&mut self, id: &Uuid) -> Option<OhBoy> {
         self.oh_boy.remove(id)
-    }
-
-    /// Exhume mut [`OhBoy`] from the store — mutably.
-    ///
-    pub fn exhume_oh_boy_mut(&mut self, id: &Uuid) -> Option<&mut OhBoy> {
-        self.oh_boy.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, OhBoy>`.
@@ -356,12 +308,6 @@ impl ObjectStore {
         self.ownership.remove(id)
     }
 
-    /// Exhume mut [`Ownership`] from the store — mutably.
-    ///
-    pub fn exhume_ownership_mut(&mut self, id: &Uuid) -> Option<&mut Ownership> {
-        self.ownership.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, Ownership>`.
     ///
     pub fn iter_ownership(&self) -> impl Iterator<Item = &Ownership> {
@@ -384,12 +330,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_reference(&mut self, id: &Uuid) -> Option<Reference> {
         self.reference.remove(id)
-    }
-
-    /// Exhume mut [`Reference`] from the store — mutably.
-    ///
-    pub fn exhume_reference_mut(&mut self, id: &Uuid) -> Option<&mut Reference> {
-        self.reference.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Reference>`.
@@ -417,12 +357,6 @@ impl ObjectStore {
         self.simple_subtype_a.remove(id)
     }
 
-    /// Exhume mut [`SimpleSubtypeA`] from the store — mutably.
-    ///
-    pub fn exhume_simple_subtype_a_mut(&mut self, id: &Uuid) -> Option<&mut SimpleSubtypeA> {
-        self.simple_subtype_a.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSubtypeA>`.
     ///
     pub fn iter_simple_subtype_a(&self) -> impl Iterator<Item = &SimpleSubtypeA> {
@@ -446,12 +380,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_simple_supertype(&mut self, id: &Uuid) -> Option<SimpleSupertype> {
         self.simple_supertype.remove(id)
-    }
-
-    /// Exhume mut [`SimpleSupertype`] from the store — mutably.
-    ///
-    pub fn exhume_simple_supertype_mut(&mut self, id: &Uuid) -> Option<&mut SimpleSupertype> {
-        self.simple_supertype.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSupertype>`.
@@ -478,12 +406,6 @@ impl ObjectStore {
         self.subtype_a.remove(id)
     }
 
-    /// Exhume mut [`SubtypeA`] from the store — mutably.
-    ///
-    pub fn exhume_subtype_a_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeA> {
-        self.subtype_a.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeA>`.
     ///
     pub fn iter_subtype_a(&self) -> impl Iterator<Item = &SubtypeA> {
@@ -506,12 +428,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_subtype_b(&mut self, id: &Uuid) -> Option<SubtypeB> {
         self.subtype_b.remove(id)
-    }
-
-    /// Exhume mut [`SubtypeB`] from the store — mutably.
-    ///
-    pub fn exhume_subtype_b_mut(&mut self, id: &Uuid) -> Option<&mut SubtypeB> {
-        self.subtype_b.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeB>`.
@@ -538,12 +454,6 @@ impl ObjectStore {
         self.super_bar.remove(id)
     }
 
-    /// Exhume mut [`SuperBar`] from the store — mutably.
-    ///
-    pub fn exhume_super_bar_mut(&mut self, id: &Uuid) -> Option<&mut SuperBar> {
-        self.super_bar.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, SuperBar>`.
     ///
     pub fn iter_super_bar(&self) -> impl Iterator<Item = &SuperBar> {
@@ -568,12 +478,6 @@ impl ObjectStore {
         self.super_foo.remove(id)
     }
 
-    /// Exhume mut [`SuperFoo`] from the store — mutably.
-    ///
-    pub fn exhume_super_foo_mut(&mut self, id: &Uuid) -> Option<&mut SuperFoo> {
-        self.super_foo.get_mut(id)
-    }
-
     /// Get an iterator over the internal `HashMap<&Uuid, SuperFoo>`.
     ///
     pub fn iter_super_foo(&self) -> impl Iterator<Item = &SuperFoo> {
@@ -596,12 +500,6 @@ impl ObjectStore {
     ///
     pub fn exorcise_super_t(&mut self, id: &Uuid) -> Option<SuperT> {
         self.super_t.remove(id)
-    }
-
-    /// Exhume mut [`SuperT`] from the store — mutably.
-    ///
-    pub fn exhume_super_t_mut(&mut self, id: &Uuid) -> Option<&mut SuperT> {
-        self.super_t.get_mut(id)
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, SuperT>`.
@@ -845,6 +743,10 @@ impl ObjectStore {
 
     /// Load the store.
     ///
+    pub fn from_bincode(code: &[u8]) -> io::Result<Self> {
+        Ok(bincode::deserialize(code).unwrap())
+    }
+
     /// The store is as a bincode file.
     pub fn load_bincode<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let path = path.as_ref();
