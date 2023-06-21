@@ -24,7 +24,7 @@ use crate::{
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
-        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid,
+        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_hybrid,
         object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_referential_attributes,
@@ -405,7 +405,7 @@ impl CodeWriter for HybridNewImpl {
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
-        let is_uber = config.is_uber_store();
+        let _is_uber = config.is_uber_store();
 
         let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 

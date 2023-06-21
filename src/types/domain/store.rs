@@ -7,10 +7,7 @@ use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
     v2::domain::Domain,
-    woog::{
-        store::ObjectStore as WoogStore,
-        types::{Ownership, MUTABLE},
-    },
+    woog::{store::ObjectStore as WoogStore, types::Ownership},
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -203,7 +200,7 @@ impl DomainStore {
                     };
 
                     if is_uber {
-                        use UberStoreOptions::*;
+
 let (read, _write) = get_uber_read_write(config);
                         emit!(buffer, "let read = {}{read};", obj.as_ident());
                     }
@@ -339,8 +336,8 @@ let (read, _write) = get_uber_read_write(config);
                     }
 
                     if is_uber {
-                        let thing = get_value_wrapper(is_uber, config, obj, woog, domain);
-                        use UberStoreOptions::*;
+                        let _thing = get_value_wrapper(is_uber, config, obj, woog, domain);
+
                         let (read, _write) = get_uber_read_write(config);
                         if timestamp {
                             emit!(
@@ -884,6 +881,7 @@ impl CodeWriter for DomainStore {
                 if has_name {
                     emit!(buffer, "use heck::ToUpperCamelCase;");
                 }
+                #[allow(clippy::overly_complex_bool_expr)]
                 if timestamp && is_meta && false {
                     emit!(buffer, "use snafu::prelude::*;");
                     emit!(buffer, "");
@@ -1134,7 +1132,7 @@ impl CodeWriter for DomainStore {
                     emit!(buffer, "}}}}\n");
 
                     for obj in &objects {
-                        let obj_ident = obj.as_ident();
+                        let _obj_ident = obj.as_ident();
                         let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
 
                         emit!(buffer, "struct {obj_type}Visitor;");
@@ -1454,7 +1452,7 @@ fn generate_store_persistence(
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
                     if is_uber {
                         use UberStoreOptions::*;
-                        let store_type = get_value_wrapper(is_uber, config, obj, woog, domain);
+                        let _store_type = get_value_wrapper(is_uber, config, obj, woog, domain);
                         match config.get_uber_store().unwrap() {
                             Disabled => unreachable!(),
                             AsyncRwLock => {
@@ -1483,7 +1481,7 @@ fn generate_store_persistence(
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
                     if is_uber {
                         use UberStoreOptions::*;
-                        let store_type = get_value_wrapper(is_uber, config, obj, woog, domain);
+                        let _store_type = get_value_wrapper(is_uber, config, obj, woog, domain);
                         match config.get_uber_store().unwrap() {
                             Disabled => unreachable!(),
                             AsyncRwLock => {
@@ -1527,6 +1525,7 @@ fn generate_store_persistence(
                     } else {
                         emit!(buffer, "if !self.{obj_ident}.contains_key(&id) {{");
                     }
+                    #[allow(clippy::overly_complex_bool_expr)]
                     if is_meta && false {
                         emit!(buffer, "let result = fs::remove_file(path);");
                         emit!(buffer, "match result {{");
@@ -1668,7 +1667,7 @@ fn generate_store_persistence(
 
             for obj in objects {
                 let obj_ident = obj.as_ident();
-                let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+                let _obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
 
                 emit!(buffer, "// Load {}.", obj.name);
                 emit!(buffer, "{{");
@@ -1770,7 +1769,7 @@ fn generate_store_persistence(
 
                     if object_has_name(obj, domain) {
                         if is_uber {
-                            use UberStoreOptions::*;
+
 let (read, write) = get_uber_read_write(config);
                             emit!(
                                 buffer,

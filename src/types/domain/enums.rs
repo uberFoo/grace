@@ -499,7 +499,7 @@ impl CodeWriter for EnumNewImpl {
 
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
                     let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
-                    let is_imported = config.is_imported(&s_obj.id);
+                    let _is_imported = config.is_imported(&s_obj.id);
 
                     emit!(
                         buffer,

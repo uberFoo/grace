@@ -155,7 +155,7 @@ impl ForStore for GraceType {
                 let o = woog.exhume_woog_option(&o).unwrap();
                 let inner = o.r20_grace_type(woog)[0];
 
-                let (inner, imported) = if let GraceType::Reference(ref id) = inner {
+                let (inner, _imported) = if let GraceType::Reference(ref id) = inner {
                     let reference = woog.exhume_reference(&id).unwrap();
                     let object = reference.r13_object(domain.sarzak())[0];
 

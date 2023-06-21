@@ -19,7 +19,7 @@ use crate::{
         buffer::{emit, Buffer},
         collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        render::{RenderConst, RenderType},
+        render::{RenderType},
         AttributeBuilder,
     },
     options::GraceConfig,

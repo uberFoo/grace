@@ -135,7 +135,7 @@ impl CodeWriter for ChaChaFile {
         woog: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
-        module: &str,
+        _module: &str,
         _obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
     ) -> Result<()> {

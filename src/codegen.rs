@@ -23,6 +23,7 @@ use sarzak::{
             GraceType, Item, Local, ObjectMethod as WoogObjectMethod, Ownership, StatementEnum,
             Structure, SymbolTable, Variable, VariableEnum,
         },
+        StructureField,
     },
 };
 use snafu::prelude::*;
@@ -755,7 +756,6 @@ pub(crate) fn render_new_instance(
                                 };
 
                                 if is_uber {
-                                    use UberStoreOptions::*;
                                     let (read, _write) = get_uber_read_write(config);
                                     emit!(
                                         buffer,
@@ -786,7 +786,6 @@ pub(crate) fn render_new_instance(
                             }
                             _ => {
                                 if is_uber {
-                                    use UberStoreOptions::*;
                                     let (read, _write) = get_uber_read_write(config);
                                     emit!(
                                         buffer,
@@ -990,12 +989,13 @@ pub(crate) fn render_new_instance_new(
 
     let is_uber = config.is_uber_store();
 
-    let mut first = structure
-        .r27_structure_field(woog)
-        .iter()
-        .find(|&&field| field.r30c_structure_field(woog).len() == 0)
-        .unwrap()
-        .clone();
+    let mut first = <&StructureField>::clone(
+        structure
+            .r27_structure_field(woog)
+            .iter()
+            .find(|&&field| field.r30c_structure_field(woog).len() == 0)
+            .unwrap(),
+    );
 
     let mut fields = vec![first];
     loop {
@@ -1042,12 +1042,13 @@ pub(crate) fn render_new_instance_new(
     let rvals = fields
         .iter()
         .map(|field| {
-            table
-                .r20_variable(woog)
-                .iter()
-                .find(|&var| var.name == field.r27_field(woog)[0].name)
-                .unwrap()
-                .clone()
+            <&Variable>::clone(
+                table
+                    .r20_variable(woog)
+                    .iter()
+                    .find(|&var| var.name == field.r27_field(woog)[0].name)
+                    .unwrap(),
+            )
         })
         .collect::<Vec<_>>();
 
@@ -1105,7 +1106,7 @@ fn typecheck_and_coerce(
                             let object = reference.r13_object(domain.sarzak())[0];
                             let obj_ident = object.as_ident();
 
-                            let imported = config.is_imported(&object.id);
+                            let _imported = config.is_imported(&object.id);
 
                             let id = if object_is_enum(object, config, imports, domain)? {
                                 "id()"
@@ -1170,7 +1171,7 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            let is_imported = config.is_imported(&obj.id);
+                            let _is_imported = config.is_imported(&obj.id);
 
                             let id = if object_is_enum(obj, config, imports, domain)? {
                                 "id()"
