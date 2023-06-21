@@ -68,7 +68,7 @@ impl<'a> DwarfTarget<'a> {
             config,
             package,
             module,
-            src_path: src_path.as_ref(),
+            src_path,
             domain,
             woog,
             _test,
@@ -111,9 +111,7 @@ impl<'a> Target for DwarfTarget<'a> {
                 if !imported_domains.contains_key(&io.domain) {
                     let domain = DomainBuilder::new()
                         .cuckoo_model(&io.model_file)
-                        .expect(
-                            format!("Failed to load domain {}", io.model_file.display()).as_str(),
-                        )
+                        .unwrap_or_else(|_| panic!("Failed to load domain {}", io.model_file.display()))
                         .build_v2()
                         .expect("Failed to build domain");
 
@@ -130,7 +128,7 @@ impl<'a> Target for DwarfTarget<'a> {
 
         GeneratorBuilder::new()
             .path(&dwarf_file)?
-            .package(&self.package)
+            .package(self.package)
             .config(&self.config)
             .domain(&self.domain)
             .module(self.module)
@@ -140,7 +138,7 @@ impl<'a> Target for DwarfTarget<'a> {
 
         GeneratorBuilder::new()
             .path(&chacha_file)?
-            .package(&self.package)
+            .package(self.package)
             .config(&self.config)
             .domain(&self.domain)
             .module(self.module)

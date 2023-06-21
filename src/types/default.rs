@@ -5,7 +5,7 @@
 use std::fmt::Write;
 
 use fnv::FnvHashMap as HashMap;
-use log;
+
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
@@ -102,7 +102,7 @@ impl FileGenerator for DefaultStructGenerator {
             }
         );
         let obj_id = obj_id.unwrap();
-        let object = domain.sarzak().exhume_object(&obj_id).unwrap();
+        let object = domain.sarzak().exhume_object(obj_id).unwrap();
 
         buffer.block(
             DirectiveKind::AllowEditing,
@@ -199,7 +199,7 @@ impl CodeWriter for DefaultStruct {
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
         let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
-        let has_referential_attrs = referrers.len() > 0;
+        let has_referential_attrs = !referrers.is_empty();
 
         // Everything has an `id`, everything needs these.
         emit!(buffer, "use uuid::Uuid;");
@@ -342,7 +342,7 @@ impl CodeWriter for DefaultImplementation {
             }
         );
         let obj_id = obj_id.unwrap();
-        let object = domain.sarzak().exhume_object(&obj_id).unwrap();
+        let object = domain.sarzak().exhume_object(obj_id).unwrap();
         ensure!(
             woog.is_some(),
             CompilerSnafu {
@@ -355,10 +355,10 @@ impl CodeWriter for DefaultImplementation {
             DirectiveKind::IgnoreOrig,
             format!("{}-struct-implementation", object.as_ident()),
             |buffer| {
-                let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
+                let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
                 let referrers = obj.r17_referrer(domain.sarzak());
-                let has_referential_attrs = referrers.len() > 0;
+                let has_referential_attrs = !referrers.is_empty();
 
                 if has_referential_attrs {
                     emit!(
@@ -502,7 +502,7 @@ impl CodeWriter for DefaultNewImpl {
         }
 
         // Link the params. The result is the head of the list.
-        let param = if params.len() > 0 {
+        let param = if !params.is_empty() {
             let mut iter = params.iter_mut().rev();
             let mut last = iter.next().unwrap();
             loop {

@@ -104,7 +104,7 @@ pub(crate) fn generate_binary_referent_rels(
                         buffer, obj, r_obj, id, binary, store, referrer, config, woog, domain,
                     )?,
                     Conditionality::Conditional(_) => backward_one_biconditional(
-                        buffer, obj, r_obj, id, binary, &store, referrer, config, woog, domain,
+                        buffer, obj, r_obj, id, binary, store, referrer, config, woog, domain,
                     )?,
                 },
             },
@@ -231,7 +231,7 @@ pub(crate) fn generate_assoc_referent_rels(
                 id,
                 assoc.number,
                 store,
-                &referential_attribute,
+                referential_attribute,
                 config,
                 woog,
                 domain,
@@ -1450,21 +1450,13 @@ fn subtype_to_supertype(
                     emit!(buffer, "if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}.subtype {{");
                     emit!(buffer, "id == self.{id} }} else {{ false }} }}).unwrap()]");
                 }
-            } else {
-                if is_uber {
-                    if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                        emit!(
-                            buffer,
-                            "vec![store.exhume_{}(&self.{id}).await.unwrap()]",
-                            s_obj.as_ident()
-                        );
-                    } else {
-                        emit!(
-                            buffer,
-                            "vec![store.exhume_{}(&self.{id}).unwrap()]",
-                            s_obj.as_ident()
-                        );
-                    }
+            } else if is_uber {
+                if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                    emit!(
+                        buffer,
+                        "vec![store.exhume_{}(&self.{id}).await.unwrap()]",
+                        s_obj.as_ident()
+                    );
                 } else {
                     emit!(
                         buffer,
@@ -1472,6 +1464,12 @@ fn subtype_to_supertype(
                         s_obj.as_ident()
                     );
                 }
+            } else {
+                emit!(
+                    buffer,
+                    "vec![store.exhume_{}(&self.{id}).unwrap()]",
+                    s_obj.as_ident()
+                );
             }
             emit!(buffer, "}}");
 
@@ -1531,6 +1529,6 @@ fn get_value_wrapper(
             ),
         }
     } else {
-        format!("{}", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+        obj.as_type(&Ownership::new_borrowed(), woog, domain)
     }
 }

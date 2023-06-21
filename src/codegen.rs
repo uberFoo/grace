@@ -242,7 +242,7 @@ pub(crate) fn render_method_definition(
                 buffer,
                 "{}: {},",
                 param.as_ident(),
-                param.ty.for_store(&mutability, config, woog, domain),
+                param.ty.for_store(mutability, config, woog, domain),
             )
             .context(FormatSnafu)?;
         } else {
@@ -250,7 +250,7 @@ pub(crate) fn render_method_definition(
                 buffer,
                 "{}: {},",
                 param.as_ident(),
-                param.ty.as_type(&mutability, woog, domain),
+                param.ty.as_type(mutability, woog, domain),
             )
             .context(FormatSnafu)?;
         }
@@ -264,7 +264,7 @@ pub(crate) fn render_method_definition(
                     "{}: {},",
                     // Why do I need to drill down to name?
                     next_param.name.as_ident(),
-                    next_param.ty.for_store(&mutability, config, woog, domain),
+                    next_param.ty.for_store(mutability, config, woog, domain),
                 )
                 .context(FormatSnafu)?;
             } else {
@@ -273,12 +273,12 @@ pub(crate) fn render_method_definition(
                     "{}: {},",
                     // Why do I need to drill down to name?
                     next_param.name.as_ident(),
-                    next_param.ty.as_type(&mutability, woog, domain),
+                    next_param.ty.as_type(mutability, woog, domain),
                 )
                 .context(FormatSnafu)?;
             }
 
-            param = &next_param;
+            param = next_param;
         }
     }
 
@@ -359,7 +359,7 @@ pub(crate) fn render_method_definition_new(
     let param = woog.iter_parameter().find(|p| {
         if let Some(func_id) = p.function {
             func_id == method.r25_function(woog).pop().unwrap().id
-                && p.r1c_parameter(woog).len() == 0
+                && p.r1c_parameter(woog).is_empty()
         } else {
             false
         }
@@ -387,7 +387,7 @@ pub(crate) fn render_method_definition_new(
                     buffer,
                     "{}: {},",
                     param_name,
-                    ty.for_store(&mutability, config, woog, domain)
+                    ty.for_store(mutability, config, woog, domain)
                 )
                 .context(FormatSnafu)?;
             } else {
@@ -395,7 +395,7 @@ pub(crate) fn render_method_definition_new(
                     buffer,
                     "{}: {},",
                     param_name,
-                    ty.as_type(&mutability, woog, domain)
+                    ty.as_type(mutability, woog, domain)
                 )
                 .context(FormatSnafu)?;
             }
@@ -555,7 +555,7 @@ pub(crate) fn render_make_uuid_new(
     let param = woog.iter_parameter().find(|p| {
         if let Some(func_id) = p.function {
             func_id == method.r25_function(woog).pop().unwrap().id
-                && p.r1c_parameter(woog).len() == 0
+                && p.r1c_parameter(woog).is_empty()
         } else {
             false
         }
@@ -707,7 +707,7 @@ pub(crate) fn render_new_instance(
         // 🚧: This type conversion should likely be a function.
         match &field.ty {
             GType::Object(obj) => {
-                let obj = domain.sarzak().exhume_object(&obj).unwrap();
+                let obj = domain.sarzak().exhume_object(obj).unwrap();
                 // If this is a subtype, grab the supertype object and if it's a hybrid, we need to
                 // handle the inner enum specially.
                 //
@@ -819,7 +819,7 @@ pub(crate) fn render_new_instance(
             GType::Uuid => match &rval.ty {
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
                 GType::Reference(obj_id) => {
-                    let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
+                    let obj = domain.sarzak().exhume_object(obj_id).unwrap();
 
                     let id = if local_object_is_enum(obj, config, domain) {
                         "id()"
@@ -965,7 +965,7 @@ pub(crate) fn render_new_instance_new(
     ensure!(
         match ty {
             GraceType::Reference(id) => {
-                let reference = woog.exhume_reference(&id).unwrap();
+                let reference = woog.exhume_reference(id).unwrap();
                 ensure!(
                     reference.object == object.id,
                     CompilerSnafu {
@@ -993,7 +993,7 @@ pub(crate) fn render_new_instance_new(
         structure
             .r27_structure_field(woog)
             .iter()
-            .find(|&&field| field.r30c_structure_field(woog).len() == 0)
+            .find(|&&field| field.r30c_structure_field(woog).is_empty())
             .unwrap(),
     );
 
@@ -1098,11 +1098,11 @@ fn typecheck_and_coerce(
             // rendering a new Self item, the type of the lhs option is uuid.
             match &rhs_ty {
                 GraceType::WoogOption(id) => {
-                    let opt = woog.exhume_woog_option(&id).unwrap();
+                    let opt = woog.exhume_woog_option(id).unwrap();
                     let opt_ty = opt.r20_grace_type(woog)[0];
                     match &opt_ty {
                         GraceType::Reference(id) => {
-                            let reference = woog.exhume_reference(&id).unwrap();
+                            let reference = woog.exhume_reference(id).unwrap();
                             let object = reference.r13_object(domain.sarzak())[0];
                             let obj_ident = object.as_ident();
 
@@ -1159,7 +1159,7 @@ fn typecheck_and_coerce(
         }
         // GraceType::TimeStamp(id) => {}
         GraceType::Ty(id) => {
-            let ty = domain.sarzak().exhume_ty(&id).unwrap();
+            let ty = domain.sarzak().exhume_ty(id).unwrap();
             match ty {
                 Ty::SUuid(_) => {
                     // If the lhs is a uuid, and the rhs is a reference, we need to
@@ -1167,7 +1167,7 @@ fn typecheck_and_coerce(
                     match &rhs_ty {
                         GraceType::Reference(id) => {
                             let obj = woog
-                                .exhume_reference(&id)
+                                .exhume_reference(id)
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
@@ -1266,7 +1266,7 @@ pub(crate) fn render_methods(
 
                 // This renders the method signature.
                 // It's probably ok as it is.
-                render_method_definition_new(buffer, &method, config, woog, domain)?;
+                render_method_definition_new(buffer, method, config, woog, domain)?;
 
                 // Find the properly scoped variable named `id`.
                 let table = method.r23_block(woog)[0].r24_symbol_table(woog)[0];
@@ -1279,7 +1279,7 @@ pub(crate) fn render_methods(
                 let id = match var {
                     // This works because the id of the variable is the same as the id of the
                     // subtype enum.
-                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                    VariableEnum::Local(id) => woog.exhume_local(id).unwrap(),
                     _ => panic!("This should never happen"),
                 };
 
@@ -1288,7 +1288,7 @@ pub(crate) fn render_methods(
                 // create (let) statements in the block whilst populating woog. Then
                 // someplace else, maybe here, we iterate over the statements and generate
                 // code. Maybe an as_statement trait, or something?
-                render_make_uuid_new(buffer, &id, &method, woog, domain)?;
+                render_make_uuid_new(buffer, id, method, woog, domain)?;
 
                 // Look up the properly scoped variable named `new`.
                 let var = &table
@@ -1298,7 +1298,7 @@ pub(crate) fn render_methods(
                     .unwrap()
                     .subtype;
                 let new = match var {
-                    VariableEnum::Local(id) => woog.exhume_local(&id).unwrap(),
+                    VariableEnum::Local(id) => woog.exhume_local(id).unwrap(),
                     _ => panic!("This should never happen"),
                 };
 
@@ -1332,9 +1332,9 @@ pub(crate) fn render_methods(
                 render_new_instance_new(
                     buffer,
                     obj,
-                    &new,
-                    &stmt,
-                    &method
+                    new,
+                    stmt,
+                    method
                         .r23_block(woog)
                         .pop()
                         .unwrap()
@@ -1470,7 +1470,7 @@ pub(crate) fn local_object_is_supertype(
     let is_super = object.r14_supertype(domain.sarzak());
     log::debug!("{} is_super: {:?}", object.name, is_super);
 
-    is_super.len() > 0
+    !is_super.is_empty()
 }
 
 // test_local_and_imports!(object_is_subtype, local_object_is_subtype);
@@ -1482,7 +1482,7 @@ pub(crate) fn local_object_is_subtype(
     let is_sub = object.r15_subtype(domain.sarzak());
     log::debug!("{} is_sub: {:?}", object.name, is_sub);
 
-    is_sub.len() > 0
+    !is_sub.is_empty()
 }
 
 test_local_and_imports!(object_is_singleton, local_object_is_singleton);
@@ -1514,7 +1514,7 @@ fn local_object_is_referrer(object: &Object, _config: &GraceConfig, domain: &Dom
         assoc_referrers
     );
 
-    referrers.len() > 0 || assoc_referrers.len() > 0
+    !referrers.is_empty() || !assoc_referrers.is_empty()
 }
 
 /// Generate struct/enum Documentation
@@ -1538,7 +1538,7 @@ pub(crate) fn emit_object_comments(
 ) -> Result<()> {
     const MAX_LEN: usize = 90;
 
-    if input.len() > 0 {
+    if !input.is_empty() {
         for line in input.split('\n') {
             write!(context, "{}", prefix).context(FormatSnafu)?;
             let mut length = 4;
@@ -1585,11 +1585,11 @@ pub(crate) fn find_store<'a>(name: &str, woog: &WoogStore, domain: &'a Domain) -
     let name = if name.contains("::") {
         name.split("::")
             .last()
-            .expect(format!("Can't parse store from {}", name).as_str())
+            .unwrap_or_else(|| panic!("Can't parse store from {}", name))
     } else {
-        name.split("/")
+        name.split('/')
             .last()
-            .expect(format!("Can't parse store from {}", name).as_str())
+            .unwrap_or_else(|| panic!("Can't parse store from {}", name))
     };
     let name = format!(
         "{}Store",
@@ -1602,7 +1602,7 @@ pub(crate) fn find_store<'a>(name: &str, woog: &WoogStore, domain: &'a Domain) -
         match ty {
             Some(ty) => match ty {
                 Ty::External(e) => {
-                    let ext = domain.sarzak().exhume_external(&e).unwrap();
+                    let ext = domain.sarzak().exhume_external(e).unwrap();
                     if ext.name == name {
                         break ext;
                     }
@@ -1629,7 +1629,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
     };
 
     // Always rebuild with a newer compiler.
-    let built_time = chrono::DateTime::parse_from_rfc3339(&BUILD_TIME).unwrap();
+    let built_time = chrono::DateTime::parse_from_rfc3339(BUILD_TIME).unwrap();
     if last_time < built_time.into() {
         return true;
     }
@@ -1639,7 +1639,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
     }
 
     for attr in object.r1_attribute(domain.sarzak()) {
-        if domain.sarzak().attribute_timestamp(&attr) > last_time {
+        if domain.sarzak().attribute_timestamp(attr) > last_time {
             return true;
         }
     }
@@ -1700,7 +1700,7 @@ pub(crate) fn is_object_stale(object: &Object, woog: &WoogStore, domain: &Domain
         }
     }
 
-    return false;
+    false
 }
 
 pub(crate) trait AttributeBuilder<A> {

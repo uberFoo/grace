@@ -389,8 +389,8 @@ impl CodeWriter for ChaChaFile {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
                     render_ctor(
                         &format!("new_{}", s_obj.as_ident()),
-                        &s_obj,
-                        Some(&obj),
+                        s_obj,
+                        Some(obj),
                         &attrs,
                         config,
                         imports,
@@ -463,49 +463,47 @@ impl CodeWriter for ChaChaFile {
                         buffer,
                         "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{id})))),",
                     );
-                } else {
-                    if ty == "UserType" {
-                        emit!(buffer, "\"{attr_name}\" => {{");
-                        emit!(
-                            buffer,
-                            "let {attr_name} = MODEL.read().exhume_{obj_ident}(&self_.read().{attr_name}).unwrap();"
-                        );
-                        emit!(buffer, "");
-                        emit!(
-                            buffer,
-                            "Ok(Arc::new(RwLock::new(({attr_name}, self.lu_dog.clone()).into())))"
-                        );
-                        emit!(buffer, "}},");
-                    } else if ty == "Option" {
-                        emit!(buffer, "\"{attr_name}\" => {{");
-                        emit!(
-                            buffer,
-                            "if let Some({attr_name}) = &self_.read().{attr_name} {{"
-                        );
-                        emit!(
-                            buffer,
-                            "let {attr_name} = MODEL.read().exhume_{obj_ident}({attr_name}).unwrap();"
-                        );
-                        emit!(buffer, "");
-                        emit!(
-                            buffer,
-                            "Ok(Arc::new(RwLock::new(Value::Option(Some(Arc::new(RwLock::new(({attr_name}, self.lu_dog.clone()).into())))))))"
-                        );
-                        emit!(buffer, "}} else {{");
-                        emit!(buffer, "Ok(Arc::new(RwLock::new(Value::Option(None))))");
-                        emit!(buffer, "}}");
-                        emit!(buffer, "}},");
-                    } else if ty == "String" {
-                        emit!(
-                            buffer,
-                            "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{attr_name}.to_owned())))),",
-                        );
-                    } else {
-                        emit!(
+                } else if ty == "UserType" {
+                    emit!(buffer, "\"{attr_name}\" => {{");
+                    emit!(
                         buffer,
-                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{attr_name})))),",
+                        "let {attr_name} = MODEL.read().exhume_{obj_ident}(&self_.read().{attr_name}).unwrap();"
                     );
-                    }
+                    emit!(buffer, "");
+                    emit!(
+                        buffer,
+                        "Ok(Arc::new(RwLock::new(({attr_name}, self.lu_dog.clone()).into())))"
+                    );
+                    emit!(buffer, "}},");
+                } else if ty == "Option" {
+                    emit!(buffer, "\"{attr_name}\" => {{");
+                    emit!(
+                        buffer,
+                        "if let Some({attr_name}) = &self_.read().{attr_name} {{"
+                    );
+                    emit!(
+                        buffer,
+                        "let {attr_name} = MODEL.read().exhume_{obj_ident}({attr_name}).unwrap();"
+                    );
+                    emit!(buffer, "");
+                    emit!(
+                        buffer,
+                        "Ok(Arc::new(RwLock::new(Value::Option(Some(Arc::new(RwLock::new(({attr_name}, self.lu_dog.clone()).into())))))))"
+                    );
+                    emit!(buffer, "}} else {{");
+                    emit!(buffer, "Ok(Arc::new(RwLock::new(Value::Option(None))))");
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}},");
+                } else if ty == "String" {
+                    emit!(
+                        buffer,
+                        "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{attr_name}.to_owned())))),",
+                    );
+                } else {
+                    emit!(
+                    buffer,
+                    "\"{attr_name}\" => Ok(Arc::new(RwLock::new(Value::{ty}(self_.read().{attr_name})))),",
+                );
                 }
             }
             emit!(
@@ -732,7 +730,7 @@ fn render_ctor(
             "let subtype: {obj_type}Proxy = (&*arg).try_into()?;"
         );
         emit!(buffer, "let subtype = subtype.self_.unwrap();");
-        args.extend([format!("&subtype, ")]);
+        args.extend(["&subtype, ".to_string()]);
     }
 
     emit!(buffer, "");

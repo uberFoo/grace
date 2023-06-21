@@ -91,11 +91,11 @@ impl<'a> DomainTarget<'a> {
         let mut external = HashSet::default();
 
         // This is the object store for _this_ domain.
-        external.insert(module.replace("/", "::"));
+        external.insert(module.replace('/', "::"));
 
         if let Some(domains) = options.imported_domains.as_ref() {
             for domain in domains {
-                external.insert(domain.replace("/", "::"));
+                external.insert(domain.replace('/', "::"));
             }
         }
 
@@ -152,7 +152,7 @@ impl<'a> DomainTarget<'a> {
         if let Some(from_domain) = config.get_from_domain() {
             let domain = DomainBuilder::new()
                 .cuckoo_model(&from_domain.path)
-                .expect(format!("Failed to load domain {}", &from_domain.path.display()).as_str())
+                .unwrap_or_else(|_| panic!("Failed to load domain {}", &from_domain.path.display()))
                 .build_v2()
                 .expect("Failed to build domain");
 
@@ -174,9 +174,7 @@ impl<'a> DomainTarget<'a> {
                 if !imported_domains.contains_key(&io.domain) {
                     let domain = DomainBuilder::new()
                         .cuckoo_model(&io.model_file)
-                        .expect(
-                            format!("Failed to load domain {}", io.model_file.display()).as_str(),
-                        )
+                        .unwrap_or_else(|_| panic!("Failed to load domain {}", io.model_file.display()))
                         .build_v2()
                         .expect("Failed to build domain");
 
@@ -192,7 +190,7 @@ impl<'a> DomainTarget<'a> {
             config,
             package,
             module,
-            src_path: src_path.as_ref(),
+            src_path,
             domain,
             imports: imported_domains,
             woog,
@@ -250,7 +248,7 @@ impl<'a> DomainTarget<'a> {
                     // Well, I don't have a use case for that at the moment, so they
                     // will be done in due time.
                     if local_object_is_hybrid(obj, &self.config, &self.domain) {
-                        display_output!(&obj, &types, Colour::Cyan, "hybrid");
+                        display_output!(obj, &types, Colour::Cyan, "hybrid");
 
                         DefaultStructBuilder::new()
                             .definition(Hybrid::new())
@@ -263,7 +261,7 @@ impl<'a> DomainTarget<'a> {
                             )
                             .build()?
                     } else {
-                        display_output!(&obj, &types, Colour::Green, "enumeration");
+                        display_output!(obj, &types, Colour::Green, "enumeration");
 
                         DefaultStructBuilder::new()
                             .definition(Enum::new())
@@ -295,19 +293,19 @@ impl<'a> DomainTarget<'a> {
                     NullGenerator::new()
                 } else if self.config.is_external(&obj.id) {
                     // If the object is external, we create a newtype to wrap it.
-                    display_output!(&obj, &types, Colour::Red, "external");
+                    display_output!(obj, &types, Colour::Red, "external");
 
                     ExternalGenerator::new()
                 } else if local_object_is_singleton(obj, &self.config, &self.domain) {
                     // Look for naked objects, and generate a singleton for them.
-                    display_output!(&obj, &types, Colour::Purple, "constant");
+                    display_output!(obj, &types, Colour::Purple, "constant");
 
                     log::debug!("Generating singleton for {}", obj.name);
                     DefaultStructBuilder::new()
                         .definition(DomainConst::new())
                         .build()?
                 } else {
-                    display_output!(&obj, &types, Colour::Yellow, "struct");
+                    display_output!(obj, &types, Colour::Yellow, "struct");
 
                     DefaultStructBuilder::new()
                         .imports(Imports::new())
@@ -329,7 +327,7 @@ impl<'a> DomainTarget<'a> {
 
                 // Here's the generation.
                 GeneratorBuilder::new()
-                    .package(&self.package)
+                    .package(self.package)
                     .config(&self.config)
                     // Where to write
                     .path(&types)?
@@ -349,7 +347,7 @@ impl<'a> DomainTarget<'a> {
 
                 // Update the timestamp in woog.
                 let ts = TimeStamp::new(&mut woog);
-                let _ = GenerationUnit::new(&obj, &ts, &mut woog);
+                let _ = GenerationUnit::new(obj, &ts, &mut woog);
 
                 Ok(())
             })
@@ -366,7 +364,7 @@ impl<'a> DomainTarget<'a> {
         store.push("store.rs");
 
         GeneratorBuilder::new()
-            .package(&self.package)
+            .package(self.package)
             .config(&self.config)
             .path(&store)?
             .domain(&self.domain)
@@ -391,7 +389,7 @@ impl<'a> DomainTarget<'a> {
         types.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
-            .package(&self.package)
+            .package(self.package)
             .config(&self.config)
             .path(&types)?
             .domain(&self.domain)
@@ -415,7 +413,7 @@ impl<'a> DomainTarget<'a> {
         from.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
-            .package(&self.package)
+            .package(self.package)
             .config(&self.config)
             .path(&from)?
             .domain(&self.domain)

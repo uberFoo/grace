@@ -185,22 +185,20 @@ impl CodeWriter for Hybrid {
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                             ));
                         }
+                    } else if is_singleton && !is_supertype {
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_const()
+                        ));
                     } else {
-                        if is_singleton && !is_supertype {
-                            uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
-                                module,
-                                s_obj.as_ident(),
-                                s_obj.as_const()
-                            ));
-                        } else {
-                            uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
-                                module,
-                                s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            ));
-                        }
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
                     }
                 }
 
@@ -529,7 +527,7 @@ impl CodeWriter for HybridNewImpl {
             //     ));
             // } else {
             fields_.push(LValue::new(
-                SUBTYPE_ATTR.to_owned(),
+                SUBTYPE_ATTR,
                 GType::Object(s_obj.id),
                 Some(GType::Object(obj.id)),
             ));
@@ -547,7 +545,7 @@ impl CodeWriter for HybridNewImpl {
                 None,
                 GType::Reference(s_obj.id),
                 PUBLIC,
-                SUBTYPE_ATTR.to_owned(),
+                SUBTYPE_ATTR,
             ));
             // }
             // }
@@ -562,7 +560,7 @@ impl CodeWriter for HybridNewImpl {
             if is_singleton && !is_supertype {
                 params_.pop();
                 rvals.pop();
-                rvals.push(RValue::new(format!("{}", s_obj.as_const()), GType::Uuid));
+                rvals.push(RValue::new(&s_obj.as_const(), GType::Uuid));
             }
 
             // Fuck me. I'm starting to regret not merging feature/recurse. Although, it probably
@@ -576,11 +574,11 @@ impl CodeWriter for HybridNewImpl {
                 None,
                 GType::External(store.into()),
                 PUBLIC,
-                "store".to_owned(),
+                "store",
             ));
 
             // Link the params. The result is the head of the list.
-            let param = if params_.len() > 0 {
+            let param = if !params_.is_empty() {
                 let mut iter = params_.iter_mut().rev();
                 let mut last = iter.next().unwrap();
                 loop {

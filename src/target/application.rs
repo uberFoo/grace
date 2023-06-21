@@ -52,7 +52,7 @@ impl<'a> ApplicationTarget<'a> {
             config,
             package,
             module,
-            src_path: src_path.as_ref(),
+            src_path,
             domain,
             woog,
             _test,
@@ -85,7 +85,7 @@ impl<'a> Target for ApplicationTarget<'a> {
 
             // Here's the generation.
             GeneratorBuilder::new()
-                .package(&self.package)
+                .package(self.package)
                 .config(&self.config)
                 // Where to write
                 .path(&types)?
@@ -125,7 +125,7 @@ impl<'a> Target for ApplicationTarget<'a> {
         types.set_extension(RS_EXT);
 
         GeneratorBuilder::new()
-            .package(&self.package)
+            .package(self.package)
             .config(&self.config)
             .path(&types)?
             .domain(&self.domain)

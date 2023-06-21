@@ -6,7 +6,7 @@
 //! what's already there. While also hopefully actually doing it's job.
 use std::path::PathBuf;
 
-use diff;
+
 use serde::{Deserialize, Serialize};
 
 const MAGIC: char = '';
@@ -136,7 +136,7 @@ fn process_diff_not_recursive_after_all<'a>(
     let mut directive = directive;
     let mut output = String::new();
 
-    while lines.len() > 0 {
+    while !lines.is_empty() {
         let line = lines.pop().expect("lines.pop()");
         match line {
             diff::Result::Left(orig) => {

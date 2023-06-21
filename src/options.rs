@@ -273,7 +273,7 @@ impl ModelCompilerOptions for GraceCompilerOptions {
 }
 
 const DEFAULT_TARGET: Target = Target::Application;
-const DEFAULT_DERIVE: &'static [&'static str] = &["Debug", "PartialEq"];
+const DEFAULT_DERIVE: &[&str] = &["Debug", "PartialEq"];
 const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
 const DEFAULT_DOC_TEST: bool = true;
@@ -328,7 +328,7 @@ impl GraceConfig {
     pub(crate) fn get_target(&self) -> &Target {
         if let Some(config_value) = self.get(_TARGET_) {
             if let Some(ref target) = config_value.target {
-                &target
+                target
             } else {
                 &DEFAULT_TARGET
             }
@@ -353,11 +353,7 @@ impl GraceConfig {
         match self.get_target() {
             Target::Domain(config) => {
                 if let Some(module) = config.from_module.clone() {
-                    if let Some(path) = config.from_path.clone() {
-                        Some(FromDomain { module, path })
-                    } else {
-                        None
-                    }
+                    config.from_path.clone().map(|path| FromDomain { module, path })
                 } else {
                     None
                 }
@@ -440,7 +436,7 @@ impl GraceConfig {
     pub(crate) fn get_use_paths(&self, key: &Uuid) -> Option<&Vec<String>> {
         if let Some(config_value) = self.get(*key) {
             if let Some(ref use_paths) = config_value.use_paths {
-                Some(&use_paths)
+                Some(use_paths)
             } else {
                 None
             }
@@ -452,7 +448,7 @@ impl GraceConfig {
     pub(crate) fn get_derives(&self, key: &Uuid) -> Option<&Vec<String>> {
         if let Some(config_value) = self.get(*key) {
             if let Some(ref derive) = config_value.derive {
-                Some(&derive)
+                Some(derive)
             } else {
                 None
             }
@@ -464,7 +460,7 @@ impl GraceConfig {
     pub(crate) fn get_imported(&self, key: &Uuid) -> Option<&ImportedObject> {
         if let Some(config_value) = self.get(*key) {
             if let Some(ref imported_object) = config_value.imported_object {
-                Some(&imported_object)
+                Some(imported_object)
             } else {
                 None
             }
@@ -480,7 +476,7 @@ impl GraceConfig {
     pub(crate) fn get_external(&self, key: &Uuid) -> Option<&ExternalEntity> {
         if let Some(config_value) = self.get(*key) {
             if let Some(ref external_entity) = config_value.external_entity {
-                Some(&external_entity)
+                Some(external_entity)
             } else {
                 None
             }
@@ -580,8 +576,8 @@ impl From<&GraceCompilerOptions> for ConfigValue {
             external_entity: None,
             derive: options.derive.clone(),
             use_paths: options.use_paths.clone(),
-            doc_test: options.doc_test.clone(),
-            always_process: options.always_process.clone(),
+            doc_test: options.doc_test,
+            always_process: options.always_process,
         }
     }
 }
@@ -625,8 +621,8 @@ pub(crate) struct ExternalEntity {
 }
 
 pub(crate) fn parse_config_value(input: &str) -> ConfigValue {
-    if input.contains("🐶") {
-        let mut iter = input.split("🐶");
+    if input.contains('🐶') {
+        let mut iter = input.split('🐶');
         iter.next();
         if let Some(input) = iter.next() {
             let value = serde_json::from_str(input)

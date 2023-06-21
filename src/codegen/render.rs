@@ -148,15 +148,15 @@ impl ForStore for GraceType {
 
         match self {
             Self::Ty(t) => {
-                let ty = domain.sarzak().exhume_ty(&t).unwrap();
+                let ty = domain.sarzak().exhume_ty(t).unwrap();
                 ty.as_type(mutability, woog, domain)
             }
             Self::WoogOption(o) => {
-                let o = woog.exhume_woog_option(&o).unwrap();
+                let o = woog.exhume_woog_option(o).unwrap();
                 let inner = o.r20_grace_type(woog)[0];
 
                 let (inner, _imported) = if let GraceType::Reference(ref id) = inner {
-                    let reference = woog.exhume_reference(&id).unwrap();
+                    let reference = woog.exhume_reference(id).unwrap();
                     let object = reference.r13_object(domain.sarzak())[0];
 
                     // Here we swizzle the type from a reference to just an object, as
@@ -191,7 +191,7 @@ impl ForStore for GraceType {
                 }
             }
             Self::Reference(r) => {
-                let reference = woog.exhume_reference(&r).unwrap();
+                let reference = woog.exhume_reference(r).unwrap();
                 let object = reference.r13_object(domain.sarzak())[0];
                 let imported = config.is_imported(&object.id);
 
@@ -235,11 +235,11 @@ impl ForStore for GType {
         match self {
             GType::Boolean => "bool".to_owned(),
             GType::Object(o) => {
-                let object = domain.sarzak().exhume_object(&o).unwrap();
-                format!("{}", object.as_type(mutability, woog, domain))
+                let object = domain.sarzak().exhume_object(o).unwrap();
+                object.as_type(mutability, woog, domain)
             }
             GType::Reference(r) => {
-                let object = domain.sarzak().exhume_object(&r).unwrap();
+                let object = domain.sarzak().exhume_object(r).unwrap();
 
                 if is_uber {
                     use UberStoreOptions::*;
@@ -352,17 +352,17 @@ impl RenderType for Ty {
         match self {
             Self::Boolean(_) => "bool".to_owned(),
             Self::Object(o) => {
-                let object = domain.sarzak().exhume_object(&o).unwrap();
-                format!("{}", object.as_type(mutability, woog, domain))
+                let object = domain.sarzak().exhume_object(o).unwrap();
+                object.as_type(mutability, woog, domain)
             }
             Self::SString(_) => "String".to_owned(),
             Self::SUuid(_) => "Uuid".to_owned(),
             Self::External(e) => {
-                let ext = domain.sarzak().exhume_external(&e).unwrap();
+                let ext = domain.sarzak().exhume_external(e).unwrap();
                 // format!("&{}", ext.as_type(mutability, woog, domain))
                 match mutability {
                     Ownership::Owned(_) => {
-                        format!("{}", ext.name.sanitize().to_upper_camel_case())
+                        ext.name.sanitize().to_upper_camel_case()
                     }
                     Ownership::Borrowed(_) => {
                         format!("&{}", ext.name.sanitize().to_upper_camel_case())
@@ -393,11 +393,11 @@ impl RenderType for GType {
         match self {
             GType::Boolean => "bool".to_owned(),
             GType::Object(o) => {
-                let object = domain.sarzak().exhume_object(&o).unwrap();
-                format!("{}", object.as_type(mutability, woog, domain))
+                let object = domain.sarzak().exhume_object(o).unwrap();
+                object.as_type(mutability, woog, domain)
             }
             GType::Reference(r) => {
-                let object = domain.sarzak().exhume_object(&r).unwrap();
+                let object = domain.sarzak().exhume_object(r).unwrap();
                 format!("&{}", object.as_type(mutability, woog, domain))
             }
             GType::Option(o) => {
@@ -418,16 +418,16 @@ impl RenderType for GraceType {
     fn as_type(&self, mutability: &Ownership, woog: &WoogStore, domain: &Domain) -> String {
         match self {
             Self::Ty(t) => {
-                let ty = domain.sarzak().exhume_ty(&t).unwrap();
+                let ty = domain.sarzak().exhume_ty(t).unwrap();
                 ty.as_type(mutability, woog, domain)
             }
             Self::WoogOption(o) => {
-                let o = woog.exhume_woog_option(&o).unwrap();
+                let o = woog.exhume_woog_option(o).unwrap();
                 let inner = o.r20_grace_type(woog)[0];
                 format!("Option<{}>", inner.as_type(mutability, woog, domain))
             }
             Self::Reference(r) => {
-                let reference = woog.exhume_reference(&r).unwrap();
+                let reference = woog.exhume_reference(r).unwrap();
                 let object = reference.r13_object(domain.sarzak())[0];
                 format!("&{}", object.as_type(mutability, woog, domain))
             }

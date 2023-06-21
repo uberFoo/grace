@@ -244,23 +244,21 @@ impl CodeWriter for Enum {
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                             ));
                         }
+                    } else if is_singleton && !is_supertype {
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_const()
+                        ));
                     } else {
-                        if is_singleton && !is_supertype {
-                            uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
-                                module,
-                                s_obj.as_ident(),
-                                s_obj.as_const()
-                            ));
-                        } else {
-                            only_singletons = false;
-                            uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
-                                module,
-                                s_obj.as_ident(),
-                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                            ));
-                        }
+                        only_singletons = false;
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
                     }
                 }
 

@@ -118,7 +118,7 @@ impl<'a> GeneratorBuilder<'a> {
     }
 
     pub(crate) fn module(mut self, module: &'a str) -> Self {
-        self.module = Some(module.replace("/", "::"));
+        self.module = Some(module.replace('/', "::"));
 
         self
     }
@@ -198,8 +198,8 @@ impl<'a> GeneratorBuilder<'a> {
 
         let mut buffer = Buffer::new();
         match self.generator.unwrap().generate(
-            &self.config.unwrap(),
-            &self.domain.unwrap(),
+            self.config.unwrap(),
+            self.domain.unwrap(),
             &self.woog,
             &self.imports,
             self.package.unwrap(),
@@ -215,7 +215,7 @@ impl<'a> GeneratorBuilder<'a> {
                             description: "writing generated file".to_owned(),
                             path: &path,
                         })?;
-                        file.write_all(&buffer.dump().as_bytes()).context(IOSnafu {
+                        file.write_all(buffer.dump().as_bytes()).context(IOSnafu {
                             description: "writing generated file".to_owned(),
                         })?;
                     }
@@ -270,7 +270,7 @@ impl<'a> GeneratorBuilder<'a> {
                                 description: "writing generated file for formatting".to_owned(),
                                 path: &path,
                             })?;
-                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu {
+                            file.write_all(buffer.dump().as_bytes()).context(IOSnafu {
                                 description: "writing generated file for formatting".to_owned(),
                             })?;
                             match format(&path, true) {
@@ -285,7 +285,7 @@ impl<'a> GeneratorBuilder<'a> {
                                         path: &path,
                                     })?;
                                     // This is where we diff and write the output.
-                                    if orig.len() > 0 {
+                                    if !orig.is_empty() {
                                         let diffed = process_diff(
                                             &path,
                                             orig.trim(),
@@ -296,12 +296,12 @@ impl<'a> GeneratorBuilder<'a> {
                                         );
 
                                         // Write the file
-                                        file.write_all(&diffed.as_bytes()).context(IOSnafu {
+                                        file.write_all(diffed.as_bytes()).context(IOSnafu {
                                             description: "writing generated file".to_owned(),
                                         })?;
                                     } else {
                                         // Write the file
-                                        file.write_all(&incoming.as_bytes()).context(IOSnafu {
+                                        file.write_all(incoming.as_bytes()).context(IOSnafu {
                                             description: "writing generated file".to_owned(),
                                         })?;
                                     }
@@ -312,7 +312,7 @@ impl<'a> GeneratorBuilder<'a> {
                                         description: "writing original source file".to_owned(),
                                         path: &path,
                                     })?;
-                                    file.write_all(&orig.as_bytes()).context(IOSnafu {
+                                    file.write_all(orig.as_bytes()).context(IOSnafu {
                                         description: "writing original file".to_owned(),
                                     })?;
 
@@ -333,7 +333,7 @@ impl<'a> GeneratorBuilder<'a> {
                                 description: "writing source file".to_owned(),
                                 path: &path,
                             })?;
-                            file.write_all(&buffer.dump().as_bytes()).context(IOSnafu {
+                            file.write_all(buffer.dump().as_bytes()).context(IOSnafu {
                                 description: "writing new file".to_owned(),
                             })?;
 

@@ -242,7 +242,7 @@ impl CodeWriter for DwarfFile {
                 // Oh, man, what did I do? This was for the original parser,
                 // whatever it's for.
                 // 🚧 Fix this.
-                &obj.description.replace("\"", "\u{201d}"),
+                &obj.description.replace('\"', "\u{201d}"),
                 "        print(\"",
                 "\\n\");",
                 buffer,
@@ -309,7 +309,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
                 reference.r35_value_type(&lu_dog)[0].clone()
             };
 
-            format!("{}", &value_type_to_string(&inner, woog, domain))
+            value_type_to_string(&inner, woog, domain).to_string()
         }
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();

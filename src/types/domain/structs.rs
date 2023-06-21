@@ -364,7 +364,7 @@ impl CodeWriter for DomainImplementation {
             }
         );
         let obj_id = obj_id.unwrap();
-        let object = domain.sarzak().exhume_object(&obj_id).unwrap();
+        let object = domain.sarzak().exhume_object(obj_id).unwrap();
         ensure!(
             woog.is_some(),
             CompilerSnafu {

@@ -6,7 +6,7 @@ use std::{
 };
 
 use sarzak::mc::{FormatSnafu, Result};
-use serde_json;
+
 use snafu::prelude::*;
 
 use crate::codegen::diff_engine::{DirectiveComment, DirectiveKind};
@@ -46,9 +46,9 @@ impl Buffer {
         block(&mut inner)?;
 
         // Don't do anything if nothing happened.
-        if inner.buffer.len() != 0 {
+        if !inner.buffer.is_empty() {
             let start_comment = serde_json::to_string(&DirectiveComment::start(
-                directive.clone(),
+                directive,
                 tag.as_ref().to_owned(),
             ))
             .expect("serde_json failed");

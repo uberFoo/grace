@@ -43,7 +43,7 @@ pub(crate) fn format(path: &Path, display_err: bool) -> Result<()> {
             })?;
             fail_file
                 .write_all(
-                    fs::read_to_string(&path)
+                    fs::read_to_string(path)
                         .expect("read_to_string")
                         .as_bytes(),
                 )

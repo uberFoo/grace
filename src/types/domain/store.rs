@@ -241,62 +241,52 @@ let (read, _write) = get_uber_read_write(config);
                                 );
                             }
 
+                        } else if is_uber {
+                            let (_read, write) = get_uber_read_write(config);
+                            emit!(
+                                buffer,
+                                "self.{obj_ident}{write}.insert(read.{id}, ({obj_ident}.clone(), SystemTime::now()));",
+                            );
                         } else {
-
-                             if is_uber {
-                                let (_read, write) = get_uber_read_write(config);
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}{write}.insert(read.{id}, ({obj_ident}.clone(), SystemTime::now()));",
-                                );
-                            } else {
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}.insert({obj_ident}.{id}, ({obj_ident}, SystemTime::now()));",
-                                );
-                            }
-
+                            emit!(
+                                buffer,
+                                "self.{obj_ident}.insert({obj_ident}.{id}, ({obj_ident}, SystemTime::now()));",
+                            );
                         }
+                    } else if object_has_name(obj, domain) {
+
+                        if is_uber {
+                            let (_read, write) = get_uber_read_write(config);
+                            emit!(
+                                buffer,
+                                "self.{obj_ident}_id_by_name{write}.insert(read.name.to_upper_camel_case(), read.{id});",
+                            );
+                            emit!(
+                                buffer,
+                                "self.{obj_ident}{write}.insert(read.{id}, {obj_ident}.clone());",
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "self.{obj_ident}_id_by_name.insert({obj_ident}.name.to_upper_camel_case(), {obj_ident}.{id});",
+                            );
+                            emit!(
+                                buffer,
+                                "self.{obj_ident}.insert({obj_ident}.{id}, {obj_ident});",
+                            );
+                        }
+
+                    } else if is_uber {
+                        let (_read, write) = get_uber_read_write(config);
+                        emit!(
+                            buffer,
+                            "self.{obj_ident}{write}.insert(read.{id}, {obj_ident}.clone());",
+                        );
                     } else {
-                        if object_has_name(obj, domain) {
-
-                            if is_uber {
-                                let (_read, write) = get_uber_read_write(config);
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}_id_by_name{write}.insert(read.name.to_upper_camel_case(), read.{id});",
-                                );
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}{write}.insert(read.{id}, {obj_ident}.clone());",
-                                );
-                            } else {
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}_id_by_name.insert({obj_ident}.name.to_upper_camel_case(), {obj_ident}.{id});",
-                                );
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}.insert({obj_ident}.{id}, {obj_ident});",
-                                );
-                            }
-
-                        } else {
-
-                            if is_uber {
-                                let (_read, write) = get_uber_read_write(config);
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}{write}.insert(read.{id}, {obj_ident}.clone());",
-                                );
-                            } else {
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}.insert({obj_ident}.{id}, {obj_ident});",
-                                );
-                            }
-
-                        }
+                        emit!(
+                            buffer,
+                            "self.{obj_ident}.insert({obj_ident}.{id}, {obj_ident});",
+                        );
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
@@ -351,15 +341,13 @@ let (read, _write) = get_uber_read_write(config);
                                 "self.{obj_ident}{read}.get(id).map(|{obj_ident}| {obj_ident}.clone())",
                             );
                         }
+                    } else if timestamp {
+                        emit!(
+                            buffer,
+                            "self.{obj_ident}.get(id).map(|{obj_ident}| &{obj_ident}.0)",
+                        );
                     } else {
-                        if timestamp {
-                            emit!(
-                                buffer,
-                                "self.{obj_ident}.get(id).map(|{obj_ident}| &{obj_ident}.0)",
-                            );
-                        } else {
-                            emit!(buffer, "self.{obj_ident}.get(id)");
-                        }
+                        emit!(buffer, "self.{obj_ident}.get(id)");
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
@@ -413,16 +401,14 @@ let (read, _write) = get_uber_read_write(config);
                                 obj_ident,
                             );
                         }
+                    } else if timestamp {
+                        emit!(
+                            buffer,
+                            "self.{0}.remove(id).map(|{0}| {0}.0)",
+                            obj_ident
+                        );
                     } else {
-                        if timestamp {
-                            emit!(
-                                buffer,
-                                "self.{0}.remove(id).map(|{0}| {0}.0)",
-                                obj_ident
-                            );
-                        } else {
-                            emit!(buffer, "self.{obj_ident}.remove(id)");
-                        }
+                        emit!(buffer, "self.{obj_ident}.remove(id)");
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "");
@@ -461,25 +447,23 @@ let (read, _write) = get_uber_read_write(config);
                             } else {
                                 emit!(buffer, "self.{0}_id_by_name{read}.get(name).map(|{0}| *{0})", obj_ident);
                             }
+                        } else if timestamp {
+                            emit!(
+                                buffer,
+                                "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
+                            );
+                            emit!(
+                                buffer,
+                                "self.{obj_ident}_id_by_name.get(name).map(|{obj_ident}| {obj_ident}.0)",
+                            );
                         } else {
-                            if timestamp {
-                                emit!(
-                                    buffer,
-                                    "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
-                                );
-                                emit!(
-                                    buffer,
-                                    "self.{obj_ident}_id_by_name.get(name).map(|{obj_ident}| {obj_ident}.0)",
-                                );
-                            } else {
-                                // 🚧 Is this right? We are changing the signaature of the method, which
-                                // i think is bad as it will break existing code.
-                                emit!(
-                                    buffer,
-                                    "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<&Uuid> {{",
-                                );
-                                emit!(buffer, "self.{obj_ident}_id_by_name.get(name)");
-                            }
+                            // 🚧 Is this right? We are changing the signaature of the method, which
+                            // i think is bad as it will break existing code.
+                            emit!(
+                                buffer,
+                                "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<&Uuid> {{",
+                            );
+                            emit!(buffer, "self.{obj_ident}_id_by_name.get(name)");
                         }
                         emit!(buffer, "}}");
                         emit!(buffer, "");
@@ -582,15 +566,13 @@ let (read, _write) = get_uber_read_write(config);
                                 "(0..len).map(move|i| values[i].clone())",
                             );
                         }
+                    } else if timestamp {
+                        emit!(
+                            buffer,
+                            "self.{obj_ident}.values().map(|{obj_ident}| &{obj_ident}.0)",
+                        );
                     } else {
-                        if timestamp {
-                            emit!(
-                                buffer,
-                                "self.{obj_ident}.values().map(|{obj_ident}| &{obj_ident}.0)",
-                            );
-                        } else {
-                            emit!(buffer, "self.{obj_ident}.values()");
-                        }
+                        emit!(buffer, "self.{obj_ident}.values()");
                     }
 
                     emit!(buffer, "}}");
@@ -712,13 +694,13 @@ impl CodeWriter for DomainStore {
             }
 
             if includes.is_empty() {
-                return Ok(false);
+                Ok(false)
             } else {
                 for include in includes {
                     emit!(buffer, "{},", include);
                 }
 
-                return Ok(true);
+                Ok(true)
             }
         }
 
@@ -821,8 +803,7 @@ impl CodeWriter for DomainStore {
         let has_name = objects
             .iter()
             .map(|obj| object_has_name(obj, domain))
-            .find(|x| *x)
-            .is_some();
+            .any(|x| x);
         let is_uber = config.is_uber_store();
 
         buffer.block(
@@ -971,63 +952,61 @@ impl CodeWriter for DomainStore {
                                 );
                             }
                         }
-                    } else {
-                        if is_uber {
+                    } else if is_uber {
+                        use UberStoreOptions::*;
+                        let mother_of_all_types = match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => format!(
+                                "Rc<RefCell<HashMap<Uuid, {}>>>",
+                                value_type
+                            ),
+                            StdRwLock |
+                            ParkingLotRwLock |
+                            AsyncRwLock |
+                            NDRwLock => format!(
+                                "Arc<RwLock<HashMap<Uuid, {}>>>",
+                                value_type
+                            ),
+                            StdMutex | ParkingLotMutex => format!(
+                                "Arc<Mutex<HashMap<Uuid, {}>>>",
+                                value_type
+                            ),
+                        };
+                        emit!(
+                            buffer,
+                            "{}: {mother_of_all_types},",
+                            obj.as_ident(),
+                        );
+                        if object_has_name(obj, domain) {
                             use UberStoreOptions::*;
-                            let mother_of_all_types = match config.get_uber_store().unwrap() {
+                            let by_name_type = match config.get_uber_store().unwrap() {
                                 Disabled => unreachable!(),
-                                Single => format!(
-                                    "Rc<RefCell<HashMap<Uuid, {}>>>",
-                                    value_type
-                                ),
+                                Single => "Rc<RefCell<HashMap<String, Uuid>>>",
                                 StdRwLock |
                                 ParkingLotRwLock |
                                 AsyncRwLock |
-                                NDRwLock => format!(
-                                    "Arc<RwLock<HashMap<Uuid, {}>>>",
-                                    value_type
-                                ),
-                                StdMutex | ParkingLotMutex => format!(
-                                    "Arc<Mutex<HashMap<Uuid, {}>>>",
-                                    value_type
-                                ),
+                                NDRwLock => "Arc<RwLock<HashMap<String, Uuid>>>",
+                                StdMutex | ParkingLotMutex => "Arc<Mutex<HashMap<Uuid, Uuid>>>",
                             };
                             emit!(
                                 buffer,
-                                "{}: {mother_of_all_types},",
+                                "{}_id_by_name: {by_name_type},",
                                 obj.as_ident(),
                             );
-                            if object_has_name(obj, domain) {
-                                use UberStoreOptions::*;
-                                let by_name_type = match config.get_uber_store().unwrap() {
-                                    Disabled => unreachable!(),
-                                    Single => "Rc<RefCell<HashMap<String, Uuid>>>",
-                                    StdRwLock |
-                                    ParkingLotRwLock |
-                                    AsyncRwLock |
-                                    NDRwLock => "Arc<RwLock<HashMap<String, Uuid>>>",
-                                    StdMutex | ParkingLotMutex => "Arc<Mutex<HashMap<Uuid, Uuid>>>",
-                                };
-                                emit!(
-                                    buffer,
-                                    "{}_id_by_name: {by_name_type},",
-                                    obj.as_ident(),
-                                );
-                            }
-                        } else {
+                        }
+                    } else {
+                        emit!(
+                            buffer,
+                            "{}: HashMap<Uuid, {}>,",
+                            obj.as_ident(),
+                            value_type
+                        );
+                        if object_has_name(obj, domain) {
                             emit!(
                                 buffer,
-                                "{}: HashMap<Uuid, {}>,",
+                                "{}_id_by_name: HashMap<String, Uuid>,",
                                 obj.as_ident(),
-                                value_type
                             );
-                            if object_has_name(obj, domain) {
-                                emit!(
-                                    buffer,
-                                    "{}_id_by_name: HashMap<String, Uuid>,",
-                                    obj.as_ident(),
-                                );
-                            }
                         }
                     }
                 }
@@ -1213,7 +1192,7 @@ impl CodeWriter for DomainStore {
                         emit_singleton_subtype_instances(
                             obj,
                             &format!("store.inter_{}({ctor}", obj.as_ident()),
-                            &tail,
+                            tail,
                             config,
                             domain,
                             woog,
@@ -1223,7 +1202,7 @@ impl CodeWriter for DomainStore {
                         emit_singleton_subtype_instances(
                             obj,
                             &format!("store.inter_{}(", obj.as_ident()),
-                            &");",
+                            ");",
                             config,
                             domain,
                             woog,
@@ -1576,18 +1555,16 @@ fn generate_store_persistence(
                                 "let path = path.join(format!(\"{{}}.json\", {obj_ident}{read}.id));"
                             );
                         }
+                    } else if local_object_is_enum(obj, config, domain) {
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {obj_ident}.id()));"
+                        );
                     } else {
-                        if local_object_is_enum(obj, config, domain) {
-                            emit!(
-                                buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {obj_ident}.id()));"
-                            );
-                        } else {
-                            emit!(
-                                buffer,
-                                "let path = path.join(format!(\"{{}}.json\", {obj_ident}.id));"
-                            );
-                        }
+                        emit!(
+                            buffer,
+                            "let path = path.join(format!(\"{{}}.json\", {obj_ident}.id));"
+                        );
                     }
                     emit!(buffer, "let file = fs::File::create(path)?;");
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
@@ -1862,6 +1839,6 @@ fn get_value_wrapper(
             ),
         }
     } else {
-        format!("{}", obj.as_type(&Ownership::new_borrowed(), woog, domain))
+        obj.as_type(&Ownership::new_borrowed(), woog, domain)
     }
 }

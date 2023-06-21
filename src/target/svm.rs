@@ -49,7 +49,7 @@ impl<'a> SvmTarget<'a> {
             config,
             package,
             module,
-            src_path: src_path.as_ref(),
+            src_path,
             domain,
             woog,
             lu_dog,

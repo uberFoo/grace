@@ -66,8 +66,8 @@ impl FileGenerator for ExternalGenerator {
             }
         );
 
-        let object = domain.sarzak().exhume_object(&obj_id).unwrap();
-        let external = config.get_external(&obj_id).unwrap();
+        let object = domain.sarzak().exhume_object(obj_id).unwrap();
+        let external = config.get_external(obj_id).unwrap();
         let store = find_store(module, woog, domain);
 
         emit!(buffer, "//! {} External Entity", object.name);
