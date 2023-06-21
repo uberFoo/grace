@@ -151,9 +151,8 @@ fn inter_struct_method_new(
 
     let table = SymbolTable::new(&block, woog);
 
-    let (mut params, mut fields) = collect_params_and_fields(
-        obj, &structure, &function, &table, module, config, domain, woog,
-    );
+    let (mut params, mut fields) =
+        collect_params_and_fields(obj, &structure, &function, &table, domain, woog);
 
     if let Target::Domain(_) = config.get_target() {
         // Add the store to the end of the  input parameters
@@ -235,9 +234,8 @@ fn inter_struct_method_new_(
 
     let table = SymbolTable::new(&block, woog);
 
-    let (mut params, mut fields) = collect_params_and_fields(
-        obj, &structure, &function, &table, module, config, domain, woog,
-    );
+    let (mut params, mut fields) =
+        collect_params_and_fields(obj, &structure, &function, &table, domain, woog);
 
     // Link the params
     // I need to maintain the order I've adopted because I'don't need things
@@ -317,9 +315,8 @@ fn inter_hybrid_method_new(
 
         let table = SymbolTable::new(&block, woog);
 
-        let (mut params, mut fields) = collect_params_and_fields(
-            s_obj, &structure, &function, &table, module, config, domain, woog,
-        );
+        let (mut params, mut fields) =
+            collect_params_and_fields(s_obj, &structure, &function, &table, domain, woog);
 
         // These are for the "subtype" attribute, which points at the subtype.
         let reference = Reference::new(s_obj, woog);
@@ -429,9 +426,8 @@ fn inter_external_method_new(
 
     let table = SymbolTable::new(&block, woog);
 
-    let (mut params, mut fields) = collect_params_and_fields(
-        obj, &structure, &function, &table, module, config, domain, woog,
-    );
+    let (mut params, mut fields) =
+        collect_params_and_fields(obj, &structure, &function, &table, domain, woog);
 
     // Maybe this is a hack, maybe it's cool. In any case, I'm inserting an
     // attribute on external entities to store the internal value of the thing.
@@ -507,8 +503,6 @@ fn collect_params_and_fields(
     structure: &Structure,
     function: &Function,
     table: &SymbolTable,
-    _module: &str,
-    _config: &GraceConfig,
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> (Vec<Parameter>, Vec<StructureField>) {

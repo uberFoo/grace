@@ -1131,7 +1131,7 @@ fn typecheck_and_coerce(
                         }
                         _ => {
                             ensure!(
-                                &lhs_ty == &rhs_ty,
+                                lhs_ty == rhs_ty,
                                 CompilerSnafu {
                                     description: format!(
                                         "type mismatch: found `{:?}`, expected `{:?}`",
@@ -1145,7 +1145,7 @@ fn typecheck_and_coerce(
                 }
                 _ => {
                     ensure!(
-                        &lhs_ty == &rhs_ty,
+                        lhs_ty == rhs_ty,
                         CompilerSnafu {
                             description: format!(
                                 "type mismatch: found `{:?}`, expected `{:?}`",
@@ -1188,7 +1188,7 @@ fn typecheck_and_coerce(
                         }
                         _ => {
                             ensure!(
-                                &lhs_ty == &rhs_ty,
+                                lhs_ty == rhs_ty,
                                 CompilerSnafu {
                                     description: format!(
                                         "type mismatch: found `{:?}`, expected `{:?}`",
@@ -1202,7 +1202,7 @@ fn typecheck_and_coerce(
                 }
                 _ => {
                     ensure!(
-                        &lhs_ty == &rhs_ty,
+                        lhs_ty == rhs_ty,
                         CompilerSnafu {
                             description: format!(
                                 "type mismatch: found `{:?}`, expected `{:?}`",
@@ -1216,7 +1216,7 @@ fn typecheck_and_coerce(
         }
         _ => {
             ensure!(
-                &lhs_ty == &rhs_ty,
+                lhs_ty == rhs_ty,
                 CompilerSnafu {
                     description: format!(
                         "type mismatch: found `{:?}`, expected `{:?}`",
