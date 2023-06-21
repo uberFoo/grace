@@ -309,7 +309,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
                 reference.r35_value_type(&lu_dog)[0].clone()
             };
 
-            value_type_to_string(&inner, woog, domain).to_string()
+            value_type_to_string(&inner, woog, domain)
         }
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
