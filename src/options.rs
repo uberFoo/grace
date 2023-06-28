@@ -144,6 +144,11 @@ pub struct DomainConfig {
     /// add Mutex, from both crates.
     #[arg(short, long, value_enum, default_value_t=UberStoreOptions::Disabled)]
     pub uber_store: UberStoreOptions,
+    /// Optimization Level
+    ///
+    /// Determines the data structures used to store objects in the ObjectStore.
+    #[arg(long, short = 'O', default_value = "None", requires = "persist")]
+    pub optimization_level: OptimizationLevel,
     /// This Domain is Sarzak
     ///
     /// There can be only one! 💥😱🤣
@@ -162,6 +167,7 @@ const DOMAIN_FROM_MODULE: Option<String> = None;
 const DOMAIN_FROM_PATH: Option<PathBuf> = None;
 const DOMAIN_PERSIST: bool = true;
 const DOMAIN_PERSIST_TIMESTAMPS: bool = false;
+const DOMAIN_OPTIMIZATION_LEVEL: OptimizationLevel = OptimizationLevel::None;
 const DOMAIN_UBER_STORE: UberStoreOptions = UberStoreOptions::Disabled;
 const DOMAIN_IS_SARZAK: bool = false;
 const DOMAIN_IS_META_MODEL: bool = false;
@@ -181,11 +187,30 @@ impl Default for DomainConfig {
             from_path: DOMAIN_FROM_PATH,
             persist: DOMAIN_PERSIST,
             persist_timestamps: DOMAIN_PERSIST_TIMESTAMPS,
+            optimization_level: DOMAIN_OPTIMIZATION_LEVEL,
             uber_store: DOMAIN_UBER_STORE,
             is_sarzak: DOMAIN_IS_SARZAK,
             is_meta_model: DOMAIN_IS_META_MODEL,
         }
     }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize, ValueEnum)]
+pub enum OptimizationLevel {
+    /// Use  HashMaps
+    ///
+    /// Uses a hash map to index each Object by it's UUID.
+    ///
+    /// This is the default.
+    None,
+    /// Use Vectors
+    ///
+    /// This uses a Vector, replacing the UUID by an index.
+    Vec,
+    /// Use a Vector of Unions
+    ///
+    /// This one is tricky.
+    Unsafe,
 }
 
 /// Dowarf Target Configuration
@@ -353,7 +378,10 @@ impl GraceConfig {
         match self.get_target() {
             Target::Domain(config) => {
                 if let Some(module) = config.from_module.clone() {
-                    config.from_path.clone().map(|path| FromDomain { module, path })
+                    config
+                        .from_path
+                        .clone()
+                        .map(|path| FromDomain { module, path })
                 } else {
                     None
                 }
@@ -399,6 +427,13 @@ impl GraceConfig {
         match self.get_target() {
             Target::Domain(config) => config.is_sarzak,
             _ => false,
+        }
+    }
+
+    pub(crate) fn get_optimization_level(&self) -> &OptimizationLevel {
+        match self.get_target() {
+            Target::Domain(config) => &config.optimization_level,
+            _ => &OptimizationLevel::None,
         }
     }
 
