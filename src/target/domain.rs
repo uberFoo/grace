@@ -33,6 +33,7 @@ use crate::{
             from::{DomainFromBuilder, DomainFromImpl},
             hybrid::{Hybrid, HybridNewImpl},
             store::{DomainStore, DomainStoreBuilder},
+            store_vec::DomainStoreVec,
             structs::{DomainImplBuilder, Imports, Struct, StructNewImpl, StructRelNavImpl},
         },
         external::ExternalGenerator,
@@ -238,7 +239,12 @@ impl<'a> DomainTarget<'a> {
                 let mut types = types.clone();
                 types.set_file_name(obj.as_ident());
                 types.set_extension(RS_EXT);
-                types = types.strip_prefix(&cwd).unwrap().to_owned();
+                dbg!(&types, &cwd);
+                types = if let Ok(types) = types.strip_prefix(&cwd) {
+                    types.to_owned()
+                } else {
+                    types
+                };
 
                 // Test if the object is a supertype. For those we generate as enums.
                 let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
@@ -362,6 +368,19 @@ impl<'a> DomainTarget<'a> {
         store.push(self.module);
         store.push("store.rs");
 
+        // 🚧 I should have a store that's persistent, and one that isn't.
+        let generator = match self.config.get_optimization_level() {
+            crate::options::OptimizationLevel::None => DomainStoreBuilder::new()
+                .definition(DomainStore::new())
+                .build()?,
+
+            crate::options::OptimizationLevel::Vec => DomainStoreBuilder::new()
+                .definition(DomainStoreVec::new())
+                .build()?,
+
+            _ => todo!(),
+        };
+
         GeneratorBuilder::new()
             .package(self.package)
             .config(&self.config)
@@ -369,12 +388,7 @@ impl<'a> DomainTarget<'a> {
             .domain(&self.domain)
             .module(self.module)
             .woog(&mut self.woog)
-            .generator(
-                // 🚧 I should have a store that's persistent, and one that isn't.
-                DomainStoreBuilder::new()
-                    .definition(DomainStore::new())
-                    .build()?,
-            )
+            .generator(generator)
             .generate()?;
 
         Ok(())
