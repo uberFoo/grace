@@ -1639,7 +1639,11 @@ fn generate_store_persistence(
             emit!(buffer, "let path = path.as_ref();");
             emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
             emit!(buffer, "");
-            emit!(buffer, "let mut store = Self::new();");
+            if is_uber {
+                emit!(buffer, "let store = Self::new();");
+            } else {
+                emit!(buffer, "let mut store = Self::new();");
+            }
             emit!(buffer, "");
 
             for obj in objects {

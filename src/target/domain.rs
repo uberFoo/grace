@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    env, fs,
     path::{Path, PathBuf},
 };
 
@@ -174,7 +174,9 @@ impl<'a> DomainTarget<'a> {
                 if !imported_domains.contains_key(&io.domain) {
                     let domain = DomainBuilder::new()
                         .cuckoo_model(&io.model_file)
-                        .unwrap_or_else(|_| panic!("Failed to load domain {}", io.model_file.display()))
+                        .unwrap_or_else(|_| {
+                            panic!("Failed to load domain {}", io.model_file.display())
+                        })
                         .build_v2()
                         .expect("Failed to build domain");
 
@@ -209,6 +211,8 @@ impl<'a> DomainTarget<'a> {
         })?;
         types.push("discard");
 
+        let cwd = env::current_dir().unwrap();
+
         // Sort the objects -- I need to figure out how to do this automagically.
         let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
@@ -234,12 +238,7 @@ impl<'a> DomainTarget<'a> {
                 let mut types = types.clone();
                 types.set_file_name(obj.as_ident());
                 types.set_extension(RS_EXT);
-
-                // println!(
-                //     "Generating code for: {} ... output path: {}",
-                //     Colour::Blue.paint(&obj.name),
-                //     Colour::White.dimmed().paint(types.display().to_string()),
-                // );
+                types = types.strip_prefix(&cwd).unwrap().to_owned();
 
                 // Test if the object is a supertype. For those we generate as enums.
                 let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
