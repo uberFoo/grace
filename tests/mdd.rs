@@ -565,6 +565,11 @@ test_target_domain!(
     "one_to_many",
     "tests/mdd/models/one_to_many.json"
 );
+test_target_domain_vec_store!(
+    one_to_many_domain_vec,
+    "one_to_many_vec",
+    "tests/mdd/models/one_to_many.json"
+);
 test_target_domain_timestamps!(
     one_to_many_domain_ts,
     "one_to_many_ts",
@@ -577,6 +582,7 @@ test_target_dwarf!(
 );
 
 test_target_domain!(isa_domain, "isa", "tests/mdd/models/isa.json");
+test_target_domain_vec_store!(isa_domain_vec, "isa_vec", "tests/mdd/models/isa.json");
 test_target_domain_timestamps!(isa_domain_ts, "isa_ts", "tests/mdd/models/isa.json");
 test_target_dwarf!(isa_domain_dwarf, "isa", "tests/mdd/models/isa.json");
 
