@@ -1,0 +1,66 @@
+// {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"everything-struct-definition-file"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-use-statements"}}}
+use std::cell::RefCell;
+use std::rc::Rc;
+use tracy_client::span;
+use uuid::Uuid;
+
+use crate::domain::everything_vec::types::rando_object::RandoObject;
+use serde::{Deserialize, Serialize};
+
+use crate::domain::everything_vec::store::ObjectStore as EverythingVecStore;
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-documentation"}}}
+/// An object, with everything on it!
+///
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct Everything {
+    pub bool: bool,
+    pub float: f64,
+    pub id: usize,
+    pub int: i64,
+    pub s_string: String,
+    /// R1: [`Everything`] 'points at' [`RandoObject`]
+    pub rando: usize,
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-implementation"}}}
+impl Everything {
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-new"}}}
+    /// Inter a new 'Everything' in the store, and return it's `id`.
+    pub fn new(
+        bool: bool,
+        float: f64,
+        int: i64,
+        s_string: String,
+        rando: &Rc<RefCell<RandoObject>>,
+        store: &mut EverythingVecStore,
+    ) -> Rc<RefCell<Everything>> {
+        store.inter_everything(|id| {
+            Rc::new(RefCell::new(Everything {
+                bool,
+                float,
+                id,
+                int,
+                s_string: s_string.to_owned(),
+                rando: rando.borrow().id,
+            }))
+        })
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-impl-nav-forward-to-rando"}}}
+    /// Navigate to [`RandoObject`] across R1(1-*)
+    pub fn r1_rando_object<'a>(
+        &'a self,
+        store: &'a EverythingVecStore,
+    ) -> Vec<Rc<RefCell<RandoObject>>> {
+        span!("r1_rando_object");
+        vec![store.exhume_rando_object(self.rando).unwrap()]
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

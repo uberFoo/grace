@@ -940,53 +940,14 @@ pub(crate) fn render_new_instance(
 pub(crate) fn render_new_instance_new(
     buffer: &mut Buffer,
     object: &Object,
-    var: &Local,
     structure: &Structure,
     table: &SymbolTable,
+    expr_stmt: bool,
     config: &GraceConfig,
     imports: &Option<&HashMap<String, Domain>>,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    let ty = var
-        .r8_variable(woog)
-        .pop()
-        .unwrap()
-        .r7_x_value(woog)
-        .pop()
-        .unwrap()
-        .r3_grace_type(woog)[0];
-
-    // Check that the type of the variable is a reference to the object that we
-    // are instantiating.
-    // This doesn't belong here. It should be part of a let statement renderer.
-    // 🚧 These errors are terrible. You get a uuid that may not even be possible
-    // to look up. It should print the generated type. That would be fucking slick.
-    ensure!(
-        match ty {
-            GraceType::Reference(id) => {
-                let reference = woog.exhume_reference(id).unwrap();
-                ensure!(
-                    reference.object == object.id,
-                    CompilerSnafu {
-                        description: format!(
-                            "type mismatch: found `{:?}`, expected `{:?}`",
-                            reference, object
-                        )
-                    }
-                );
-                true
-            }
-            _ => false,
-        },
-        CompilerSnafu {
-            description: format!(
-                "type mismatch: found `{:?}`, expected `SarzakType::Reference`",
-                ty
-            )
-        }
-    );
-
     let is_uber = config.is_uber_store();
 
     let mut first = <&StructureField>::clone(
@@ -1006,8 +967,6 @@ pub(crate) fn render_new_instance_new(
             break;
         }
     }
-
-    write!(buffer, "let {} = ", var.r8_variable(woog)[0].name).context(FormatSnafu)?;
 
     if is_uber {
         use UberStoreOptions::*;
@@ -1067,9 +1026,17 @@ pub(crate) fn render_new_instance_new(
     }
 
     if is_uber {
-        emit!(buffer, "}}));");
+        if expr_stmt {
+            emit!(buffer, "}}));");
+        } else {
+            emit!(buffer, "}}))");
+        }
     } else {
-        emit!(buffer, "}};");
+        if expr_stmt {
+            emit!(buffer, "}};");
+        } else {
+            emit!(buffer, "}}");
+        }
     }
 
     Ok(())
@@ -1157,6 +1124,45 @@ fn typecheck_and_coerce(
                 }
             }
         }
+        GraceType::Usize(_) => {
+            // If the lhs is a usize, and the rhs is a reference, we need to
+            // pull it's id.
+            match &rhs_ty {
+                GraceType::Reference(id) => {
+                    let obj = woog
+                        .exhume_reference(id)
+                        .unwrap()
+                        .r13_object(domain.sarzak())[0];
+
+                    let _is_imported = config.is_imported(&obj.id);
+
+                    let id = if object_is_enum(obj, config, imports, domain)? {
+                        "id()"
+                    } else {
+                        "id"
+                    };
+
+                    if is_uber {
+                        let (read, _write) = get_uber_read_write(config);
+                        format!("{}{read}.{id}", rhs.as_ident())
+                    } else {
+                        format!("{}.{id}", rhs.as_ident())
+                    }
+                }
+                _ => {
+                    ensure!(
+                        lhs_ty == rhs_ty,
+                        CompilerSnafu {
+                            description: format!(
+                                "type mismatch: found `{:?}`, expected `{:?}`",
+                                rhs_ty, lhs_ty
+                            )
+                        }
+                    );
+                    rhs.as_ident()
+                }
+            }
+        }
         // GraceType::TimeStamp(id) => {}
         GraceType::Ty(id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
@@ -1198,6 +1204,23 @@ fn typecheck_and_coerce(
                             );
                             rhs.as_ident()
                         }
+                    }
+                }
+                Ty::SString(_) => {
+                    ensure!(
+                        lhs_ty == rhs_ty,
+                        CompilerSnafu {
+                            description: format!(
+                                "type mismatch: found `{:?}`, expected `{:?}`",
+                                rhs_ty, lhs_ty
+                            )
+                        }
+                    );
+                    match config.get_optimization_level() {
+                        crate::options::OptimizationLevel::Vec => {
+                            format!("{}.to_owned()", rhs.as_ident())
+                        }
+                        _ => rhs.as_ident(),
                     }
                 }
                 _ => {
@@ -1254,6 +1277,8 @@ pub(crate) fn render_methods(
         a.name.cmp(&b.name)
     });
 
+    let obj_ident = obj.as_ident();
+
     for method in methods {
         let func = method.r25_function(woog).pop().unwrap();
 
@@ -1283,25 +1308,6 @@ pub(crate) fn render_methods(
                     _ => panic!("This should never happen"),
                 };
 
-                // This renders a let statement, assigning a new uuid to the id variable.
-                // This is where the work lies. I think that what I really want to do is
-                // create (let) statements in the block whilst populating woog. Then
-                // someplace else, maybe here, we iterate over the statements and generate
-                // code. Maybe an as_statement trait, or something?
-                render_make_uuid_new(buffer, id, method, woog, domain)?;
-
-                // Look up the properly scoped variable named `new`.
-                let var = &table
-                    .r20_variable(woog)
-                    .iter()
-                    .find(|&&v| v.name == "new")
-                    .unwrap()
-                    .subtype;
-                let new = match var {
-                    VariableEnum::Local(id) => woog.exhume_local(id).unwrap(),
-                    _ => panic!("This should never happen"),
-                };
-
                 // Now this is interesting. This is good. It's getting close to what I
                 // was talking about above. In the woog population code, the function
                 // for populating a new method I created a statement: a struct item.
@@ -1326,39 +1332,123 @@ pub(crate) fn render_methods(
                     _ => unimplemented!(),
                 };
 
-                // I wrote this this morning, and already I'can't say how it works
-                // exactly. It takes a structure, and not a statement, so it's
-                // pretty low level. It's also assigning the let. Refactor time.
-                render_new_instance_new(
-                    buffer,
-                    obj,
-                    new,
-                    stmt,
-                    method
-                        .r23_block(woog)
+                if let crate::options::OptimizationLevel::None = config.get_optimization_level() {
+                    // This renders a let statement, assigning a new uuid to the id variable.
+                    // This is where the work lies. I think that what I really want to do is
+                    // create (let) statements in the block whilst populating woog. Then
+                    // someplace else, maybe here, we iterate over the statements and generate
+                    // code. Maybe an as_statement trait, or something?
+                    render_make_uuid_new(buffer, id, method, woog, domain)?;
+
+                    // Look up the properly scoped variable named `new`.
+                    let var = &table
+                        .r20_variable(woog)
+                        .iter()
+                        .find(|&&v| v.name == "new")
+                        .unwrap()
+                        .subtype;
+                    let new = match var {
+                        VariableEnum::Local(id) => woog.exhume_local(id).unwrap(),
+                        _ => panic!("This should never happen"),
+                    };
+
+                    let ty = new
+                        .r8_variable(woog)
                         .pop()
                         .unwrap()
-                        .r24_symbol_table(woog)
+                        .r7_x_value(woog)
                         .pop()
-                        .unwrap(),
-                    config,
-                    imports,
-                    woog,
-                    domain,
-                )?;
+                        .unwrap()
+                        .r3_grace_type(woog)[0];
 
-                if func.name == "new" {
-                    if config.is_uber_store() {
-                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                            emit!(buffer, "store.inter_{}(new.clone()).await;", obj.as_ident());
+                    // Check that the type of the variable is a reference to the object that we
+                    // are instantiating.
+                    // This doesn't belong here. It should be part of a let statement renderer.
+                    // 🚧 These errors are terrible. You get a uuid that may not even be possible
+                    // to look up. It should print the generated type. That would be fucking slick.
+                    ensure!(
+                        match ty {
+                            GraceType::Reference(id) => {
+                                let reference = woog.exhume_reference(id).unwrap();
+                                ensure!(
+                                    reference.object == obj.id,
+                                    CompilerSnafu {
+                                        description: format!(
+                                            "type mismatch: found `{:?}`, expected `{:?}`",
+                                            reference, obj
+                                        )
+                                    }
+                                );
+                                true
+                            }
+                            _ => false,
+                        },
+                        CompilerSnafu {
+                            description: format!(
+                                "type mismatch: found `{:?}`, expected `SarzakType::Reference`",
+                                ty
+                            )
+                        }
+                    );
+
+                    write!(buffer, "let {} = ", new.r8_variable(woog)[0].name)
+                        .context(FormatSnafu)?;
+
+                    // I wrote this this morning, and already I'can't say how it works
+                    // exactly. It takes a structure, and not a statement, so it's
+                    // pretty low level. It's also assigning the let. Refactor time.
+                    render_new_instance_new(
+                        buffer,
+                        obj,
+                        stmt,
+                        method
+                            .r23_block(woog)
+                            .pop()
+                            .unwrap()
+                            .r24_symbol_table(woog)
+                            .pop()
+                            .unwrap(),
+                        true,
+                        config,
+                        imports,
+                        woog,
+                        domain,
+                    )?;
+
+                    if func.name == "new" {
+                        if config.is_uber_store() {
+                            if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap()
+                            {
+                                emit!(buffer, "store.inter_{}(new.clone()).await;", obj.as_ident());
+                            } else {
+                                emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                            }
                         } else {
                             emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                         }
-                    } else {
-                        emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
                     }
+                    emit!(buffer, "new");
+                } else {
+                    emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                    render_new_instance_new(
+                        buffer,
+                        obj,
+                        stmt,
+                        method
+                            .r23_block(woog)
+                            .pop()
+                            .unwrap()
+                            .r24_symbol_table(woog)
+                            .pop()
+                            .unwrap(),
+                        false,
+                        config,
+                        imports,
+                        woog,
+                        domain,
+                    )?;
+                    emit!(buffer, "}})");
                 }
-                emit!(buffer, "new");
                 emit!(buffer, "}}");
 
                 Ok(())

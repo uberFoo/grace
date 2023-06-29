@@ -147,7 +147,7 @@ pub struct DomainConfig {
     /// Optimization Level
     ///
     /// Determines the data structures used to store objects in the ObjectStore.
-    #[arg(long, short = 'O', default_value = "None", requires = "persist")]
+    #[arg(long, short = 'O', default_value = "none", requires = "uber_store")]
     pub optimization_level: OptimizationLevel,
     /// This Domain is Sarzak
     ///

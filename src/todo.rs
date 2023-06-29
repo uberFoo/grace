@@ -13,6 +13,7 @@ pub(crate) enum GType {
     Float,
     String,
     Uuid,
+    Usize,
     Object(Uuid),
     Reference(Uuid),
     Option(Box<GType>),

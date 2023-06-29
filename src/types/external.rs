@@ -119,8 +119,8 @@ impl FileGenerator for ExternalGenerator {
                     object.as_type(&Ownership::new_borrowed(), woog, domain),
                 );
 
-                render_attributes(buffer, object, woog, domain)?;
-                render_referential_attributes(buffer, object, woog, domain)?;
+                render_attributes(buffer, object, config, woog, domain)?;
+                render_referential_attributes(buffer, object, config, woog, domain)?;
                 render_associative_attributes(buffer, object, woog, domain)?;
                 emit!(buffer, "inner: {},", external.name);
 

@@ -302,8 +302,8 @@ impl CodeWriter for Struct {
                     obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
-                render_attributes(buffer, obj, woog, domain)?;
-                render_referential_attributes(buffer, obj, woog, domain)?;
+                render_attributes(buffer, obj, config, woog, domain)?;
+                render_referential_attributes(buffer, obj, config, woog, domain)?;
                 render_associative_attributes(buffer, obj, woog, domain)?;
 
                 emit!(buffer, "}}");

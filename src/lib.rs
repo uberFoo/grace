@@ -9,7 +9,9 @@ mod todo;
 mod types;
 mod woog;
 
-pub use options::{DomainConfig, DwarfConfig, GraceCompilerOptions, Target};
+pub use options::{
+    DomainConfig, DwarfConfig, GraceCompilerOptions, OptimizationLevel, Target, UberStoreOptions,
+};
 pub use sarzak::mc::{FileSnafu, ModelCompilerError, SarzakModelCompiler};
 
 use target::{

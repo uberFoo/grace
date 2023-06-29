@@ -217,6 +217,7 @@ impl ForStore for GraceType {
                 }
             }
             Self::TimeStamp(_) => "SystemTime".to_owned(),
+            Self::Usize(_) => "usize".to_owned(),
         }
     }
 }
@@ -301,6 +302,7 @@ impl ForStore for GType {
             }
             GType::String => "String".to_owned(),
             GType::Uuid => "Uuid".to_owned(),
+            GType::Usize => "usize".to_owned(),
             GType::Float => "f64".to_owned(),
             GType::Integer => "i64".to_owned(),
         }
@@ -361,9 +363,7 @@ impl RenderType for Ty {
                 let ext = domain.sarzak().exhume_external(e).unwrap();
                 // format!("&{}", ext.as_type(mutability, woog, domain))
                 match mutability {
-                    Ownership::Owned(_) => {
-                        ext.name.sanitize().to_upper_camel_case()
-                    }
+                    Ownership::Owned(_) => ext.name.sanitize().to_upper_camel_case(),
                     Ownership::Borrowed(_) => {
                         format!("&{}", ext.name.sanitize().to_upper_camel_case())
                     }
@@ -408,6 +408,7 @@ impl RenderType for GType {
             }
             GType::String => "String".to_owned(),
             GType::Uuid => "Uuid".to_owned(),
+            GType::Usize => "usize".to_owned(),
             GType::Float => "f64".to_owned(),
             GType::Integer => "i64".to_owned(),
         }
@@ -432,6 +433,7 @@ impl RenderType for GraceType {
                 format!("&{}", object.as_type(mutability, woog, domain))
             }
             Self::TimeStamp(_) => "SystemTime".to_owned(),
+            Self::Usize(_) => "usize".to_owned(),
         }
     }
 }
@@ -576,6 +578,7 @@ impl Sanitize for String {
 pub(crate) fn render_attributes(
     buffer: &mut Buffer,
     obj: &Object,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -587,13 +590,25 @@ pub(crate) fn render_attributes(
             attr.name,
             obj.name
         );
-        let ty = attr.r2_ty(domain.sarzak())[0];
-        emit!(
-            buffer,
-            "pub {}: {},",
-            attr.as_ident(),
-            ty.as_type(&Ownership::new_borrowed(), woog, domain)
-        );
+        // This is a really weird thing and I'm not really sure how to address it.
+        // I suspect that my troubles stem from the fact that I'm generating rust
+        // directly from a sarzak model. Maybe in dwarf this would be a triviality.
+        // I think I'd have to add a usize to lu-dog. Maybe an index type? Right
+        // now I'm just testing that it's an int and casting it to usize. And that
+        // might work, depending on how the emit stuff is implemented, I think.
+        // Not sure.
+        // Anyway, I'm doing the really ugly thing here.
+        if attr.name == "id" && config.get_optimization_level() == &crate::OptimizationLevel::Vec {
+            emit!(buffer, "pub {}: usize,", attr.as_ident());
+        } else {
+            let ty = attr.r2_ty(domain.sarzak())[0];
+            emit!(
+                buffer,
+                "pub {}: {},",
+                attr.as_ident(),
+                ty.as_type(&Ownership::new_borrowed(), woog, domain)
+            );
+        }
     }
 
     Ok(())
@@ -602,6 +617,7 @@ pub(crate) fn render_attributes(
 pub(crate) fn render_referential_attributes(
     buffer: &mut Buffer,
     obj: &Object,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
@@ -659,6 +675,11 @@ pub(crate) fn render_referential_attributes(
         // That means that we need to check the conditionality of the referrer.
         //
         let cond = referrer.r11_conditionality(domain.sarzak())[0];
+        let ty = if config.is_uber_store() && !config.is_imported(&r_obj.id) {
+            "usize"
+        } else {
+            "Uuid"
+        };
 
         emit!(
             buffer,
@@ -671,12 +692,12 @@ pub(crate) fn render_referential_attributes(
         match cond {
             Conditionality::Conditional(_) => emit!(
                 buffer,
-                "pub {}: Option<Uuid>,",
+                "pub {}: Option<{ty}>,",
                 referrer.referential_attribute.as_ident(),
             ),
             Conditionality::Unconditional(_) => emit!(
                 buffer,
-                "pub {}: Uuid,",
+                "pub {}: {ty},",
                 referrer.referential_attribute.as_ident(),
             ),
         }

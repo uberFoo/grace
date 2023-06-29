@@ -239,7 +239,6 @@ impl<'a> DomainTarget<'a> {
                 let mut types = types.clone();
                 types.set_file_name(obj.as_ident());
                 types.set_extension(RS_EXT);
-                dbg!(&types, &cwd);
                 types = if let Ok(types) = types.strip_prefix(&cwd) {
                     types.to_owned()
                 } else {

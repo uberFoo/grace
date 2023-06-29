@@ -8,4 +8,5 @@ pub mod from;
 pub mod hybrid;
 pub mod rels;
 pub mod store;
+pub mod store_vec;
 pub mod structs;

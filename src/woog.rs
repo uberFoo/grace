@@ -152,7 +152,7 @@ fn inter_struct_method_new(
     let table = SymbolTable::new(&block, woog);
 
     let (mut params, mut fields) =
-        collect_params_and_fields(obj, &structure, &function, &table, domain, woog);
+        collect_params_and_fields(obj, &structure, &function, &table, config, domain, woog);
 
     if let Target::Domain(_) = config.get_target() {
         // Add the store to the end of the  input parameters
@@ -235,7 +235,7 @@ fn inter_struct_method_new_(
     let table = SymbolTable::new(&block, woog);
 
     let (mut params, mut fields) =
-        collect_params_and_fields(obj, &structure, &function, &table, domain, woog);
+        collect_params_and_fields(obj, &structure, &function, &table, config, domain, woog);
 
     // Link the params
     // I need to maintain the order I've adopted because I'don't need things
@@ -316,7 +316,7 @@ fn inter_hybrid_method_new(
         let table = SymbolTable::new(&block, woog);
 
         let (mut params, mut fields) =
-            collect_params_and_fields(s_obj, &structure, &function, &table, domain, woog);
+            collect_params_and_fields(s_obj, &structure, &function, &table, config, domain, woog);
 
         // These are for the "subtype" attribute, which points at the subtype.
         let reference = Reference::new(s_obj, woog);
@@ -427,7 +427,7 @@ fn inter_external_method_new(
     let table = SymbolTable::new(&block, woog);
 
     let (mut params, mut fields) =
-        collect_params_and_fields(obj, &structure, &function, &table, domain, woog);
+        collect_params_and_fields(obj, &structure, &function, &table, config, domain, woog);
 
     // Maybe this is a hack, maybe it's cool. In any case, I'm inserting an
     // attribute on external entities to store the internal value of the thing.
@@ -503,6 +503,7 @@ fn collect_params_and_fields(
     structure: &Structure,
     function: &Function,
     table: &SymbolTable,
+    config: &GraceConfig,
     domain: &Domain,
     woog: &mut WoogStore,
 ) -> (Vec<Parameter>, Vec<StructureField>) {
@@ -562,8 +563,15 @@ fn collect_params_and_fields(
                 let _ = Value::new_variable(&access, &ty, &var, woog);
                 params.push(param);
 
-                let uuid = GraceType::new_ty(&Ty::new_s_uuid(), woog);
-                let option = WoogOption::new(&uuid, woog);
+                let option = if let crate::options::OptimizationLevel::Vec =
+                    config.get_optimization_level()
+                {
+                    let ty = GraceType::new_usize();
+                    WoogOption::new(&ty, woog)
+                } else {
+                    let uuid = GraceType::new_ty(&Ty::new_s_uuid(), woog);
+                    WoogOption::new(&uuid, woog)
+                };
                 let ty = GraceType::new_woog_option(&option, woog);
                 let field = Field::new(referrer.referential_attribute.as_ident(), &ty, woog);
                 let field = StructureField::new(None, &field, structure, woog);
@@ -583,11 +591,14 @@ fn collect_params_and_fields(
                 let _ = Value::new_variable(&access, &ty, &var, woog);
                 params.push(param);
 
-                let field = Field::new(
-                    referrer.referential_attribute.as_ident(),
-                    &GraceType::new_ty(&Ty::new_s_uuid(), woog),
-                    woog,
-                );
+                let ty = if let crate::options::OptimizationLevel::Vec =
+                    config.get_optimization_level()
+                {
+                    GraceType::new_usize()
+                } else {
+                    GraceType::new_ty(&Ty::new_s_uuid(), woog)
+                };
+                let field = Field::new(referrer.referential_attribute.as_ident(), &ty, woog);
                 let field = StructureField::new(None, &field, structure, woog);
                 fields.push(field);
             }
@@ -614,11 +625,13 @@ fn collect_params_and_fields(
             let _ = Value::new_variable(&access, &ty, &var, woog);
             params.push(param);
 
-            let field = Field::new(
-                an_ass.referential_attribute.as_ident(),
-                &GraceType::new_ty(&Ty::new_s_uuid(), woog),
-                woog,
-            );
+            let ty = if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
+            {
+                GraceType::new_usize()
+            } else {
+                GraceType::new_ty(&Ty::new_s_uuid(), woog)
+            };
+            let field = Field::new(an_ass.referential_attribute.as_ident(), &ty, woog);
             let field = StructureField::new(None, &field, structure, woog);
             fields.push(field);
         }

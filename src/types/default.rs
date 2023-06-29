@@ -279,7 +279,7 @@ impl CodeWriter for DefaultStruct {
                     );
                 }
 
-                render_attributes(buffer, obj, woog, domain)?;
+                render_attributes(buffer, obj, config, woog, domain)?;
 
                 // Paste in the referential attributes, computed above.
                 *buffer += paste;
@@ -567,7 +567,7 @@ impl CodeWriter for DefaultNewImpl {
                 render_method_definition(buffer, &method, config, woog, domain)?;
 
                 // Output the code to create the `id`.
-                let id = LValue::new("id", GType::Uuid, None);
+                let id = LValue::new("id", GType::Usize, None);
                 render_make_uuid(buffer, &id, &rvals, domain)?;
 
                 // Output code to create the instance

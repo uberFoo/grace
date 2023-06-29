@@ -341,11 +341,19 @@ fn forward(
                     referrer.referential_attribute.as_ident()
                 );
             } else {
-                emit!(
-                    buffer,
-                    "vec![store.exhume_{obj_ident}(&self.{}).unwrap()]",
-                    referrer.referential_attribute.as_ident()
-                );
+                if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+                    emit!(
+                        buffer,
+                        "vec![store.exhume_{obj_ident}(self.{}).unwrap()]",
+                        referrer.referential_attribute.as_ident()
+                    );
+                } else {
+                    emit!(
+                        buffer,
+                        "vec![store.exhume_{obj_ident}(&self.{}).unwrap()]",
+                        referrer.referential_attribute.as_ident()
+                    );
+                }
             }
             emit!(buffer, "}}");
 

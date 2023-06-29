@@ -4,7 +4,8 @@ use std::process::{self, ExitCode};
 
 use env_logger;
 use grace::{
-    DomainConfig, DwarfConfig, GraceCompilerOptions, ModelCompiler, SarzakModelCompiler, Target,
+    DomainConfig, DwarfConfig, GraceCompilerOptions, ModelCompiler, OptimizationLevel,
+    SarzakModelCompiler, Target, UberStoreOptions,
 };
 use log;
 use sarzak::domain::DomainBuilder;
@@ -20,6 +21,140 @@ macro_rules! test_target_domain {
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
                 persist: true,
+                ..Default::default()
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                ).map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}", $domain))
+                .arg("--")
+                .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+    ($name:ident, $domain:literal, $path:literal, $($imports:literal),+) => {
+        #[test]
+        /// This one handles imports
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                persist: true,
+                ..Default::default()
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            let mut imports = Vec::new();
+            $(
+                imports.push($imports.to_string());
+            )*
+            options.imported_domains = Some(imports);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                )
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}", $domain))
+                .arg("--")
+                .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+}
+
+macro_rules! test_target_domain_vec_store {
+    ($name:ident, $domain:literal, $path:literal) => {
+        #[test]
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                persist: true,
+                optimization_level: OptimizationLevel::Vec,
+                uber_store: UberStoreOptions::Single,
                 ..Default::default()
             });
             if let Some(ref mut derive) = options.derive {
@@ -388,6 +523,11 @@ test_target_domain!(
     "everything",
     "tests/mdd/models/everything.json"
 );
+test_target_domain_vec_store!(
+    everything_domain_vec,
+    "everything_vec",
+    "tests/mdd/models/everything.json"
+);
 test_target_domain_timestamps!(
     everything_domain_ts,
     "everything_ts",
@@ -395,7 +535,7 @@ test_target_domain_timestamps!(
 );
 test_target_dwarf!(
     everything_domain_dwarf,
-    "everything",
+    "everything_dwarf",
     "tests/mdd/models/everything.json"
 );
 
@@ -404,6 +544,11 @@ test_target_domain!(
     "one_to_one",
     "tests/mdd/models/one_to_one.json"
 );
+// test_target_domain_vec_store!(
+//     one_to_one_domain_vec,
+//     "one_to_one_vec",
+//     "tests/mdd/models/one_to_one.json"
+// );
 test_target_domain_timestamps!(
     one_to_one_domain_ts,
     "one_to_one_ts",
@@ -411,7 +556,7 @@ test_target_domain_timestamps!(
 );
 test_target_dwarf!(
     one_to_one_domain_dwarf,
-    "one_to_one",
+    "one_to_one_dwarf",
     "tests/mdd/models/one_to_one.json"
 );
 
@@ -427,7 +572,7 @@ test_target_domain_timestamps!(
 );
 test_target_dwarf!(
     one_to_many_domain_dwarf,
-    "one_to_many",
+    "one_to_many_dwwarf",
     "tests/mdd/models/one_to_many.json"
 );
 
@@ -447,7 +592,7 @@ test_target_domain_timestamps!(
 );
 test_target_dwarf!(
     associative_domain_dwarf,
-    "associative",
+    "associative_dwarf",
     "tests/mdd/models/associative.json"
 );
 
@@ -474,14 +619,19 @@ test_target_domain_timestamps!(
 
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
 test_target_domain_timestamps!(external_ts, "external_ts", "tests/mdd/models/external.json");
-test_target_dwarf!(external_dwarf, "external", "tests/mdd/models/external.json");
-
-// Application Target Tests
-test_target_application!(
-    everything_application,
-    "everything",
-    "tests/mdd/models/everything.json"
+test_target_dwarf!(
+    external_dwarf,
+    "external_dwarf",
+    "tests/mdd/models/external.json"
 );
+
+// I just don't care about application any more. Not now anyway.
+// // Application Target Tests
+// test_target_application!(
+//     everything_application,
+//     "everything",
+//     "tests/mdd/models/everything.json"
+// );
 
 #[test]
 fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
