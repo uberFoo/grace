@@ -544,11 +544,11 @@ test_target_domain!(
     "one_to_one",
     "tests/mdd/models/one_to_one.json"
 );
-// test_target_domain_vec_store!(
-//     one_to_one_domain_vec,
-//     "one_to_one_vec",
-//     "tests/mdd/models/one_to_one.json"
-// );
+test_target_domain_vec_store!(
+    one_to_one_domain_vec,
+    "one_to_one_vec",
+    "tests/mdd/models/one_to_one.json"
+);
 test_target_domain_timestamps!(
     one_to_one_domain_ts,
     "one_to_one_ts",

@@ -49,7 +49,7 @@ impl C {
     pub fn r3_referent<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<Referent>>> {
         span!("r3_referent");
         match self.ptr {
-            Some(ref ptr) => vec![store.exhume_referent(ptr).unwrap()],
+            Some(ref ptr) => vec![store.exhume_referent(*ptr).unwrap()],
             None => Vec::new(),
         }
     }

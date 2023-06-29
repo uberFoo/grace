@@ -442,13 +442,24 @@ fn forward_conditional(
                         referrer.referential_attribute.as_ident()
                     );
                 } else {
-                    emit!(
-                        buffer,
-                        "Some(ref {}) => vec![store.exhume_{}({}).unwrap()],",
-                        referrer.referential_attribute.as_ident(),
-                        r_obj.as_ident(),
-                        referrer.referential_attribute.as_ident()
-                    );
+                    if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
+                    {
+                        emit!(
+                            buffer,
+                            "Some(ref {}) => vec![store.exhume_{}(*{}).unwrap()],",
+                            referrer.referential_attribute.as_ident(),
+                            r_obj.as_ident(),
+                            referrer.referential_attribute.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "Some(ref {}) => vec![store.exhume_{}({}).unwrap()],",
+                            referrer.referential_attribute.as_ident(),
+                            r_obj.as_ident(),
+                            referrer.referential_attribute.as_ident()
+                        );
+                    }
                 }
             } else {
                 emit!(

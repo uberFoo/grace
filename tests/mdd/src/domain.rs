@@ -12,5 +12,5 @@ pub mod isa;
 pub mod one_to_many;
 pub mod one_to_one;
 pub mod one_to_one_ts;
-// pub mod one_to_one_vec;
+pub mod one_to_one_vec;
 pub mod sarzak;
