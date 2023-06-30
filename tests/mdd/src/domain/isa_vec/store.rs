@@ -33,41 +33,14 @@ use std::{
     path::Path,
 };
 
-use ansi_term::Colour;
 use fnv::FnvHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::{
     Alpha, Baz, Beta, Borrowed, Gamma, Henry, NotImportant, OhBoy, Ownership, Reference,
-    SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB, SuperBar, SuperFoo, SuperT, MUTABLE,
-    OWNED, SHARED,
+    SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB, SuperBar, SuperFoo, SuperT,
 };
-
-macro_rules! function {
-    () => {{
-        fn f() {}
-        fn type_name_of<T>(_: T) -> &'static str {
-            std::any::type_name::<T>()
-        }
-        let name = type_name_of(f);
-        name.strip_suffix("::f").unwrap()
-    }};
-}
-
-macro_rules! debug {
-    ($($arg:tt)*) => {
-        log::debug!(
-            target: "store",
-            "{}: {}\n  --> {}:{}:{}",
-            Colour::Cyan.dimmed().italic().paint(function!()),
-            format_args!($($arg)*),
-            file!(),
-            line!(),
-            column!()
-        )
-    };
-}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
@@ -109,7 +82,7 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        let mut store = Self {
+        let store = Self {
             alpha_free_list: std::sync::Mutex::new(Vec::new()),
             alpha: Vec::new(),
             baz_free_list: std::sync::Mutex::new(Vec::new()),
@@ -150,26 +123,6 @@ impl ObjectStore {
         // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
         // I remember having a bit of a struggle making it work. It's recursive, with
         // a lot of special cases, and I think it calls other recursive functions...💥
-        store.inter_borrowed(|id| {
-            assert!(id == Borrowed::Mutable as usize);
-            Rc::new(RefCell::new(Borrowed::Mutable))
-        });
-        store.inter_borrowed(|id| {
-            assert!(id == Borrowed::Shared as usize);
-            Rc::new(RefCell::new(Borrowed::Shared))
-        });
-        store.inter_ownership(|id| {
-            assert!(id == Ownership::BorrowedMutable as usize);
-            Rc::new(RefCell::new(Ownership::BorrowedMutable))
-        });
-        store.inter_ownership(|id| {
-            assert!(id == Ownership::BorrowedShared as usize);
-            Rc::new(RefCell::new(Ownership::BorrowedShared))
-        });
-        store.inter_ownership(|id| {
-            assert!(id == Ownership::Owned as usize);
-            Rc::new(RefCell::new(Ownership::Owned))
-        });
 
         store
     }
@@ -196,7 +149,10 @@ impl ObjectStore {
     /// Exhume (get) [`Alpha`] from the store.
     ///
     pub fn exhume_alpha(&self, id: usize) -> Option<Rc<RefCell<Alpha>>> {
-        self.alpha.get(id).unwrap().clone()
+        match self.alpha.get(id) {
+            Some(alpha) => alpha.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Alpha`] from the store.
@@ -235,7 +191,10 @@ impl ObjectStore {
     /// Exhume (get) [`Baz`] from the store.
     ///
     pub fn exhume_baz(&self, id: usize) -> Option<Rc<RefCell<Baz>>> {
-        self.baz.get(id).unwrap().clone()
+        match self.baz.get(id) {
+            Some(baz) => baz.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Baz`] from the store.
@@ -274,7 +233,10 @@ impl ObjectStore {
     /// Exhume (get) [`Beta`] from the store.
     ///
     pub fn exhume_beta(&self, id: usize) -> Option<Rc<RefCell<Beta>>> {
-        self.beta.get(id).unwrap().clone()
+        match self.beta.get(id) {
+            Some(beta) => beta.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Beta`] from the store.
@@ -313,7 +275,10 @@ impl ObjectStore {
     /// Exhume (get) [`Borrowed`] from the store.
     ///
     pub fn exhume_borrowed(&self, id: usize) -> Option<Rc<RefCell<Borrowed>>> {
-        self.borrowed.get(id).unwrap().clone()
+        match self.borrowed.get(id) {
+            Some(borrowed) => borrowed.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Borrowed`] from the store.
@@ -357,7 +322,10 @@ impl ObjectStore {
     /// Exhume (get) [`Gamma`] from the store.
     ///
     pub fn exhume_gamma(&self, id: usize) -> Option<Rc<RefCell<Gamma>>> {
-        self.gamma.get(id).unwrap().clone()
+        match self.gamma.get(id) {
+            Some(gamma) => gamma.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Gamma`] from the store.
@@ -396,7 +364,10 @@ impl ObjectStore {
     /// Exhume (get) [`Henry`] from the store.
     ///
     pub fn exhume_henry(&self, id: usize) -> Option<Rc<RefCell<Henry>>> {
-        self.henry.get(id).unwrap().clone()
+        match self.henry.get(id) {
+            Some(henry) => henry.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Henry`] from the store.
@@ -435,7 +406,10 @@ impl ObjectStore {
     /// Exhume (get) [`NotImportant`] from the store.
     ///
     pub fn exhume_not_important(&self, id: usize) -> Option<Rc<RefCell<NotImportant>>> {
-        self.not_important.get(id).unwrap().clone()
+        match self.not_important.get(id) {
+            Some(not_important) => not_important.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`NotImportant`] from the store.
@@ -479,7 +453,10 @@ impl ObjectStore {
     /// Exhume (get) [`OhBoy`] from the store.
     ///
     pub fn exhume_oh_boy(&self, id: usize) -> Option<Rc<RefCell<OhBoy>>> {
-        self.oh_boy.get(id).unwrap().clone()
+        match self.oh_boy.get(id) {
+            Some(oh_boy) => oh_boy.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`OhBoy`] from the store.
@@ -523,7 +500,10 @@ impl ObjectStore {
     /// Exhume (get) [`Ownership`] from the store.
     ///
     pub fn exhume_ownership(&self, id: usize) -> Option<Rc<RefCell<Ownership>>> {
-        self.ownership.get(id).unwrap().clone()
+        match self.ownership.get(id) {
+            Some(ownership) => ownership.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Ownership`] from the store.
@@ -567,7 +547,10 @@ impl ObjectStore {
     /// Exhume (get) [`Reference`] from the store.
     ///
     pub fn exhume_reference(&self, id: usize) -> Option<Rc<RefCell<Reference>>> {
-        self.reference.get(id).unwrap().clone()
+        match self.reference.get(id) {
+            Some(reference) => reference.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Reference`] from the store.
@@ -582,10 +565,11 @@ impl ObjectStore {
     ///
     pub fn iter_reference(&self) -> impl Iterator<Item = Rc<RefCell<Reference>>> + '_ {
         let len = self.reference.len();
-        (0..len).filter_map(move |i| {
+        (0..len).map(move |i| {
             self.reference[i]
                 .as_ref()
                 .map(|reference| reference.clone())
+                .unwrap()
         })
     }
 
@@ -657,7 +641,10 @@ impl ObjectStore {
     /// Exhume (get) [`SimpleSupertype`] from the store.
     ///
     pub fn exhume_simple_supertype(&self, id: usize) -> Option<Rc<RefCell<SimpleSupertype>>> {
-        self.simple_supertype.get(id).unwrap().clone()
+        match self.simple_supertype.get(id) {
+            Some(simple_supertype) => simple_supertype.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`SimpleSupertype`] from the store.
@@ -701,7 +688,10 @@ impl ObjectStore {
     /// Exhume (get) [`SubtypeA`] from the store.
     ///
     pub fn exhume_subtype_a(&self, id: usize) -> Option<Rc<RefCell<SubtypeA>>> {
-        self.subtype_a.get(id).unwrap().clone()
+        match self.subtype_a.get(id) {
+            Some(subtype_a) => subtype_a.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`SubtypeA`] from the store.
@@ -745,7 +735,10 @@ impl ObjectStore {
     /// Exhume (get) [`SubtypeB`] from the store.
     ///
     pub fn exhume_subtype_b(&self, id: usize) -> Option<Rc<RefCell<SubtypeB>>> {
-        self.subtype_b.get(id).unwrap().clone()
+        match self.subtype_b.get(id) {
+            Some(subtype_b) => subtype_b.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`SubtypeB`] from the store.
@@ -807,10 +800,11 @@ impl ObjectStore {
     ///
     pub fn iter_super_bar(&self) -> impl Iterator<Item = Rc<RefCell<SuperBar>>> + '_ {
         let len = self.super_bar.len();
-        (0..len).filter_map(move |i| {
+        (0..len).map(move |i| {
             self.super_bar[i]
                 .as_ref()
                 .map(|super_bar| super_bar.clone())
+                .unwrap()
         })
     }
 
@@ -837,7 +831,7 @@ impl ObjectStore {
     pub fn exhume_super_foo(&self, id: usize) -> Option<Rc<RefCell<SuperFoo>>> {
         match self.super_foo.get(id) {
             Some(super_foo) => super_foo.clone(),
-            _ => None,
+            None => None,
         }
     }
 
@@ -882,7 +876,10 @@ impl ObjectStore {
     /// Exhume (get) [`SuperT`] from the store.
     ///
     pub fn exhume_super_t(&self, id: usize) -> Option<Rc<RefCell<SuperT>>> {
-        self.super_t.get(id).unwrap().clone()
+        match self.super_t.get(id) {
+            Some(super_t) => super_t.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`SuperT`] from the store.
@@ -979,7 +976,7 @@ impl ObjectStore {
             fs::create_dir_all(&path)?;
             for borrowed in &self.borrowed {
                 if let Some(borrowed) = borrowed {
-                    let path = path.join(format!("{}.json", borrowed.borrow().id()));
+                    let path = path.join(format!("{}.json", borrowed.borrow().id));
                     let file = fs::File::create(path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &borrowed)?;
@@ -1049,7 +1046,7 @@ impl ObjectStore {
             fs::create_dir_all(&path)?;
             for ownership in &self.ownership {
                 if let Some(ownership) = ownership {
-                    let path = path.join(format!("{}.json", ownership.borrow().id()));
+                    let path = path.join(format!("{}.json", ownership.borrow().id));
                     let file = fs::File::create(path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &ownership)?;
@@ -1077,7 +1074,7 @@ impl ObjectStore {
             fs::create_dir_all(&path)?;
             for simple_subtype_a in &self.simple_subtype_a {
                 if let Some(simple_subtype_a) = simple_subtype_a {
-                    let path = path.join(format!("{}.json", simple_subtype_a.borrow().id()));
+                    let path = path.join(format!("{}.json", simple_subtype_a.borrow().id));
                     let file = fs::File::create(path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &simple_subtype_a)?;
@@ -1133,7 +1130,7 @@ impl ObjectStore {
             fs::create_dir_all(&path)?;
             for super_bar in &self.super_bar {
                 if let Some(super_bar) = super_bar {
-                    let path = path.join(format!("{}.json", super_bar.borrow().id()));
+                    let path = path.join(format!("{}.json", super_bar.borrow().id));
                     let file = fs::File::create(path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &super_bar)?;
@@ -1147,7 +1144,7 @@ impl ObjectStore {
             fs::create_dir_all(&path)?;
             for super_foo in &self.super_foo {
                 if let Some(super_foo) = super_foo {
-                    let path = path.join(format!("{}.json", super_foo.borrow().id()));
+                    let path = path.join(format!("{}.json", super_foo.borrow().id));
                     let file = fs::File::create(path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &super_foo)?;
@@ -1258,7 +1255,7 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let borrowed: Rc<RefCell<Borrowed>> = serde_json::from_reader(reader)?;
                 store.inter_borrowed(|id| {
-                    assert!(borrowed.borrow().id() == id);
+                    borrowed.borrow_mut().id = id;
                     borrowed.clone()
                 });
             }
@@ -1343,7 +1340,7 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let ownership: Rc<RefCell<Ownership>> = serde_json::from_reader(reader)?;
                 store.inter_ownership(|id| {
-                    assert!(ownership.borrow().id() == id);
+                    ownership.borrow_mut().id = id;
                     ownership.clone()
                 });
             }
@@ -1378,7 +1375,7 @@ impl ObjectStore {
                 let simple_subtype_a: Rc<RefCell<SimpleSubtypeA>> =
                     serde_json::from_reader(reader)?;
                 store.inter_simple_subtype_a(|id| {
-                    assert!(simple_subtype_a.borrow().id() == id);
+                    simple_subtype_a.borrow_mut().id = id;
                     simple_subtype_a.clone()
                 });
             }
@@ -1447,7 +1444,7 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let super_bar: Rc<RefCell<SuperBar>> = serde_json::from_reader(reader)?;
                 store.inter_super_bar(|id| {
-                    assert!(super_bar.borrow().id() == id);
+                    super_bar.borrow_mut().id = id;
                     super_bar.clone()
                 });
             }
@@ -1464,7 +1461,7 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let super_foo: Rc<RefCell<SuperFoo>> = serde_json::from_reader(reader)?;
                 store.inter_super_foo(|id| {
-                    assert!(id == super_foo.borrow().id());
+                    super_foo.borrow_mut().id = id;
                     super_foo.clone()
                 });
             }

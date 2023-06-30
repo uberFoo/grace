@@ -83,13 +83,13 @@ impl Ty {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            Ty::Boolean(id) => *id,
-            Ty::External(id) => *id,
-            Ty::Float(id) => *id,
-            Ty::Integer(id) => *id,
-            Ty::Object(id) => *id,
-            Ty::SString(id) => *id,
-            Ty::SUuid(id) => *id,
+            Self::Boolean(id) => *id,
+            Self::External(id) => *id,
+            Self::Float(id) => *id,
+            Self::Integer(id) => *id,
+            Self::Object(id) => *id,
+            Self::SString(id) => *id,
+            Self::SUuid(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

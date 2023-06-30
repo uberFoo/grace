@@ -1098,7 +1098,7 @@ fn forward_assoc(
                     );
                 }
 
-                emit!(buffer, "span!(\"\"r{number}_{});\"\"", r_obj.as_ident());
+                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
             } else {
                 emit!(
                     buffer,
@@ -1110,12 +1110,21 @@ fn forward_assoc(
                 );
             }
 
+            if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
             emit!(
                 buffer,
-                "vec![store.exhume_{}(&self.{}).unwrap()]",
+                "vec![store.exhume_{}(self.{}).unwrap()]",
                 r_obj.as_ident(),
                 referential_attribute.as_ident()
             );
+            } else {
+                emit!(
+                    buffer,
+                    "vec![store.exhume_{}(&self.{}).unwrap()]",
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                );
+            }
             emit!(buffer, "}}");
 
             Ok(())
@@ -1170,7 +1179,7 @@ fn backward_assoc_one(
                     );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{});\"", r_obj.as_ident());
+                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
             } else {
                 emit!(
                     buffer,
@@ -1221,6 +1230,8 @@ fn backward_assoc_one_conditional(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let obj_ident = r_obj.as_ident();
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -1243,26 +1254,22 @@ fn backward_assoc_one_conditional(
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
-                        "pub async fn r{number}_{}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
-                        r_obj.as_ident(),
+                        "pub async fn r{number}_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
                         store.name
                     );
                 } else {
                     emit!(
                         buffer,
-                        "pub fn r{number}_{}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
-                        r_obj.as_ident(),
+                        "pub fn r{number}_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
                         store.name
                     );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{});\"", r_obj.as_ident());
+                emit!(buffer, "span!(\"r{number}_{obj_ident}\");");
             } else {
                 emit!(
                     buffer,
-                    "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
-                    number,
-                    r_obj.as_ident(),
+                    "pub fn r{number}_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<&{}> {{",
                     store.name,
                     r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
@@ -1270,24 +1277,26 @@ fn backward_assoc_one_conditional(
 
             emit!(
                 buffer,
-                "let {} = store.iter_{}()",
-                r_obj.as_ident(),
-                r_obj.as_ident()
+                "let {obj_ident} = store.iter_{obj_ident}()"
             );
-            emit!(
-                buffer,
-                ".find(|{}| {}.{} == self.{});",
-                r_obj.as_ident(),
-                r_obj.as_ident(),
-                referential_attribute.as_ident(),
-                id
-            );
+            if is_uber {
+                let (read, _write) = get_uber_read_write(config);
+                emit!(
+                    buffer,
+                    ".find(|{obj_ident}| {obj_ident}{read}.{} == self.{id});",
+                    referential_attribute.as_ident(),
+                );
+            } else {
+                emit!(
+                    buffer,
+                    ".find(|{obj_ident}| {obj_ident}.{} == self.{id});",
+                    referential_attribute.as_ident(),
+                );
+            }
             emit!(buffer, "match {} {{", r_obj.as_ident());
             emit!(
                 buffer,
-                "Some(ref {}) => vec![{}],",
-                r_obj.as_ident(),
-                r_obj.as_ident()
+                "Some({obj_ident}) => vec![{obj_ident}],",
             );
             emit!(buffer, "None => Vec::new(),");
             emit!(buffer, "}}");
@@ -1345,7 +1354,7 @@ fn backward_assoc_many(
                     );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{});\"", r_obj.as_ident());
+                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
             } else {
                 emit!(
                     buffer,

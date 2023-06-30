@@ -86,7 +86,10 @@ impl ObjectStore {
     /// Exhume (get) [`A`] from the store.
     ///
     pub fn exhume_a(&self, id: usize) -> Option<Rc<RefCell<A>>> {
-        self.a.get(id).unwrap().clone()
+        match self.a.get(id) {
+            Some(a) => a.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`A`] from the store.
@@ -125,7 +128,10 @@ impl ObjectStore {
     /// Exhume (get) [`B`] from the store.
     ///
     pub fn exhume_b(&self, id: usize) -> Option<Rc<RefCell<B>>> {
-        self.b.get(id).unwrap().clone()
+        match self.b.get(id) {
+            Some(b) => b.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`B`] from the store.
@@ -164,7 +170,10 @@ impl ObjectStore {
     /// Exhume (get) [`C`] from the store.
     ///
     pub fn exhume_c(&self, id: usize) -> Option<Rc<RefCell<C>>> {
-        self.c.get(id).unwrap().clone()
+        match self.c.get(id) {
+            Some(c) => c.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`C`] from the store.
@@ -203,7 +212,10 @@ impl ObjectStore {
     /// Exhume (get) [`D`] from the store.
     ///
     pub fn exhume_d(&self, id: usize) -> Option<Rc<RefCell<D>>> {
-        self.d.get(id).unwrap().clone()
+        match self.d.get(id) {
+            Some(d) => d.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`D`] from the store.
@@ -242,7 +254,10 @@ impl ObjectStore {
     /// Exhume (get) [`Referent`] from the store.
     ///
     pub fn exhume_referent(&self, id: usize) -> Option<Rc<RefCell<Referent>>> {
-        self.referent.get(id).unwrap().clone()
+        match self.referent.get(id) {
+            Some(referent) => referent.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Referent`] from the store.

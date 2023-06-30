@@ -37,7 +37,7 @@ impl SimpleSubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            SimpleSubtypeA::OhBoy(id) => *id,
+            Self::OhBoy(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

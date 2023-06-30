@@ -26,7 +26,6 @@ pub struct Subtype {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-implementation"}}}
 impl Subtype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-new_"}}}
     /// Inter a new 'Subtype' in the store, and return it's `id`.
     pub fn new(isa: &Isa, obj_id: &Object, store: &mut SarzakStore) -> Subtype {
         let id = Uuid::new_v4();
@@ -36,9 +35,6 @@ impl Subtype {
             obj_id: obj_id.id,
         };
         store.inter_subtype(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

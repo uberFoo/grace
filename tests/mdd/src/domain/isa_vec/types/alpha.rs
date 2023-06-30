@@ -2,6 +2,8 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"alpha-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
+use tracy_client::span;
+use uuid::Uuid;
 
 use crate::domain::isa_vec::types::gamma::Gamma;
 use serde::{Deserialize, Serialize};
@@ -34,7 +36,7 @@ impl Alpha {
     ) -> Rc<RefCell<Alpha>> {
         store.inter_alpha(|id| {
             Rc::new(RefCell::new(Alpha {
-                name: name.clone(),
+                name: name.to_owned(),
                 subtype: AlphaEnum::Gamma(subtype.borrow().id),
                 id,
             }))

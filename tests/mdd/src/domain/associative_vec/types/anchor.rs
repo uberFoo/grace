@@ -1,11 +1,14 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"anchor-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-use-statements"}}}
+use std::cell::RefCell;
+use std::rc::Rc;
+use tracy_client::span;
 use uuid::Uuid;
 
-use crate::domain::associative_ts::types::subtype_anchor::SubtypeAnchor;
+use crate::domain::associative_vec::types::subtype_anchor::SubtypeAnchor;
 use serde::{Deserialize, Serialize};
 
-use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;
+use crate::domain::associative_vec::store::ObjectStore as AssociativeVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-documentation"}}}
@@ -25,31 +28,28 @@ use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-definition"}}}
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Anchor {
-    pub id: Uuid,
+    pub id: usize,
     pub number: i64,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-implementation"}}}
 impl Anchor {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new_"}}}
     /// Inter a new 'Anchor' in the store, and return it's `id`.
-    pub fn new(number: i64, store: &mut AssociativeTsStore) -> Anchor {
-        let id = Uuid::new_v4();
-        let new = Anchor { id, number };
-        store.inter_anchor(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-new_"}}}
-        new
+    pub fn new(number: i64, store: &mut AssociativeVecStore) -> Rc<RefCell<Anchor>> {
+        store.inter_anchor(|id| Rc::new(RefCell::new(Anchor { id, number })))
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-struct-impl-nav-backward-assoc-one-cond-to-subtype_anchor"}}}
     /// Navigate to [`SubtypeAnchor`] across R10(1-1c)
-    pub fn r10_subtype_anchor<'a>(&'a self, store: &'a AssociativeTsStore) -> Vec<&SubtypeAnchor> {
+    pub fn r10_subtype_anchor<'a>(
+        &'a self,
+        store: &'a AssociativeVecStore,
+    ) -> Vec<Rc<RefCell<SubtypeAnchor>>> {
+        span!("r10_subtype_anchor");
         let subtype_anchor = store
             .iter_subtype_anchor()
-            .find(|subtype_anchor| subtype_anchor.anchor_id == self.id);
+            .find(|subtype_anchor| subtype_anchor.borrow().anchor_id == self.id);
         match subtype_anchor {
             Some(subtype_anchor) => vec![subtype_anchor],
             None => Vec::new(),

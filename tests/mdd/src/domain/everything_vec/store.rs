@@ -71,7 +71,10 @@ impl ObjectStore {
     /// Exhume (get) [`Everything`] from the store.
     ///
     pub fn exhume_everything(&self, id: usize) -> Option<Rc<RefCell<Everything>>> {
-        self.everything.get(id).unwrap().clone()
+        match self.everything.get(id) {
+            Some(everything) => everything.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`Everything`] from the store.
@@ -115,7 +118,10 @@ impl ObjectStore {
     /// Exhume (get) [`RandoObject`] from the store.
     ///
     pub fn exhume_rando_object(&self, id: usize) -> Option<Rc<RefCell<RandoObject>>> {
-        self.rando_object.get(id).unwrap().clone()
+        match self.rando_object.get(id) {
+            Some(rando_object) => rando_object.clone(),
+            None => None,
+        }
     }
 
     /// Exorcise (remove) [`RandoObject`] from the store.

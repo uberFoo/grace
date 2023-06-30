@@ -12,7 +12,7 @@ use uuid::{uuid, Uuid};
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"shared-const-definition"}}}
-pub const SHARED: usize = 1;
+pub const SHARED: Uuid = uuid!["8f05f131-50d1-552e-930f-672ae2c316e1"];
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Shared;
@@ -22,7 +22,7 @@ impl Shared {
         Self {}
     }
 
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> Uuid {
         SHARED
     }
 }

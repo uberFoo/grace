@@ -1,39 +1,43 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"super_foo-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-use-statements"}}}
-use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
-use crate::domain::isa_vec::types::gamma::Gamma;
-use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 use tracy_client::span;
 use uuid::Uuid;
+
+use crate::domain::isa_vec::types::gamma::Gamma;
+use serde::{Deserialize, Serialize};
+
+use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-enum-definition"}}}
-#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub enum SuperFoo {
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-hybrid-struct-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct SuperFoo {
+    pub subtype: SuperFooEnum,
+    pub id: usize,
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-hybrid-enum-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub enum SuperFooEnum {
     Gamma(usize),
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-implementation"}}}
 impl SuperFoo {
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-new-impl"}}}
-    /// Create a new instance of SuperFoo::Gamma
-    pub fn new_gamma(gamma: &Rc<RefCell<Gamma>>, store: &mut IsaVecStore) -> Rc<RefCell<Self>> {
-        let id = gamma.borrow().id;
-        if let Some(gamma) = store.exhume_super_foo(id) {
-            gamma
-        } else {
-            store.inter_super_foo(|id| Rc::new(RefCell::new(Self::Gamma(id))))
-        }
-    }
-
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-get-id-impl"}}}
-    pub fn id(&self) -> usize {
-        match self {
-            SuperFoo::Gamma(id) => *id,
-        }
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-struct-impl-new_gamma"}}}
+    /// Inter a new SuperFoo in the store, and return it's `id`.
+    pub fn new_gamma(
+        subtype: &Rc<RefCell<Gamma>>,
+        store: &mut IsaVecStore,
+    ) -> Rc<RefCell<SuperFoo>> {
+        store.inter_super_foo(|id| {
+            Rc::new(RefCell::new(SuperFoo {
+                subtype: SuperFooEnum::Gamma(subtype.borrow().id),
+                id,
+            }))
+        })
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

@@ -907,6 +907,22 @@ pub(crate) fn render_new_instance(
                     }
                 ),
             },
+            GType::String => {
+                ensure!(
+                    field.ty == rval.ty,
+                    CompilerSnafu {
+                        description: format!(
+                            "type mismatch, found `{}: {:?}`, expected `{}: {:?}`",
+                            rval.name, rval.ty, field.name, field.ty
+                        )
+                    }
+                );
+                if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+                    emit!(buffer, "{}: {}.to_owned(),", field.name, rval.name)
+                } else {
+                    emit!(buffer, "{}: {},", field.name, rval.name)
+                }
+            }
             _ => {
                 ensure!(
                     field.ty == rval.ty,

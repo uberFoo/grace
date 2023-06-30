@@ -600,7 +600,10 @@ pub(crate) fn render_attributes(
         // Anyway, I'm doing the really ugly thing here.
         if attr.name == "id" && config.get_optimization_level() == &crate::OptimizationLevel::Vec {
             emit!(buffer, "pub {}: usize,", attr.as_ident());
-        } else {
+        } else if attr.name != "hack" {
+            // Ugly thing times two. The "hack" thing is added when we first process
+            // the domain. If it's a Vec store, we want to promote any enums to hybrids.
+            // This is the fast button.
             let ty = attr.r2_ty(domain.sarzak())[0];
             emit!(
                 buffer,
@@ -709,12 +712,18 @@ pub(crate) fn render_referential_attributes(
 pub(crate) fn render_associative_attributes(
     buffer: &mut Buffer,
     obj: &Object,
+    config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
         let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
         let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
+        let ty = if config.is_uber_store() && !config.is_imported(&obj.id) {
+            "usize"
+        } else {
+            "Uuid"
+        };
 
         for referent in referents {
             let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
@@ -731,7 +740,7 @@ pub(crate) fn render_associative_attributes(
             );
             emit!(
                 buffer,
-                "pub {}: Uuid,",
+                "pub {}: {ty},",
                 an_ass.referential_attribute.as_ident(),
             );
         }

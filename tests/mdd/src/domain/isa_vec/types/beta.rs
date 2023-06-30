@@ -38,7 +38,7 @@ impl Beta {
     ) -> Rc<RefCell<Beta>> {
         store.inter_beta(|id| {
             Rc::new(RefCell::new(Beta {
-                name: name.clone(),
+                name: name.to_owned(),
                 subtype: BetaEnum::Gamma(subtype.borrow().id),
                 id,
             }))
@@ -54,8 +54,8 @@ impl Beta {
     ) -> Rc<RefCell<Beta>> {
         store.inter_beta(|id| {
             Rc::new(RefCell::new(Beta {
-                name: name.clone(),
-                subtype: BetaEnum::SuperBar(subtype.borrow().id()),
+                name: name.to_owned(),
+                subtype: BetaEnum::SuperBar(subtype.borrow().id),
                 id,
             }))
         })

@@ -306,11 +306,23 @@ impl DomainStoreVec {
                                 buffer,
                                 "self.{obj_ident}{read}.get(id).map(|{obj_ident}| {obj_ident}.0.clone())",
 
-                            );//kts
+                            );
                         } else {
                             emit!(
                                 buffer,
-                                "self.{obj_ident}.get(id).unwrap().clone()",
+                                "match self.{obj_ident}.get(id) {{",
+                            );
+                            emit!(
+                                buffer,
+                                "Some({obj_ident}) => {obj_ident}.clone(),",
+                            );
+                            emit!(
+                                buffer,
+                                "None => None",
+                            );
+                            emit!(
+                                buffer,
+                                "}}",
                             );
                         }
                     } else if timestamp {

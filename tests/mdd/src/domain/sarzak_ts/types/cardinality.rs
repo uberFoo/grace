@@ -37,8 +37,8 @@ impl Cardinality {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"cardinality-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            Cardinality::Many(id) => *id,
-            Cardinality::One(id) => *id,
+            Self::Many(id) => *id,
+            Self::One(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

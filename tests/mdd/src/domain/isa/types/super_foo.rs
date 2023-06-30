@@ -26,7 +26,7 @@ impl SuperFoo {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            SuperFoo::Gamma(id) => *id,
+            Self::Gamma(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

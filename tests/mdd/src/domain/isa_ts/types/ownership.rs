@@ -41,8 +41,8 @@ impl Ownership {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            Ownership::Borrowed(id) => *id,
-            Ownership::Owned(id) => *id,
+            Self::Borrowed(id) => *id,
+            Self::Owned(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

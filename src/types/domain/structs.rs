@@ -304,7 +304,7 @@ impl CodeWriter for Struct {
 
                 render_attributes(buffer, obj, config, woog, domain)?;
                 render_referential_attributes(buffer, obj, config, woog, domain)?;
-                render_associative_attributes(buffer, obj, woog, domain)?;
+                render_associative_attributes(buffer, obj, config, woog, domain)?;
 
                 emit!(buffer, "}}");
                 Ok(())

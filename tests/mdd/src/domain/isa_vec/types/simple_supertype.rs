@@ -41,7 +41,7 @@ pub struct SimpleSupertype {
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SimpleSupertypeEnum {
     SimpleSubtypeA(usize),
-    SimpleSubtypeB(usize),
+    SimpleSubtypeB(Uuid),
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-implementation"}}}
@@ -56,7 +56,7 @@ impl SimpleSupertype {
         store.inter_simple_supertype(|id| {
             Rc::new(RefCell::new(SimpleSupertype {
                 state: state,
-                subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.borrow().id()),
+                subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.borrow().id),
                 id,
             }))
         })

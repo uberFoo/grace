@@ -10,7 +10,9 @@ use crate::domain::isa_vec::types::alpha::AlphaEnum;
 use crate::domain::isa_vec::types::beta::Beta;
 use crate::domain::isa_vec::types::beta::BetaEnum;
 use crate::domain::isa_vec::types::super_bar::SuperBar;
+use crate::domain::isa_vec::types::super_bar::SuperBarEnum;
 use crate::domain::isa_vec::types::super_foo::SuperFoo;
+use crate::domain::isa_vec::types::super_foo::SuperFooEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
@@ -71,14 +73,32 @@ impl Gamma {
     // Navigate to [`SuperBar`] across R12(isa)
     pub fn r12_super_bar<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<SuperBar>>> {
         span!("r12_super_bar");
-        vec![store.exhume_super_bar(self.id).unwrap()]
+        vec![store
+            .iter_super_bar()
+            .find(|super_bar| {
+                if let SuperBarEnum::Gamma(id) = super_bar.borrow().subtype {
+                    id == self.id
+                } else {
+                    false
+                }
+            })
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
     // Navigate to [`SuperFoo`] across R13(isa)
     pub fn r13_super_foo<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<SuperFoo>>> {
         span!("r13_super_foo");
-        vec![store.exhume_super_foo(self.id).unwrap()]
+        vec![store
+            .iter_super_foo()
+            .find(|super_foo| {
+                if let SuperFooEnum::Gamma(id) = super_foo.borrow().subtype {
+                    id == self.id
+                } else {
+                    false
+                }
+            })
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

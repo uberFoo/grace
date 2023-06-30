@@ -21,7 +21,7 @@ use snafu::prelude::*;
 use crate::{
     codegen::{
         generator::GeneratorBuilder, local_object_is_hybrid, local_object_is_singleton,
-        local_object_is_supertype, render::RenderIdent,
+        local_object_is_supertype, object_is_enum, render::RenderIdent,
     },
     options::{FromDomain, GraceCompilerOptions, GraceConfig},
     target::Target,
@@ -183,6 +183,22 @@ impl<'a> DomainTarget<'a> {
 
                     log::debug!("Loaded imported domain {}", io.domain);
                     imported_domains.insert(io.domain.clone(), domain);
+                }
+            }
+        }
+
+        if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+            let objects = domain.sarzak().iter_object().cloned().collect::<Vec<_>>();
+            // Find all the enums and add an id attribute so that they become hybrids.
+            for obj in objects {
+                if object_is_enum(&obj, &config, &Some(&imported_domains), &domain)? {
+                    log::debug!("Turning {} into a hybrid", &obj.name);
+                    sarzak::sarzak::Attribute::new(
+                        "hack".to_owned(),
+                        &obj,
+                        &Ty::new_s_uuid(),
+                        &mut domain.sarzak_mut(),
+                    );
                 }
             }
         }

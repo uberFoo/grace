@@ -86,8 +86,15 @@ mod tests {
 
         // Just making sure that they exist in the store. This will panic if they
         // do not.
-        store.exhume_ownership(mutable.borrow().id()).unwrap();
-        store.exhume_ownership(shared.borrow().id()).unwrap();
+        store.exhume_borrowed(mutable.borrow().id).unwrap();
+        store.exhume_borrowed(shared.borrow().id).unwrap();
+
+        let mutable = Ownership::new_borrowed(&mutable, &mut store);
+        let shared = Ownership::new_borrowed(&shared, &mut store);
+        let owned = Ownership::new_owned(&mut store);
+        store.exhume_ownership(mutable.borrow().id).unwrap();
+        store.exhume_ownership(shared.borrow().id).unwrap();
+        store.exhume_ownership(owned.borrow().id).unwrap();
     }
 
     #[test]

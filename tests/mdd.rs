@@ -591,6 +591,11 @@ test_target_domain!(
     "associative",
     "tests/mdd/models/associative.json"
 );
+test_target_domain_vec_store!(
+    associative_domain_vec,
+    "associative_vec",
+    "tests/mdd/models/associative.json"
+);
 test_target_domain_timestamps!(
     associative_domain_ts,
     "associative_ts",

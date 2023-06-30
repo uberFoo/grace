@@ -1,17 +1,21 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"borrowed-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-use-statements"}}}
-use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
-use crate::domain::isa_vec::types::mutable::MUTABLE;
-use crate::domain::isa_vec::types::ownership::Ownership;
-use crate::domain::isa_vec::types::shared::SHARED;
-use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 use tracy_client::span;
 use uuid::Uuid;
+
+use crate::domain::isa_vec::types::mutable::MUTABLE;
+use crate::domain::isa_vec::types::ownership::Ownership;
+use crate::domain::isa_vec::types::ownership::OwnershipEnum;
+use crate::domain::isa_vec::types::shared::SHARED;
+use serde::{Deserialize, Serialize};
+
+use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-enum-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-hybrid-documentation"}}}
 /// Borrowed
 ///
 /// The type is declared as borrowed.
@@ -20,41 +24,60 @@ use uuid::Uuid;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-enum-definition"}}}
-#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub enum Borrowed {
-    Mutable = 0,
-    Shared,
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-hybrid-struct-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct Borrowed {
+    pub subtype: BorrowedEnum,
+    pub id: usize,
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-hybrid-enum-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub enum BorrowedEnum {
+    Mutable(Uuid),
+    Shared(Uuid),
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-implementation"}}}
 impl Borrowed {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-new-impl"}}}
-    /// Create a new instance of Borrowed::Mutable
-    pub fn new_mutable(store: &IsaVecStore) -> Rc<RefCell<Self>> {
-        // This is already in the store.
-        store.exhume_borrowed(Self::Mutable as usize).unwrap()
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-struct-impl-new_mutable"}}}
+    /// Inter a new Borrowed in the store, and return it's `id`.
+    pub fn new_mutable(store: &mut IsaVecStore) -> Rc<RefCell<Borrowed>> {
+        store.inter_borrowed(|id| {
+            Rc::new(RefCell::new(Borrowed {
+                subtype: BorrowedEnum::Mutable(MUTABLE),
+                id,
+            }))
+        })
     }
-
-    /// Create a new instance of Borrowed::Shared
-    pub fn new_shared(store: &IsaVecStore) -> Rc<RefCell<Self>> {
-        // This is already in the store.
-        store.exhume_borrowed(Self::Shared as usize).unwrap()
-    }
-
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-get-id-impl"}}}
-    pub fn id(&self) -> usize {
-        match self {
-            Borrowed::Mutable => Borrowed::Mutable as usize,
-            Borrowed::Shared => Borrowed::Shared as usize,
-        }
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-struct-impl-new_shared"}}}
+    /// Inter a new Borrowed in the store, and return it's `id`.
+    pub fn new_shared(store: &mut IsaVecStore) -> Rc<RefCell<Borrowed>> {
+        store.inter_borrowed(|id| {
+            Rc::new(RefCell::new(Borrowed {
+                subtype: BorrowedEnum::Shared(SHARED),
+                id,
+            }))
+        })
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-impl-nav-subtype-to-supertype-ownership"}}}
     // Navigate to [`Ownership`] across R9(isa)
     pub fn r9_ownership<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Ownership>>> {
         span!("r9_ownership");
-        vec![store.exhume_ownership(self.id()).unwrap()]
+        vec![store
+            .iter_ownership()
+            .find(|ownership| {
+                if let OwnershipEnum::Borrowed(id) = ownership.borrow().subtype {
+                    id == self.id
+                } else {
+                    false
+                }
+            })
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

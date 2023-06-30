@@ -6,6 +6,7 @@ use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::simple_subtype_a::SimpleSubtypeA;
+use crate::domain::isa_vec::types::simple_subtype_a::SimpleSubtypeAEnum;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
@@ -52,7 +53,16 @@ impl OhBoy {
         store: &'a IsaVecStore,
     ) -> Vec<Rc<RefCell<SimpleSubtypeA>>> {
         span!("r8_simple_subtype_a");
-        vec![store.exhume_simple_subtype_a(self.id).unwrap()]
+        vec![store
+            .iter_simple_subtype_a()
+            .find(|simple_subtype_a| {
+                if let SimpleSubtypeAEnum::OhBoy(id) = simple_subtype_a.borrow().subtype {
+                    id == self.id
+                } else {
+                    false
+                }
+            })
+            .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

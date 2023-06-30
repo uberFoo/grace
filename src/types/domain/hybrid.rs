@@ -309,7 +309,7 @@ impl CodeWriter for Hybrid {
 
                 render_referential_attributes(buffer, obj, config, woog, domain)?;
 
-                render_associative_attributes(buffer, obj, woog, domain)?;
+                render_associative_attributes(buffer, obj, config, woog, domain)?;
 
                 emit!(buffer, "}}");
                 Ok(())
@@ -336,11 +336,31 @@ impl CodeWriter for Hybrid {
                 );
                 for subtype in &subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    emit!(
-                        buffer,
-                        "{}(Uuid),",
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                    );
+                    let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
+                    let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+
+                    if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
+                    {
+                        if is_singleton && !is_supertype {
+                            emit!(
+                                buffer,
+                                "{}(Uuid),",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "{}(usize),",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                            );
+                        }
+                    } else {
+                        emit!(
+                            buffer,
+                            "{}(Uuid),",
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        );
+                    }
                 }
                 emit!(buffer, "}}");
                 Ok(())
@@ -402,6 +422,7 @@ impl CodeWriter for HybridNewImpl {
         };
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        let obj_ident = obj.as_ident();
 
         let _is_uber = config.is_uber_store();
 
@@ -425,7 +446,7 @@ impl CodeWriter for HybridNewImpl {
         for attr in attrs {
             // We are going to generate the id, so don't include it in the
             // list of parameters.
-            if attr.name != "id" {
+            if attr.name != "id" && attr.name != "hack" {
                 let ty = attr.r2_ty(domain.sarzak())[0];
                 fields.push(LValue::new(attr.name.as_ident(), ty.into(), None));
                 params.push(Parameter::new(
@@ -615,7 +636,7 @@ impl CodeWriter for HybridNewImpl {
 
             buffer.block(
                 DirectiveKind::IgnoreOrig,
-                format!("{}-struct-impl-{}", obj.as_ident(), method_name),
+                format!("{obj_ident}-struct-impl-{method_name}"),
                 |buffer| {
                     // Output a docstring
                     emit!(
@@ -680,33 +701,44 @@ impl CodeWriter for HybridNewImpl {
                     //     }
                     // }
 
-                    emit!(buffer, "let id = Uuid::new_v4();");
-
-                    // Output code to create the instance
-                    let new = LValue::new("new", GType::Reference(obj.id), None);
-                    render_new_instance(
-                        buffer,
-                        obj,
-                        Some(&new),
-                        &fields_,
-                        &rvals,
-                        config,
-                        imports,
-                        woog,
-                        domain,
-                    )?;
-
-                    if config.is_uber_store() {
-                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                            emit!(buffer, "store.inter_{}(new.clone()).await;", obj.as_ident());
-                        } else {
-                            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
-                        }
+                    if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
+                    {
+                        emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                        render_new_instance(
+                            buffer, obj, None, &fields_, &rvals, config, imports, woog, domain,
+                        )?;
+                        emit!(buffer, "}})");
+                        emit!(buffer, "}}");
                     } else {
-                        emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                        emit!(buffer, "let id = Uuid::new_v4();");
+
+                        // Output code to create the instance
+                        let new = LValue::new("new", GType::Reference(obj.id), None);
+                        render_new_instance(
+                            buffer,
+                            obj,
+                            Some(&new),
+                            &fields_,
+                            &rvals,
+                            config,
+                            imports,
+                            woog,
+                            domain,
+                        )?;
+
+                        if config.is_uber_store() {
+                            if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap()
+                            {
+                                emit!(buffer, "store.inter_{obj_ident}(new.clone()).await;");
+                            } else {
+                                emit!(buffer, "store.inter_{obj_ident}(new.clone());");
+                            }
+                        } else {
+                            emit!(buffer, "store.inter_{obj_ident}(new.clone());");
+                        }
+                        emit!(buffer, "new");
+                        emit!(buffer, "}}");
                     }
-                    emit!(buffer, "new");
-                    emit!(buffer, "}}");
 
                     Ok(())
                 },

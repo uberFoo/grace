@@ -28,7 +28,7 @@ impl SuperBar {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            SuperBar::Gamma(id) => *id,
+            Self::Gamma(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

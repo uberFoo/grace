@@ -36,8 +36,8 @@ impl Conditionality {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"conditionality-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            Conditionality::Conditional(id) => *id,
-            Conditionality::Unconditional(id) => *id,
+            Self::Conditional(id) => *id,
+            Self::Unconditional(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

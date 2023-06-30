@@ -312,13 +312,50 @@ impl CodeWriter for Enum {
                     "pub enum {} {{",
                     obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
-                for subtype in &subtypes {
-                    let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    emit!(
-                        buffer,
-                        "{}(Uuid),",
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                    );
+
+                if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+                    // We need to plumb the depths of this tree to see if any of our
+                    // subtypes are also supertypes, and if they consist of only
+                    // singletons. If that's the case, we need to expand them out here,
+                    // so that
+                    let all_single = subtypes.iter().all(|subtype| {
+                        let s_obj = subtype.r15_object(domain.sarzak())[0];
+                        // These unwraps really bug me, and I don't know what else to do
+                        // inside of an `all` adaptor.
+                        let is_singleton =
+                            object_is_singleton(s_obj, config, imports, domain).unwrap();
+                        let is_supertype =
+                            object_is_supertype(s_obj, config, imports, domain).unwrap();
+
+                        is_singleton && !is_supertype
+                    });
+                    for (i, subtype) in subtypes.iter().enumerate() {
+                        let s_obj = subtype.r15_object(domain.sarzak())[0];
+
+                        if all_single {
+                            emit!(
+                                buffer,
+                                "{} = {i},",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                            );
+                        } else {
+                            emit!(
+                                buffer,
+                                "{}(usize),",
+                                s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                            );
+                        }
+                    }
+                } else {
+                    for subtype in &subtypes {
+                        let s_obj = subtype.r15_object(domain.sarzak())[0];
+
+                        emit!(
+                            buffer,
+                            "{}(Uuid),",
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        );
+                    }
                 }
                 emit!(buffer, "}}");
                 Ok(())
@@ -342,7 +379,7 @@ impl MethodImplementation for EnumGetIdImpl {}
 impl CodeWriter for EnumGetIdImpl {
     fn write_code(
         &self,
-        _config: &GraceConfig,
+        config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
         _imports: &Option<&HashMap<String, Domain>>,
@@ -373,16 +410,29 @@ impl CodeWriter for EnumGetIdImpl {
             DirectiveKind::IgnoreOrig,
             format!("{}-get-id-impl", obj.as_ident()),
             |buffer| {
-                emit!(buffer, "pub fn id(&self) -> Uuid {{");
+                if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+                    emit!(buffer, "pub fn id(&self) -> usize {{");
+                } else {
+                    emit!(buffer, "pub fn id(&self) -> Uuid {{");
+                }
                 emit!(buffer, "match self {{");
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    emit!(
-                        buffer,
-                        "{}::{}(id) => *id,",
-                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                    );
+                    if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
+                    {
+                        emit!(
+                            buffer,
+                            "Self::{} => Self::{} as usize,",
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "Self::{}(id) => *id,",
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                        );
+                    }
                 }
                 emit!(buffer, "}}");
                 emit!(buffer, "}}");
@@ -534,20 +584,38 @@ impl CodeWriter for EnumNewImpl {
                                     s_obj.as_const()
                                 );
                             } else {
-                                emit!(
-                                    buffer,
-                                    "pub fn new_{s_obj_ident}(store: &{}) -> {ret_type} {{",
-                                    store.name
-                                );
-                                emit!(
-                                    buffer,
-                                    "// This is already in the store."
-                                );
-                                emit!(
-                                    buffer,
-                                    "store.exhume_{obj_ident}(&{}).unwrap()",
-                                    s_obj.as_const()
-                                );
+                                if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
+                                {
+                                    emit!(
+                                        buffer,
+                                        "pub fn new_{s_obj_ident}(store: &{}) -> {ret_type} {{",
+                                        store.name
+                                    );
+                                    emit!(
+                                        buffer,
+                                        "// This is already in the store."
+                                    );
+                                    emit!(
+                                        buffer,
+                                        "store.exhume_{obj_ident}(Self::{} as usize).unwrap()",
+                                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                    );
+                                } else {
+                                    emit!(
+                                        buffer,
+                                        "pub fn new_{s_obj_ident}(store: &{}) -> {ret_type} {{",
+                                        store.name
+                                    );
+                                    emit!(
+                                        buffer,
+                                        "// This is already in the store."
+                                    );
+                                    emit!(
+                                        buffer,
+                                        "store.exhume_{obj_ident}(&{}).unwrap()",
+                                        s_obj.as_const()
+                                    );
+                                }
                             }
 
                         } else {
@@ -707,18 +775,18 @@ impl CodeWriter for EnumNewImpl {
                                     emit!(buffer, "store.inter_{obj_ident}(new.clone()).await;");
                                 } else {
                                     emit!(
-                                        buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(&id) {{"
+                                        buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(id) {{"
                                     );
                                     emit!(buffer, "{s_obj_ident}");
                                     emit!(buffer, "}} else {{");
+                                    emit!(buffer, "store.inter_{obj_ident}(|id| {{");
                                     emit!(
                                         buffer,
-                                        "let new = {ctor}(id){tail};"
+                                        "{ctor}(id){tail}"
                                     );
-                                    emit!(buffer, "store.inter_{obj_ident}(new.clone());");
                                 }
 
-                                emit!(buffer, "new");
+                                emit!(buffer, "}})");
                                 emit!(buffer, "}}");
                             // }
                         } else {

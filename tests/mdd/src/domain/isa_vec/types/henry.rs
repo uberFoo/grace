@@ -33,7 +33,7 @@ impl Henry {
             Rc::new(RefCell::new(Henry {
                 id,
                 last_name: last_name.to_owned(),
-                bar: bar.borrow().id(),
+                bar: bar.borrow().id,
             }))
         })
     }

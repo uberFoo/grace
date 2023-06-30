@@ -13,7 +13,7 @@ use uuid::{uuid, Uuid};
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_b-const-definition"}}}
-pub const SIMPLE_SUBTYPE_B: usize = 0;
+pub const SIMPLE_SUBTYPE_B: Uuid = uuid!["860ddc36-2540-5ebe-84e9-157e0350e01e"];
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct SimpleSubtypeB;
@@ -23,7 +23,7 @@ impl SimpleSubtypeB {
         Self {}
     }
 
-    pub fn id(&self) -> usize {
+    pub fn id(&self) -> Uuid {
         SIMPLE_SUBTYPE_B
     }
 }

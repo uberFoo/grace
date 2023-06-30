@@ -55,9 +55,9 @@ impl Relationship {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            Relationship::Associative(id) => *id,
-            Relationship::Binary(id) => *id,
-            Relationship::Isa(id) => *id,
+            Self::Associative(id) => *id,
+            Self::Binary(id) => *id,
+            Self::Isa(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

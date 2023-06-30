@@ -42,8 +42,8 @@ impl Borrowed {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            Borrowed::Mutable(id) => *id,
-            Borrowed::Shared(id) => *id,
+            Self::Mutable(id) => *id,
+            Self::Shared(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

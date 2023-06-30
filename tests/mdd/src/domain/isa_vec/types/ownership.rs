@@ -1,16 +1,19 @@
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"ownership-struct-definition-file"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-use-statements"}}}
-use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
-use crate::domain::isa_vec::types::borrowed::Borrowed;
-use crate::domain::isa_vec::types::owned::OWNED;
-use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::rc::Rc;
 use tracy_client::span;
 use uuid::Uuid;
+
+use crate::domain::isa_vec::types::borrowed::Borrowed;
+use crate::domain::isa_vec::types::owned::OWNED;
+use serde::{Deserialize, Serialize};
+
+use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-enum-documentation"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-hybrid-documentation"}}}
 /// Type Ownership
 ///
 /// This is tied closely with Rust. There are tthree possible options: owned, mutable and borrowed
@@ -18,42 +21,47 @@ use uuid::Uuid;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-enum-definition"}}}
-#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
-pub enum Ownership {
-    // What I want:
-    BorrowedMutable = 0,
-    BorrowedShared = 1,
-    Owned = 2,
-    // Borrowed(Borrowed),
-    // Owned,
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-hybrid-struct-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct Ownership {
+    pub subtype: OwnershipEnum,
+    pub id: usize,
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-hybrid-enum-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub enum OwnershipEnum {
+    Borrowed(usize),
+    Owned(Uuid),
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-implementation"}}}
 impl Ownership {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-new-impl"}}}
-    /// Create a new instance of Ownership::Borrowed
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-struct-impl-new_borrowed"}}}
+    /// Inter a new Ownership in the store, and return it's `id`.
     pub fn new_borrowed(
-        borrowed: &Rc<RefCell<Borrowed>>,
+        subtype: &Rc<RefCell<Borrowed>>,
         store: &mut IsaVecStore,
-    ) -> Rc<RefCell<Self>> {
-        let id = borrowed.borrow().id();
-        store.exhume_ownership(id).unwrap()
+    ) -> Rc<RefCell<Ownership>> {
+        store.inter_ownership(|id| {
+            Rc::new(RefCell::new(Ownership {
+                subtype: OwnershipEnum::Borrowed(subtype.borrow().id),
+                id,
+            }))
+        })
     }
-
-    /// Create a new instance of Ownership::Owned
-    pub fn new_owned(store: &IsaVecStore) -> Rc<RefCell<Self>> {
-        // This is already in the store.
-        store.exhume_ownership(Self::Owned as usize).unwrap()
-    }
-
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-get-id-impl"}}}
-    pub fn id(&self) -> usize {
-        match self {
-            Ownership::BorrowedMutable => Self::BorrowedMutable as usize,
-            Ownership::BorrowedShared => Self::BorrowedShared as usize,
-            Ownership::Owned => Ownership::Owned as usize,
-        }
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-struct-impl-new_owned"}}}
+    /// Inter a new Ownership in the store, and return it's `id`.
+    pub fn new_owned(store: &mut IsaVecStore) -> Rc<RefCell<Ownership>> {
+        store.inter_ownership(|id| {
+            Rc::new(RefCell::new(Ownership {
+                subtype: OwnershipEnum::Owned(OWNED),
+                id,
+            }))
+        })
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

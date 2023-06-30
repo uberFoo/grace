@@ -9,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-const-documentation"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-enum-documentation"}}}
 /// Simple [`Subtype`] A
 ///
@@ -18,7 +17,6 @@ use uuid::Uuid;
 /// ❗️{ "singleton_object": true }
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-const-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-enum-definition"}}}
 #[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum SimpleSubtypeA {
@@ -39,7 +37,7 @@ impl SimpleSubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-get-id-impl"}}}
     pub fn id(&self) -> Uuid {
         match self {
-            SimpleSubtypeA::OhBoy(id) => *id,
+            Self::OhBoy(id) => *id,
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -121,7 +121,7 @@ impl FileGenerator for ExternalGenerator {
 
                 render_attributes(buffer, object, config, woog, domain)?;
                 render_referential_attributes(buffer, object, config, woog, domain)?;
-                render_associative_attributes(buffer, object, woog, domain)?;
+                render_associative_attributes(buffer, object, config, woog, domain)?;
                 emit!(buffer, "inner: {},", external.name);
 
                 emit!(buffer, "}}");
