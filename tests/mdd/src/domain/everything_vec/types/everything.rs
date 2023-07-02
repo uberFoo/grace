@@ -58,7 +58,7 @@ impl Everything {
         store: &'a EverythingVecStore,
     ) -> Vec<Rc<RefCell<RandoObject>>> {
         span!("r1_rando_object");
-        vec![store.exhume_rando_object(self.rando).unwrap()]
+        vec![store.exhume_rando_object(&self.rando).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

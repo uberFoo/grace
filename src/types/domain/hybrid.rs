@@ -341,7 +341,7 @@ impl CodeWriter for Hybrid {
 
                     if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
                     {
-                        if is_singleton && !is_supertype {
+                        if is_singleton && !is_supertype || config.is_imported(&s_obj.id) {
                             emit!(
                                 buffer,
                                 "{}(Uuid),",

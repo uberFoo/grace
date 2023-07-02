@@ -175,17 +175,7 @@ pub(crate) use get_objs_for_binary_referents_sorted;
 macro_rules! get_binary_referrers_sorted {
     ($obj:expr, $store:expr) => {{
         let mut referrers = $obj.r17_referrer($store);
-        referrers.sort_by(|a, b| {
-            let binary = a.r6_binary($store)[0];
-            let referent = binary.r5_referent($store)[0];
-            let obj_a = referent.r16_object($store)[0];
-
-            let binary = b.r6_binary($store)[0];
-            let referent = binary.r5_referent($store)[0];
-            let obj_b = referent.r16_object($store)[0];
-
-            obj_a.name.cmp(&obj_b.name)
-        });
+        referrers.sort_by(|a, b| a.referential_attribute.cmp(&b.referential_attribute));
 
         referrers
     }};

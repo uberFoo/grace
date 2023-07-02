@@ -1,7 +1,6 @@
 .VSCodeCounter
 .DS_Store
 **/target
-/Cargo.lock
 coverage.lcov
 **/tmp
 !src/target

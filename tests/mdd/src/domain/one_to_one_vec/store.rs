@@ -71,13 +71,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<A>>,
     {
-        if let Some(index) = self.a_free_list.lock().unwrap().pop() {
-            let a = a(index);
-            self.a[index] = Some(a.clone());
+        if let Some(_index) = self.a_free_list.lock().unwrap().pop() {
+            let a = a(_index);
+            self.a[_index] = Some(a.clone());
             a
         } else {
-            let index = self.a.len();
-            let a = a(index);
+            let _index = self.a.len();
+            let a = a(_index);
             self.a.push(Some(a.clone()));
             a
         }
@@ -85,8 +85,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`A`] from the store.
     ///
-    pub fn exhume_a(&self, id: usize) -> Option<Rc<RefCell<A>>> {
-        match self.a.get(id) {
+    pub fn exhume_a(&self, id: &usize) -> Option<Rc<RefCell<A>>> {
+        match self.a.get(*id) {
             Some(a) => a.clone(),
             None => None,
         }
@@ -94,9 +94,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`A`] from the store.
     ///
-    pub fn exorcise_a(&mut self, id: usize) -> Option<Rc<RefCell<A>>> {
-        let result = self.a[id].take();
-        self.a_free_list.lock().unwrap().push(id);
+    pub fn exorcise_a(&mut self, id: &usize) -> Option<Rc<RefCell<A>>> {
+        let result = self.a[*id].take();
+        self.a_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -113,13 +113,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<B>>,
     {
-        if let Some(index) = self.b_free_list.lock().unwrap().pop() {
-            let b = b(index);
-            self.b[index] = Some(b.clone());
+        if let Some(_index) = self.b_free_list.lock().unwrap().pop() {
+            let b = b(_index);
+            self.b[_index] = Some(b.clone());
             b
         } else {
-            let index = self.b.len();
-            let b = b(index);
+            let _index = self.b.len();
+            let b = b(_index);
             self.b.push(Some(b.clone()));
             b
         }
@@ -127,8 +127,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`B`] from the store.
     ///
-    pub fn exhume_b(&self, id: usize) -> Option<Rc<RefCell<B>>> {
-        match self.b.get(id) {
+    pub fn exhume_b(&self, id: &usize) -> Option<Rc<RefCell<B>>> {
+        match self.b.get(*id) {
             Some(b) => b.clone(),
             None => None,
         }
@@ -136,9 +136,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`B`] from the store.
     ///
-    pub fn exorcise_b(&mut self, id: usize) -> Option<Rc<RefCell<B>>> {
-        let result = self.b[id].take();
-        self.b_free_list.lock().unwrap().push(id);
+    pub fn exorcise_b(&mut self, id: &usize) -> Option<Rc<RefCell<B>>> {
+        let result = self.b[*id].take();
+        self.b_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -155,13 +155,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<C>>,
     {
-        if let Some(index) = self.c_free_list.lock().unwrap().pop() {
-            let c = c(index);
-            self.c[index] = Some(c.clone());
+        if let Some(_index) = self.c_free_list.lock().unwrap().pop() {
+            let c = c(_index);
+            self.c[_index] = Some(c.clone());
             c
         } else {
-            let index = self.c.len();
-            let c = c(index);
+            let _index = self.c.len();
+            let c = c(_index);
             self.c.push(Some(c.clone()));
             c
         }
@@ -169,8 +169,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`C`] from the store.
     ///
-    pub fn exhume_c(&self, id: usize) -> Option<Rc<RefCell<C>>> {
-        match self.c.get(id) {
+    pub fn exhume_c(&self, id: &usize) -> Option<Rc<RefCell<C>>> {
+        match self.c.get(*id) {
             Some(c) => c.clone(),
             None => None,
         }
@@ -178,9 +178,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`C`] from the store.
     ///
-    pub fn exorcise_c(&mut self, id: usize) -> Option<Rc<RefCell<C>>> {
-        let result = self.c[id].take();
-        self.c_free_list.lock().unwrap().push(id);
+    pub fn exorcise_c(&mut self, id: &usize) -> Option<Rc<RefCell<C>>> {
+        let result = self.c[*id].take();
+        self.c_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -197,13 +197,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Parameter>>,
     {
-        if let Some(index) = self.parameter_free_list.lock().unwrap().pop() {
-            let parameter = parameter(index);
-            self.parameter[index] = Some(parameter.clone());
+        if let Some(_index) = self.parameter_free_list.lock().unwrap().pop() {
+            let parameter = parameter(_index);
+            self.parameter[_index] = Some(parameter.clone());
             parameter
         } else {
-            let index = self.parameter.len();
-            let parameter = parameter(index);
+            let _index = self.parameter.len();
+            let parameter = parameter(_index);
             self.parameter.push(Some(parameter.clone()));
             parameter
         }
@@ -211,8 +211,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Parameter`] from the store.
     ///
-    pub fn exhume_parameter(&self, id: usize) -> Option<Rc<RefCell<Parameter>>> {
-        match self.parameter.get(id) {
+    pub fn exhume_parameter(&self, id: &usize) -> Option<Rc<RefCell<Parameter>>> {
+        match self.parameter.get(*id) {
             Some(parameter) => parameter.clone(),
             None => None,
         }
@@ -220,9 +220,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Parameter`] from the store.
     ///
-    pub fn exorcise_parameter(&mut self, id: usize) -> Option<Rc<RefCell<Parameter>>> {
-        let result = self.parameter[id].take();
-        self.parameter_free_list.lock().unwrap().push(id);
+    pub fn exorcise_parameter(&mut self, id: &usize) -> Option<Rc<RefCell<Parameter>>> {
+        let result = self.parameter[*id].take();
+        self.parameter_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -244,13 +244,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Referent>>,
     {
-        if let Some(index) = self.referent_free_list.lock().unwrap().pop() {
-            let referent = referent(index);
-            self.referent[index] = Some(referent.clone());
+        if let Some(_index) = self.referent_free_list.lock().unwrap().pop() {
+            let referent = referent(_index);
+            self.referent[_index] = Some(referent.clone());
             referent
         } else {
-            let index = self.referent.len();
-            let referent = referent(index);
+            let _index = self.referent.len();
+            let referent = referent(_index);
             self.referent.push(Some(referent.clone()));
             referent
         }
@@ -258,8 +258,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Referent`] from the store.
     ///
-    pub fn exhume_referent(&self, id: usize) -> Option<Rc<RefCell<Referent>>> {
-        match self.referent.get(id) {
+    pub fn exhume_referent(&self, id: &usize) -> Option<Rc<RefCell<Referent>>> {
+        match self.referent.get(*id) {
             Some(referent) => referent.clone(),
             None => None,
         }
@@ -267,9 +267,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Referent`] from the store.
     ///
-    pub fn exorcise_referent(&mut self, id: usize) -> Option<Rc<RefCell<Referent>>> {
-        let result = self.referent[id].take();
-        self.referent_free_list.lock().unwrap().push(id);
+    pub fn exorcise_referent(&mut self, id: &usize) -> Option<Rc<RefCell<Referent>>> {
+        let result = self.referent[*id].take();
+        self.referent_free_list.lock().unwrap().push(*id);
         result
     }
 

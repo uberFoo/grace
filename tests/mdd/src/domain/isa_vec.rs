@@ -28,8 +28,8 @@ mod tests {
         let a = SimpleSupertype::new_simple_subtype_a(true, &z, &mut store);
         let b = SimpleSupertype::new_simple_subtype_b(false, &mut store);
 
-        assert_eq!(a, store.exhume_simple_supertype(a.borrow().id).unwrap());
-        assert_eq!(b, store.exhume_simple_supertype(b.borrow().id).unwrap());
+        assert_eq!(a, store.exhume_simple_supertype(&a.borrow().id).unwrap());
+        assert_eq!(b, store.exhume_simple_supertype(&b.borrow().id).unwrap());
 
         assert_eq!(a, z.borrow().r1_simple_supertype(&store)[0]);
 
@@ -40,9 +40,9 @@ mod tests {
         let sb = SuperT::new_subtype_b(&r, &b, &mut store);
 
         // assert_eq!(&a, store.exhume_subtype_a(&a.id).unwrap());
-        assert_eq!(b, store.exhume_subtype_b(b.borrow().id).unwrap());
-        assert_eq!(sa, store.exhume_super_t(sa.borrow().id).unwrap());
-        assert_eq!(sb, store.exhume_super_t(sb.borrow().id).unwrap());
+        assert_eq!(b, store.exhume_subtype_b(&b.borrow().id).unwrap());
+        assert_eq!(sa, store.exhume_super_t(&sa.borrow().id).unwrap());
+        assert_eq!(sb, store.exhume_super_t(&sb.borrow().id).unwrap());
 
         assert_eq!(sa, a.borrow().r2_super_t(&store)[0]);
         assert_eq!(sb, b.borrow().r2_super_t(&store)[0]);
@@ -86,15 +86,15 @@ mod tests {
 
         // Just making sure that they exist in the store. This will panic if they
         // do not.
-        store.exhume_borrowed(mutable.borrow().id).unwrap();
-        store.exhume_borrowed(shared.borrow().id).unwrap();
+        store.exhume_borrowed(&mutable.borrow().id).unwrap();
+        store.exhume_borrowed(&shared.borrow().id).unwrap();
 
         let mutable = Ownership::new_borrowed(&mutable, &mut store);
         let shared = Ownership::new_borrowed(&shared, &mut store);
         let owned = Ownership::new_owned(&mut store);
-        store.exhume_ownership(mutable.borrow().id).unwrap();
-        store.exhume_ownership(shared.borrow().id).unwrap();
-        store.exhume_ownership(owned.borrow().id).unwrap();
+        store.exhume_ownership(&mutable.borrow().id).unwrap();
+        store.exhume_ownership(&shared.borrow().id).unwrap();
+        store.exhume_ownership(&owned.borrow().id).unwrap();
     }
 
     #[test]

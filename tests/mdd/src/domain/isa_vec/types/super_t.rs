@@ -75,7 +75,7 @@ impl SuperT {
     /// Navigate to [`Reference`] across R88(1-*)
     pub fn r88_reference<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Reference>>> {
         span!("r88_reference");
-        vec![store.exhume_reference(self.pointer).unwrap()]
+        vec![store.exhume_reference(&self.pointer).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-nav-backward-cond-to-not_important"}}}

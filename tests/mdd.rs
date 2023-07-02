@@ -514,8 +514,9 @@ macro_rules! test_target_dwarf {
 }
 // This is an imported domain that we need to build, so get it done early.
 test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak.json");
+test_target_domain_vec_store!(sarzak_vec, "sarzak_vec", "../sarzak/models/sarzak.json");
 test_target_domain_timestamps!(sarzak_ts, "sarzak_ts", "../sarzak/models/sarzak.json");
-test_target_dwarf!(sarzak_dwarf, "sarzak", "../sarzak/models/sarzak.json");
+test_target_dwarf!(sarzak_dwarf, "sarzak_dwarf", "../sarzak/models/sarzak.json");
 
 // Domain Target Tests
 test_target_domain!(
@@ -615,6 +616,13 @@ test_target_domain!(
     "domain/sarzak",
     "domain/isa"
 );
+test_target_domain_vec_store!(
+    imported_object_domain_vec,
+    "imported_object_vec",
+    "tests/mdd/models/imported_object.json",
+    "domain/sarzak",
+    "domain/isa"
+);
 test_target_domain_timestamps!(
     imported_object_domain_ts,
     "imported_object_ts",
@@ -629,6 +637,11 @@ test_target_domain_timestamps!(
 // );
 
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
+test_target_domain_vec_store!(
+    external_vec,
+    "external_vec",
+    "tests/mdd/models/external.json"
+);
 test_target_domain_timestamps!(external_ts, "external_ts", "tests/mdd/models/external.json");
 test_target_dwarf!(
     external_dwarf,

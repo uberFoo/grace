@@ -45,7 +45,7 @@ impl Baz {
         store: &'a IsaVecStore,
     ) -> Vec<Rc<RefCell<SimpleSupertype>>> {
         span!("r4_simple_supertype");
-        vec![store.exhume_simple_supertype(self.fugue).unwrap()]
+        vec![store.exhume_simple_supertype(&self.fugue).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

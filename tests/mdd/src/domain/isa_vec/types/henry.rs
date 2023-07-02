@@ -45,7 +45,7 @@ impl Henry {
         store: &'a IsaVecStore,
     ) -> Vec<Rc<RefCell<SimpleSubtypeA>>> {
         span!("r3_simple_subtype_a");
-        vec![store.exhume_simple_subtype_a(self.bar).unwrap()]
+        vec![store.exhume_simple_subtype_a(&self.bar).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

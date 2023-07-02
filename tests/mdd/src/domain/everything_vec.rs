@@ -63,10 +63,10 @@ mod tests {
         assert_eq!(e.borrow().int, 42);
         assert_eq!(e.borrow().rando, r.borrow().id);
 
-        let r_prime = store.exhume_rando_object(r.borrow().id).unwrap();
+        let r_prime = store.exhume_rando_object(&r.borrow().id).unwrap();
         assert_eq!(r, r_prime);
 
-        let e_prime = store.exhume_everything(e.borrow().id).unwrap();
+        let e_prime = store.exhume_everything(&e.borrow().id).unwrap();
         assert_eq!(e, e_prime);
     }
 

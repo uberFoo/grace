@@ -81,13 +81,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<AcknowledgedEvent>>,
     {
-        if let Some(index) = self.acknowledged_event_free_list.lock().unwrap().pop() {
-            let acknowledged_event = acknowledged_event(index);
-            self.acknowledged_event[index] = Some(acknowledged_event.clone());
+        if let Some(_index) = self.acknowledged_event_free_list.lock().unwrap().pop() {
+            let acknowledged_event = acknowledged_event(_index);
+            self.acknowledged_event[_index] = Some(acknowledged_event.clone());
             acknowledged_event
         } else {
-            let index = self.acknowledged_event.len();
-            let acknowledged_event = acknowledged_event(index);
+            let _index = self.acknowledged_event.len();
+            let acknowledged_event = acknowledged_event(_index);
             self.acknowledged_event
                 .push(Some(acknowledged_event.clone()));
             acknowledged_event
@@ -96,8 +96,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`AcknowledgedEvent`] from the store.
     ///
-    pub fn exhume_acknowledged_event(&self, id: usize) -> Option<Rc<RefCell<AcknowledgedEvent>>> {
-        match self.acknowledged_event.get(id) {
+    pub fn exhume_acknowledged_event(&self, id: &usize) -> Option<Rc<RefCell<AcknowledgedEvent>>> {
+        match self.acknowledged_event.get(*id) {
             Some(acknowledged_event) => acknowledged_event.clone(),
             None => None,
         }
@@ -107,10 +107,10 @@ impl ObjectStore {
     ///
     pub fn exorcise_acknowledged_event(
         &mut self,
-        id: usize,
+        id: &usize,
     ) -> Option<Rc<RefCell<AcknowledgedEvent>>> {
-        let result = self.acknowledged_event[id].take();
-        self.acknowledged_event_free_list.lock().unwrap().push(id);
+        let result = self.acknowledged_event[*id].take();
+        self.acknowledged_event_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -134,13 +134,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Anchor>>,
     {
-        if let Some(index) = self.anchor_free_list.lock().unwrap().pop() {
-            let anchor = anchor(index);
-            self.anchor[index] = Some(anchor.clone());
+        if let Some(_index) = self.anchor_free_list.lock().unwrap().pop() {
+            let anchor = anchor(_index);
+            self.anchor[_index] = Some(anchor.clone());
             anchor
         } else {
-            let index = self.anchor.len();
-            let anchor = anchor(index);
+            let _index = self.anchor.len();
+            let anchor = anchor(_index);
             self.anchor.push(Some(anchor.clone()));
             anchor
         }
@@ -148,8 +148,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Anchor`] from the store.
     ///
-    pub fn exhume_anchor(&self, id: usize) -> Option<Rc<RefCell<Anchor>>> {
-        match self.anchor.get(id) {
+    pub fn exhume_anchor(&self, id: &usize) -> Option<Rc<RefCell<Anchor>>> {
+        match self.anchor.get(*id) {
             Some(anchor) => anchor.clone(),
             None => None,
         }
@@ -157,9 +157,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Anchor`] from the store.
     ///
-    pub fn exorcise_anchor(&mut self, id: usize) -> Option<Rc<RefCell<Anchor>>> {
-        let result = self.anchor[id].take();
-        self.anchor_free_list.lock().unwrap().push(id);
+    pub fn exorcise_anchor(&mut self, id: &usize) -> Option<Rc<RefCell<Anchor>>> {
+        let result = self.anchor[*id].take();
+        self.anchor_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -181,13 +181,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Event>>,
     {
-        if let Some(index) = self.event_free_list.lock().unwrap().pop() {
-            let event = event(index);
-            self.event[index] = Some(event.clone());
+        if let Some(_index) = self.event_free_list.lock().unwrap().pop() {
+            let event = event(_index);
+            self.event[_index] = Some(event.clone());
             event
         } else {
-            let index = self.event.len();
-            let event = event(index);
+            let _index = self.event.len();
+            let event = event(_index);
             self.event.push(Some(event.clone()));
             event
         }
@@ -195,8 +195,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Event`] from the store.
     ///
-    pub fn exhume_event(&self, id: usize) -> Option<Rc<RefCell<Event>>> {
-        match self.event.get(id) {
+    pub fn exhume_event(&self, id: &usize) -> Option<Rc<RefCell<Event>>> {
+        match self.event.get(*id) {
             Some(event) => event.clone(),
             None => None,
         }
@@ -204,9 +204,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Event`] from the store.
     ///
-    pub fn exorcise_event(&mut self, id: usize) -> Option<Rc<RefCell<Event>>> {
-        let result = self.event[id].take();
-        self.event_free_list.lock().unwrap().push(id);
+    pub fn exorcise_event(&mut self, id: &usize) -> Option<Rc<RefCell<Event>>> {
+        let result = self.event[*id].take();
+        self.event_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -223,13 +223,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<IsaUi>>,
     {
-        if let Some(index) = self.isa_ui_free_list.lock().unwrap().pop() {
-            let isa_ui = isa_ui(index);
-            self.isa_ui[index] = Some(isa_ui.clone());
+        if let Some(_index) = self.isa_ui_free_list.lock().unwrap().pop() {
+            let isa_ui = isa_ui(_index);
+            self.isa_ui[_index] = Some(isa_ui.clone());
             isa_ui
         } else {
-            let index = self.isa_ui.len();
-            let isa_ui = isa_ui(index);
+            let _index = self.isa_ui.len();
+            let isa_ui = isa_ui(_index);
             self.isa_ui.push(Some(isa_ui.clone()));
             isa_ui
         }
@@ -237,8 +237,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`IsaUi`] from the store.
     ///
-    pub fn exhume_isa_ui(&self, id: usize) -> Option<Rc<RefCell<IsaUi>>> {
-        match self.isa_ui.get(id) {
+    pub fn exhume_isa_ui(&self, id: &usize) -> Option<Rc<RefCell<IsaUi>>> {
+        match self.isa_ui.get(*id) {
             Some(isa_ui) => isa_ui.clone(),
             None => None,
         }
@@ -246,9 +246,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`IsaUi`] from the store.
     ///
-    pub fn exorcise_isa_ui(&mut self, id: usize) -> Option<Rc<RefCell<IsaUi>>> {
-        let result = self.isa_ui[id].take();
-        self.isa_ui_free_list.lock().unwrap().push(id);
+    pub fn exorcise_isa_ui(&mut self, id: &usize) -> Option<Rc<RefCell<IsaUi>>> {
+        let result = self.isa_ui[*id].take();
+        self.isa_ui_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -270,13 +270,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<State>>,
     {
-        if let Some(index) = self.state_free_list.lock().unwrap().pop() {
-            let state = state(index);
-            self.state[index] = Some(state.clone());
+        if let Some(_index) = self.state_free_list.lock().unwrap().pop() {
+            let state = state(_index);
+            self.state[_index] = Some(state.clone());
             state
         } else {
-            let index = self.state.len();
-            let state = state(index);
+            let _index = self.state.len();
+            let state = state(_index);
             self.state.push(Some(state.clone()));
             state
         }
@@ -284,8 +284,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`State`] from the store.
     ///
-    pub fn exhume_state(&self, id: usize) -> Option<Rc<RefCell<State>>> {
-        match self.state.get(id) {
+    pub fn exhume_state(&self, id: &usize) -> Option<Rc<RefCell<State>>> {
+        match self.state.get(*id) {
             Some(state) => state.clone(),
             None => None,
         }
@@ -293,9 +293,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`State`] from the store.
     ///
-    pub fn exorcise_state(&mut self, id: usize) -> Option<Rc<RefCell<State>>> {
-        let result = self.state[id].take();
-        self.state_free_list.lock().unwrap().push(id);
+    pub fn exorcise_state(&mut self, id: &usize) -> Option<Rc<RefCell<State>>> {
+        let result = self.state[*id].take();
+        self.state_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -312,13 +312,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SubtypeAnchor>>,
     {
-        if let Some(index) = self.subtype_anchor_free_list.lock().unwrap().pop() {
-            let subtype_anchor = subtype_anchor(index);
-            self.subtype_anchor[index] = Some(subtype_anchor.clone());
+        if let Some(_index) = self.subtype_anchor_free_list.lock().unwrap().pop() {
+            let subtype_anchor = subtype_anchor(_index);
+            self.subtype_anchor[_index] = Some(subtype_anchor.clone());
             subtype_anchor
         } else {
-            let index = self.subtype_anchor.len();
-            let subtype_anchor = subtype_anchor(index);
+            let _index = self.subtype_anchor.len();
+            let subtype_anchor = subtype_anchor(_index);
             self.subtype_anchor.push(Some(subtype_anchor.clone()));
             subtype_anchor
         }
@@ -326,8 +326,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SubtypeAnchor`] from the store.
     ///
-    pub fn exhume_subtype_anchor(&self, id: usize) -> Option<Rc<RefCell<SubtypeAnchor>>> {
-        match self.subtype_anchor.get(id) {
+    pub fn exhume_subtype_anchor(&self, id: &usize) -> Option<Rc<RefCell<SubtypeAnchor>>> {
+        match self.subtype_anchor.get(*id) {
             Some(subtype_anchor) => subtype_anchor.clone(),
             None => None,
         }
@@ -335,9 +335,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SubtypeAnchor`] from the store.
     ///
-    pub fn exorcise_subtype_anchor(&mut self, id: usize) -> Option<Rc<RefCell<SubtypeAnchor>>> {
-        let result = self.subtype_anchor[id].take();
-        self.subtype_anchor_free_list.lock().unwrap().push(id);
+    pub fn exorcise_subtype_anchor(&mut self, id: &usize) -> Option<Rc<RefCell<SubtypeAnchor>>> {
+        let result = self.subtype_anchor[*id].take();
+        self.subtype_anchor_free_list.lock().unwrap().push(*id);
         result
     }
 

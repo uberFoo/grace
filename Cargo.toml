@@ -10,7 +10,8 @@ clap = { version = "4.1.4", features = ["derive"] }
 serde = { version = "1.0.152", features = ["derive"] }
 sarzak = { git = "https://github.com/uberFoo/sarzak", default-features = false, branch = "develop", features = [
     "lu-dog-rwlock",
-] } # sarzak = { git = "https://gitlab-runner:7kzem8nVeizSJQnLPWFY@git.uberfoo.com/sarzak/sarzak.git", branch = "develop", default-features = false, features = [
+] }
+# sarzak = { git = "https://gitlab-runner:7kzem8nVeizSJQnLPWFY@git.uberfoo.com/sarzak/sarzak.git", branch = "develop", default-features = false, features = [
 # "lu-dog-rwlock",
 # ] }
 # sarzak = { path = "../sarzak", default-features = false, features = [

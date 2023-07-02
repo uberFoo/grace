@@ -171,16 +171,22 @@ impl DomainStoreVec {
                     };
 
                     if is_uber {
-                        emit!(buffer, "if let Some(index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
-                        emit!(buffer, "let {obj_ident} = {obj_ident}(index);");
-                        emit!(buffer, "self.{obj_ident}[index] = Some({obj_ident}.clone());");
+                        if object_has_name(obj, domain) {
+                            emit!(buffer, "let {obj_ident} = ");
+                        }
+                        emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
+                        emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                        emit!(buffer, "self.{obj_ident}[_index] = Some({obj_ident}.clone());");
                         emit!(buffer, "{obj_ident}");
                         emit!(buffer, "}} else {{");
-                        emit!(buffer, "let index = self.{obj_ident}.len();");
-                        emit!(buffer, "let {obj_ident} = {obj_ident}(index);");
+                        emit!(buffer, "let _index = self.{obj_ident}.len();");
+                        emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
                         emit!(buffer, "self.{obj_ident}.push(Some({obj_ident}.clone()));");
                         emit!(buffer, "{obj_ident}");
                         emit!(buffer, "}}");
+                        if object_has_name(obj, domain) {
+                            emit!(buffer, ";");
+                        }
                     }
 
                     if timestamp {
@@ -232,17 +238,13 @@ impl DomainStoreVec {
                             );
                         }
                     } else if object_has_name(obj, domain) {
-
                         if is_uber {
-                            let (_read, write) = get_uber_read_write(config);
+                            let (read, _write) = get_uber_read_write(config);
                             emit!(
                                 buffer,
-                                "self.{obj_ident}_id_by_name.insert(read.name.to_upper_camel_case(), read.{id});",
+                                "self.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});",
                             );
-                            emit!(
-                                buffer,
-                                "self.{obj_ident}{write}.insert(read.{id}, {obj_ident}.clone());",
-                            );
+                            emit!(buffer, "{obj_ident}");
                         } else {
                             emit!(
                                 buffer,
@@ -286,7 +288,7 @@ impl DomainStoreVec {
                             _ => {
                                 emit!(
                                     buffer,
-                                    "pub fn exhume_{obj_ident}(&self, id: usize) -> Option<{thing}> {{",
+                                    "pub fn exhume_{obj_ident}(&self, id: &usize) -> Option<{thing}> {{",
                                 );
                             }
                         }
@@ -310,7 +312,7 @@ impl DomainStoreVec {
                         } else {
                             emit!(
                                 buffer,
-                                "match self.{obj_ident}.get(id) {{",
+                                "match self.{obj_ident}.get(*id) {{",
                             );
                             emit!(
                                 buffer,
@@ -359,7 +361,7 @@ impl DomainStoreVec {
                             _ => {
                                 emit!(
                                     buffer,
-                                    "pub fn exorcise_{obj_ident}(&mut self, id: usize) -> Option<{thing}> {{",
+                                    "pub fn exorcise_{obj_ident}(&mut self, id: &usize) -> Option<{thing}> {{",
                                 );
                             }
                         }
@@ -379,8 +381,8 @@ impl DomainStoreVec {
                                 obj_ident
                             );
                         } else {
-                            emit!(buffer, "let result = self.{obj_ident}[id].take();");
-                            emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(id);" );
+                            emit!(buffer, "let result = self.{obj_ident}[*id].take();");
+                            emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(*id);" );
                             emit!(buffer, "result");
                         }
                     } else if timestamp {
@@ -398,7 +400,7 @@ impl DomainStoreVec {
                     if object_has_name(obj, domain) {
                         emit!(
                             buffer,
-                            "/// Exhume [`{}`] id from the store by name.",
+                            "/// Exorcise [`{}`] id from the store by name.",
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         emit!(buffer, "///");
@@ -410,29 +412,29 @@ impl DomainStoreVec {
                                 AsyncRwLock => {
                                     emit!(
                                         buffer,
-                                        "pub async fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
+                                        "pub async fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<usize> {{",
                                     );
                                 }
                                 _ => {
                                     emit!(
                                         buffer,
-                                        "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
+                                        "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<usize> {{",
                                     );
                                 }
                             }
                             if timestamp {
                                 emit!(
                                     buffer,
-                                    "self.{0}_id_by_name{read}.get(name).map(|{0}| {0}.0)",
+                                    "self.{0}_id_by_name.get(name).map(|{0}| {0}.0)",
                                     obj_ident
                                 );
                             } else {
-                                emit!(buffer, "self.{0}_id_by_name{read}.get(name).map(|{0}| *{0})", obj_ident);
+                                emit!(buffer, "self.{0}_id_by_name.get(name).map(|{0}| *{0})", obj_ident);
                             }
                         } else if timestamp {
                             emit!(
                                 buffer,
-                                "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<Uuid> {{",
+                                "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<usize> {{",
                             );
                             emit!(
                                 buffer,
@@ -443,7 +445,7 @@ impl DomainStoreVec {
                             // i think is bad as it will break existing code.
                             emit!(
                                 buffer,
-                                "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<&Uuid> {{",
+                                "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<&usize> {{",
                             );
                             emit!(buffer, "self.{obj_ident}_id_by_name.get(name)");
                         }
@@ -660,7 +662,6 @@ impl CodeWriter for DomainStoreVec {
                         if local_object_is_supertype(s_obj, config, domain)
                             && !local_object_is_subtype(s_obj, config, domain)
                         {
-                            // Ooooh. Look here — recursion.
                             includes.extend(emit_singleton_subtype_uses_inner(
                                 s_obj, config, domain, woog,
                             )?);
@@ -728,26 +729,22 @@ impl CodeWriter for DomainStoreVec {
             for subtype in get_subtypes_sorted_from_super_obj!(sup, domain.sarzak()) {
                 let s_obj = subtype.r15_object(domain.sarzak())[0];
 
-                if local_object_is_hybrid(sup, config, domain) {
-                    continue;
-                }
-
                 let prefix = format!(
-                    "{}{}::{}",
-                    prefix,
+                    "{prefix} super::{}Enum::{}",
                     sup.as_type(&Ownership::new_borrowed(), woog, domain),
                     s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
                 if !config.is_imported(&s_obj.id) {
-                    if local_object_is_supertype(s_obj, config, domain) {
-                        let prefix = format!("{}(", prefix);
-                        let suffix = format!(".id()){}", suffix);
-                        emit_singleton_subtype_instances(
-                            s_obj, &prefix, &suffix, config, domain, woog, buffer,
-                        )?;
-                    } else if local_object_is_singleton(s_obj, config, domain) {
-                        writeln!(buffer, "{}({}){}", prefix, s_obj.as_const(), suffix)
+                    // if local_object_is_supertype(s_obj, config, domain) {
+                    //     let prefix = format!("{prefix}(");
+                    //     let suffix = format!(".id()){suffix}");
+                    //     emit_singleton_subtype_instances(
+                    //         s_obj, &prefix, &suffix, config, domain, woog, buffer,
+                    //     )?;
+                    // } else if local_object_is_singleton(s_obj, config, domain) {
+                    if local_object_is_singleton(s_obj, config, domain) {
+                        writeln!(buffer, "{prefix}({}){suffix}", s_obj.as_const())
                             .context(FormatSnafu)?;
                     }
                 }
@@ -761,7 +758,9 @@ impl CodeWriter for DomainStoreVec {
         objects.sort_by(|a, b| a.name.cmp(&b.name));
         let supertypes = objects
             .iter()
-            .filter(|obj| !config.is_imported(&obj.id) && local_object_is_enum(obj, config, domain))
+            .filter(|obj| {
+                !config.is_imported(&obj.id) && local_object_is_supertype(obj, config, domain)
+            })
             .collect::<Vec<_>>();
         let objects = objects
             .iter()
@@ -899,11 +898,7 @@ impl CodeWriter for DomainStoreVec {
                                     value_type
                                 ),
                             };
-                            emit!(
-                                buffer,
-                                "{}: {mother_of_all_types},",
-                                obj.as_ident()
-                            );
+                            emit!( buffer, "{obj_ident}: {mother_of_all_types},");
                             if object_has_name(obj, domain) {
                                 use UberStoreOptions::*;
                                 let by_name_type = match config.get_uber_store().unwrap() {
@@ -915,82 +910,43 @@ impl CodeWriter for DomainStoreVec {
                                     NDRwLock => "Arc<RwLock<HashMap<String, (usize, SystemTime)>>>",
                                     StdMutex | ParkingLotMutex => "Arc<Mutex<HashMap<String, (usize, SystemTime)>>>",
                                 };
-                                emit!(
-                                    buffer,
-                                    "{}_id_by_name: {by_name_type},",
-                                    obj.as_ident()
-                                );
+                                emit!(buffer, "{obj_ident}_id_by_name: {by_name_type},");
                             }
                         } else {
-                            emit!(
-                                buffer,
-                                "{}: Vec<({}, SystemTime)>,",
-                                obj.as_ident(),
-                                value_type
-                            );
+                            emit!(buffer, "{obj_ident}: Vec<({value_type}, SystemTime)>,");
                             if object_has_name(obj, domain) {
-                                emit!(
-                                    buffer,
-                                    "{}_id_by_name: HashMap<String, (usize, SystemTime)>,",
-                                    obj.as_ident()
-                                );
+                                emit!(buffer, "{obj_ident}_id_by_name: HashMap<String, (usize, SystemTime)>,");
                             }
                         }
                     } else if is_uber {
                         use UberStoreOptions::*;
                         let mother_of_all_types = match config.get_uber_store().unwrap() {
                             Disabled => unreachable!(),
-                            Single => format!(
-                                "Vec<Option<{}>>",
-                                value_type
-                            ),
+                            Single => format!("Vec<Option<{value_type}>>"),
                             StdRwLock |
                             ParkingLotRwLock |
                             AsyncRwLock |
-                            NDRwLock => format!(
-                                "Arc<RwLock<Vec<{}>>>",
-                                value_type
-                            ),
-                            StdMutex | ParkingLotMutex => format!(
-                                "Arc<Mutex<Vec<{}>>>",
-                                value_type
-                            ),
+                            NDRwLock => format!("Arc<RwLock<Vec<{value_type}>>>"),
+                            StdMutex | ParkingLotMutex => format!("Arc<Mutex<Vec<{value_type}>>>"),
                         };
-                        emit!(
-                            buffer,
-                            "{}: {mother_of_all_types},",
-                            obj.as_ident(),
-                        );
+                        emit!(buffer, "{obj_ident}: {mother_of_all_types},");
                         if object_has_name(obj, domain) {
                             use UberStoreOptions::*;
                             let by_name_type = match config.get_uber_store().unwrap() {
                                 Disabled => unreachable!(),
-                                Single => "HashMap<usize, Uuid>",
+                                Single => "HashMap<String, usize>",
                                 StdRwLock |
                                 ParkingLotRwLock |
                                 AsyncRwLock |
-                                NDRwLock => "Arc<RwLock<HashMap<usize, Uuid>>>",
-                                StdMutex | ParkingLotMutex => "Arc<Mutex<HashMap<usize, Uuid>>>",
+                                NDRwLock => "Arc<RwLock<HashMap<String, usize>>>",
+                                StdMutex | ParkingLotMutex => "Arc<Mutex<HashMap<String, usize>>>",
                             };
-                            emit!(
-                                buffer,
-                                "{}_id_by_name: {by_name_type},",
-                                obj.as_ident(),
-                            );
+                            emit!(buffer, "{obj_ident}_id_by_name: {by_name_type},");
                         }
                     } else {
-                        emit!(
-                            buffer,
-                            "{}: Vec<{}>,",
-                            obj.as_ident(),
-                            value_type
-                        );
+                        emit!(buffer, "{obj_ident}: Vec<{value_type}>,");
                         if object_has_name(obj, domain) {
-                            emit!(
-                                buffer,
-                                "{}_id_by_name: HashMap<String, usize>,",
-                                obj.as_ident(),
-                            );
+                            emit!(buffer, "{obj_ident}_id_by_name: HashMap<String, usize>,");
                         }
                     }
                 }
@@ -1149,14 +1105,12 @@ impl CodeWriter for DomainStoreVec {
                             ParkingLotMutex => "Arc::new(Mutex::new(HashMap::default()))",
                         };
                         emit!(buffer, "{}: {ctor},", obj.as_ident());
-                        if object_has_name(obj, domain) {
-                            emit!(buffer, "{}_id_by_name: {ctor},", obj.as_ident());
-                        }
                     } else {
                         emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
-                        if object_has_name(obj, domain) {
-                            emit!(buffer, "{}_id_by_name: HashMap::default(),", obj.as_ident());
-                        }
+                    }
+
+                    if object_has_name(obj, domain) {
+                        emit!(buffer, "{obj_ident}_id_by_name: HashMap::default(),");
                     }
                 }
                 emit!(buffer, "}};");
@@ -1170,21 +1124,36 @@ impl CodeWriter for DomainStoreVec {
                         use UberStoreOptions::*;
                         let (ctor, tail) = match config.get_uber_store().unwrap() {
                             Disabled => unreachable!(),
-                            Single => ("Rc::new(RefCell::new(", ")));"),
-                            StdRwLock | ParkingLotRwLock | NDRwLock => ("Arc::new(RwLock::new(", ")));"),
-                            AsyncRwLock => ("Arc::new(RwLock::new(", "))).await;"),
-                            StdMutex | ParkingLotMutex => ("Arc::new(Mutex::new(", ")));"),
+                            Single => (
+                                format!(
+                                    "Rc::new(RefCell::new({} {{ subtype: ",
+                                    obj.as_type(&Ownership::new_borrowed(), woog, domain)),
+                                ",id}))});"
+                            ),
+                            StdRwLock | ParkingLotRwLock | NDRwLock => ("Arc::new(RwLock::new(".to_owned(), ")));"),
+                            AsyncRwLock => ("Arc::new(RwLock::new(".to_owned(), "))).await;"),
+                            StdMutex | ParkingLotMutex => ("Arc::new(Mutex::new(".to_owned(), ")));"),
                         };
 
-                        emit_singleton_subtype_instances(
-                            obj,
-                            &format!("store.inter_{}({ctor}", obj.as_ident()),
-                            tail,
-                            config,
-                            domain,
-                            woog,
-                            buffer,
-                        )?;
+                        let attrs = obj.r1_attribute(domain.sarzak());
+                        let mut attr_len = attrs.len();
+                        for attr in &attrs {
+                            if attr.name == "hack" {
+                                attr_len -= 1;
+                                continue;
+                            }
+                        }
+                        if attr_len < 2 {
+                            emit_singleton_subtype_instances(
+                                obj,
+                                &format!("store.inter_{}(|id| {{ {ctor}", obj.as_ident()),
+                                tail,
+                                config,
+                                domain,
+                                woog,
+                                buffer,
+                            )?;
+                        }
                     } else {
                         emit_singleton_subtype_instances(
                             obj,

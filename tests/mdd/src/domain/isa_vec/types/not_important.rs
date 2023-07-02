@@ -83,7 +83,7 @@ impl NotImportant {
     /// Navigate to [`SuperT`] across R888(1-*)
     pub fn r888_super_t<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<SuperT>>> {
         span!("r888_super_t");
-        vec![store.exhume_super_t(self.x_ref).unwrap()]
+        vec![store.exhume_super_t(&self.x_ref).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

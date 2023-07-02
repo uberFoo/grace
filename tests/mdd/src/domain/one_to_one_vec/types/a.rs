@@ -51,7 +51,7 @@ impl A {
     /// Navigate to [`Referent`] across R1(1-*)
     pub fn r1_referent<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<Referent>>> {
         span!("r1_referent");
-        vec![store.exhume_referent(self.ptr).unwrap()]
+        vec![store.exhume_referent(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }

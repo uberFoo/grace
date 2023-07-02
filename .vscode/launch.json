@@ -7,8 +7,58 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/<executable file>",
+            "name": "Debug unit tests in library 'grace'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=grace"
+                ],
+                "filter": {
+                    "name": "grace",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug integration test 'mdd'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "isa_domain_vec",
+                    "--no-run",
+                    "--test=mdd",
+                    "--package=grace"
+                ],
+                "filter": {
+                    "name": "mdd",
+                    "kind": "test"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'everything'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=everything",
+                    "--package=grace"
+                ],
+                "filter": {
+                    "name": "everything",
+                    "kind": "bench"
+                }
+            },
             "args": [],
             "cwd": "${workspaceFolder}"
         }

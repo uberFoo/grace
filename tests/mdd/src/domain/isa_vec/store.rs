@@ -39,7 +39,8 @@ use uuid::Uuid;
 
 use crate::domain::isa_vec::types::{
     Alpha, Baz, Beta, Borrowed, Gamma, Henry, NotImportant, OhBoy, Ownership, Reference,
-    SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB, SuperBar, SuperFoo, SuperT,
+    SimpleSubtypeA, SimpleSupertype, SubtypeA, SubtypeB, SuperBar, SuperFoo, SuperT, MUTABLE,
+    OWNED, SHARED, SIMPLE_SUBTYPE_B,
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -82,7 +83,7 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        let store = Self {
+        let mut store = Self {
             alpha_free_list: std::sync::Mutex::new(Vec::new()),
             alpha: Vec::new(),
             baz_free_list: std::sync::Mutex::new(Vec::new()),
@@ -123,6 +124,24 @@ impl ObjectStore {
         // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
         // I remember having a bit of a struggle making it work. It's recursive, with
         // a lot of special cases, and I think it calls other recursive functions...💥
+        store.inter_borrowed(|id| {
+            Rc::new(RefCell::new(Borrowed {
+                subtype: super::BorrowedEnum::Mutable(MUTABLE),
+                id,
+            }))
+        });
+        store.inter_borrowed(|id| {
+            Rc::new(RefCell::new(Borrowed {
+                subtype: super::BorrowedEnum::Shared(SHARED),
+                id,
+            }))
+        });
+        store.inter_ownership(|id| {
+            Rc::new(RefCell::new(Ownership {
+                subtype: super::OwnershipEnum::Owned(OWNED),
+                id,
+            }))
+        });
 
         store
     }
@@ -134,13 +153,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Alpha>>,
     {
-        if let Some(index) = self.alpha_free_list.lock().unwrap().pop() {
-            let alpha = alpha(index);
-            self.alpha[index] = Some(alpha.clone());
+        if let Some(_index) = self.alpha_free_list.lock().unwrap().pop() {
+            let alpha = alpha(_index);
+            self.alpha[_index] = Some(alpha.clone());
             alpha
         } else {
-            let index = self.alpha.len();
-            let alpha = alpha(index);
+            let _index = self.alpha.len();
+            let alpha = alpha(_index);
             self.alpha.push(Some(alpha.clone()));
             alpha
         }
@@ -148,8 +167,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Alpha`] from the store.
     ///
-    pub fn exhume_alpha(&self, id: usize) -> Option<Rc<RefCell<Alpha>>> {
-        match self.alpha.get(id) {
+    pub fn exhume_alpha(&self, id: &usize) -> Option<Rc<RefCell<Alpha>>> {
+        match self.alpha.get(*id) {
             Some(alpha) => alpha.clone(),
             None => None,
         }
@@ -157,9 +176,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Alpha`] from the store.
     ///
-    pub fn exorcise_alpha(&mut self, id: usize) -> Option<Rc<RefCell<Alpha>>> {
-        let result = self.alpha[id].take();
-        self.alpha_free_list.lock().unwrap().push(id);
+    pub fn exorcise_alpha(&mut self, id: &usize) -> Option<Rc<RefCell<Alpha>>> {
+        let result = self.alpha[*id].take();
+        self.alpha_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -176,13 +195,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Baz>>,
     {
-        if let Some(index) = self.baz_free_list.lock().unwrap().pop() {
-            let baz = baz(index);
-            self.baz[index] = Some(baz.clone());
+        if let Some(_index) = self.baz_free_list.lock().unwrap().pop() {
+            let baz = baz(_index);
+            self.baz[_index] = Some(baz.clone());
             baz
         } else {
-            let index = self.baz.len();
-            let baz = baz(index);
+            let _index = self.baz.len();
+            let baz = baz(_index);
             self.baz.push(Some(baz.clone()));
             baz
         }
@@ -190,8 +209,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Baz`] from the store.
     ///
-    pub fn exhume_baz(&self, id: usize) -> Option<Rc<RefCell<Baz>>> {
-        match self.baz.get(id) {
+    pub fn exhume_baz(&self, id: &usize) -> Option<Rc<RefCell<Baz>>> {
+        match self.baz.get(*id) {
             Some(baz) => baz.clone(),
             None => None,
         }
@@ -199,9 +218,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Baz`] from the store.
     ///
-    pub fn exorcise_baz(&mut self, id: usize) -> Option<Rc<RefCell<Baz>>> {
-        let result = self.baz[id].take();
-        self.baz_free_list.lock().unwrap().push(id);
+    pub fn exorcise_baz(&mut self, id: &usize) -> Option<Rc<RefCell<Baz>>> {
+        let result = self.baz[*id].take();
+        self.baz_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -218,13 +237,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Beta>>,
     {
-        if let Some(index) = self.beta_free_list.lock().unwrap().pop() {
-            let beta = beta(index);
-            self.beta[index] = Some(beta.clone());
+        if let Some(_index) = self.beta_free_list.lock().unwrap().pop() {
+            let beta = beta(_index);
+            self.beta[_index] = Some(beta.clone());
             beta
         } else {
-            let index = self.beta.len();
-            let beta = beta(index);
+            let _index = self.beta.len();
+            let beta = beta(_index);
             self.beta.push(Some(beta.clone()));
             beta
         }
@@ -232,8 +251,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Beta`] from the store.
     ///
-    pub fn exhume_beta(&self, id: usize) -> Option<Rc<RefCell<Beta>>> {
-        match self.beta.get(id) {
+    pub fn exhume_beta(&self, id: &usize) -> Option<Rc<RefCell<Beta>>> {
+        match self.beta.get(*id) {
             Some(beta) => beta.clone(),
             None => None,
         }
@@ -241,9 +260,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Beta`] from the store.
     ///
-    pub fn exorcise_beta(&mut self, id: usize) -> Option<Rc<RefCell<Beta>>> {
-        let result = self.beta[id].take();
-        self.beta_free_list.lock().unwrap().push(id);
+    pub fn exorcise_beta(&mut self, id: &usize) -> Option<Rc<RefCell<Beta>>> {
+        let result = self.beta[*id].take();
+        self.beta_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -260,13 +279,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Borrowed>>,
     {
-        if let Some(index) = self.borrowed_free_list.lock().unwrap().pop() {
-            let borrowed = borrowed(index);
-            self.borrowed[index] = Some(borrowed.clone());
+        if let Some(_index) = self.borrowed_free_list.lock().unwrap().pop() {
+            let borrowed = borrowed(_index);
+            self.borrowed[_index] = Some(borrowed.clone());
             borrowed
         } else {
-            let index = self.borrowed.len();
-            let borrowed = borrowed(index);
+            let _index = self.borrowed.len();
+            let borrowed = borrowed(_index);
             self.borrowed.push(Some(borrowed.clone()));
             borrowed
         }
@@ -274,8 +293,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Borrowed`] from the store.
     ///
-    pub fn exhume_borrowed(&self, id: usize) -> Option<Rc<RefCell<Borrowed>>> {
-        match self.borrowed.get(id) {
+    pub fn exhume_borrowed(&self, id: &usize) -> Option<Rc<RefCell<Borrowed>>> {
+        match self.borrowed.get(*id) {
             Some(borrowed) => borrowed.clone(),
             None => None,
         }
@@ -283,9 +302,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Borrowed`] from the store.
     ///
-    pub fn exorcise_borrowed(&mut self, id: usize) -> Option<Rc<RefCell<Borrowed>>> {
-        let result = self.borrowed[id].take();
-        self.borrowed_free_list.lock().unwrap().push(id);
+    pub fn exorcise_borrowed(&mut self, id: &usize) -> Option<Rc<RefCell<Borrowed>>> {
+        let result = self.borrowed[*id].take();
+        self.borrowed_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -307,13 +326,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Gamma>>,
     {
-        if let Some(index) = self.gamma_free_list.lock().unwrap().pop() {
-            let gamma = gamma(index);
-            self.gamma[index] = Some(gamma.clone());
+        if let Some(_index) = self.gamma_free_list.lock().unwrap().pop() {
+            let gamma = gamma(_index);
+            self.gamma[_index] = Some(gamma.clone());
             gamma
         } else {
-            let index = self.gamma.len();
-            let gamma = gamma(index);
+            let _index = self.gamma.len();
+            let gamma = gamma(_index);
             self.gamma.push(Some(gamma.clone()));
             gamma
         }
@@ -321,8 +340,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Gamma`] from the store.
     ///
-    pub fn exhume_gamma(&self, id: usize) -> Option<Rc<RefCell<Gamma>>> {
-        match self.gamma.get(id) {
+    pub fn exhume_gamma(&self, id: &usize) -> Option<Rc<RefCell<Gamma>>> {
+        match self.gamma.get(*id) {
             Some(gamma) => gamma.clone(),
             None => None,
         }
@@ -330,9 +349,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Gamma`] from the store.
     ///
-    pub fn exorcise_gamma(&mut self, id: usize) -> Option<Rc<RefCell<Gamma>>> {
-        let result = self.gamma[id].take();
-        self.gamma_free_list.lock().unwrap().push(id);
+    pub fn exorcise_gamma(&mut self, id: &usize) -> Option<Rc<RefCell<Gamma>>> {
+        let result = self.gamma[*id].take();
+        self.gamma_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -349,13 +368,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Henry>>,
     {
-        if let Some(index) = self.henry_free_list.lock().unwrap().pop() {
-            let henry = henry(index);
-            self.henry[index] = Some(henry.clone());
+        if let Some(_index) = self.henry_free_list.lock().unwrap().pop() {
+            let henry = henry(_index);
+            self.henry[_index] = Some(henry.clone());
             henry
         } else {
-            let index = self.henry.len();
-            let henry = henry(index);
+            let _index = self.henry.len();
+            let henry = henry(_index);
             self.henry.push(Some(henry.clone()));
             henry
         }
@@ -363,8 +382,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Henry`] from the store.
     ///
-    pub fn exhume_henry(&self, id: usize) -> Option<Rc<RefCell<Henry>>> {
-        match self.henry.get(id) {
+    pub fn exhume_henry(&self, id: &usize) -> Option<Rc<RefCell<Henry>>> {
+        match self.henry.get(*id) {
             Some(henry) => henry.clone(),
             None => None,
         }
@@ -372,9 +391,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Henry`] from the store.
     ///
-    pub fn exorcise_henry(&mut self, id: usize) -> Option<Rc<RefCell<Henry>>> {
-        let result = self.henry[id].take();
-        self.henry_free_list.lock().unwrap().push(id);
+    pub fn exorcise_henry(&mut self, id: &usize) -> Option<Rc<RefCell<Henry>>> {
+        let result = self.henry[*id].take();
+        self.henry_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -391,13 +410,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<NotImportant>>,
     {
-        if let Some(index) = self.not_important_free_list.lock().unwrap().pop() {
-            let not_important = not_important(index);
-            self.not_important[index] = Some(not_important.clone());
+        if let Some(_index) = self.not_important_free_list.lock().unwrap().pop() {
+            let not_important = not_important(_index);
+            self.not_important[_index] = Some(not_important.clone());
             not_important
         } else {
-            let index = self.not_important.len();
-            let not_important = not_important(index);
+            let _index = self.not_important.len();
+            let not_important = not_important(_index);
             self.not_important.push(Some(not_important.clone()));
             not_important
         }
@@ -405,8 +424,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`NotImportant`] from the store.
     ///
-    pub fn exhume_not_important(&self, id: usize) -> Option<Rc<RefCell<NotImportant>>> {
-        match self.not_important.get(id) {
+    pub fn exhume_not_important(&self, id: &usize) -> Option<Rc<RefCell<NotImportant>>> {
+        match self.not_important.get(*id) {
             Some(not_important) => not_important.clone(),
             None => None,
         }
@@ -414,9 +433,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`NotImportant`] from the store.
     ///
-    pub fn exorcise_not_important(&mut self, id: usize) -> Option<Rc<RefCell<NotImportant>>> {
-        let result = self.not_important[id].take();
-        self.not_important_free_list.lock().unwrap().push(id);
+    pub fn exorcise_not_important(&mut self, id: &usize) -> Option<Rc<RefCell<NotImportant>>> {
+        let result = self.not_important[*id].take();
+        self.not_important_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -438,13 +457,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<OhBoy>>,
     {
-        if let Some(index) = self.oh_boy_free_list.lock().unwrap().pop() {
-            let oh_boy = oh_boy(index);
-            self.oh_boy[index] = Some(oh_boy.clone());
+        if let Some(_index) = self.oh_boy_free_list.lock().unwrap().pop() {
+            let oh_boy = oh_boy(_index);
+            self.oh_boy[_index] = Some(oh_boy.clone());
             oh_boy
         } else {
-            let index = self.oh_boy.len();
-            let oh_boy = oh_boy(index);
+            let _index = self.oh_boy.len();
+            let oh_boy = oh_boy(_index);
             self.oh_boy.push(Some(oh_boy.clone()));
             oh_boy
         }
@@ -452,8 +471,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`OhBoy`] from the store.
     ///
-    pub fn exhume_oh_boy(&self, id: usize) -> Option<Rc<RefCell<OhBoy>>> {
-        match self.oh_boy.get(id) {
+    pub fn exhume_oh_boy(&self, id: &usize) -> Option<Rc<RefCell<OhBoy>>> {
+        match self.oh_boy.get(*id) {
             Some(oh_boy) => oh_boy.clone(),
             None => None,
         }
@@ -461,9 +480,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`OhBoy`] from the store.
     ///
-    pub fn exorcise_oh_boy(&mut self, id: usize) -> Option<Rc<RefCell<OhBoy>>> {
-        let result = self.oh_boy[id].take();
-        self.oh_boy_free_list.lock().unwrap().push(id);
+    pub fn exorcise_oh_boy(&mut self, id: &usize) -> Option<Rc<RefCell<OhBoy>>> {
+        let result = self.oh_boy[*id].take();
+        self.oh_boy_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -485,13 +504,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Ownership>>,
     {
-        if let Some(index) = self.ownership_free_list.lock().unwrap().pop() {
-            let ownership = ownership(index);
-            self.ownership[index] = Some(ownership.clone());
+        if let Some(_index) = self.ownership_free_list.lock().unwrap().pop() {
+            let ownership = ownership(_index);
+            self.ownership[_index] = Some(ownership.clone());
             ownership
         } else {
-            let index = self.ownership.len();
-            let ownership = ownership(index);
+            let _index = self.ownership.len();
+            let ownership = ownership(_index);
             self.ownership.push(Some(ownership.clone()));
             ownership
         }
@@ -499,8 +518,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Ownership`] from the store.
     ///
-    pub fn exhume_ownership(&self, id: usize) -> Option<Rc<RefCell<Ownership>>> {
-        match self.ownership.get(id) {
+    pub fn exhume_ownership(&self, id: &usize) -> Option<Rc<RefCell<Ownership>>> {
+        match self.ownership.get(*id) {
             Some(ownership) => ownership.clone(),
             None => None,
         }
@@ -508,9 +527,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Ownership`] from the store.
     ///
-    pub fn exorcise_ownership(&mut self, id: usize) -> Option<Rc<RefCell<Ownership>>> {
-        let result = self.ownership[id].take();
-        self.ownership_free_list.lock().unwrap().push(id);
+    pub fn exorcise_ownership(&mut self, id: &usize) -> Option<Rc<RefCell<Ownership>>> {
+        let result = self.ownership[*id].take();
+        self.ownership_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -532,13 +551,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Reference>>,
     {
-        if let Some(index) = self.reference_free_list.lock().unwrap().pop() {
-            let reference = reference(index);
-            self.reference[index] = Some(reference.clone());
+        if let Some(_index) = self.reference_free_list.lock().unwrap().pop() {
+            let reference = reference(_index);
+            self.reference[_index] = Some(reference.clone());
             reference
         } else {
-            let index = self.reference.len();
-            let reference = reference(index);
+            let _index = self.reference.len();
+            let reference = reference(_index);
             self.reference.push(Some(reference.clone()));
             reference
         }
@@ -546,8 +565,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Reference`] from the store.
     ///
-    pub fn exhume_reference(&self, id: usize) -> Option<Rc<RefCell<Reference>>> {
-        match self.reference.get(id) {
+    pub fn exhume_reference(&self, id: &usize) -> Option<Rc<RefCell<Reference>>> {
+        match self.reference.get(*id) {
             Some(reference) => reference.clone(),
             None => None,
         }
@@ -555,9 +574,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Reference`] from the store.
     ///
-    pub fn exorcise_reference(&mut self, id: usize) -> Option<Rc<RefCell<Reference>>> {
-        let result = self.reference[id].take();
-        self.reference_free_list.lock().unwrap().push(id);
+    pub fn exorcise_reference(&mut self, id: &usize) -> Option<Rc<RefCell<Reference>>> {
+        let result = self.reference[*id].take();
+        self.reference_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -579,13 +598,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SimpleSubtypeA>>,
     {
-        if let Some(index) = self.simple_subtype_a_free_list.lock().unwrap().pop() {
-            let simple_subtype_a = simple_subtype_a(index);
-            self.simple_subtype_a[index] = Some(simple_subtype_a.clone());
+        if let Some(_index) = self.simple_subtype_a_free_list.lock().unwrap().pop() {
+            let simple_subtype_a = simple_subtype_a(_index);
+            self.simple_subtype_a[_index] = Some(simple_subtype_a.clone());
             simple_subtype_a
         } else {
-            let index = self.simple_subtype_a.len();
-            let simple_subtype_a = simple_subtype_a(index);
+            let _index = self.simple_subtype_a.len();
+            let simple_subtype_a = simple_subtype_a(_index);
             self.simple_subtype_a.push(Some(simple_subtype_a.clone()));
             simple_subtype_a
         }
@@ -593,8 +612,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SimpleSubtypeA`] from the store.
     ///
-    pub fn exhume_simple_subtype_a(&self, id: usize) -> Option<Rc<RefCell<SimpleSubtypeA>>> {
-        match self.simple_subtype_a.get(id) {
+    pub fn exhume_simple_subtype_a(&self, id: &usize) -> Option<Rc<RefCell<SimpleSubtypeA>>> {
+        match self.simple_subtype_a.get(*id) {
             Some(simple_subtype_a) => simple_subtype_a.clone(),
             None => None,
         }
@@ -602,9 +621,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SimpleSubtypeA`] from the store.
     ///
-    pub fn exorcise_simple_subtype_a(&mut self, id: usize) -> Option<Rc<RefCell<SimpleSubtypeA>>> {
-        let result = self.simple_subtype_a[id].take();
-        self.simple_subtype_a_free_list.lock().unwrap().push(id);
+    pub fn exorcise_simple_subtype_a(&mut self, id: &usize) -> Option<Rc<RefCell<SimpleSubtypeA>>> {
+        let result = self.simple_subtype_a[*id].take();
+        self.simple_subtype_a_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -626,13 +645,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SimpleSupertype>>,
     {
-        if let Some(index) = self.simple_supertype_free_list.lock().unwrap().pop() {
-            let simple_supertype = simple_supertype(index);
-            self.simple_supertype[index] = Some(simple_supertype.clone());
+        if let Some(_index) = self.simple_supertype_free_list.lock().unwrap().pop() {
+            let simple_supertype = simple_supertype(_index);
+            self.simple_supertype[_index] = Some(simple_supertype.clone());
             simple_supertype
         } else {
-            let index = self.simple_supertype.len();
-            let simple_supertype = simple_supertype(index);
+            let _index = self.simple_supertype.len();
+            let simple_supertype = simple_supertype(_index);
             self.simple_supertype.push(Some(simple_supertype.clone()));
             simple_supertype
         }
@@ -640,8 +659,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SimpleSupertype`] from the store.
     ///
-    pub fn exhume_simple_supertype(&self, id: usize) -> Option<Rc<RefCell<SimpleSupertype>>> {
-        match self.simple_supertype.get(id) {
+    pub fn exhume_simple_supertype(&self, id: &usize) -> Option<Rc<RefCell<SimpleSupertype>>> {
+        match self.simple_supertype.get(*id) {
             Some(simple_supertype) => simple_supertype.clone(),
             None => None,
         }
@@ -649,9 +668,12 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SimpleSupertype`] from the store.
     ///
-    pub fn exorcise_simple_supertype(&mut self, id: usize) -> Option<Rc<RefCell<SimpleSupertype>>> {
-        let result = self.simple_supertype[id].take();
-        self.simple_supertype_free_list.lock().unwrap().push(id);
+    pub fn exorcise_simple_supertype(
+        &mut self,
+        id: &usize,
+    ) -> Option<Rc<RefCell<SimpleSupertype>>> {
+        let result = self.simple_supertype[*id].take();
+        self.simple_supertype_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -673,13 +695,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SubtypeA>>,
     {
-        if let Some(index) = self.subtype_a_free_list.lock().unwrap().pop() {
-            let subtype_a = subtype_a(index);
-            self.subtype_a[index] = Some(subtype_a.clone());
+        if let Some(_index) = self.subtype_a_free_list.lock().unwrap().pop() {
+            let subtype_a = subtype_a(_index);
+            self.subtype_a[_index] = Some(subtype_a.clone());
             subtype_a
         } else {
-            let index = self.subtype_a.len();
-            let subtype_a = subtype_a(index);
+            let _index = self.subtype_a.len();
+            let subtype_a = subtype_a(_index);
             self.subtype_a.push(Some(subtype_a.clone()));
             subtype_a
         }
@@ -687,8 +709,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SubtypeA`] from the store.
     ///
-    pub fn exhume_subtype_a(&self, id: usize) -> Option<Rc<RefCell<SubtypeA>>> {
-        match self.subtype_a.get(id) {
+    pub fn exhume_subtype_a(&self, id: &usize) -> Option<Rc<RefCell<SubtypeA>>> {
+        match self.subtype_a.get(*id) {
             Some(subtype_a) => subtype_a.clone(),
             None => None,
         }
@@ -696,9 +718,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SubtypeA`] from the store.
     ///
-    pub fn exorcise_subtype_a(&mut self, id: usize) -> Option<Rc<RefCell<SubtypeA>>> {
-        let result = self.subtype_a[id].take();
-        self.subtype_a_free_list.lock().unwrap().push(id);
+    pub fn exorcise_subtype_a(&mut self, id: &usize) -> Option<Rc<RefCell<SubtypeA>>> {
+        let result = self.subtype_a[*id].take();
+        self.subtype_a_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -720,13 +742,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SubtypeB>>,
     {
-        if let Some(index) = self.subtype_b_free_list.lock().unwrap().pop() {
-            let subtype_b = subtype_b(index);
-            self.subtype_b[index] = Some(subtype_b.clone());
+        if let Some(_index) = self.subtype_b_free_list.lock().unwrap().pop() {
+            let subtype_b = subtype_b(_index);
+            self.subtype_b[_index] = Some(subtype_b.clone());
             subtype_b
         } else {
-            let index = self.subtype_b.len();
-            let subtype_b = subtype_b(index);
+            let _index = self.subtype_b.len();
+            let subtype_b = subtype_b(_index);
             self.subtype_b.push(Some(subtype_b.clone()));
             subtype_b
         }
@@ -734,8 +756,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SubtypeB`] from the store.
     ///
-    pub fn exhume_subtype_b(&self, id: usize) -> Option<Rc<RefCell<SubtypeB>>> {
-        match self.subtype_b.get(id) {
+    pub fn exhume_subtype_b(&self, id: &usize) -> Option<Rc<RefCell<SubtypeB>>> {
+        match self.subtype_b.get(*id) {
             Some(subtype_b) => subtype_b.clone(),
             None => None,
         }
@@ -743,9 +765,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SubtypeB`] from the store.
     ///
-    pub fn exorcise_subtype_b(&mut self, id: usize) -> Option<Rc<RefCell<SubtypeB>>> {
-        let result = self.subtype_b[id].take();
-        self.subtype_b_free_list.lock().unwrap().push(id);
+    pub fn exorcise_subtype_b(&mut self, id: &usize) -> Option<Rc<RefCell<SubtypeB>>> {
+        let result = self.subtype_b[*id].take();
+        self.subtype_b_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -767,13 +789,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SuperBar>>,
     {
-        if let Some(index) = self.super_bar_free_list.lock().unwrap().pop() {
-            let super_bar = super_bar(index);
-            self.super_bar[index] = Some(super_bar.clone());
+        if let Some(_index) = self.super_bar_free_list.lock().unwrap().pop() {
+            let super_bar = super_bar(_index);
+            self.super_bar[_index] = Some(super_bar.clone());
             super_bar
         } else {
-            let index = self.super_bar.len();
-            let super_bar = super_bar(index);
+            let _index = self.super_bar.len();
+            let super_bar = super_bar(_index);
             self.super_bar.push(Some(super_bar.clone()));
             super_bar
         }
@@ -781,8 +803,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SuperBar`] from the store.
     ///
-    pub fn exhume_super_bar(&self, id: usize) -> Option<Rc<RefCell<SuperBar>>> {
-        match self.super_bar.get(id) {
+    pub fn exhume_super_bar(&self, id: &usize) -> Option<Rc<RefCell<SuperBar>>> {
+        match self.super_bar.get(*id) {
             Some(super_bar) => super_bar.clone(),
             None => None,
         }
@@ -790,9 +812,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SuperBar`] from the store.
     ///
-    pub fn exorcise_super_bar(&mut self, id: usize) -> Option<Rc<RefCell<SuperBar>>> {
-        let result = self.super_bar[id].take();
-        self.super_bar_free_list.lock().unwrap().push(id);
+    pub fn exorcise_super_bar(&mut self, id: &usize) -> Option<Rc<RefCell<SuperBar>>> {
+        let result = self.super_bar[*id].take();
+        self.super_bar_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -814,13 +836,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SuperFoo>>,
     {
-        if let Some(index) = self.super_foo_free_list.lock().unwrap().pop() {
-            let super_foo = super_foo(index);
-            self.super_foo[index] = Some(super_foo.clone());
+        if let Some(_index) = self.super_foo_free_list.lock().unwrap().pop() {
+            let super_foo = super_foo(_index);
+            self.super_foo[_index] = Some(super_foo.clone());
             super_foo
         } else {
-            let index = self.super_foo.len();
-            let super_foo = super_foo(index);
+            let _index = self.super_foo.len();
+            let super_foo = super_foo(_index);
             self.super_foo.push(Some(super_foo.clone()));
             super_foo
         }
@@ -828,8 +850,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SuperFoo`] from the store.
     ///
-    pub fn exhume_super_foo(&self, id: usize) -> Option<Rc<RefCell<SuperFoo>>> {
-        match self.super_foo.get(id) {
+    pub fn exhume_super_foo(&self, id: &usize) -> Option<Rc<RefCell<SuperFoo>>> {
+        match self.super_foo.get(*id) {
             Some(super_foo) => super_foo.clone(),
             None => None,
         }
@@ -837,9 +859,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SuperFoo`] from the store.
     ///
-    pub fn exorcise_super_foo(&mut self, id: usize) -> Option<Rc<RefCell<SuperFoo>>> {
-        let result = self.super_foo[id].take();
-        self.super_foo_free_list.lock().unwrap().push(id);
+    pub fn exorcise_super_foo(&mut self, id: &usize) -> Option<Rc<RefCell<SuperFoo>>> {
+        let result = self.super_foo[*id].take();
+        self.super_foo_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -861,13 +883,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SuperT>>,
     {
-        if let Some(index) = self.super_t_free_list.lock().unwrap().pop() {
-            let super_t = super_t(index);
-            self.super_t[index] = Some(super_t.clone());
+        if let Some(_index) = self.super_t_free_list.lock().unwrap().pop() {
+            let super_t = super_t(_index);
+            self.super_t[_index] = Some(super_t.clone());
             super_t
         } else {
-            let index = self.super_t.len();
-            let super_t = super_t(index);
+            let _index = self.super_t.len();
+            let super_t = super_t(_index);
             self.super_t.push(Some(super_t.clone()));
             super_t
         }
@@ -875,8 +897,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`SuperT`] from the store.
     ///
-    pub fn exhume_super_t(&self, id: usize) -> Option<Rc<RefCell<SuperT>>> {
-        match self.super_t.get(id) {
+    pub fn exhume_super_t(&self, id: &usize) -> Option<Rc<RefCell<SuperT>>> {
+        match self.super_t.get(*id) {
             Some(super_t) => super_t.clone(),
             None => None,
         }
@@ -884,9 +906,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SuperT`] from the store.
     ///
-    pub fn exorcise_super_t(&mut self, id: usize) -> Option<Rc<RefCell<SuperT>>> {
-        let result = self.super_t[id].take();
-        self.super_t_free_list.lock().unwrap().push(id);
+    pub fn exorcise_super_t(&mut self, id: &usize) -> Option<Rc<RefCell<SuperT>>> {
+        let result = self.super_t[*id].take();
+        self.super_t_free_list.lock().unwrap().push(*id);
         result
     }
 

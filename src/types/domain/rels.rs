@@ -341,19 +341,11 @@ fn forward(
                     referrer.referential_attribute.as_ident()
                 );
             } else {
-                if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
-                    emit!(
-                        buffer,
-                        "vec![store.exhume_{obj_ident}(self.{}).unwrap()]",
-                        referrer.referential_attribute.as_ident()
-                    );
-                } else {
-                    emit!(
-                        buffer,
-                        "vec![store.exhume_{obj_ident}(&self.{}).unwrap()]",
-                        referrer.referential_attribute.as_ident()
-                    );
-                }
+                emit!(
+                    buffer,
+                    "vec![store.exhume_{obj_ident}(&self.{}).unwrap()]",
+                    referrer.referential_attribute.as_ident()
+                );
             }
             emit!(buffer, "}}");
 
@@ -442,24 +434,13 @@ fn forward_conditional(
                         referrer.referential_attribute.as_ident()
                     );
                 } else {
-                    if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
-                    {
-                        emit!(
-                            buffer,
-                            "Some(ref {}) => vec![store.exhume_{}(*{}).unwrap()],",
-                            referrer.referential_attribute.as_ident(),
-                            r_obj.as_ident(),
-                            referrer.referential_attribute.as_ident()
-                        );
-                    } else {
-                        emit!(
-                            buffer,
-                            "Some(ref {}) => vec![store.exhume_{}({}).unwrap()],",
-                            referrer.referential_attribute.as_ident(),
-                            r_obj.as_ident(),
-                            referrer.referential_attribute.as_ident()
-                        );
-                    }
+                    emit!(
+                        buffer,
+                        "Some(ref {}) => vec![store.exhume_{}(&{}).unwrap()],",
+                        referrer.referential_attribute.as_ident(),
+                        r_obj.as_ident(),
+                        referrer.referential_attribute.as_ident()
+                    );
                 }
             } else {
                 emit!(
@@ -1109,22 +1090,12 @@ fn forward_assoc(
                     r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
             }
-
-            if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
             emit!(
                 buffer,
-                "vec![store.exhume_{}(self.{}).unwrap()]",
+                "vec![store.exhume_{}(&self.{}).unwrap()]",
                 r_obj.as_ident(),
                 referential_attribute.as_ident()
             );
-            } else {
-                emit!(
-                    buffer,
-                    "vec![store.exhume_{}(&self.{}).unwrap()]",
-                    r_obj.as_ident(),
-                    referential_attribute.as_ident()
-                );
-            }
             emit!(buffer, "}}");
 
             Ok(())

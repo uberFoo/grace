@@ -50,7 +50,7 @@ impl Parameter {
     pub fn r8_parameter<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<Parameter>>> {
         span!("r8_parameter");
         match self.next {
-            Some(ref next) => vec![store.exhume_parameter(*next).unwrap()],
+            Some(ref next) => vec![store.exhume_parameter(&next).unwrap()],
             None => Vec::new(),
         }
     }

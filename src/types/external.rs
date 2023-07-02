@@ -140,46 +140,84 @@ impl FileGenerator for ExternalGenerator {
                     object.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
 
-                emit!(
-                    buffer,
-                    "pub fn new(store: &mut {}) -> {} {{",
-                    store.name,
-                    object.as_type(&Ownership::new_borrowed(), woog, domain)
-                );
-                emit!(
-                    buffer,
-                    "let inner = {}::{}();",
-                    external.name,
-                    external.ctor
-                );
-                emit!(
-                    buffer,
-                    "let id = Uuid::new_v5(&UUID_NS, format!(\"{{:?}}\", inner).as_bytes());"
-                );
-                emit!(
-                    buffer,
-                    "let new = {} {{",
-                    object.as_type(&Ownership::new_borrowed(), woog, domain)
-                );
-                emit!(buffer, "id: id,");
-                emit!(buffer, "inner: inner,");
-                emit!(buffer, "}};");
-                if config.is_uber_store() {
-                    if let crate::options::UberStoreOptions::AsyncRwLock =
-                        config.get_uber_store().unwrap()
-                    {
+                if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+                    if config.is_uber_store() {
+                        if let crate::options::UberStoreOptions::AsyncRwLock =
+                            config.get_uber_store().unwrap()
+                        {
+                            unimplemented!();
+                        } else {
+                            emit!(
+                                buffer,
+                                "pub fn new(store: &mut {}) -> std::rc::Rc<std::cell::RefCell<{}>> {{",
+                                store.name,
+                                object.as_type(&Ownership::new_borrowed(), woog, domain)
+                            );
+
+                            emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                        }
+                    } else {
                         emit!(
                             buffer,
-                            "store.inter_{}(new.clone()).await;",
-                            object.as_ident()
+                            "pub fn new(store: &mut {}) -> {} {{",
+                            store.name,
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
+
+                        emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                    }
+                    emit!(
+                        buffer,
+                        "std::rc::Rc::new(std::cell::RefCell::new({} {{",
+                        object.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
+                    emit!(buffer, "id,");
+                    emit!(buffer, "inner: {}::{}(),", external.name, external.ctor);
+                    emit!(buffer, "}}))");
+                    emit!(buffer, "}})");
+                } else {
+                    emit!(
+                        buffer,
+                        "pub fn new(store: &mut {}) -> {} {{",
+                        store.name,
+                        object.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
+                    emit!(
+                        buffer,
+                        "let inner = {}::{}();",
+                        external.name,
+                        external.ctor
+                    );
+                    emit!(
+                        buffer,
+                        "let id = Uuid::new_v5(&UUID_NS, format!(\"{{:?}}\", inner).as_bytes());"
+                    );
+                    emit!(
+                        buffer,
+                        "let new = {} {{",
+                        object.as_type(&Ownership::new_borrowed(), woog, domain)
+                    );
+                    emit!(buffer, "id: id,");
+                    emit!(buffer, "inner: inner,");
+                    emit!(buffer, "}};");
+                    if config.is_uber_store() {
+                        if let crate::options::UberStoreOptions::AsyncRwLock =
+                            config.get_uber_store().unwrap()
+                        {
+                            emit!(
+                                buffer,
+                                "store.inter_{}(new.clone()).await;",
+                                object.as_ident()
+                            );
+                        } else {
+                            emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
+                        }
                     } else {
                         emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
                     }
-                } else {
-                    emit!(buffer, "store.inter_{}(new.clone());", object.as_ident());
+                    emit!(buffer, "new");
                 }
-                emit!(buffer, "new");
+
                 // Darn. So I need to insert a local here. And hybrid has similar needs.
                 // render_method_new(buffer, object, config, imports, woog, domain)?;
 

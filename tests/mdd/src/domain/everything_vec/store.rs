@@ -56,13 +56,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Everything>>,
     {
-        if let Some(index) = self.everything_free_list.lock().unwrap().pop() {
-            let everything = everything(index);
-            self.everything[index] = Some(everything.clone());
+        if let Some(_index) = self.everything_free_list.lock().unwrap().pop() {
+            let everything = everything(_index);
+            self.everything[_index] = Some(everything.clone());
             everything
         } else {
-            let index = self.everything.len();
-            let everything = everything(index);
+            let _index = self.everything.len();
+            let everything = everything(_index);
             self.everything.push(Some(everything.clone()));
             everything
         }
@@ -70,8 +70,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`Everything`] from the store.
     ///
-    pub fn exhume_everything(&self, id: usize) -> Option<Rc<RefCell<Everything>>> {
-        match self.everything.get(id) {
+    pub fn exhume_everything(&self, id: &usize) -> Option<Rc<RefCell<Everything>>> {
+        match self.everything.get(*id) {
             Some(everything) => everything.clone(),
             None => None,
         }
@@ -79,9 +79,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Everything`] from the store.
     ///
-    pub fn exorcise_everything(&mut self, id: usize) -> Option<Rc<RefCell<Everything>>> {
-        let result = self.everything[id].take();
-        self.everything_free_list.lock().unwrap().push(id);
+    pub fn exorcise_everything(&mut self, id: &usize) -> Option<Rc<RefCell<Everything>>> {
+        let result = self.everything[*id].take();
+        self.everything_free_list.lock().unwrap().push(*id);
         result
     }
 
@@ -103,13 +103,13 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<RandoObject>>,
     {
-        if let Some(index) = self.rando_object_free_list.lock().unwrap().pop() {
-            let rando_object = rando_object(index);
-            self.rando_object[index] = Some(rando_object.clone());
+        if let Some(_index) = self.rando_object_free_list.lock().unwrap().pop() {
+            let rando_object = rando_object(_index);
+            self.rando_object[_index] = Some(rando_object.clone());
             rando_object
         } else {
-            let index = self.rando_object.len();
-            let rando_object = rando_object(index);
+            let _index = self.rando_object.len();
+            let rando_object = rando_object(_index);
             self.rando_object.push(Some(rando_object.clone()));
             rando_object
         }
@@ -117,8 +117,8 @@ impl ObjectStore {
 
     /// Exhume (get) [`RandoObject`] from the store.
     ///
-    pub fn exhume_rando_object(&self, id: usize) -> Option<Rc<RefCell<RandoObject>>> {
-        match self.rando_object.get(id) {
+    pub fn exhume_rando_object(&self, id: &usize) -> Option<Rc<RefCell<RandoObject>>> {
+        match self.rando_object.get(*id) {
             Some(rando_object) => rando_object.clone(),
             None => None,
         }
@@ -126,9 +126,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`RandoObject`] from the store.
     ///
-    pub fn exorcise_rando_object(&mut self, id: usize) -> Option<Rc<RefCell<RandoObject>>> {
-        let result = self.rando_object[id].take();
-        self.rando_object_free_list.lock().unwrap().push(id);
+    pub fn exorcise_rando_object(&mut self, id: &usize) -> Option<Rc<RefCell<RandoObject>>> {
+        let result = self.rando_object[*id].take();
+        self.rando_object_free_list.lock().unwrap().push(*id);
         result
     }
 
