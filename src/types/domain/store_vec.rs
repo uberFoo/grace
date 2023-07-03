@@ -174,16 +174,36 @@ impl DomainStoreVec {
                         if object_has_name(obj, domain) {
                             emit!(buffer, "let {obj_ident} = ");
                         }
-                        emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
-                        emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
-                        emit!(buffer, "self.{obj_ident}[_index] = Some({obj_ident}.clone());");
-                        emit!(buffer, "{obj_ident}");
-                        emit!(buffer, "}} else {{");
-                        emit!(buffer, "let _index = self.{obj_ident}.len();");
-                        emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
-                        emit!(buffer, "self.{obj_ident}.push(Some({obj_ident}.clone()));");
-                        emit!(buffer, "{obj_ident}");
-                        emit!(buffer, "}}");
+
+                        let (read, write) = get_uber_read_write(config);
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            StdRwLock => {
+                                emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
+                                emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
+                                emit!(buffer, "{obj_ident}");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "let _index = self.{obj_ident}{read}.len();");
+                                emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "self.{obj_ident}{write}.push(Some({obj_ident}.clone()));");
+                                emit!(buffer, "{obj_ident}");
+                                emit!(buffer, "}}");
+                            },
+                            Single => {
+                                emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.pop() {{");
+                                emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "self.{obj_ident}[_index] = Some({obj_ident}.clone());");
+                                emit!(buffer, "{obj_ident}");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "let _index = self.{obj_ident}.len();");
+                                emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "self.{obj_ident}.push(Some({obj_ident}.clone()));");
+                                emit!(buffer, "{obj_ident}");
+                                emit!(buffer, "}}");
+                            },
+                            store => panic!("{store} is not currently supported"),
+                        }
                         if object_has_name(obj, domain) {
                             emit!(buffer, ";");
                         }
@@ -310,10 +330,22 @@ impl DomainStoreVec {
 
                             );
                         } else {
-                            emit!(
-                                buffer,
-                                "match self.{obj_ident}.get(*id) {{",
-                            );
+                            use UberStoreOptions::*;
+                            match config.get_uber_store().unwrap() {
+                                StdRwLock =>  {
+                                    emit!(
+                                        buffer,
+                                        "match self.{obj_ident}{read}.get(*id) {{",
+                                    );
+                                },
+                                Single => {
+                                    emit!(
+                                        buffer,
+                                        "match self.{obj_ident}.get(*id) {{",
+                                    );
+                                },
+                                store => panic!("{store} is not currently supported"),
+                            }
                             emit!(
                                 buffer,
                                 "Some({obj_ident}) => {obj_ident}.clone(),",
@@ -373,7 +405,7 @@ impl DomainStoreVec {
                     }
 
                     if is_uber {
-                        let (_read, write) = get_uber_read_write(config);
+                        let (read, write) = get_uber_read_write(config);
                         if timestamp {
                             emit!(
                                 buffer,
@@ -381,8 +413,18 @@ impl DomainStoreVec {
                                 obj_ident
                             );
                         } else {
-                            emit!(buffer, "let result = self.{obj_ident}[*id].take();");
-                            emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(*id);" );
+                            use UberStoreOptions::*;
+                            match config.get_uber_store().unwrap() {
+                                StdRwLock =>  {
+                                    emit!(buffer, "let result = self.{obj_ident}{write}[*id].take();");
+                                    emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(*id);");
+                                },
+                                Single => {
+                                    emit!(buffer, "let result = self.{obj_ident}[*id].take();");
+                                    emit!(buffer, "self.{obj_ident}_free_list.push(*id);");
+                                },
+                                store => panic!("{store} is not currently supported"),
+                            }
                             emit!(buffer, "result");
                         }
                     } else if timestamp {
@@ -515,7 +557,7 @@ impl DomainStoreVec {
                                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
                             ),
                             StdRwLock | ParkingLotRwLock | AsyncRwLock | NDRwLock => format!(
-                                "Vec<Arc<RwLock<{}>>>",
+                                "Vec<Option<Arc<RwLock<{}>>>>",
                                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
                             ),
                             StdMutex | ParkingLotMutex => format!(
@@ -529,22 +571,39 @@ impl DomainStoreVec {
                                 "let values: {store_type} = self.{obj_ident}{read}.values().map(|{obj_ident}| {obj_ident}.0.clone()).collect();",
                             );
                             emit!(
-                                buffer,
-                                "let len = values.len();"
+                            buffer,
+                            "let len = values.len();"
                             );
                             emit!(
                                 buffer,
                                 "(0..len).map(move|i| values[i].clone())",
                             );
                         } else {
-                            emit!(
-                                buffer,
-                                "let len = self.{obj_ident}.len();"
-                            );
-                            emit!(
-                                buffer,
-                                "(0..len).map(move|i|{{self.{obj_ident}[i].as_ref().map(|{obj_ident}| {obj_ident}.clone()).unwrap()}})",
-                            );
+                            let (read, _write) = get_uber_read_write(config);
+                            use UberStoreOptions::*;
+                            match config.get_uber_store().unwrap() {
+                                StdRwLock => {
+                                    emit!(
+                                        buffer,
+                                        "let len = self.{obj_ident}{read}.len();"
+                                    );
+                                    emit!(
+                                        buffer,
+                                        "(0..len).map(move|i|{{self.{obj_ident}{read}[i].as_ref().map(|{obj_ident}| {obj_ident}.clone()).unwrap()}})",
+                                    );
+                                },
+                                Single => {
+                                    emit!(
+                                        buffer,
+                                        "let len = self.{obj_ident}.len();"
+                                    );
+                                    emit!(
+                                        buffer,
+                                        "(0..len).map(move|i|{{self.{obj_ident}[i].as_ref().map(|{obj_ident}| {obj_ident}.clone()).unwrap()}})",
+                                    );
+                                },
+                                store => panic!("{store} is not currently supported"),
+                            }
                         }
                     } else if timestamp {
                         emit!(
@@ -866,7 +925,7 @@ impl CodeWriter for DomainStoreVec {
                 use UberStoreOptions::*;
                 match config.get_uber_store().unwrap() {
                     AsyncRwLock => emit!(buffer, "#[derive(Clone, Debug)]"),
-                    Single => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]"),
+                    Single | StdRwLock => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]"),
                     _ => emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]")
                 }
 
@@ -874,7 +933,12 @@ impl CodeWriter for DomainStoreVec {
                 for obj in &objects {
                     let obj_ident = obj.as_ident();
 
-                    emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex<Vec<usize>>,");
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        StdRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex<Vec<usize>>,"),
+                        Single => emit!(buffer, "{obj_ident}_free_list: Vec<usize>,"),
+                        store => panic!("{store} is not currently supported"),
+                    }
 
                     let value_type = get_value_wrapper(is_uber, config, obj, woog, domain);
                     if timestamp {
@@ -890,7 +954,7 @@ impl CodeWriter for DomainStoreVec {
                                 ParkingLotRwLock |
                                 AsyncRwLock |
                                 NDRwLock => format!(
-                                    "Arc<RwLock<Vec<({}, SystemTime)>>>>",
+                                    "Arc<RwLock<Vec<Option<({}, SystemTime)>>>>>",
                                     value_type
                                 ),
                                 StdMutex | ParkingLotMutex => format!(
@@ -926,7 +990,7 @@ impl CodeWriter for DomainStoreVec {
                             StdRwLock |
                             ParkingLotRwLock |
                             AsyncRwLock |
-                            NDRwLock => format!("Arc<RwLock<Vec<{value_type}>>>"),
+                            NDRwLock => format!("Arc<RwLock<Vec<Option<{value_type}>>>>"),
                             StdMutex | ParkingLotMutex => format!("Arc<Mutex<Vec<{value_type}>>>"),
                         };
                         emit!(buffer, "{obj_ident}: {mother_of_all_types},");
@@ -1090,7 +1154,12 @@ impl CodeWriter for DomainStoreVec {
                 }
                 for obj in &objects {
                     let obj_ident = obj.as_ident();
-                    emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),");
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        StdRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
+                        Single => emit!(buffer, "{obj_ident}_free_list: Vec::new(),"),
+                        store => panic!("{store} is not currently supported"),
+                    }
 
                     if is_uber {
                         use UberStoreOptions::*;
@@ -1100,7 +1169,7 @@ impl CodeWriter for DomainStoreVec {
                             StdRwLock |
                             ParkingLotRwLock |
                             AsyncRwLock |
-                            NDRwLock => "Arc::new(RwLock::new(HashMap::default()))",
+                            NDRwLock => "Arc::new(RwLock::new(Vec::new()))",
                             StdMutex |
                             ParkingLotMutex => "Arc::new(Mutex::new(HashMap::default()))",
                         };
@@ -1483,10 +1552,16 @@ fn generate_store_persistence(
                 } else {
                     if is_uber {
                         let (read, _write) = get_uber_read_write(config);
-                        emit!(
-                            buffer,
-                            "for {obj_ident} in &self.{obj_ident} {{"
-                        );
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            StdRwLock => {
+                                emit!(buffer, "for {obj_ident} in &*self.{obj_ident}{read} {{");
+                            },
+                            Single => {
+                                emit!(buffer, "for {obj_ident} in &self.{obj_ident} {{");
+                            },
+                            store => panic!("{store} is not currently supported"),
+                        }
                         emit!(
                             buffer,
                             "if let Some({obj_ident}) = {obj_ident} {{"

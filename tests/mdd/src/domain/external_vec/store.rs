@@ -26,18 +26,18 @@ use crate::domain::external_vec::types::{Nunchuck, Timestamp};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
-    nunchuck_free_list: std::sync::Mutex<Vec<usize>>,
+    nunchuck_free_list: Vec<usize>,
     nunchuck: Vec<Option<Rc<RefCell<Nunchuck>>>>,
-    timestamp_free_list: std::sync::Mutex<Vec<usize>>,
+    timestamp_free_list: Vec<usize>,
     timestamp: Vec<Option<Rc<RefCell<Timestamp>>>>,
 }
 
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            nunchuck_free_list: std::sync::Mutex::new(Vec::new()),
+            nunchuck_free_list: Vec::new(),
             nunchuck: Vec::new(),
-            timestamp_free_list: std::sync::Mutex::new(Vec::new()),
+            timestamp_free_list: Vec::new(),
             timestamp: Vec::new(),
         };
 
@@ -56,7 +56,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Nunchuck>>,
     {
-        if let Some(_index) = self.nunchuck_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.nunchuck_free_list.pop() {
             let nunchuck = nunchuck(_index);
             self.nunchuck[_index] = Some(nunchuck.clone());
             nunchuck
@@ -81,7 +81,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_nunchuck(&mut self, id: &usize) -> Option<Rc<RefCell<Nunchuck>>> {
         let result = self.nunchuck[*id].take();
-        self.nunchuck_free_list.lock().unwrap().push(*id);
+        self.nunchuck_free_list.push(*id);
         result
     }
 
@@ -103,7 +103,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Timestamp>>,
     {
-        if let Some(_index) = self.timestamp_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.timestamp_free_list.pop() {
             let timestamp = timestamp(_index);
             self.timestamp[_index] = Some(timestamp.clone());
             timestamp
@@ -128,7 +128,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_timestamp(&mut self, id: &usize) -> Option<Rc<RefCell<Timestamp>>> {
         let result = self.timestamp[*id].take();
-        self.timestamp_free_list.lock().unwrap().push(*id);
+        self.timestamp_free_list.push(*id);
         result
     }
 

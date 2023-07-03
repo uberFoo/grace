@@ -277,6 +277,140 @@ macro_rules! test_target_domain_vec_store {
     };
 }
 
+macro_rules! test_target_domain_rwlock_vec_store {
+    ($name:ident, $domain:literal, $path:literal) => {
+        #[test]
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                persist: true,
+                optimization_level: OptimizationLevel::Vec,
+                uber_store: UberStoreOptions::StdRwLock,
+                ..Default::default()
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                ).map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}", $domain))
+                .arg("--")
+                .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+    ($name:ident, $domain:literal, $path:literal, $($imports:literal),+) => {
+        #[test]
+        /// This one handles imports
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                persist: true,
+                ..Default::default()
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            let mut imports = Vec::new();
+            $(
+                imports.push($imports.to_string());
+            )*
+            options.imported_domains = Some(imports);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                )
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}", $domain))
+                .arg("--")
+                .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+}
+
 macro_rules! test_target_domain_timestamps {
     ($name:ident, $domain:literal, $path:literal) => {
         #[test]
@@ -527,6 +661,11 @@ test_target_domain!(
 test_target_domain_vec_store!(
     everything_domain_vec,
     "everything_vec",
+    "tests/mdd/models/everything.json"
+);
+test_target_domain_rwlock_vec_store!(
+    everything_domain_rwlock_vec,
+    "everything_rwlock_vec",
     "tests/mdd/models/everything.json"
 );
 test_target_domain_timestamps!(

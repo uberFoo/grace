@@ -32,34 +32,34 @@ use crate::domain::associative_vec::types::{
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
-    acknowledged_event_free_list: std::sync::Mutex<Vec<usize>>,
+    acknowledged_event_free_list: Vec<usize>,
     acknowledged_event: Vec<Option<Rc<RefCell<AcknowledgedEvent>>>>,
-    anchor_free_list: std::sync::Mutex<Vec<usize>>,
+    anchor_free_list: Vec<usize>,
     anchor: Vec<Option<Rc<RefCell<Anchor>>>>,
-    event_free_list: std::sync::Mutex<Vec<usize>>,
+    event_free_list: Vec<usize>,
     event: Vec<Option<Rc<RefCell<Event>>>>,
-    isa_ui_free_list: std::sync::Mutex<Vec<usize>>,
+    isa_ui_free_list: Vec<usize>,
     isa_ui: Vec<Option<Rc<RefCell<IsaUi>>>>,
-    state_free_list: std::sync::Mutex<Vec<usize>>,
+    state_free_list: Vec<usize>,
     state: Vec<Option<Rc<RefCell<State>>>>,
-    subtype_anchor_free_list: std::sync::Mutex<Vec<usize>>,
+    subtype_anchor_free_list: Vec<usize>,
     subtype_anchor: Vec<Option<Rc<RefCell<SubtypeAnchor>>>>,
 }
 
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            acknowledged_event_free_list: std::sync::Mutex::new(Vec::new()),
+            acknowledged_event_free_list: Vec::new(),
             acknowledged_event: Vec::new(),
-            anchor_free_list: std::sync::Mutex::new(Vec::new()),
+            anchor_free_list: Vec::new(),
             anchor: Vec::new(),
-            event_free_list: std::sync::Mutex::new(Vec::new()),
+            event_free_list: Vec::new(),
             event: Vec::new(),
-            isa_ui_free_list: std::sync::Mutex::new(Vec::new()),
+            isa_ui_free_list: Vec::new(),
             isa_ui: Vec::new(),
-            state_free_list: std::sync::Mutex::new(Vec::new()),
+            state_free_list: Vec::new(),
             state: Vec::new(),
-            subtype_anchor_free_list: std::sync::Mutex::new(Vec::new()),
+            subtype_anchor_free_list: Vec::new(),
             subtype_anchor: Vec::new(),
         };
 
@@ -81,7 +81,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<AcknowledgedEvent>>,
     {
-        if let Some(_index) = self.acknowledged_event_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.acknowledged_event_free_list.pop() {
             let acknowledged_event = acknowledged_event(_index);
             self.acknowledged_event[_index] = Some(acknowledged_event.clone());
             acknowledged_event
@@ -110,7 +110,7 @@ impl ObjectStore {
         id: &usize,
     ) -> Option<Rc<RefCell<AcknowledgedEvent>>> {
         let result = self.acknowledged_event[*id].take();
-        self.acknowledged_event_free_list.lock().unwrap().push(*id);
+        self.acknowledged_event_free_list.push(*id);
         result
     }
 
@@ -134,7 +134,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Anchor>>,
     {
-        if let Some(_index) = self.anchor_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.anchor_free_list.pop() {
             let anchor = anchor(_index);
             self.anchor[_index] = Some(anchor.clone());
             anchor
@@ -159,7 +159,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_anchor(&mut self, id: &usize) -> Option<Rc<RefCell<Anchor>>> {
         let result = self.anchor[*id].take();
-        self.anchor_free_list.lock().unwrap().push(*id);
+        self.anchor_free_list.push(*id);
         result
     }
 
@@ -181,7 +181,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Event>>,
     {
-        if let Some(_index) = self.event_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.event_free_list.pop() {
             let event = event(_index);
             self.event[_index] = Some(event.clone());
             event
@@ -206,7 +206,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_event(&mut self, id: &usize) -> Option<Rc<RefCell<Event>>> {
         let result = self.event[*id].take();
-        self.event_free_list.lock().unwrap().push(*id);
+        self.event_free_list.push(*id);
         result
     }
 
@@ -223,7 +223,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<IsaUi>>,
     {
-        if let Some(_index) = self.isa_ui_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.isa_ui_free_list.pop() {
             let isa_ui = isa_ui(_index);
             self.isa_ui[_index] = Some(isa_ui.clone());
             isa_ui
@@ -248,7 +248,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_isa_ui(&mut self, id: &usize) -> Option<Rc<RefCell<IsaUi>>> {
         let result = self.isa_ui[*id].take();
-        self.isa_ui_free_list.lock().unwrap().push(*id);
+        self.isa_ui_free_list.push(*id);
         result
     }
 
@@ -270,7 +270,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<State>>,
     {
-        if let Some(_index) = self.state_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.state_free_list.pop() {
             let state = state(_index);
             self.state[_index] = Some(state.clone());
             state
@@ -295,7 +295,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_state(&mut self, id: &usize) -> Option<Rc<RefCell<State>>> {
         let result = self.state[*id].take();
-        self.state_free_list.lock().unwrap().push(*id);
+        self.state_free_list.push(*id);
         result
     }
 
@@ -312,7 +312,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<SubtypeAnchor>>,
     {
-        if let Some(_index) = self.subtype_anchor_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.subtype_anchor_free_list.pop() {
             let subtype_anchor = subtype_anchor(_index);
             self.subtype_anchor[_index] = Some(subtype_anchor.clone());
             subtype_anchor
@@ -337,7 +337,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_subtype_anchor(&mut self, id: &usize) -> Option<Rc<RefCell<SubtypeAnchor>>> {
         let result = self.subtype_anchor[*id].take();
-        self.subtype_anchor_free_list.lock().unwrap().push(*id);
+        self.subtype_anchor_free_list.push(*id);
         result
     }
 

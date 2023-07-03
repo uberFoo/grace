@@ -29,30 +29,30 @@ use crate::domain::one_to_one_vec::types::{Parameter, Referent, A, B, C};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
-    a_free_list: std::sync::Mutex<Vec<usize>>,
+    a_free_list: Vec<usize>,
     a: Vec<Option<Rc<RefCell<A>>>>,
-    b_free_list: std::sync::Mutex<Vec<usize>>,
+    b_free_list: Vec<usize>,
     b: Vec<Option<Rc<RefCell<B>>>>,
-    c_free_list: std::sync::Mutex<Vec<usize>>,
+    c_free_list: Vec<usize>,
     c: Vec<Option<Rc<RefCell<C>>>>,
-    parameter_free_list: std::sync::Mutex<Vec<usize>>,
+    parameter_free_list: Vec<usize>,
     parameter: Vec<Option<Rc<RefCell<Parameter>>>>,
-    referent_free_list: std::sync::Mutex<Vec<usize>>,
+    referent_free_list: Vec<usize>,
     referent: Vec<Option<Rc<RefCell<Referent>>>>,
 }
 
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            a_free_list: std::sync::Mutex::new(Vec::new()),
+            a_free_list: Vec::new(),
             a: Vec::new(),
-            b_free_list: std::sync::Mutex::new(Vec::new()),
+            b_free_list: Vec::new(),
             b: Vec::new(),
-            c_free_list: std::sync::Mutex::new(Vec::new()),
+            c_free_list: Vec::new(),
             c: Vec::new(),
-            parameter_free_list: std::sync::Mutex::new(Vec::new()),
+            parameter_free_list: Vec::new(),
             parameter: Vec::new(),
-            referent_free_list: std::sync::Mutex::new(Vec::new()),
+            referent_free_list: Vec::new(),
             referent: Vec::new(),
         };
 
@@ -71,7 +71,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<A>>,
     {
-        if let Some(_index) = self.a_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.a_free_list.pop() {
             let a = a(_index);
             self.a[_index] = Some(a.clone());
             a
@@ -96,7 +96,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_a(&mut self, id: &usize) -> Option<Rc<RefCell<A>>> {
         let result = self.a[*id].take();
-        self.a_free_list.lock().unwrap().push(*id);
+        self.a_free_list.push(*id);
         result
     }
 
@@ -113,7 +113,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<B>>,
     {
-        if let Some(_index) = self.b_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.b_free_list.pop() {
             let b = b(_index);
             self.b[_index] = Some(b.clone());
             b
@@ -138,7 +138,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_b(&mut self, id: &usize) -> Option<Rc<RefCell<B>>> {
         let result = self.b[*id].take();
-        self.b_free_list.lock().unwrap().push(*id);
+        self.b_free_list.push(*id);
         result
     }
 
@@ -155,7 +155,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<C>>,
     {
-        if let Some(_index) = self.c_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.c_free_list.pop() {
             let c = c(_index);
             self.c[_index] = Some(c.clone());
             c
@@ -180,7 +180,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_c(&mut self, id: &usize) -> Option<Rc<RefCell<C>>> {
         let result = self.c[*id].take();
-        self.c_free_list.lock().unwrap().push(*id);
+        self.c_free_list.push(*id);
         result
     }
 
@@ -197,7 +197,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Parameter>>,
     {
-        if let Some(_index) = self.parameter_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.parameter_free_list.pop() {
             let parameter = parameter(_index);
             self.parameter[_index] = Some(parameter.clone());
             parameter
@@ -222,7 +222,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_parameter(&mut self, id: &usize) -> Option<Rc<RefCell<Parameter>>> {
         let result = self.parameter[*id].take();
-        self.parameter_free_list.lock().unwrap().push(*id);
+        self.parameter_free_list.push(*id);
         result
     }
 
@@ -244,7 +244,7 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Referent>>,
     {
-        if let Some(_index) = self.referent_free_list.lock().unwrap().pop() {
+        if let Some(_index) = self.referent_free_list.pop() {
             let referent = referent(_index);
             self.referent[_index] = Some(referent.clone());
             referent
@@ -269,7 +269,7 @@ impl ObjectStore {
     ///
     pub fn exorcise_referent(&mut self, id: &usize) -> Option<Rc<RefCell<Referent>>> {
         let result = self.referent[*id].take();
-        self.referent_free_list.lock().unwrap().push(*id);
+        self.referent_free_list.push(*id);
         result
     }
 

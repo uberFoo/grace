@@ -4,6 +4,7 @@ pub mod associative;
 pub mod associative_ts;
 pub mod associative_vec;
 pub mod everything;
+pub mod everything_rwlock_vec;
 pub mod everything_ts;
 pub mod everything_vec;
 pub mod external;

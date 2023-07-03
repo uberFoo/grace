@@ -1,17 +1,17 @@
-//! domain::everything_vec Object Store
+//! domain::everything_rwlock_vec Object Store
 //!
 //! The ObjectStore contains instances of objects in the domain.
 //! The instances are stored in a hash map, keyed by the object's UUID.
 //! This is used during code generation, and probably not useful elsewhere.
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_vec-object-store-file"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_rwlock_vec-object-store-file"}}}
 //!
 //! # Contents:
 //!
 //! * [`Everything`]
 //! * [`RandoObject`]
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_vec-object-store-definition"}}}
-use std::cell::RefCell;
-use std::rc::Rc;
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_rwlock_vec-object-store-definition"}}}
+use std::sync::Arc;
+use std::sync::RwLock;
 use std::{
     fs,
     io::{self, prelude::*},
@@ -22,23 +22,23 @@ use fnv::FnvHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::domain::everything_vec::types::{Everything, RandoObject};
+use crate::domain::everything_rwlock_vec::types::{Everything, RandoObject};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ObjectStore {
-    everything_free_list: Vec<usize>,
-    everything: Vec<Option<Rc<RefCell<Everything>>>>,
-    rando_object_free_list: Vec<usize>,
-    rando_object: Vec<Option<Rc<RefCell<RandoObject>>>>,
+    everything_free_list: std::sync::Mutex<Vec<usize>>,
+    everything: Arc<RwLock<Vec<Option<Arc<RwLock<Everything>>>>>>,
+    rando_object_free_list: std::sync::Mutex<Vec<usize>>,
+    rando_object: Arc<RwLock<Vec<Option<Arc<RwLock<RandoObject>>>>>>,
 }
 
 impl ObjectStore {
     pub fn new() -> Self {
         let store = Self {
-            everything_free_list: Vec::new(),
-            everything: Vec::new(),
-            rando_object_free_list: Vec::new(),
-            rando_object: Vec::new(),
+            everything_free_list: std::sync::Mutex::new(Vec::new()),
+            everything: Arc::new(RwLock::new(Vec::new())),
+            rando_object_free_list: std::sync::Mutex::new(Vec::new()),
+            rando_object: Arc::new(RwLock::new(Vec::new())),
         };
 
         // Initialize Singleton Subtypes
@@ -49,29 +49,32 @@ impl ObjectStore {
         store
     }
 
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_vec-object-store-methods"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_rwlock_vec-object-store-methods"}}}
     /// Inter (insert) [`Everything`] into the store.
     ///
-    pub fn inter_everything<F>(&mut self, everything: F) -> Rc<RefCell<Everything>>
+    pub fn inter_everything<F>(&mut self, everything: F) -> Arc<RwLock<Everything>>
     where
-        F: Fn(usize) -> Rc<RefCell<Everything>>,
+        F: Fn(usize) -> Arc<RwLock<Everything>>,
     {
-        if let Some(_index) = self.everything_free_list.pop() {
+        if let Some(_index) = self.everything_free_list.lock().unwrap().pop() {
             let everything = everything(_index);
-            self.everything[_index] = Some(everything.clone());
+            self.everything.write().unwrap()[_index] = Some(everything.clone());
             everything
         } else {
-            let _index = self.everything.len();
+            let _index = self.everything.read().unwrap().len();
             let everything = everything(_index);
-            self.everything.push(Some(everything.clone()));
+            self.everything
+                .write()
+                .unwrap()
+                .push(Some(everything.clone()));
             everything
         }
     }
 
     /// Exhume (get) [`Everything`] from the store.
     ///
-    pub fn exhume_everything(&self, id: &usize) -> Option<Rc<RefCell<Everything>>> {
-        match self.everything.get(*id) {
+    pub fn exhume_everything(&self, id: &usize) -> Option<Arc<RwLock<Everything>>> {
+        match self.everything.read().unwrap().get(*id) {
             Some(everything) => everything.clone(),
             None => None,
         }
@@ -79,18 +82,18 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Everything`] from the store.
     ///
-    pub fn exorcise_everything(&mut self, id: &usize) -> Option<Rc<RefCell<Everything>>> {
-        let result = self.everything[*id].take();
-        self.everything_free_list.push(*id);
+    pub fn exorcise_everything(&mut self, id: &usize) -> Option<Arc<RwLock<Everything>>> {
+        let result = self.everything.write().unwrap()[*id].take();
+        self.everything_free_list.lock().unwrap().push(*id);
         result
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, Everything>`.
     ///
-    pub fn iter_everything(&self) -> impl Iterator<Item = Rc<RefCell<Everything>>> + '_ {
-        let len = self.everything.len();
+    pub fn iter_everything(&self) -> impl Iterator<Item = Arc<RwLock<Everything>>> + '_ {
+        let len = self.everything.read().unwrap().len();
         (0..len).map(move |i| {
-            self.everything[i]
+            self.everything.read().unwrap()[i]
                 .as_ref()
                 .map(|everything| everything.clone())
                 .unwrap()
@@ -99,26 +102,29 @@ impl ObjectStore {
 
     /// Inter (insert) [`RandoObject`] into the store.
     ///
-    pub fn inter_rando_object<F>(&mut self, rando_object: F) -> Rc<RefCell<RandoObject>>
+    pub fn inter_rando_object<F>(&mut self, rando_object: F) -> Arc<RwLock<RandoObject>>
     where
-        F: Fn(usize) -> Rc<RefCell<RandoObject>>,
+        F: Fn(usize) -> Arc<RwLock<RandoObject>>,
     {
-        if let Some(_index) = self.rando_object_free_list.pop() {
+        if let Some(_index) = self.rando_object_free_list.lock().unwrap().pop() {
             let rando_object = rando_object(_index);
-            self.rando_object[_index] = Some(rando_object.clone());
+            self.rando_object.write().unwrap()[_index] = Some(rando_object.clone());
             rando_object
         } else {
-            let _index = self.rando_object.len();
+            let _index = self.rando_object.read().unwrap().len();
             let rando_object = rando_object(_index);
-            self.rando_object.push(Some(rando_object.clone()));
+            self.rando_object
+                .write()
+                .unwrap()
+                .push(Some(rando_object.clone()));
             rando_object
         }
     }
 
     /// Exhume (get) [`RandoObject`] from the store.
     ///
-    pub fn exhume_rando_object(&self, id: &usize) -> Option<Rc<RefCell<RandoObject>>> {
-        match self.rando_object.get(*id) {
+    pub fn exhume_rando_object(&self, id: &usize) -> Option<Arc<RwLock<RandoObject>>> {
+        match self.rando_object.read().unwrap().get(*id) {
             Some(rando_object) => rando_object.clone(),
             None => None,
         }
@@ -126,18 +132,18 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`RandoObject`] from the store.
     ///
-    pub fn exorcise_rando_object(&mut self, id: &usize) -> Option<Rc<RefCell<RandoObject>>> {
-        let result = self.rando_object[*id].take();
-        self.rando_object_free_list.push(*id);
+    pub fn exorcise_rando_object(&mut self, id: &usize) -> Option<Arc<RwLock<RandoObject>>> {
+        let result = self.rando_object.write().unwrap()[*id].take();
+        self.rando_object_free_list.lock().unwrap().push(*id);
         result
     }
 
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
     ///
-    pub fn iter_rando_object(&self) -> impl Iterator<Item = Rc<RefCell<RandoObject>>> + '_ {
-        let len = self.rando_object.len();
+    pub fn iter_rando_object(&self) -> impl Iterator<Item = Arc<RwLock<RandoObject>>> + '_ {
+        let len = self.rando_object.read().unwrap().len();
         (0..len).map(move |i| {
-            self.rando_object[i]
+            self.rando_object.read().unwrap()[i]
                 .as_ref()
                 .map(|rando_object| rando_object.clone())
                 .unwrap()
@@ -146,7 +152,7 @@ impl ObjectStore {
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_vec-object-store-persistence"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_rwlock_vec-object-store-persistence"}}}
     /// Persist the store.
     ///
     /// The store is persisted as a a bincode file.
@@ -174,9 +180,9 @@ impl ObjectStore {
         {
             let path = path.join("everything");
             fs::create_dir_all(&path)?;
-            for everything in &self.everything {
+            for everything in &*self.everything.read().unwrap() {
                 if let Some(everything) = everything {
-                    let path = path.join(format!("{}.json", everything.borrow().id));
+                    let path = path.join(format!("{}.json", everything.read().unwrap().id));
                     let file = fs::File::create(path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &everything)?;
@@ -188,9 +194,9 @@ impl ObjectStore {
         {
             let path = path.join("rando_object");
             fs::create_dir_all(&path)?;
-            for rando_object in &self.rando_object {
+            for rando_object in &*self.rando_object.read().unwrap() {
                 if let Some(rando_object) = rando_object {
-                    let path = path.join(format!("{}.json", rando_object.borrow().id));
+                    let path = path.join(format!("{}.json", rando_object.read().unwrap().id));
                     let file = fs::File::create(path)?;
                     let mut writer = io::BufWriter::new(file);
                     serde_json::to_writer_pretty(&mut writer, &rando_object)?;
@@ -234,9 +240,9 @@ impl ObjectStore {
                 let path = entry.path();
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
-                let everything: Rc<RefCell<Everything>> = serde_json::from_reader(reader)?;
+                let everything: Arc<RwLock<Everything>> = serde_json::from_reader(reader)?;
                 store.inter_everything(|id| {
-                    everything.borrow_mut().id = id;
+                    everything.write().unwrap().id = id;
                     everything.clone()
                 });
             }
@@ -251,9 +257,9 @@ impl ObjectStore {
                 let path = entry.path();
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
-                let rando_object: Rc<RefCell<RandoObject>> = serde_json::from_reader(reader)?;
+                let rando_object: Arc<RwLock<RandoObject>> = serde_json::from_reader(reader)?;
                 store.inter_rando_object(|id| {
-                    rando_object.borrow_mut().id = id;
+                    rando_object.write().unwrap().id = id;
                     rando_object.clone()
                 });
             }

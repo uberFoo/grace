@@ -14,7 +14,7 @@
 //! I need te generate a struct definition anyway. All generating this would
 //! be is modifying a struct definition. And that's just the sort of problem that
 //! I should solve early.
-use std::{any::Any, path::PathBuf};
+use std::{any::Any, fmt, path::PathBuf};
 
 use clap::{ArgAction, Args, Subcommand, ValueEnum};
 use fnv::FnvHashMap as HashMap;
@@ -76,6 +76,21 @@ pub enum UberStoreOptions {
     ParkingLotRwLock,
     /// Use the parking_lot Mutex
     ParkingLotMutex,
+}
+
+impl fmt::Display for UberStoreOptions {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            UberStoreOptions::Disabled => write!(f, "Disabled"),
+            UberStoreOptions::AsyncRwLock => write!(f, "Async RwLock"),
+            UberStoreOptions::NDRwLock => write!(f, "No Deadlocks RwLock"),
+            UberStoreOptions::Single => write!(f, "Single"),
+            UberStoreOptions::StdRwLock => write!(f, "Std RwLock"),
+            UberStoreOptions::StdMutex => write!(f, "Std Mutex"),
+            UberStoreOptions::ParkingLotRwLock => write!(f, "Parking Lot RwLock"),
+            UberStoreOptions::ParkingLotMutex => write!(f, "Parking Lot Mutex"),
+        }
+    }
 }
 
 /// Domain Target Configuration
