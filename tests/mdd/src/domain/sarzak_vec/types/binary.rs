@@ -32,10 +32,10 @@ use crate::domain::sarzak_vec::store::ObjectStore as SarzakVecStore;
 pub struct Binary {
     pub id: usize,
     pub number: i64,
-    /// R5: [`Binary`] 'loops in the' [`Referent`]
-    pub to: usize,
     /// R6: [`Binary`] 'is formalized by' [`Referrer`]
     pub from: usize,
+    /// R5: [`Binary`] 'loops in the' [`Referent`]
+    pub to: usize,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-implementation"}}}
@@ -44,18 +44,27 @@ impl Binary {
     /// Inter a new 'Binary' in the store, and return it's `id`.
     pub fn new(
         number: i64,
-        to: &Rc<RefCell<Referent>>,
         from: &Rc<RefCell<Referrer>>,
+        to: &Rc<RefCell<Referent>>,
         store: &mut SarzakVecStore,
     ) -> Rc<RefCell<Binary>> {
         store.inter_binary(|id| {
             Rc::new(RefCell::new(Binary {
                 id,
                 number,
-                to: to.borrow().id,
                 from: from.borrow().id,
+                to: to.borrow().id,
             }))
         })
+    }
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-to"}}}
+    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-from"}}}
+    /// Navigate to [`Referrer`] across R6(1-*)
+    pub fn r6_referrer<'a>(&'a self, store: &'a SarzakVecStore) -> Vec<Rc<RefCell<Referrer>>> {
+        span!("r6_referrer");
+        vec![store.exhume_referrer(&self.from).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-to"}}}
@@ -63,13 +72,6 @@ impl Binary {
     pub fn r5_referent<'a>(&'a self, store: &'a SarzakVecStore) -> Vec<Rc<RefCell<Referent>>> {
         span!("r5_referent");
         vec![store.exhume_referent(&self.to).unwrap()]
-    }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-from"}}}
-    /// Navigate to [`Referrer`] across R6(1-*)
-    pub fn r6_referrer<'a>(&'a self, store: &'a SarzakVecStore) -> Vec<Rc<RefCell<Referrer>>> {
-        span!("r6_referrer");
-        vec![store.exhume_referrer(&self.from).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-impl-nav-subtype-to-supertype-relationship"}}}

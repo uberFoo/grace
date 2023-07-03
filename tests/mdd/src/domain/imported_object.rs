@@ -40,6 +40,6 @@ mod tests {
         let oh_boy = OhBoy::new("The Wall Street Journal".to_owned(), &mut isa_store);
         let z = SimpleSubtypeA::new_oh_boy(&oh_boy, &mut isa_store);
         let st = SimpleSupertype::new_simple_subtype_a(true, &z, &mut isa_store);
-        let _ao = AnotherObject::new(&obj, &st, &mut store);
+        let _ao = AnotherObject::new(&st, &obj, &mut store);
     }
 }

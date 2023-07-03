@@ -44,7 +44,8 @@ use uuid::Uuid;
 use crate::domain::sarzak_vec::types::{
     AcknowledgedEvent, AnAssociativeReferent, Associative, AssociativeReferent,
     AssociativeReferrer, Attribute, Binary, Cardinality, Conditionality, Event, External, Isa,
-    Object, Referent, Referrer, Relationship, State, Subtype, Supertype, Ty,
+    Object, Referent, Referrer, Relationship, State, Subtype, Supertype, Ty, BOOLEAN, CONDITIONAL,
+    FLOAT, INTEGER, MANY, ONE, S_STRING, S_UUID, UNCONDITIONAL,
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -94,7 +95,7 @@ pub struct ObjectStore {
 
 impl ObjectStore {
     pub fn new() -> Self {
-        let store = Self {
+        let mut store = Self {
             acknowledged_event_free_list: std::sync::Mutex::new(Vec::new()),
             acknowledged_event: Vec::new(),
             an_associative_referent_free_list: std::sync::Mutex::new(Vec::new()),
@@ -142,6 +143,60 @@ impl ObjectStore {
         // 💥 Look at how beautiful this generated code is for super/sub-type graphs!
         // I remember having a bit of a struggle making it work. It's recursive, with
         // a lot of special cases, and I think it calls other recursive functions...💥
+        store.inter_cardinality(|id| {
+            Rc::new(RefCell::new(Cardinality {
+                subtype: super::CardinalityEnum::Many(MANY),
+                id,
+            }))
+        });
+        store.inter_cardinality(|id| {
+            Rc::new(RefCell::new(Cardinality {
+                subtype: super::CardinalityEnum::One(ONE),
+                id,
+            }))
+        });
+        store.inter_conditionality(|id| {
+            Rc::new(RefCell::new(Conditionality {
+                subtype: super::ConditionalityEnum::Conditional(CONDITIONAL),
+                id,
+            }))
+        });
+        store.inter_conditionality(|id| {
+            Rc::new(RefCell::new(Conditionality {
+                subtype: super::ConditionalityEnum::Unconditional(UNCONDITIONAL),
+                id,
+            }))
+        });
+        store.inter_ty(|id| {
+            Rc::new(RefCell::new(Ty {
+                subtype: super::TyEnum::Boolean(BOOLEAN),
+                id,
+            }))
+        });
+        store.inter_ty(|id| {
+            Rc::new(RefCell::new(Ty {
+                subtype: super::TyEnum::Float(FLOAT),
+                id,
+            }))
+        });
+        store.inter_ty(|id| {
+            Rc::new(RefCell::new(Ty {
+                subtype: super::TyEnum::Integer(INTEGER),
+                id,
+            }))
+        });
+        store.inter_ty(|id| {
+            Rc::new(RefCell::new(Ty {
+                subtype: super::TyEnum::SString(S_STRING),
+                id,
+            }))
+        });
+        store.inter_ty(|id| {
+            Rc::new(RefCell::new(Ty {
+                subtype: super::TyEnum::SUuid(S_UUID),
+                id,
+            }))
+        });
 
         store
     }
