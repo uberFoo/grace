@@ -142,19 +142,29 @@ impl FileGenerator for ExternalGenerator {
 
                 if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
                     if config.is_uber_store() {
-                        if let crate::options::UberStoreOptions::AsyncRwLock =
-                            config.get_uber_store().unwrap()
-                        {
-                            unimplemented!();
-                        } else {
-                            emit!(
-                                buffer,
-                                "pub fn new(store: &mut {}) -> std::rc::Rc<std::cell::RefCell<{}>> {{",
-                                store.name,
-                                object.as_type(&Ownership::new_borrowed(), woog, domain)
-                            );
+                        use crate::UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            StdRwLock => {
+                                emit!(
+                                    buffer,
+                                    "pub fn new(store: &mut {}) -> std::rc::Arc<std::sync::RwLock<{}>> {{",
+                                    store.name,
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
 
-                            emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                                emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                            }
+                            Single => {
+                                emit!(
+                                    buffer,
+                                    "pub fn new(store: &mut {}) -> std::rc::Rc<std::cell::RefCell<{}>> {{",
+                                    store.name,
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
+
+                                emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                            }
+                            store => panic!("{store} is not currently supported"),
                         }
                     } else {
                         emit!(
@@ -176,12 +186,35 @@ impl FileGenerator for ExternalGenerator {
                     emit!(buffer, "}}))");
                     emit!(buffer, "}})");
                 } else {
-                    emit!(
-                        buffer,
-                        "pub fn new(store: &mut {}) -> {} {{",
-                        store.name,
-                        object.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
+                    if config.is_uber_store() {
+                        use crate::UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            StdRwLock => {
+                                emit!(
+                                    buffer,
+                                    "pub fn new(store: &mut {}) -> std::sync::Arc<std::sync::RwLock<{}>> {{",
+                                    store.name,
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
+                            }
+                            Single => {
+                                emit!(
+                                    buffer,
+                                    "pub fn new(store: &mut {}) -> std::rc::Rc<std::cell::RefCell<{}>> {{",
+                                    store.name,
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
+                            }
+                            store => panic!("{store} is not currently supported"),
+                        }
+                    } else {
+                        emit!(
+                            buffer,
+                            "pub fn new(store: &mut {}) -> {} {{",
+                            store.name,
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                    }
                     emit!(
                         buffer,
                         "let inner = {}::{}();",
@@ -192,14 +225,43 @@ impl FileGenerator for ExternalGenerator {
                         buffer,
                         "let id = Uuid::new_v5(&UUID_NS, format!(\"{{:?}}\", inner).as_bytes());"
                     );
-                    emit!(
-                        buffer,
-                        "let new = {} {{",
-                        object.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
-                    emit!(buffer, "id: id,");
-                    emit!(buffer, "inner: inner,");
-                    emit!(buffer, "}};");
+
+                    if config.is_uber_store() {
+                        use crate::UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            StdRwLock => {
+                                emit!(
+                                    buffer,
+                                    "let new = std::sync::Arc::new(std::sync::RwLock::new({}{{",
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
+                                emit!(buffer, "id: id,");
+                                emit!(buffer, "inner: inner,");
+                                emit!(buffer, "}}));");
+                            }
+                            Single => {
+                                emit!(
+                                    buffer,
+                                    "let new = std::rt::Rc::new(std::cell::RefCell::new({}{{",
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
+                                emit!(buffer, "id: id,");
+                                emit!(buffer, "inner: inner,");
+                                emit!(buffer, "}}));");
+                            }
+                            store => panic!("{store} is not currently supported"),
+                        }
+                    } else {
+                        emit!(
+                            buffer,
+                            "let new = {} {{",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
+                        emit!(buffer, "id: id,");
+                        emit!(buffer, "inner: inner,");
+                        emit!(buffer, "}};");
+                    }
+
                     if config.is_uber_store() {
                         if let crate::options::UberStoreOptions::AsyncRwLock =
                             config.get_uber_store().unwrap()

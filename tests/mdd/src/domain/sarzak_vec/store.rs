@@ -1522,10 +1522,10 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let acknowledged_event: Rc<RefCell<AcknowledgedEvent>> =
                     serde_json::from_reader(reader)?;
-                store.inter_acknowledged_event(|id| {
-                    acknowledged_event.borrow_mut().id = id;
-                    acknowledged_event.clone()
-                });
+                store.acknowledged_event.insert(
+                    acknowledged_event.borrow().id,
+                    Some(acknowledged_event.clone()),
+                );
             }
         }
 
@@ -1540,10 +1540,10 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let an_associative_referent: Rc<RefCell<AnAssociativeReferent>> =
                     serde_json::from_reader(reader)?;
-                store.inter_an_associative_referent(|id| {
-                    an_associative_referent.borrow_mut().id = id;
-                    an_associative_referent.clone()
-                });
+                store.an_associative_referent.insert(
+                    an_associative_referent.borrow().id,
+                    Some(an_associative_referent.clone()),
+                );
             }
         }
 
@@ -1557,10 +1557,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let associative: Rc<RefCell<Associative>> = serde_json::from_reader(reader)?;
-                store.inter_associative(|id| {
-                    associative.borrow_mut().id = id;
-                    associative.clone()
-                });
+                store
+                    .associative
+                    .insert(associative.borrow().id, Some(associative.clone()));
             }
         }
 
@@ -1575,10 +1574,10 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let associative_referent: Rc<RefCell<AssociativeReferent>> =
                     serde_json::from_reader(reader)?;
-                store.inter_associative_referent(|id| {
-                    associative_referent.borrow_mut().id = id;
-                    associative_referent.clone()
-                });
+                store.associative_referent.insert(
+                    associative_referent.borrow().id,
+                    Some(associative_referent.clone()),
+                );
             }
         }
 
@@ -1593,10 +1592,10 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let associative_referrer: Rc<RefCell<AssociativeReferrer>> =
                     serde_json::from_reader(reader)?;
-                store.inter_associative_referrer(|id| {
-                    associative_referrer.borrow_mut().id = id;
-                    associative_referrer.clone()
-                });
+                store.associative_referrer.insert(
+                    associative_referrer.borrow().id,
+                    Some(associative_referrer.clone()),
+                );
             }
         }
 
@@ -1610,10 +1609,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let attribute: Rc<RefCell<Attribute>> = serde_json::from_reader(reader)?;
-                store.inter_attribute(|id| {
-                    attribute.borrow_mut().id = id;
-                    attribute.clone()
-                });
+                store
+                    .attribute
+                    .insert(attribute.borrow().id, Some(attribute.clone()));
             }
         }
 
@@ -1627,10 +1625,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let binary: Rc<RefCell<Binary>> = serde_json::from_reader(reader)?;
-                store.inter_binary(|id| {
-                    binary.borrow_mut().id = id;
-                    binary.clone()
-                });
+                store
+                    .binary
+                    .insert(binary.borrow().id, Some(binary.clone()));
             }
         }
 
@@ -1644,10 +1641,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let cardinality: Rc<RefCell<Cardinality>> = serde_json::from_reader(reader)?;
-                store.inter_cardinality(|id| {
-                    cardinality.borrow_mut().id = id;
-                    cardinality.clone()
-                });
+                store
+                    .cardinality
+                    .insert(cardinality.borrow().id, Some(cardinality.clone()));
             }
         }
 
@@ -1661,10 +1657,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let conditionality: Rc<RefCell<Conditionality>> = serde_json::from_reader(reader)?;
-                store.inter_conditionality(|id| {
-                    conditionality.borrow_mut().id = id;
-                    conditionality.clone()
-                });
+                store
+                    .conditionality
+                    .insert(conditionality.borrow().id, Some(conditionality.clone()));
             }
         }
 
@@ -1678,10 +1673,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let event: Rc<RefCell<Event>> = serde_json::from_reader(reader)?;
-                store.inter_event(|id| {
-                    event.borrow_mut().id = id;
-                    event.clone()
-                });
+                store.event.insert(event.borrow().id, Some(event.clone()));
             }
         }
 
@@ -1695,10 +1687,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let external: Rc<RefCell<External>> = serde_json::from_reader(reader)?;
-                store.inter_external(|id| {
-                    external.borrow_mut().id = id;
-                    external.clone()
-                });
+                store
+                    .external
+                    .insert(external.borrow().id, Some(external.clone()));
             }
         }
 
@@ -1712,10 +1703,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let isa: Rc<RefCell<Isa>> = serde_json::from_reader(reader)?;
-                store.inter_isa(|id| {
-                    isa.borrow_mut().id = id;
-                    isa.clone()
-                });
+                store.isa.insert(isa.borrow().id, Some(isa.clone()));
             }
         }
 
@@ -1733,10 +1721,9 @@ impl ObjectStore {
                     object.borrow().name.to_upper_camel_case(),
                     object.borrow().id,
                 );
-                store.inter_object(|id| {
-                    object.borrow_mut().id = id;
-                    object.clone()
-                });
+                store
+                    .object
+                    .insert(object.borrow().id, Some(object.clone()));
             }
         }
 
@@ -1750,10 +1737,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referent: Rc<RefCell<Referent>> = serde_json::from_reader(reader)?;
-                store.inter_referent(|id| {
-                    referent.borrow_mut().id = id;
-                    referent.clone()
-                });
+                store
+                    .referent
+                    .insert(referent.borrow().id, Some(referent.clone()));
             }
         }
 
@@ -1767,10 +1753,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referrer: Rc<RefCell<Referrer>> = serde_json::from_reader(reader)?;
-                store.inter_referrer(|id| {
-                    referrer.borrow_mut().id = id;
-                    referrer.clone()
-                });
+                store
+                    .referrer
+                    .insert(referrer.borrow().id, Some(referrer.clone()));
             }
         }
 
@@ -1784,10 +1769,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let relationship: Rc<RefCell<Relationship>> = serde_json::from_reader(reader)?;
-                store.inter_relationship(|id| {
-                    relationship.borrow_mut().id = id;
-                    relationship.clone()
-                });
+                store
+                    .relationship
+                    .insert(relationship.borrow().id, Some(relationship.clone()));
             }
         }
 
@@ -1801,10 +1785,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let state: Rc<RefCell<State>> = serde_json::from_reader(reader)?;
-                store.inter_state(|id| {
-                    state.borrow_mut().id = id;
-                    state.clone()
-                });
+                store.state.insert(state.borrow().id, Some(state.clone()));
             }
         }
 
@@ -1818,10 +1799,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let subtype: Rc<RefCell<Subtype>> = serde_json::from_reader(reader)?;
-                store.inter_subtype(|id| {
-                    subtype.borrow_mut().id = id;
-                    subtype.clone()
-                });
+                store
+                    .subtype
+                    .insert(subtype.borrow().id, Some(subtype.clone()));
             }
         }
 
@@ -1835,10 +1815,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let supertype: Rc<RefCell<Supertype>> = serde_json::from_reader(reader)?;
-                store.inter_supertype(|id| {
-                    supertype.borrow_mut().id = id;
-                    supertype.clone()
-                });
+                store
+                    .supertype
+                    .insert(supertype.borrow().id, Some(supertype.clone()));
             }
         }
 
@@ -1852,10 +1831,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let ty: Rc<RefCell<Ty>> = serde_json::from_reader(reader)?;
-                store.inter_ty(|id| {
-                    ty.borrow_mut().id = id;
-                    ty.clone()
-                });
+                store.ty.insert(ty.borrow().id, Some(ty.clone()));
             }
         }
 

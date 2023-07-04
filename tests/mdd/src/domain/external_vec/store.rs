@@ -235,10 +235,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let nunchuck: Rc<RefCell<Nunchuck>> = serde_json::from_reader(reader)?;
-                store.inter_nunchuck(|id| {
-                    nunchuck.borrow_mut().id = id;
-                    nunchuck.clone()
-                });
+                store
+                    .nunchuck
+                    .insert(nunchuck.borrow().id, Some(nunchuck.clone()));
             }
         }
 
@@ -252,10 +251,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let timestamp: Rc<RefCell<Timestamp>> = serde_json::from_reader(reader)?;
-                store.inter_timestamp(|id| {
-                    timestamp.borrow_mut().id = id;
-                    timestamp.clone()
-                });
+                store
+                    .timestamp
+                    .insert(timestamp.borrow().id, Some(timestamp.clone()));
             }
         }
 

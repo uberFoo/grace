@@ -13,6 +13,8 @@ pub const UUID_NS: Uuid = uuid!("88cd70e0-c065-5c4b-b1ce-69194ab4d0cb");
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use super::*;
 
     #[test]
@@ -28,6 +30,7 @@ mod tests {
         );
         let a = Attribute::new("froggles".to_owned(), &o, &t, &mut store);
 
+        let _ = fs::remove_dir_all("tmp/models");
         store.persist("tmp/models").unwrap();
 
         let bodega = ObjectStore::load("tmp/models").unwrap();

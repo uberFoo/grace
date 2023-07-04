@@ -683,7 +683,20 @@ pub(crate) fn render_referential_attributes(
         //
         let cond = referrer.r11_conditionality(domain.sarzak())[0];
         let ty = if config.is_uber_store() && !config.is_imported(&r_obj.id) {
-            "usize"
+            use crate::options::OptimizationLevel::*;
+            use UberStoreOptions::*;
+            match (
+                config.get_optimization_level(),
+                config.get_uber_store().unwrap(),
+            ) {
+                (Vec, StdRwLock) => "usize",
+                (Vec, Single) => "usize",
+                (None, Single) => "Uuid",
+                (None, StdRwLock) => "Uuid",
+                (lvl, store) => {
+                    panic!("{store} with optimization {lvl} is not currently supported")
+                }
+            }
         } else {
             "Uuid"
         };
@@ -724,7 +737,12 @@ pub(crate) fn render_associative_attributes(
         let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
         let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
         let ty = if config.is_uber_store() && !config.is_imported(&obj.id) {
-            "usize"
+            use UberStoreOptions::*;
+            match config.get_uber_store().unwrap() {
+                StdRwLock => "Uuid",
+                Single => "usize",
+                store => panic!("{store} is not currently supported"),
+            }
         } else {
             "Uuid"
         };

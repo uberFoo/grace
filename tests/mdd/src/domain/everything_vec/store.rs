@@ -235,10 +235,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let everything: Rc<RefCell<Everything>> = serde_json::from_reader(reader)?;
-                store.inter_everything(|id| {
-                    everything.borrow_mut().id = id;
-                    everything.clone()
-                });
+                store
+                    .everything
+                    .insert(everything.borrow().id, Some(everything.clone()));
             }
         }
 
@@ -252,10 +251,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let rando_object: Rc<RefCell<RandoObject>> = serde_json::from_reader(reader)?;
-                store.inter_rando_object(|id| {
-                    rando_object.borrow_mut().id = id;
-                    rando_object.clone()
-                });
+                store
+                    .rando_object
+                    .insert(rando_object.borrow().id, Some(rando_object.clone()));
             }
         }
 

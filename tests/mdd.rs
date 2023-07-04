@@ -61,9 +61,9 @@ macro_rules! test_target_domain {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -129,9 +129,9 @@ macro_rules! test_target_domain {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -195,9 +195,9 @@ macro_rules! test_target_domain_vec_store {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -263,9 +263,9 @@ macro_rules! test_target_domain_vec_store {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -329,9 +329,9 @@ macro_rules! test_target_domain_rwlock_vec_store {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -397,9 +397,142 @@ macro_rules! test_target_domain_rwlock_vec_store {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+}
+
+macro_rules! test_target_domain_rwlock {
+    ($name:ident, $domain:literal, $path:literal) => {
+        #[test]
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                persist: true,
+                uber_store: UberStoreOptions::StdRwLock,
+                ..Default::default()
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                ).map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
+                .current_dir("tests/mdd")
+                .spawn()?;
+
+            match child.wait() {
+                Ok(e) => Ok(ExitCode::from(e.code().unwrap() as u8)),
+                Err(e) => Err(e),
+            }
+        }
+    };
+    ($name:ident, $domain:literal, $path:literal, $($imports:literal),+) => {
+        #[test]
+        /// This one handles imports
+        fn $name() -> Result<ExitCode, std::io::Error> {
+            let _ = env_logger::builder().is_test(true).try_init();
+            let _ = Client::start();
+
+            let mut options = GraceCompilerOptions::default();
+            options.target = Target::Domain(DomainConfig {
+                persist: true,
+                ..Default::default()
+            });
+            if let Some(ref mut derive) = options.derive {
+                derive.push("Clone".to_string());
+                derive.push("Deserialize".to_string());
+                derive.push("Serialize".to_string());
+            }
+            options.use_paths = Some(vec!["serde::{Deserialize, Serialize}".to_string()]);
+            let mut imports = Vec::new();
+            $(
+                imports.push($imports.to_string());
+            )*
+            options.imported_domains = Some(imports);
+            options.always_process = Some(true);
+
+            let grace = ModelCompiler::default();
+
+            // Build the domains
+            log::debug!(
+                "Testing domain: {},  target: {:?}.",
+                $domain,
+                options.target
+            );
+            let domain = DomainBuilder::new()
+                .cuckoo_model($path)
+                .unwrap()
+                .build_v2()
+                .unwrap();
+
+            grace
+                .compile(
+                    domain,
+                    "mdd",
+                    format!("domain/{}", $domain).as_str(),
+                    "tests/mdd/src",
+                    Box::new(&options),
+                    false,
+                )
+                .map_err(|e| {
+                    println!("Compiler exited with: {}", e);
+                    std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
+                })?;
+
+            // Run cargo test
+            let mut child = process::Command::new("cargo")
+                .arg("test")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -463,9 +596,9 @@ macro_rules! test_target_domain_timestamps {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -532,9 +665,9 @@ macro_rules! test_target_domain_timestamps {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("domain::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("domain::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -586,9 +719,9 @@ macro_rules! test_target_application {
             // Run cargo test
             let mut child = process::Command::new("cargo")
                 .arg("test")
-                .arg(format!("app::{}", $domain))
-                .arg("--")
-                .arg("--nocapture")
+                .arg(format!("app::{}::tests", $domain))
+                // .arg("--")
+                // .arg("--nocapture")
                 .current_dir("tests/mdd")
                 .spawn()?;
 
@@ -646,8 +779,49 @@ macro_rules! test_target_dwarf {
         }
     };
 }
+
+// macro_rules! test_domain {
+//     ($domain:tt) => {
+//         test_target_domain!(
+//             $domain,
+//             stringify!($domain),
+//             "tests/mdd/models/$domain.json",
+//         );
+//         test_target_domain_rwlock!(
+//             format!("{}_rwlock", $domain),
+//             format!("\"{}_rwlock\"", $domain),
+//             format!("tests/mdd/models/{}.json", $domain).as_str()
+//         );
+//         test_target_domain_rwlock_ts!(
+//             format!("{}_rwlock_ts", $domain),
+//             format!("\"{}_rwlock_ts\"", $domain),
+//             format!("tests/mdd/models/{}.json", $domain).as_str()
+//         );
+//         test_target_domain_vec_store!(
+//             format!("{}_vec_store", $domain),
+//             format!("\"{}_vec_store\"", $domain),
+//             format!("tests/mdd/models/{}.json", $domain).as_str()
+//         );
+//         test_target_domain_timestamps!(
+//             format!("{}_ts", $domain),
+//             format!("\"{}_ts\"", $domain),
+//             format!("tests/mdd/models/{}.json", $domain).as_str()
+//         );
+//         test_target_domain_dwarf!(
+//             format!("{}_dwarf", $domain),
+//             format!("\"{}_dwarf\"", $domain),
+//             format!("tests/mdd/models/{}.json", $domain).as_str()
+//         );
+//     };
+// }
+
 // This is an imported domain that we need to build, so get it done early.
 test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak.json");
+test_target_domain_rwlock!(
+    sarzak_rwlock,
+    "sarzak_rwlock",
+    "../sarzak/models/sarzak.json"
+);
 test_target_domain_vec_store!(sarzak_vec, "sarzak_vec", "../sarzak/models/sarzak.json");
 test_target_domain_timestamps!(sarzak_ts, "sarzak_ts", "../sarzak/models/sarzak.json");
 test_target_dwarf!(sarzak_dwarf, "sarzak_dwarf", "../sarzak/models/sarzak.json");
@@ -656,6 +830,11 @@ test_target_dwarf!(sarzak_dwarf, "sarzak_dwarf", "../sarzak/models/sarzak.json")
 test_target_domain!(
     everything_domain,
     "everything",
+    "tests/mdd/models/everything.json"
+);
+test_target_domain_rwlock!(
+    everything_domain_rwlock,
+    "everything_rwlock",
     "tests/mdd/models/everything.json"
 );
 test_target_domain_vec_store!(
@@ -684,6 +863,11 @@ test_target_domain!(
     "one_to_one",
     "tests/mdd/models/one_to_one.json"
 );
+test_target_domain_rwlock!(
+    one_to_one_domain_rwlock,
+    "one_to_one_rwlock",
+    "tests/mdd/models/one_to_one.json"
+);
 test_target_domain_vec_store!(
     one_to_one_domain_vec,
     "one_to_one_vec",
@@ -705,6 +889,11 @@ test_target_domain!(
     "one_to_many",
     "tests/mdd/models/one_to_many.json"
 );
+test_target_domain_rwlock!(
+    one_to_many_domain_rwlock,
+    "one_to_many_rwlock",
+    "tests/mdd/models/one_to_many.json"
+);
 test_target_domain_vec_store!(
     one_to_many_domain_vec,
     "one_to_many_vec",
@@ -717,11 +906,12 @@ test_target_domain_timestamps!(
 );
 test_target_dwarf!(
     one_to_many_domain_dwarf,
-    "one_to_many_dwwarf",
+    "one_to_many_dwarf",
     "tests/mdd/models/one_to_many.json"
 );
 
 test_target_domain!(isa_domain, "isa", "tests/mdd/models/isa.json");
+test_target_domain_rwlock!(isa_domain_rwlock, "isa_rwlock", "tests/mdd/models/isa.json");
 test_target_domain_vec_store!(isa_domain_vec, "isa_vec", "tests/mdd/models/isa.json");
 test_target_domain_timestamps!(isa_domain_ts, "isa_ts", "tests/mdd/models/isa.json");
 test_target_dwarf!(isa_domain_dwarf, "isa", "tests/mdd/models/isa.json");
@@ -729,6 +919,11 @@ test_target_dwarf!(isa_domain_dwarf, "isa", "tests/mdd/models/isa.json");
 test_target_domain!(
     associative_domain,
     "associative",
+    "tests/mdd/models/associative.json"
+);
+test_target_domain_rwlock!(
+    associative_domain_rwlock,
+    "associative_rwlock",
     "tests/mdd/models/associative.json"
 );
 test_target_domain_vec_store!(
@@ -755,6 +950,13 @@ test_target_domain!(
     "domain/sarzak",
     "domain/isa"
 );
+test_target_domain_rwlock!(
+    imported_object_domain_rwlock,
+    "imported_object_rwlock",
+    "tests/mdd/models/imported_object.json",
+    "domain/sarzak",
+    "domain/isa"
+);
 test_target_domain_vec_store!(
     imported_object_domain_vec,
     "imported_object_vec",
@@ -776,6 +978,11 @@ test_target_domain_timestamps!(
 // );
 
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
+test_target_domain_rwlock!(
+    external_rwlock,
+    "external_rwlock",
+    "tests/mdd/models/external.json"
+);
 test_target_domain_vec_store!(
     external_vec,
     "external_vec",

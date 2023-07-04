@@ -774,19 +774,38 @@ impl CodeWriter for EnumNewImpl {
                                     );
                                     emit!(buffer, "store.inter_{obj_ident}(new.clone()).await;");
                                 } else {
-                                    emit!(
-                                        buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(id) {{"
-                                    );
-                                    emit!(buffer, "{s_obj_ident}");
-                                    emit!(buffer, "}} else {{");
-                                    emit!(buffer, "store.inter_{obj_ident}(|id| {{");
-                                    emit!(
-                                        buffer,
-                                        "{ctor}(id){tail}"
-                                    );
+                                    use UberStoreOptions::*;
+                                    match config.get_uber_store().unwrap() {
+                                        StdRwLock => {
+                                            emit!(
+                                                buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(&id) {{"
+                                            );
+                                            emit!(buffer, "{s_obj_ident}");
+                                            emit!(buffer, "}} else {{");
+                                            emit!(
+                                                buffer,
+                                                "let new = {ctor}(id){tail};"
+                                            );
+                                            emit!(buffer, "store.inter_{obj_ident}(new.clone());");
+                                            emit!(buffer, "new");
+                                        }
+                                        Single => {
+                                            emit!(
+                                                buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(id) {{"
+                                            );
+                                            emit!(buffer, "{s_obj_ident}");
+                                            emit!(buffer, "}} else {{");
+                                            emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                                            emit!(
+                                                buffer,
+                                                "{ctor}(id){tail}"
+                                            );
+                                            emit!(buffer, "}})");
+                                        }
+                                        store => panic!("{store} is not currently supported"),
+                                    }
                                 }
 
-                                emit!(buffer, "}})");
                                 emit!(buffer, "}}");
                             // }
                         } else {
@@ -795,8 +814,8 @@ impl CodeWriter for EnumNewImpl {
                                 "let new = Self::{}({s_obj_ident}.{id});",
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                             );
-                        emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
-                        emit!(buffer, "new");
+                            emit!(buffer, "store.inter_{}(new.clone());", obj.as_ident());
+                            emit!(buffer, "new");
                         };
 
                         emit!(buffer, "}}");

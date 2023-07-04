@@ -64,10 +64,10 @@ mod tests {
         assert_eq!(e.read().unwrap().rando, r.read().unwrap().id);
 
         let r_prime = store.exhume_rando_object(&r.read().unwrap().id).unwrap();
-        assert_eq!(*r.read().unwrap(), *r_prime.read().unwrap());
+        assert_eq!(&*r.read().unwrap(), &*r_prime.read().unwrap());
 
         let e_prime = store.exhume_everything(&e.read().unwrap().id).unwrap();
-        assert_eq!(*e.read().unwrap(), *e_prime.read().unwrap());
+        assert_eq!(&*e.read().unwrap(), &*e_prime.read().unwrap());
     }
 
     #[test]
@@ -80,9 +80,9 @@ mod tests {
         let e = Everything::new(true, 42.0, 42, "string".to_owned(), &r, &mut store);
 
         let r_prime = &e.read().unwrap().r1_rando_object(&store)[0];
-        assert_eq!(*r.read().unwrap(), *r_prime.read().unwrap());
+        assert_eq!(&*r.read().unwrap(), &*r_prime.read().unwrap());
 
         let e_prime = &r.read().unwrap().r1_everything(&store)[0];
-        assert_eq!(*e.read().unwrap(), *e_prime.read().unwrap());
+        assert_eq!(&*e.read().unwrap(), &*e_prime.read().unwrap());
     }
 }

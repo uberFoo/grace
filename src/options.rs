@@ -228,6 +228,16 @@ pub enum OptimizationLevel {
     Unsafe,
 }
 
+impl fmt::Display for OptimizationLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            OptimizationLevel::None => write!(f, "HashMap"),
+            OptimizationLevel::Vec => write!(f, "Vec"),
+            OptimizationLevel::Unsafe => write!(f, "Union"),
+        }
+    }
+}
+
 /// Dowarf Target Configuration
 ///
 /// The dwarf target has the following, target-specific, configuration options.

@@ -1,22 +1,35 @@
 //! Domain Target Tests
 //!
 pub mod associative;
+pub mod associative_rwlock;
 pub mod associative_ts;
 pub mod associative_vec;
 pub mod everything;
+pub mod everything_rwlock;
 pub mod everything_rwlock_vec;
 pub mod everything_ts;
 pub mod everything_vec;
 pub mod external;
+pub mod external_rwlock;
 pub mod external_ts;
+pub mod external_vec;
 pub mod imported_object;
+pub mod imported_object_rwlock;
+pub mod imported_object_ts;
+pub mod imported_object_vec;
 pub mod isa;
+pub mod isa_rwlock;
 pub mod isa_ts;
 pub mod isa_vec;
 pub mod one_to_many;
+pub mod one_to_many_rwlock;
 pub mod one_to_many_ts;
 pub mod one_to_many_vec;
 pub mod one_to_one;
+pub mod one_to_one_rwlock;
 pub mod one_to_one_ts;
 pub mod one_to_one_vec;
 pub mod sarzak;
+pub mod sarzak_rwlock;
+pub mod sarzak_ts;
+pub mod sarzak_vec;

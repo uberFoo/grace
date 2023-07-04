@@ -241,10 +241,11 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let everything: Arc<RwLock<Everything>> = serde_json::from_reader(reader)?;
-                store.inter_everything(|id| {
-                    everything.write().unwrap().id = id;
-                    everything.clone()
-                });
+                store
+                    .everything
+                    .write()
+                    .unwrap()
+                    .insert(everything.read().unwrap().id, Some(everything.clone()));
             }
         }
 
@@ -258,10 +259,11 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let rando_object: Arc<RwLock<RandoObject>> = serde_json::from_reader(reader)?;
-                store.inter_rando_object(|id| {
-                    rando_object.write().unwrap().id = id;
-                    rando_object.clone()
-                });
+                store
+                    .rando_object
+                    .write()
+                    .unwrap()
+                    .insert(rando_object.read().unwrap().id, Some(rando_object.clone()));
             }
         }
 

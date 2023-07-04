@@ -501,10 +501,10 @@ impl ObjectStore {
                 let reader = io::BufReader::new(file);
                 let acknowledged_event: Rc<RefCell<AcknowledgedEvent>> =
                     serde_json::from_reader(reader)?;
-                store.inter_acknowledged_event(|id| {
-                    acknowledged_event.borrow_mut().id = id;
-                    acknowledged_event.clone()
-                });
+                store.acknowledged_event.insert(
+                    acknowledged_event.borrow().id,
+                    Some(acknowledged_event.clone()),
+                );
             }
         }
 
@@ -518,10 +518,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let anchor: Rc<RefCell<Anchor>> = serde_json::from_reader(reader)?;
-                store.inter_anchor(|id| {
-                    anchor.borrow_mut().id = id;
-                    anchor.clone()
-                });
+                store
+                    .anchor
+                    .insert(anchor.borrow().id, Some(anchor.clone()));
             }
         }
 
@@ -535,10 +534,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let event: Rc<RefCell<Event>> = serde_json::from_reader(reader)?;
-                store.inter_event(|id| {
-                    event.borrow_mut().id = id;
-                    event.clone()
-                });
+                store.event.insert(event.borrow().id, Some(event.clone()));
             }
         }
 
@@ -552,10 +548,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let isa_ui: Rc<RefCell<IsaUi>> = serde_json::from_reader(reader)?;
-                store.inter_isa_ui(|id| {
-                    isa_ui.borrow_mut().id = id;
-                    isa_ui.clone()
-                });
+                store
+                    .isa_ui
+                    .insert(isa_ui.borrow().id, Some(isa_ui.clone()));
             }
         }
 
@@ -569,10 +564,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let state: Rc<RefCell<State>> = serde_json::from_reader(reader)?;
-                store.inter_state(|id| {
-                    state.borrow_mut().id = id;
-                    state.clone()
-                });
+                store.state.insert(state.borrow().id, Some(state.clone()));
             }
         }
 
@@ -586,10 +578,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let subtype_anchor: Rc<RefCell<SubtypeAnchor>> = serde_json::from_reader(reader)?;
-                store.inter_subtype_anchor(|id| {
-                    subtype_anchor.borrow_mut().id = id;
-                    subtype_anchor.clone()
-                });
+                store
+                    .subtype_anchor
+                    .insert(subtype_anchor.borrow().id, Some(subtype_anchor.clone()));
             }
         }
 

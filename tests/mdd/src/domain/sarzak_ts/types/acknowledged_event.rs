@@ -40,9 +40,6 @@ impl AcknowledgedEvent {
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new_"}}}
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-nav-forward-assoc-to-event_id"}}}
     /// Navigate to [`Event`] across R20(1-*)
     pub fn r20_event<'a>(&'a self, store: &'a SarzakTsStore) -> Vec<&Event> {

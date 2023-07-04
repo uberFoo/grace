@@ -1778,11 +1778,23 @@ fn generate_store_persistence(
                         }
                     }
                     if is_uber {
-                        let (_read, write) = get_uber_read_write(config);
-                        emit!(
-                            buffer,
-                            "store.inter_{obj_ident}(|id| {{ {obj_ident}{write}.id = id; {obj_ident}.clone()}});"
-                        );
+                        let (read, write) = get_uber_read_write(config);
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            StdRwLock => {
+                                emit!(
+                                    buffer,
+                                    "store.{obj_ident}{write}.insert({obj_ident}{read}.{id}, Some({obj_ident}.clone()));"
+                                );
+                            }
+                            Single => {
+                                emit!(
+                                    buffer,
+                                    "store.{obj_ident}.insert({obj_ident}{read}.{id}, Some({obj_ident}.clone()));"
+                                );
+                            }
+                            store => panic!("{store} is not currently supported"),
+                        }
                     } else {
                         emit!(
                             buffer,

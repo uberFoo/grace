@@ -418,10 +418,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let a: Rc<RefCell<A>> = serde_json::from_reader(reader)?;
-                store.inter_a(|id| {
-                    a.borrow_mut().id = id;
-                    a.clone()
-                });
+                store.a.insert(a.borrow().id, Some(a.clone()));
             }
         }
 
@@ -435,10 +432,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let b: Rc<RefCell<B>> = serde_json::from_reader(reader)?;
-                store.inter_b(|id| {
-                    b.borrow_mut().id = id;
-                    b.clone()
-                });
+                store.b.insert(b.borrow().id, Some(b.clone()));
             }
         }
 
@@ -452,10 +446,7 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let c: Rc<RefCell<C>> = serde_json::from_reader(reader)?;
-                store.inter_c(|id| {
-                    c.borrow_mut().id = id;
-                    c.clone()
-                });
+                store.c.insert(c.borrow().id, Some(c.clone()));
             }
         }
 
@@ -469,10 +460,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let parameter: Rc<RefCell<Parameter>> = serde_json::from_reader(reader)?;
-                store.inter_parameter(|id| {
-                    parameter.borrow_mut().id = id;
-                    parameter.clone()
-                });
+                store
+                    .parameter
+                    .insert(parameter.borrow().id, Some(parameter.clone()));
             }
         }
 
@@ -486,10 +476,9 @@ impl ObjectStore {
                 let file = fs::File::open(path)?;
                 let reader = io::BufReader::new(file);
                 let referent: Rc<RefCell<Referent>> = serde_json::from_reader(reader)?;
-                store.inter_referent(|id| {
-                    referent.borrow_mut().id = id;
-                    referent.clone()
-                });
+                store
+                    .referent
+                    .insert(referent.borrow().id, Some(referent.clone()));
             }
         }
 
