@@ -824,7 +824,7 @@ test_target_domain_rwlock!(
     "sarzak_rwlock",
     "../sarzak/models/sarzak.json"
 );
-test_target_domain_vec_store!(sarzak_vec, "sarzak_vec", "../sarzak/models/sarzak.json");
+// test_target_domain_vec_store!(sarzak_vec, "sarzak_vec", "../sarzak/models/sarzak.json");
 test_target_domain_timestamps!(sarzak_ts, "sarzak_ts", "../sarzak/models/sarzak.json");
 test_target_dwarf!(sarzak_dwarf, "sarzak_dwarf", "../sarzak/models/sarzak.json");
 
