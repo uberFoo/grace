@@ -27,6 +27,7 @@ pub mod one_to_many_ts;
 pub mod one_to_many_vec;
 pub mod one_to_one;
 pub mod one_to_one_rwlock;
+pub mod one_to_one_rwlock_vec;
 pub mod one_to_one_ts;
 pub mod one_to_one_vec;
 pub mod sarzak;

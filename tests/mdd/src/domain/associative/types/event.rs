@@ -23,19 +23,14 @@ pub struct Event {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-implementation"}}}
 impl Event {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
     /// Inter a new 'Event' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut AssociativeStore) -> Event {
         let id = Uuid::new_v4();
         let new = Event { id, name };
         store.inter_event(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-backward-assoc_many-to-acknowledged_event"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-impl-nav-backward-assoc-many-to-acknowledged_event"}}}
     /// Navigate to [`AcknowledgedEvent`] across R20(1-M)
     pub fn r20_acknowledged_event<'a>(

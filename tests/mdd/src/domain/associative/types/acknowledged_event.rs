@@ -28,7 +28,6 @@ pub struct AcknowledgedEvent {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-implementation"}}}
 impl AcknowledgedEvent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new_"}}}
     /// Inter a new 'Acknowledged Event' in the store, and return it's `id`.
     pub fn new(
         event_id: &Event,
@@ -42,9 +41,6 @@ impl AcknowledgedEvent {
             state_id: state_id.id,
         };
         store.inter_acknowledged_event(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

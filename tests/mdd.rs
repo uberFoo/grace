@@ -815,6 +815,8 @@ macro_rules! test_target_dwarf {
 //     };
 // }
 
+//
+// Sarzak
 // This is an imported domain that we need to build, so get it done early.
 test_target_domain!(sarzak, "sarzak", "../sarzak/models/sarzak.json");
 test_target_domain_rwlock!(
@@ -826,157 +828,168 @@ test_target_domain_vec_store!(sarzak_vec, "sarzak_vec", "../sarzak/models/sarzak
 test_target_domain_timestamps!(sarzak_ts, "sarzak_ts", "../sarzak/models/sarzak.json");
 test_target_dwarf!(sarzak_dwarf, "sarzak_dwarf", "../sarzak/models/sarzak.json");
 
-// Domain Target Tests
-test_target_domain!(
-    everything_domain,
-    "everything",
-    "tests/mdd/models/everything.json"
-);
+//
+// Everything
+//
+test_target_domain!(everything, "everything", "tests/mdd/models/everything.json");
 test_target_domain_rwlock!(
-    everything_domain_rwlock,
+    everything_rwlock,
     "everything_rwlock",
     "tests/mdd/models/everything.json"
 );
 test_target_domain_vec_store!(
-    everything_domain_vec,
+    everything_vec,
     "everything_vec",
     "tests/mdd/models/everything.json"
 );
 test_target_domain_rwlock_vec_store!(
-    everything_domain_rwlock_vec,
+    everything_rwlock_vec,
     "everything_rwlock_vec",
     "tests/mdd/models/everything.json"
 );
 test_target_domain_timestamps!(
-    everything_domain_ts,
+    everything_ts,
     "everything_ts",
     "tests/mdd/models/everything.json"
 );
 test_target_dwarf!(
-    everything_domain_dwarf,
+    everything_dwarf,
     "everything_dwarf",
     "tests/mdd/models/everything.json"
 );
 
-test_target_domain!(
-    one_to_one_domain,
-    "one_to_one",
-    "tests/mdd/models/one_to_one.json"
-);
+//
+// One to one
+//
+test_target_domain!(one_to_one, "one_to_one", "tests/mdd/models/one_to_one.json");
 test_target_domain_rwlock!(
-    one_to_one_domain_rwlock,
+    one_to_one_rwlock,
     "one_to_one_rwlock",
     "tests/mdd/models/one_to_one.json"
 );
 test_target_domain_vec_store!(
-    one_to_one_domain_vec,
+    one_to_one_vec,
     "one_to_one_vec",
     "tests/mdd/models/one_to_one.json"
 );
+test_target_domain_rwlock_vec_store!(
+    one_to_one_rwlock_vec,
+    "one_to_one_rwlock_vec",
+    "tests/mdd/models/one_to_one.json"
+);
 test_target_domain_timestamps!(
-    one_to_one_domain_ts,
+    one_to_one_ts,
     "one_to_one_ts",
     "tests/mdd/models/one_to_one.json"
 );
 test_target_dwarf!(
-    one_to_one_domain_dwarf,
+    one_to_one_dwarf,
     "one_to_one_dwarf",
     "tests/mdd/models/one_to_one.json"
 );
 
+//
+// One to many
+//
 test_target_domain!(
-    one_to_many_domain,
+    one_to_many,
     "one_to_many",
     "tests/mdd/models/one_to_many.json"
 );
 test_target_domain_rwlock!(
-    one_to_many_domain_rwlock,
+    one_to_many_rwlock,
     "one_to_many_rwlock",
     "tests/mdd/models/one_to_many.json"
 );
 test_target_domain_vec_store!(
-    one_to_many_domain_vec,
+    one_to_many_vec,
     "one_to_many_vec",
     "tests/mdd/models/one_to_many.json"
 );
 test_target_domain_timestamps!(
-    one_to_many_domain_ts,
+    one_to_many_ts,
     "one_to_many_ts",
     "tests/mdd/models/one_to_many.json"
 );
 test_target_dwarf!(
-    one_to_many_domain_dwarf,
+    one_to_many_dwarf,
     "one_to_many_dwarf",
     "tests/mdd/models/one_to_many.json"
 );
 
-test_target_domain!(isa_domain, "isa", "tests/mdd/models/isa.json");
-test_target_domain_rwlock!(isa_domain_rwlock, "isa_rwlock", "tests/mdd/models/isa.json");
-test_target_domain_vec_store!(isa_domain_vec, "isa_vec", "tests/mdd/models/isa.json");
-test_target_domain_timestamps!(isa_domain_ts, "isa_ts", "tests/mdd/models/isa.json");
-test_target_dwarf!(isa_domain_dwarf, "isa", "tests/mdd/models/isa.json");
+//
+// isa
+//
+test_target_domain!(isa, "isa", "tests/mdd/models/isa.json");
+test_target_domain_rwlock!(isa_rwlock, "isa_rwlock", "tests/mdd/models/isa.json");
+test_target_domain_vec_store!(isa_vec, "isa_vec", "tests/mdd/models/isa.json");
+test_target_domain_timestamps!(isa_ts, "isa_ts", "tests/mdd/models/isa.json");
+test_target_dwarf!(isa_dwarf, "isa", "tests/mdd/models/isa.json");
 
+//
+// Associative
+//
 test_target_domain!(
-    associative_domain,
+    associative,
     "associative",
     "tests/mdd/models/associative.json"
 );
 test_target_domain_rwlock!(
-    associative_domain_rwlock,
+    associative_rwlock,
     "associative_rwlock",
     "tests/mdd/models/associative.json"
 );
 test_target_domain_vec_store!(
-    associative_domain_vec,
+    associative_vec,
     "associative_vec",
     "tests/mdd/models/associative.json"
 );
 test_target_domain_timestamps!(
-    associative_domain_ts,
+    associative_ts,
     "associative_ts",
     "tests/mdd/models/associative.json"
 );
 test_target_dwarf!(
-    associative_domain_dwarf,
+    associative_dwarf,
     "associative_dwarf",
     "tests/mdd/models/associative.json"
 );
 
+//
 // This one has imports
+//
 test_target_domain!(
-    imported_object_domain,
+    imported_object,
     "imported_object",
     "tests/mdd/models/imported_object.json",
     "domain/sarzak",
     "domain/isa"
 );
 test_target_domain_rwlock!(
-    imported_object_domain_rwlock,
+    imported_object_rwlock,
     "imported_object_rwlock",
     "tests/mdd/models/imported_object.json",
     "domain/sarzak",
     "domain/isa"
 );
 test_target_domain_vec_store!(
-    imported_object_domain_vec,
+    imported_object_vec,
     "imported_object_vec",
     "tests/mdd/models/imported_object.json",
     "domain/sarzak",
     "domain/isa"
 );
 test_target_domain_timestamps!(
-    imported_object_domain_ts,
+    imported_object_ts,
     "imported_object_ts",
     "tests/mdd/models/imported_object.json",
     "domain/sarzak",
     "domain/isa"
 );
-// test_target_dwarf!(
-//     imported_object_domain_dwarf,
-//     "imported_object",
-//     "tests/mdd/models/imported_object.json"
-// );
 
+//
+// External
+//
 test_target_domain!(external, "external", "tests/mdd/models/external.json");
 test_target_domain_rwlock!(
     external_rwlock,
