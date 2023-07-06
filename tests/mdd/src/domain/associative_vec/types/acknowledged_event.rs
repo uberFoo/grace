@@ -22,9 +22,9 @@ use crate::domain::associative_vec::store::ObjectStore as AssociativeVecStore;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct AcknowledgedEvent {
     pub id: usize,
-    /// R20: [`Event`] '🚧 Out of order — see sarzak#14.' [`Event`]
+    /// R20: [`Event`] '🚧 Comments are out of order — see sarzak#14.' [`Event`]
     pub event_id: usize,
-    /// R20: [`State`] '🚧 Out of order — see sarzak#14.' [`State`]
+    /// R20: [`State`] '🚧 Comments are out of order — see sarzak#14.' [`State`]
     pub state_id: usize,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

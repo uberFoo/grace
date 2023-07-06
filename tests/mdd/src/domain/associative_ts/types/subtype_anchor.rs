@@ -20,9 +20,9 @@ use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct SubtypeAnchor {
     pub id: Uuid,
-    /// R10: [`Anchor`] '🚧 Out of order — see sarzak#14.' [`Anchor`]
+    /// R10: [`Anchor`] '🚧 Comments are out of order — see sarzak#14.' [`Anchor`]
     pub anchor_id: Uuid,
-    /// R10: [`IsaUi`] '🚧 Out of order — see sarzak#14.' [`IsaUi`]
+    /// R10: [`IsaUi`] '🚧 Comments are out of order — see sarzak#14.' [`IsaUi`]
     pub isaui_id: Uuid,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

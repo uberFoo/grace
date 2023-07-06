@@ -736,12 +736,24 @@ pub(crate) fn render_associative_attributes(
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
         let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
         let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
-        let ty = if config.is_uber_store() && !config.is_imported(&obj.id) {
-            use UberStoreOptions::*;
-            match config.get_uber_store().unwrap() {
-                StdRwLock => "Uuid",
-                Single => "usize",
-                store => panic!("{store} is not currently supported"),
+        let ty = if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+            // 🚧 So, here we are and we know we need to surface a `usize`, right?
+            // You know, so that we can point to the thing on the other side.
+            // Well, what if it's an imported object? It certainly can't be a `usize`.
+            // Imported objects were easy when everything was a UUID. As it
+            // stands now, someplace else, we're making it work by wrapping the
+            // UUID as an enum variant (Variant? What's the right word?), and
+            // using that to look it up in the foreign store. That's a lucky
+            // hack. We really need a better solution.
+            //
+            // Why not a tuple? We could store a pointer to the foreign store
+            // along side the `usize` index. I guess we can just store a
+            // reference really since I'm not planning on any IPC. That's what
+            // xuder is for.
+            if config.is_imported(&obj.id) {
+                "Uuid"
+            } else {
+                "usize"
             }
         } else {
             "Uuid"
@@ -757,7 +769,7 @@ pub(crate) fn render_associative_attributes(
                 assoc.number,
                 assoc_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 // one_obj.description,
-                "🚧 Out of order — see sarzak#14.".to_owned(),
+                "🚧 Comments are out of order — see sarzak#14.".to_owned(),
                 assoc_obj.as_type(&Ownership::new_borrowed(), woog, domain)
             );
             emit!(

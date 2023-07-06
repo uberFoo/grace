@@ -674,7 +674,7 @@ impl CodeWriter for HybridNewImpl {
                     // }
 
                     // Output the top of the function definition
-                    render_method_definition(buffer, &method, config, woog, domain)?;
+                    render_method_definition(buffer, obj, &method, config, woog, domain)?;
 
                     // Take the ID from the subtype
                     // We shouldn't be doing this sort of thing here -- getting the testing

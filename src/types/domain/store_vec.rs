@@ -17,8 +17,9 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        get_subtypes_sorted_from_super_obj, local_object_is_enum, local_object_is_hybrid,
-        local_object_is_singleton, local_object_is_subtype, local_object_is_supertype,
+        get_binary_referrers_sorted, get_subtypes_sorted_from_super_obj, local_object_is_enum,
+        local_object_is_hybrid, local_object_is_singleton, local_object_is_subtype,
+        local_object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
     options::{GraceConfig, UberStoreOptions},
@@ -259,11 +260,23 @@ impl DomainStoreVec {
                         }
                     } else if object_has_name(obj, domain) {
                         if is_uber {
-                            let (read, _write) = get_uber_read_write(config);
-                            emit!(
-                                buffer,
-                                "self.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});",
-                            );
+                            let (read, write) = get_uber_read_write(config);
+                            use UberStoreOptions::*;
+                            match config.get_uber_store().unwrap() {
+                                StdRwLock => {
+                                    emit!(
+                                        buffer,
+                                        "self.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});",
+                                    );
+                                }
+                                Single => {
+                                    emit!(
+                                        buffer,
+                                        "self.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});",
+                                    );
+                                }
+                                store => panic!("{store} is not currently supported"),
+                            }
                             emit!(buffer, "{obj_ident}");
                         } else {
                             emit!(
@@ -471,7 +484,16 @@ impl DomainStoreVec {
                                     obj_ident
                                 );
                             } else {
-                                emit!(buffer, "self.{0}_id_by_name.get(name).map(|{0}| *{0})", obj_ident);
+                                // use UberStoreOptions::*;
+                                match config.get_uber_store().unwrap() {
+                                    StdRwLock => {
+                                        emit!(buffer, "self.{0}_id_by_name{read}.get(name).map(|{0}| *{0})", obj_ident);
+                                    }
+                                    Single => {
+                                        emit!(buffer, "self.{0}_id_by_name.get(name).map(|{0}| *{0})", obj_ident);
+                                    }
+                                    store => panic!("{store} is not currently supported"),
+                                }
                             }
                         } else if timestamp {
                             emit!(
@@ -1154,14 +1176,14 @@ impl CodeWriter for DomainStoreVec {
                 }
                 for obj in &objects {
                     let obj_ident = obj.as_ident();
-                    use UberStoreOptions::*;
-                    match config.get_uber_store().unwrap() {
-                        StdRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
-                        Single => emit!(buffer, "{obj_ident}_free_list: Vec::new(),"),
-                        store => panic!("{store} is not currently supported"),
-                    }
-
                     if is_uber {
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            StdRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
+                            Single => emit!(buffer, "{obj_ident}_free_list: Vec::new(),"),
+                            store => panic!("{store} is not currently supported"),
+                        }
+
                         use UberStoreOptions::*;
                         let ctor = match config.get_uber_store().unwrap() {
                             Disabled => unreachable!(),
@@ -1174,13 +1196,25 @@ impl CodeWriter for DomainStoreVec {
                             ParkingLotMutex => "Arc::new(Mutex::new(HashMap::default()))",
                         };
                         emit!(buffer, "{}: {ctor},", obj.as_ident());
+
+                        if object_has_name(obj, domain) {
+                            match config.get_uber_store().unwrap() {
+                                StdRwLock => {
+                                    emit!(buffer, "{obj_ident}_id_by_name: Arc::new(RwLock::new(HashMap::default())),");
+                                }
+                                Single => {
+                                    emit!(buffer, "{obj_ident}_id_by_name: HashMap::default(),");
+                                }
+                                store => panic!("{store} is not currently supported"),
+                            }
+                        }
                     } else {
                         emit!(buffer, "{}: HashMap::default(),", obj.as_ident());
+                        if object_has_name(obj, domain) {
+                            emit!(buffer, "{obj_ident}_id_by_name: HashMap::default(),");
+                        }
                     }
 
-                    if object_has_name(obj, domain) {
-                        emit!(buffer, "{obj_ident}_id_by_name: HashMap::default(),");
-                    }
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
@@ -1199,13 +1233,23 @@ impl CodeWriter for DomainStoreVec {
                                     obj.as_type(&Ownership::new_borrowed(), woog, domain)),
                                 ",id}))});"
                             ),
-                            StdRwLock | ParkingLotRwLock | NDRwLock => ("Arc::new(RwLock::new(".to_owned(), ")));"),
+                            StdRwLock => (
+                                format!(
+                                    "Arc::new(RwLock::new({} {{ subtype: ",
+                                    obj.as_type(&Ownership::new_borrowed(), woog, domain)),
+                                ",id}))});"
+                            ),
+                            ParkingLotRwLock | NDRwLock => ("Arc::new(RwLock::new(".to_owned(), "))});"),
                             AsyncRwLock => ("Arc::new(RwLock::new(".to_owned(), "))).await;"),
                             StdMutex | ParkingLotMutex => ("Arc::new(Mutex::new(".to_owned(), ")));"),
                         };
 
                         let attrs = obj.r1_attribute(domain.sarzak());
-                        let mut attr_len = attrs.len();
+                        let referrers = get_binary_referrers_sorted!(obj, domain.sarzak());
+                        let mut attr_len = attrs.len() + referrers.len();
+                       // The "hack" thing is added when we first process the
+                       // domain. If it's a Vec store, we want to promote any
+                       // enums to hybrids.
                         for attr in &attrs {
                             if attr.name == "hack" {
                                 attr_len -= 1;
@@ -1712,10 +1756,22 @@ fn generate_store_persistence(
                     if object_has_name(obj, domain) {
                         if is_uber {
                             let (read, write) = get_uber_read_write(config);
-                            emit!(
-                                buffer,
-                                "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.to_upper_camel_case(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
-                            );
+                            use UberStoreOptions::*;
+                            match config.get_uber_store().unwrap() {
+                                StdRwLock => {
+                                    emit!(
+                                        buffer,
+                                        "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.to_upper_camel_case(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
+                                    );
+                                }
+                                Single => {
+                                    emit!(
+                                        buffer,
+                                        "store.{obj_ident}_id_by_name.insert({obj_ident}.0{read}.name.to_upper_camel_case(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
+                                    );
+                                }
+                                store => panic!("{store} is not currently supported"),
+                            }
                         } else {
                             emit!(
                                 buffer,
@@ -1765,11 +1821,23 @@ fn generate_store_persistence(
 
                     if object_has_name(obj, domain) {
                         if is_uber {
-                            let (read, _write) = get_uber_read_write(config);
-                            emit!(
-                                buffer,
-                                "store.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});"
-                            );
+                            let (read, write) = get_uber_read_write(config);
+                            use UberStoreOptions::*;
+                            match config.get_uber_store().unwrap() {
+                                StdRwLock => {
+                                    emit!(
+                                        buffer,
+                                        "store.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});"
+                                    );
+                                }
+                                Single => {
+                                    emit!(
+                                        buffer,
+                                        "store.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});"
+                                    );
+                                }
+                                store => panic!("{store} is not currently supported"),
+                            }
                         } else {
                             emit!(
                                 buffer,

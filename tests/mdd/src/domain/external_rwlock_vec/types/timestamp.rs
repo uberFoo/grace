@@ -1,0 +1,32 @@
+//! Timestamp External Entity
+//!
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-ee-use-statements"}}}
+use crate::domain::external_rwlock_vec::store::ObjectStore as ExternalRwlockVecStore;
+use crate::domain::external_rwlock_vec::UUID_NS;
+use serde::{Deserialize, Serialize};
+use std::time::SystemTime;
+use uuid::Uuid;
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-ee-documentation"}}}
+/// 🐶 {"external_entity": {"ctor":"now", "name":"SystemTime", "path": "std::time"}}
+///
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-ee-definition"}}}
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+pub struct Timestamp {
+    pub id: usize,
+    inner: SystemTime,
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-ee-impl"}}}
+impl Timestamp {
+    pub fn new(store: &mut ExternalRwlockVecStore) -> std::sync::Arc<std::sync::RwLock<Timestamp>> {
+        store.inter_timestamp(|id| {
+            std::sync::Arc::new(std::sync::RwLock::new(Timestamp {
+                id,
+                inner: SystemTime::now(),
+            }))
+        })
+    }
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

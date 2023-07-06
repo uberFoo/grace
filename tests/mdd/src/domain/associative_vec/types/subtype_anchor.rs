@@ -23,9 +23,9 @@ use crate::domain::associative_vec::store::ObjectStore as AssociativeVecStore;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct SubtypeAnchor {
     pub id: usize,
-    /// R10: [`Anchor`] '🚧 Out of order — see sarzak#14.' [`Anchor`]
+    /// R10: [`Anchor`] '🚧 Comments are out of order — see sarzak#14.' [`Anchor`]
     pub anchor_id: usize,
-    /// R10: [`IsaUi`] '🚧 Out of order — see sarzak#14.' [`IsaUi`]
+    /// R10: [`IsaUi`] '🚧 Comments are out of order — see sarzak#14.' [`IsaUi`]
     pub isaui_id: usize,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

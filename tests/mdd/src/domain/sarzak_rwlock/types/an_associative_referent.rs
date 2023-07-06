@@ -17,9 +17,9 @@ use crate::domain::sarzak_rwlock::store::ObjectStore as SarzakRwlockStore;
 pub struct AnAssociativeReferent {
     pub id: Uuid,
     pub referential_attribute: String,
-    /// R22: [`Associative`] '🚧 Out of order — see sarzak#14.' [`Associative`]
+    /// R22: [`Associative`] '🚧 Comments are out of order — see sarzak#14.' [`Associative`]
     pub associative: Uuid,
-    /// R22: [`AssociativeReferent`] '🚧 Out of order — see sarzak#14.' [`AssociativeReferent`]
+    /// R22: [`AssociativeReferent`] '🚧 Comments are out of order — see sarzak#14.' [`AssociativeReferent`]
     pub referent: Uuid,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

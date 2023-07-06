@@ -204,12 +204,13 @@ pub(crate) use get_binary_referents_sorted;
 
 pub(crate) fn render_method_definition(
     buffer: &mut Buffer,
+    obj: &Object,
     method: &ObjectMethod,
     config: &GraceConfig,
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
-    let is_uber = config.is_uber_store();
+    let is_uber = config.is_uber_store() && !config.is_imported(&obj.id);
 
     // Write the beginning of the definition
     if is_uber {

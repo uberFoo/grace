@@ -906,6 +906,11 @@ test_target_domain_vec_store!(
     "one_to_many_vec",
     "tests/mdd/models/one_to_many.json"
 );
+test_target_domain_rwlock_vec_store!(
+    one_to_many_rwlock_vec,
+    "one_to_many_rwlock_vec",
+    "tests/mdd/models/one_to_many.json"
+);
 test_target_domain_timestamps!(
     one_to_many_ts,
     "one_to_many_ts",
@@ -923,6 +928,11 @@ test_target_dwarf!(
 test_target_domain!(isa, "isa", "tests/mdd/models/isa.json");
 test_target_domain_rwlock!(isa_rwlock, "isa_rwlock", "tests/mdd/models/isa.json");
 test_target_domain_vec_store!(isa_vec, "isa_vec", "tests/mdd/models/isa.json");
+test_target_domain_rwlock_vec_store!(
+    isa_rwlock_vec,
+    "isa_rwlock_vec",
+    "tests/mdd/models/isa.json"
+);
 test_target_domain_timestamps!(isa_ts, "isa_ts", "tests/mdd/models/isa.json");
 test_target_dwarf!(isa_dwarf, "isa", "tests/mdd/models/isa.json");
 
@@ -942,6 +952,11 @@ test_target_domain_rwlock!(
 test_target_domain_vec_store!(
     associative_vec,
     "associative_vec",
+    "tests/mdd/models/associative.json"
+);
+test_target_domain_rwlock_vec_store!(
+    associative_rwlock_vec,
+    "associative_rwlock_vec",
     "tests/mdd/models/associative.json"
 );
 test_target_domain_timestamps!(
@@ -979,6 +994,13 @@ test_target_domain_vec_store!(
     "domain/sarzak",
     "domain/isa"
 );
+test_target_domain_rwlock_vec_store!(
+    imported_object_rwlock_vec,
+    "imported_object_rwlock_vec",
+    "tests/mdd/models/imported_object.json",
+    "domain/sarzak",
+    "domain/isa"
+);
 test_target_domain_timestamps!(
     imported_object_ts,
     "imported_object_ts",
@@ -999,6 +1021,11 @@ test_target_domain_rwlock!(
 test_target_domain_vec_store!(
     external_vec,
     "external_vec",
+    "tests/mdd/models/external.json"
+);
+test_target_domain_rwlock_vec_store!(
+    external_rwlock_vec,
+    "external_rwlock_vec",
     "tests/mdd/models/external.json"
 );
 test_target_domain_timestamps!(external_ts, "external_ts", "tests/mdd/models/external.json");

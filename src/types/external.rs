@@ -147,12 +147,16 @@ impl FileGenerator for ExternalGenerator {
                             StdRwLock => {
                                 emit!(
                                     buffer,
-                                    "pub fn new(store: &mut {}) -> std::rc::Arc<std::sync::RwLock<{}>> {{",
+                                    "pub fn new(store: &mut {}) -> std::sync::Arc<std::sync::RwLock<{}>> {{",
                                     store.name,
                                     object.as_type(&Ownership::new_borrowed(), woog, domain)
                                 );
-
                                 emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                                emit!(
+                                    buffer,
+                                    "std::sync::Arc::new(std::sync::RwLock::new({} {{",
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
                             }
                             Single => {
                                 emit!(
@@ -161,8 +165,12 @@ impl FileGenerator for ExternalGenerator {
                                     store.name,
                                     object.as_type(&Ownership::new_borrowed(), woog, domain)
                                 );
-
                                 emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                                emit!(
+                                    buffer,
+                                    "std::rc::Rc::new(std::cell::RefCell::new({} {{",
+                                    object.as_type(&Ownership::new_borrowed(), woog, domain)
+                                );
                             }
                             store => panic!("{store} is not currently supported"),
                         }
@@ -175,12 +183,12 @@ impl FileGenerator for ExternalGenerator {
                         );
 
                         emit!(buffer, "store.inter_{}(|id| {{", object.as_ident());
+                        emit!(
+                            buffer,
+                            "std::rc::Rc::new(std::cell::RefCell::new({} {{",
+                            object.as_type(&Ownership::new_borrowed(), woog, domain)
+                        );
                     }
-                    emit!(
-                        buffer,
-                        "std::rc::Rc::new(std::cell::RefCell::new({} {{",
-                        object.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
                     emit!(buffer, "id,");
                     emit!(buffer, "inner: {}::{}(),", external.name, external.ctor);
                     emit!(buffer, "}}))");

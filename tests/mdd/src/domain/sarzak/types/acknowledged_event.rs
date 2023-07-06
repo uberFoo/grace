@@ -19,9 +19,9 @@ use crate::domain::sarzak::store::ObjectStore as SarzakStore;
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct AcknowledgedEvent {
     pub id: Uuid,
-    /// R20: [`Event`] '🚧 Out of order — see sarzak#14.' [`Event`]
+    /// R20: [`Event`] '🚧 Comments are out of order — see sarzak#14.' [`Event`]
     pub event_id: Uuid,
-    /// R20: [`State`] '🚧 Out of order — see sarzak#14.' [`State`]
+    /// R20: [`State`] '🚧 Comments are out of order — see sarzak#14.' [`State`]
     pub state_id: Uuid,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
