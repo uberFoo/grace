@@ -1,6 +1,7 @@
 {
     "cSpell.words": [
         "dwarfc",
+        "rustc",
         "rwlock"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false

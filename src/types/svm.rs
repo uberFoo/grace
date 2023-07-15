@@ -1,13 +1,13 @@
 //! Svm File Generation
 //!
 //! This is where we generate code for use in the next stage of the compiler.
-use std::{fmt::Write};
+use std::fmt::Write;
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore},
+    woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -17,7 +17,6 @@ use crate::{
         buffer::{emit, Buffer},
         diff_engine::DirectiveKind,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        AttributeBuilder,
     },
     options::GraceConfig,
     types::TypeDefinition,

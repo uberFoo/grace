@@ -3,8 +3,8 @@
 //! Your one-stop-shop for everything to do with structs in Rust!
 use std::fmt::Write;
 
-use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use log;
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,

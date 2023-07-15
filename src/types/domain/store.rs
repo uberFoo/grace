@@ -2,7 +2,7 @@
 //!
 use std::fmt::Write;
 
-use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
@@ -855,7 +855,7 @@ impl CodeWriter for DomainStore {
                     };
                 }
                 emit!(buffer, "");
-                emit!(buffer, "use fnv::FnvHashMap as HashMap;");
+                emit!(buffer, "use rustc_hash::FxHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
                 if has_name {

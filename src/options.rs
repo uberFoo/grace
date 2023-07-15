@@ -17,7 +17,7 @@
 use std::{any::Any, fmt, path::PathBuf};
 
 use clap::{ArgAction, Args, Subcommand, ValueEnum};
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{mc::ModelCompilerOptions, v2::domain::Domain};
 use serde::{Deserialize, Serialize};
 use uuid::{uuid, Uuid};

@@ -4,7 +4,7 @@
 //! These are meant to be used in an application domain.
 use std::fmt::Write;
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},

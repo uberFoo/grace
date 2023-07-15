@@ -6,7 +6,7 @@ use std::{
 
 use lazy_static::lazy_static;
 // use rayon::prelude::*;
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     domain::DomainBuilder,
     lu_dog::store::ObjectStore as LuDogStore,
@@ -111,7 +111,9 @@ impl<'a> Target for DwarfTarget<'a> {
                 if !imported_domains.contains_key(&io.domain) {
                     let domain = DomainBuilder::new()
                         .cuckoo_model(&io.model_file)
-                        .unwrap_or_else(|_| panic!("Failed to load domain {}", io.model_file.display()))
+                        .unwrap_or_else(|_| {
+                            panic!("Failed to load domain {}", io.model_file.display())
+                        })
                         .build_v2()
                         .expect("Failed to build domain");
 

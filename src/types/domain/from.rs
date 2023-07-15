@@ -2,7 +2,7 @@
 //!
 use std::fmt::Write;
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},

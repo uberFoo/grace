@@ -1,6 +1,7 @@
 use std::path::Path;
 
 use sarzak::mc::ModelCompilerOptions;
+use tracy_client::Client;
 
 mod codegen;
 pub mod options;
@@ -58,6 +59,8 @@ impl SarzakModelCompiler for ModelCompiler {
         options: Box<&dyn ModelCompilerOptions>,
         test: bool,
     ) -> Result<usize, ModelCompilerError> {
+        Client::start();
+
         // Extract our options
         let options = match options.as_any().downcast_ref::<GraceCompilerOptions>() {
             Some(options) => options.clone(),

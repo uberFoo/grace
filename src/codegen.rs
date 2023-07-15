@@ -8,7 +8,7 @@ mod rustfmt;
 
 use std::{fmt::Write, iter::zip, sync::Arc};
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     lu_dog::{
         types::{ValueType, WoogOption},
@@ -651,12 +651,15 @@ pub(crate) fn render_new_instance(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let is_uber = config.is_uber_store();
+    let imported = config.is_imported(&object.id);
+
     if let Some(lval) = lval {
         assert!(lval.ty == GType::Reference(object.id));
         write!(buffer, "let {} = ", lval.name).context(FormatSnafu)?;
     }
 
-    if config.is_uber_store() {
+    if is_uber {
         use UberStoreOptions::*;
         let store_ctor = match config.get_uber_store().unwrap() {
             Disabled => unreachable!(),
@@ -681,8 +684,6 @@ pub(crate) fn render_new_instance(
             object.as_type(&Ownership::new_borrowed(), woog, domain)
         );
     }
-
-    let is_uber = config.is_uber_store();
 
     let tuples = zip(fields, rvals);
 
@@ -746,7 +747,7 @@ pub(crate) fn render_new_instance(
                                     "id"
                                 };
 
-                                if is_uber {
+                                if is_uber && !imported {
                                     let (read, _write) = get_uber_read_write(config);
                                     emit!(
                                         buffer,
@@ -776,7 +777,7 @@ pub(crate) fn render_new_instance(
                                 }
                             }
                             _ => {
-                                if is_uber {
+                                if is_uber && !imported {
                                     let (read, _write) = get_uber_read_write(config);
                                     emit!(
                                         buffer,
@@ -818,7 +819,7 @@ pub(crate) fn render_new_instance(
                         "id"
                     };
 
-                    if is_uber {
+                    if is_uber && !imported {
                         let (read, _write) = get_uber_read_write(config);
                         emit!(buffer, "{}: {}{read}.{id},", field.name, rval.name)
                     } else {
@@ -849,7 +850,7 @@ pub(crate) fn render_new_instance(
                             "id"
                         };
 
-                        if is_uber {
+                        if is_uber && !imported {
                             let (read, _write) = get_uber_read_write(config);
                             if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap()
                             {
@@ -1079,8 +1080,6 @@ fn typecheck_and_coerce(
                             let reference = woog.exhume_reference(id).unwrap();
                             let object = reference.r13_object(domain.sarzak())[0];
                             let obj_ident = object.as_ident();
-
-                            let _imported = config.is_imported(&object.id);
 
                             let id = if object_is_enum(object, config, imports, domain)? {
                                 "id()"

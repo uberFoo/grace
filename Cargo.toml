@@ -27,7 +27,6 @@ tempfile = "3.3.0"
 unicode-segmentation = "1.10.0"
 names = "0.14.0"
 chrono = "0.4.23"
-fnv = "1.0.7"
 rayon = "1.7.0"
 lazy_static = "1.4.0"
 ansi_term = "0.12.1"
@@ -36,6 +35,8 @@ parking_lot = { version = "0.12.1", features = [
     "deadlock_detection",
     "hardware-lock-elision",
 ] }
+tracy-client = "0.15.2"
+rustc-hash = "1.1.0"
 
 [build-dependencies]
 chrono = "0.4.23"
@@ -43,7 +44,6 @@ chrono = "0.4.23"
 [dev-dependencies]
 env_logger = "0.10.0"
 criterion = { version = "0.4.0", features = ["html_reports"] }
-tracy-client = "0.15.2"
 
 [features]
 default = ["vscode"]

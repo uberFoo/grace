@@ -3,7 +3,7 @@
 //! This is where we generate code for use in the next stage of the compiler.
 use std::{fmt::Write, sync::Arc};
 
-use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
     lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -19,7 +19,7 @@ use crate::{
         buffer::{emit, Buffer},
         collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        render::{RenderType},
+        render::RenderType,
         AttributeBuilder,
     },
     options::GraceConfig,

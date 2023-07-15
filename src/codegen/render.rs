@@ -230,9 +230,6 @@ impl ForStore for GType {
         woog: &WoogStore,
         domain: &Domain,
     ) -> String {
-        let is_uber = config.is_uber_store();
-        debug_assert!(is_uber);
-
         match self {
             GType::Boolean => "bool".to_owned(),
             GType::Object(o) => {
@@ -242,7 +239,7 @@ impl ForStore for GType {
             GType::Reference(r) => {
                 let object = domain.sarzak().exhume_object(r).unwrap();
 
-                if is_uber {
+                if !config.is_imported(&object.id) {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
                         Disabled => unreachable!(),
@@ -276,7 +273,7 @@ impl ForStore for GType {
                     (o.clone(), false)
                 };
 
-                if is_uber && !imported {
+                if !imported {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
                         Disabled => unreachable!(),
@@ -689,10 +686,8 @@ pub(crate) fn render_referential_attributes(
                 config.get_optimization_level(),
                 config.get_uber_store().unwrap(),
             ) {
-                (Vec, StdRwLock) => "usize",
-                (Vec, Single) => "usize",
-                (None, Single) => "Uuid",
-                (None, StdRwLock) => "Uuid",
+                (Vec, StdRwLock | Single | NDRwLock) => "usize",
+                (None, StdRwLock | Single) => "Uuid",
                 (lvl, store) => {
                     panic!("{store} with optimization {lvl} is not currently supported")
                 }

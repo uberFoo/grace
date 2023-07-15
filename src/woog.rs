@@ -4,7 +4,7 @@
 //! upon.
 use std::path::{Path, PathBuf};
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     mc::{FileSnafu, Result},
     sarzak::types::{Conditionality, Object, Ty},

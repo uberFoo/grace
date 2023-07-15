@@ -4,9 +4,9 @@ use std::{
 };
 
 use ansi_term::Colour;
-use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
 use heck::ToUpperCamelCase;
 use rayon::prelude::*;
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
     domain::DomainBuilder,
     mc::{FileSnafu, ModelCompilerError, Result},

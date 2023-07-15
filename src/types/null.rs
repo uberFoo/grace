@@ -1,6 +1,6 @@
 //! A type for not generating anything
 //!
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{mc::Result, v2::domain::Domain, woog::store::ObjectStore as WoogStore};
 use uuid::Uuid;
 

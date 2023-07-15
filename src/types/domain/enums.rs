@@ -3,7 +3,7 @@
 //! Here we are.
 use std::fmt::Write;
 
-use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     v2::domain::Domain,

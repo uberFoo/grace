@@ -2,7 +2,7 @@
 //!
 use std::fmt::Write;
 
-use fnv::{FnvHashMap as HashMap, FnvHashSet as HashSet};
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::Object,
@@ -179,7 +179,7 @@ impl DomainStoreVec {
                         let (read, write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            StdRwLock => {
+                            StdRwLock | NDRwLock => {
                                 emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
                                 emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
@@ -263,7 +263,7 @@ impl DomainStoreVec {
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock => {
+                                StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "self.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});",
@@ -345,7 +345,7 @@ impl DomainStoreVec {
                         } else {
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock =>  {
+                                StdRwLock | NDRwLock =>  {
                                     emit!(
                                         buffer,
                                         "match self.{obj_ident}{read}.get(*id) {{",
@@ -428,7 +428,7 @@ impl DomainStoreVec {
                         } else {
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock =>  {
+                                StdRwLock | NDRwLock =>  {
                                     emit!(buffer, "let result = self.{obj_ident}{write}[*id].take();");
                                     emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(*id);");
                                 },
@@ -486,7 +486,7 @@ impl DomainStoreVec {
                             } else {
                                 // use UberStoreOptions::*;
                                 match config.get_uber_store().unwrap() {
-                                    StdRwLock => {
+                                    StdRwLock | NDRwLock => {
                                         emit!(buffer, "self.{0}_id_by_name{read}.get(name).map(|{0}| *{0})", obj_ident);
                                     }
                                     Single => {
@@ -604,7 +604,7 @@ impl DomainStoreVec {
                             let (read, _write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock => {
+                                StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "let len = self.{obj_ident}{read}.len();"
@@ -914,7 +914,7 @@ impl CodeWriter for DomainStoreVec {
                     };
                 }
                 emit!(buffer, "");
-                emit!(buffer, "use fnv::FnvHashMap as HashMap;");
+                emit!(buffer, "use rustc_hash::FxHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
                 if has_name {
@@ -948,6 +948,7 @@ impl CodeWriter for DomainStoreVec {
                 match config.get_uber_store().unwrap() {
                     AsyncRwLock => emit!(buffer, "#[derive(Clone, Debug)]"),
                     Single | StdRwLock => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]"),
+                    NDRwLock=> emit!(buffer, "#[derive(Debug)]"),
                     _ => emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]")
                 }
 
@@ -957,7 +958,8 @@ impl CodeWriter for DomainStoreVec {
 
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
-                        StdRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex<Vec<usize>>,"),
+                        StdRwLock
+                        | NDRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex<Vec<usize>>,"),
                         Single => emit!(buffer, "{obj_ident}_free_list: Vec<usize>,"),
                         store => panic!("{store} is not currently supported"),
                     }
@@ -1179,7 +1181,7 @@ impl CodeWriter for DomainStoreVec {
                     if is_uber {
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            StdRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
+                            StdRwLock | NDRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
                             Single => emit!(buffer, "{obj_ident}_free_list: Vec::new(),"),
                             store => panic!("{store} is not currently supported"),
                         }
@@ -1199,7 +1201,7 @@ impl CodeWriter for DomainStoreVec {
 
                         if object_has_name(obj, domain) {
                             match config.get_uber_store().unwrap() {
-                                StdRwLock => {
+                                StdRwLock | NDRwLock => {
                                     emit!(buffer, "{obj_ident}_id_by_name: Arc::new(RwLock::new(HashMap::default())),");
                                 }
                                 Single => {
@@ -1233,13 +1235,13 @@ impl CodeWriter for DomainStoreVec {
                                     obj.as_type(&Ownership::new_borrowed(), woog, domain)),
                                 ",id}))});"
                             ),
-                            StdRwLock => (
+                            StdRwLock | NDRwLock => (
                                 format!(
                                     "Arc::new(RwLock::new({} {{ subtype: ",
                                     obj.as_type(&Ownership::new_borrowed(), woog, domain)),
                                 ",id}))});"
                             ),
-                            ParkingLotRwLock | NDRwLock => ("Arc::new(RwLock::new(".to_owned(), "))});"),
+                            ParkingLotRwLock => ("Arc::new(RwLock::new(".to_owned(), "))});"),
                             AsyncRwLock => ("Arc::new(RwLock::new(".to_owned(), "))).await;"),
                             StdMutex | ParkingLotMutex => ("Arc::new(Mutex::new(".to_owned(), ")));"),
                         };
@@ -1598,7 +1600,7 @@ fn generate_store_persistence(
                         let (read, _write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            StdRwLock => {
+                            StdRwLock | NDRwLock => {
                                 emit!(buffer, "for {obj_ident} in &*self.{obj_ident}{read} {{");
                             },
                             Single => {
@@ -1758,7 +1760,7 @@ fn generate_store_persistence(
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock => {
+                                StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.to_upper_camel_case(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
@@ -1824,7 +1826,7 @@ fn generate_store_persistence(
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock => {
+                                StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "store.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});"
@@ -1849,7 +1851,7 @@ fn generate_store_persistence(
                         let (read, write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            StdRwLock => {
+                            StdRwLock | NDRwLock => {
                                 emit!(
                                     buffer,
                                     "store.{obj_ident}{write}.insert({obj_ident}{read}.{id}, Some({obj_ident}.clone()));"

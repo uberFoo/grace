@@ -3,7 +3,7 @@
 //! This is where we generate code for use in the next stage of the compiler.
 use std::{fmt::Write, sync::Arc};
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -225,6 +225,9 @@ impl CodeWriter for ChaChaFile {
             "static ref MODEL: Arc<RwLock<{}Store>> = Arc::new(RwLock::new(",
             domain_type
         );
+
+        // 🚧 We really need to check that the path exists and throw a reasonable
+        // error if it doesn't.
         emit!(
             buffer,
             "{}Store::load_bincode(\"{}\").unwrap()));",

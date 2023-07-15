@@ -7,7 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     mc::{CompilerSnafu, FileSnafu, IOSnafu, Result},
     v2::domain::Domain,
