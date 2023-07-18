@@ -27,7 +27,7 @@ use crate::{
         get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_hybrid,
         object_is_singleton, object_is_supertype,
         render::{
-            render_associative_attributes, render_attributes, render_referential_attributes,
+            render_associative_attributes, render_attributes, render_binary_referential_attributes,
             RenderConst, RenderIdent, RenderType,
         },
         render_method_definition, render_new_instance,
@@ -307,7 +307,7 @@ impl CodeWriter for Hybrid {
 
                 render_attributes(buffer, obj, config, woog, domain)?;
 
-                render_referential_attributes(buffer, obj, config, woog, domain)?;
+                render_binary_referential_attributes(buffer, obj, config, woog, domain)?;
 
                 render_associative_attributes(buffer, obj, config, woog, domain)?;
 
@@ -705,7 +705,16 @@ impl CodeWriter for HybridNewImpl {
                     {
                         emit!(buffer, "store.inter_{obj_ident}(|id| {{");
                         render_new_instance(
-                            buffer, obj, None, &fields_, &rvals, config, imports, woog, domain,
+                            buffer,
+                            obj,
+                            config.is_imported(&s_obj.id),
+                            None,
+                            &fields_,
+                            &rvals,
+                            config,
+                            imports,
+                            woog,
+                            domain,
                         )?;
                         emit!(buffer, "}})");
                         emit!(buffer, "}}");
@@ -717,6 +726,7 @@ impl CodeWriter for HybridNewImpl {
                         render_new_instance(
                             buffer,
                             obj,
+                            config.is_imported(&s_obj.id),
                             Some(&new),
                             &fields_,
                             &rvals,

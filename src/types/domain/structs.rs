@@ -24,7 +24,7 @@ use crate::{
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
         get_subtypes_sorted, object_is_hybrid,
         render::{
-            render_associative_attributes, render_attributes, render_referential_attributes,
+            render_associative_attributes, render_attributes, render_binary_referential_attributes,
             RenderIdent, RenderType,
         },
         render_methods,
@@ -148,7 +148,9 @@ impl CodeWriter for Imports {
                 }
 
                 // Everything has an `id`, everything needs this.
+                // if config.get_optimization_level() == &crate::options::OptimizationLevel::None {
                 emit!(buffer, "use uuid::Uuid;");
+                // }
                 emit!(buffer, "");
 
                 // Add the use statements from the options.
@@ -181,12 +183,23 @@ impl CodeWriter for Imports {
 
                 // Add use statements for all the referents.
                 for r_obj in &referent_objs {
-                    uses.insert(format!(
-                        "use crate::{}::types::{}::{};",
-                        module,
-                        r_obj.as_ident(),
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    ));
+                    if config.is_imported(&r_obj.id) {
+                        let imported_object = config.get_imported(&r_obj.id).unwrap();
+                        imported_obj.insert(imported_object.domain.as_str());
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            imported_object.domain,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    } else {
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            r_obj.as_ident(),
+                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    }
                 }
 
                 // Add use statements for supertypes.
@@ -303,7 +316,7 @@ impl CodeWriter for Struct {
                 );
 
                 render_attributes(buffer, obj, config, woog, domain)?;
-                render_referential_attributes(buffer, obj, config, woog, domain)?;
+                render_binary_referential_attributes(buffer, obj, config, woog, domain)?;
                 render_associative_attributes(buffer, obj, config, woog, domain)?;
 
                 emit!(buffer, "}}");

@@ -572,7 +572,16 @@ impl CodeWriter for DefaultNewImpl {
 
                 // Output code to create the instance
                 render_new_instance(
-                    buffer, obj, None, &fields, &rvals, config, imports, woog, domain,
+                    buffer,
+                    obj,
+                    config.is_imported(&obj.id),
+                    None,
+                    &fields,
+                    &rvals,
+                    config,
+                    imports,
+                    woog,
+                    domain,
                 )?;
 
                 emit!(buffer, "}}");

@@ -100,8 +100,6 @@ macro_rules! get_objs_for_assoc_referrers_sorted {
         let mut objs = Vec::new();
         let referrers = $obj.r26_associative_referrer($store);
         for referrer in &referrers {
-            // For some stupid reason the compiler can't see this macro.
-            // let referents = get_assoc_referent_from_referrer_sorted!(referrer, $store);
             let assoc = referrer.r21_associative($store)[0];
             let referents = assoc
                 .r22_an_associative_referent($store)
@@ -643,6 +641,7 @@ pub(crate) fn render_make_uuid_new(
 pub(crate) fn render_new_instance(
     buffer: &mut Buffer,
     object: &Object,
+    imported: bool,
     lval: Option<&LValue>,
     fields: &Vec<LValue>,
     rvals: &Vec<RValue>,
@@ -652,7 +651,7 @@ pub(crate) fn render_new_instance(
     domain: &Domain,
 ) -> Result<()> {
     let is_uber = config.is_uber_store();
-    let imported = config.is_imported(&object.id);
+    // let imported = config.is_imported(&object.id);
 
     if let Some(lval) = lval {
         assert!(lval.ty == GType::Reference(object.id));
@@ -1024,6 +1023,7 @@ pub(crate) fn render_new_instance_new(
     for (field, rval) in tuples {
         let f = field.r27_field(woog)[0];
         let ty = f.r29_grace_type(woog)[0];
+        // dbg!(&ty, &rval);
         let rval_string = typecheck_and_coerce(ty, rval, config, imports, woog, domain)?;
         // Stupid clippy...
         if f.as_ident() == rval_string {
@@ -1140,7 +1140,7 @@ fn typecheck_and_coerce(
                         .unwrap()
                         .r13_object(domain.sarzak())[0];
 
-                    let _is_imported = config.is_imported(&obj.id);
+                    let is_imported = config.is_imported(&obj.id);
 
                     let id = if object_is_enum(obj, config, imports, domain)? {
                         "id()"
@@ -1148,7 +1148,7 @@ fn typecheck_and_coerce(
                         "id"
                     };
 
-                    if is_uber {
+                    if is_uber && !is_imported {
                         let (read, _write) = get_uber_read_write(config);
                         format!("{}{read}.{id}", rhs.as_ident())
                     } else {
@@ -1183,7 +1183,7 @@ fn typecheck_and_coerce(
                                 .unwrap()
                                 .r13_object(domain.sarzak())[0];
 
-                            let _is_imported = config.is_imported(&obj.id);
+                            let is_imported = config.is_imported(&obj.id);
 
                             let id = if object_is_enum(obj, config, imports, domain)? {
                                 "id()"
@@ -1191,7 +1191,7 @@ fn typecheck_and_coerce(
                                 "id"
                             };
 
-                            if is_uber {
+                            if is_uber && !is_imported {
                                 let (read, _write) = get_uber_read_write(config);
                                 format!("{}{read}.{id}", rhs.as_ident())
                             } else {

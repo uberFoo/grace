@@ -38,6 +38,9 @@ parking_lot = { version = "0.12.1", features = [
 tracy-client = "0.15.2"
 rustc-hash = "1.1.0"
 
+[patch."https://github.com/uberFoo/sarzak"]
+sarzak = { path = "../sarzak" }
+
 [build-dependencies]
 chrono = "0.4.23"
 

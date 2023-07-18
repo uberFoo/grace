@@ -618,7 +618,7 @@ pub(crate) fn render_attributes(
     Ok(())
 }
 
-pub(crate) fn render_referential_attributes(
+pub(crate) fn render_binary_referential_attributes(
     buffer: &mut Buffer,
     obj: &Object,
     config: &GraceConfig,
@@ -731,32 +731,34 @@ pub(crate) fn render_associative_attributes(
     for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
         let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
         let referents = get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
-        let ty = if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
-            // 🚧 So, here we are and we know we need to surface a `usize`, right?
-            // You know, so that we can point to the thing on the other side.
-            // Well, what if it's an imported object? It certainly can't be a `usize`.
-            // Imported objects were easy when everything was a UUID. As it
-            // stands now, someplace else, we're making it work by wrapping the
-            // UUID as an enum variant (Variant? What's the right word?), and
-            // using that to look it up in the foreign store. That's a lucky
-            // hack. We really need a better solution.
-            //
-            // Why not a tuple? We could store a pointer to the foreign store
-            // along side the `usize` index. I guess we can just store a
-            // reference really since I'm not planning on any IPC. That's what
-            // xuder is for.
-            if config.is_imported(&obj.id) {
-                "Uuid"
-            } else {
-                "usize"
-            }
-        } else {
-            "Uuid"
-        };
 
         for referent in referents {
             let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
             let assoc_obj = referent.r25_object(domain.sarzak())[0];
+
+            let ty = if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
+            {
+                // 🚧 So, here we are and we know we need to surface a `usize`, right?
+                // You know, so that we can point to the thing on the other side.
+                // Well, what if it's an imported object? It certainly can't be a `usize`.
+                // Imported objects were easy when everything was a UUID. As it
+                // stands now, someplace else, we're making it work by wrapping the
+                // UUID as an enum variant (Variant? What's the right word?), and
+                // using that to look it up in the foreign store. That's a lucky
+                // hack. We really need a better solution.
+                //
+                // Why not a tuple? We could store a pointer to the foreign store
+                // along side the `usize` index. I guess we can just store a
+                // reference really since I'm not planning on any IPC. That's what
+                // xuder is for.
+                if config.is_imported(&assoc_obj.id) {
+                    "Uuid"
+                } else {
+                    "usize"
+                }
+            } else {
+                "Uuid"
+            };
 
             emit!(
                 buffer,

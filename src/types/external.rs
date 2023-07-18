@@ -17,7 +17,7 @@ use crate::{
         emit_object_comments, find_store,
         generator::{FileGenerator, GenerationAction},
         render::{
-            render_associative_attributes, render_attributes, render_referential_attributes,
+            render_associative_attributes, render_attributes, render_binary_referential_attributes,
             RenderIdent, RenderType,
         },
     },
@@ -120,7 +120,7 @@ impl FileGenerator for ExternalGenerator {
                 );
 
                 render_attributes(buffer, object, config, woog, domain)?;
-                render_referential_attributes(buffer, object, config, woog, domain)?;
+                render_binary_referential_attributes(buffer, object, config, woog, domain)?;
                 render_associative_attributes(buffer, object, config, woog, domain)?;
                 emit!(buffer, "inner: {},", external.name);
 

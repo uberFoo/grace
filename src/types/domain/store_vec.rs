@@ -181,24 +181,32 @@ impl DomainStoreVec {
                         match config.get_uber_store().unwrap() {
                             StdRwLock | NDRwLock => {
                                 emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
+                                emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "let _index = self.{obj_ident}{read}.len();");
+                                emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}{write}.push(Some({obj_ident}.clone()));");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
                             },
                             Single => {
                                 emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.pop() {{");
+                                emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}[_index] = Some({obj_ident}.clone());");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "let _index = self.{obj_ident}.len();");
+                                emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}.push(Some({obj_ident}.clone()));");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
