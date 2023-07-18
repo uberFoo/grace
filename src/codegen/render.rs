@@ -155,7 +155,7 @@ impl ForStore for GraceType {
                 let o = woog.exhume_woog_option(o).unwrap();
                 let inner = o.r20_grace_type(woog)[0];
 
-                let (inner, _imported) = if let GraceType::Reference(ref id) = inner {
+                let (inner, imported) = if let GraceType::Reference(ref id) = inner {
                     let reference = woog.exhume_reference(id).unwrap();
                     let object = reference.r13_object(domain.sarzak())[0];
 
@@ -169,7 +169,7 @@ impl ForStore for GraceType {
                     (inner, false)
                 };
 
-                if is_uber {
+                if is_uber && !imported {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
                         Disabled => unreachable!(),
@@ -187,7 +187,7 @@ impl ForStore for GraceType {
                         ),
                     }
                 } else {
-                    format!("Option<{}>", inner.as_type(mutability, woog, domain))
+                    format!("Option<&{}>", inner.as_type(mutability, woog, domain))
                 }
             }
             Self::Reference(r) => {

@@ -1023,9 +1023,8 @@ pub(crate) fn render_new_instance_new(
     for (field, rval) in tuples {
         let f = field.r27_field(woog)[0];
         let ty = f.r29_grace_type(woog)[0];
-        // dbg!(&ty, &rval);
         let rval_string = typecheck_and_coerce(ty, rval, config, imports, woog, domain)?;
-        // Stupid clippy...
+
         if f.as_ident() == rval_string {
             emit!(buffer, "{rval_string},");
         } else {
@@ -1081,13 +1080,15 @@ fn typecheck_and_coerce(
                             let object = reference.r13_object(domain.sarzak())[0];
                             let obj_ident = object.as_ident();
 
+                            let is_imported = config.is_imported(&object.id);
+
                             let id = if object_is_enum(object, config, imports, domain)? {
                                 "id()"
                             } else {
                                 "id"
                             };
 
-                            if is_uber {
+                            if is_uber && !is_imported {
                                 let (read, _write) = get_uber_read_write(config);
                                 if let UberStoreOptions::AsyncRwLock =
                                     config.get_uber_store().unwrap()
@@ -1099,7 +1100,7 @@ fn typecheck_and_coerce(
                                     format!("{rhs_ident}.map(|{obj_ident}| {obj_ident}{read}.{id})")
                                 }
                             } else {
-                                format!("{rhs_ident}.map(|{obj_ident}| {obj_ident}.{id})")
+                                format!("{rhs_ident}.as_ref().map(|{obj_ident}| {obj_ident}.{id})")
                             }
                         }
                         _ => {
@@ -1335,7 +1336,7 @@ pub(crate) fn render_methods(
                             _ => unimplemented!(),
                         }
                     }
-                    _ => unimplemented!(),
+                    _ => unreachable!(),
                 };
 
                 if let crate::options::OptimizationLevel::None = config.get_optimization_level() {
