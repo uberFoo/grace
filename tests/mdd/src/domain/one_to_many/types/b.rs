@@ -32,7 +32,7 @@ impl B {
         let new = B {
             baz,
             id,
-            ptr: ptr.map(|referent| referent.id),
+            ptr: ptr.as_ref().map(|referent| referent.id),
         };
         store.inter_b(new.clone());
         new

@@ -1,6 +1,5 @@
 //! Domain to test Associative Objects/Relationships
 // {"magic":"","directive":{"Start":{"directive":"allow-editing","tag":"domain::associative_ts-module-definition-file"}}}
-// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative_ts-module-definition"}}}
 pub mod acknowledged_event;
 pub mod anchor;
 pub mod event;
@@ -14,5 +13,4 @@ pub use crate::domain::associative_ts::event::Event;
 pub use crate::domain::associative_ts::isa_ui::IsaUi;
 pub use crate::domain::associative_ts::state::State;
 pub use crate::domain::associative_ts::subtype_anchor::SubtypeAnchor;
-// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

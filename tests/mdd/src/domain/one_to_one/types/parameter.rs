@@ -34,7 +34,7 @@ impl Parameter {
         let new = Parameter {
             id,
             name,
-            next: next.map(|parameter| parameter.id),
+            next: next.as_ref().map(|parameter| parameter.id),
         };
         store.inter_parameter(new.clone());
         new

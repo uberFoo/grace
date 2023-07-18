@@ -21,7 +21,7 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -71,14 +71,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<A>>,
     {
-        if let Some(_index) = self.a_free_list.pop() {
-            let a = a(_index);
-            self.a[_index] = Some(a.clone());
-            a
+        let _index = if let Some(_index) = self.a_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.a.len();
-            let a = a(_index);
-            self.a.push(Some(a.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.a.push(None);
+            _index
+        };
+        let a = a(_index);
+        if let Some(Some(a)) = self.a.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *a.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {a:?}.");
+            self.a_free_list.push(_index);
+            a.clone()
+        } else {
+            log::debug!(target: "store", "interring {a:?}.");
+            self.a[_index] = Some(a.clone());
             a
         }
     }
@@ -104,7 +119,9 @@ impl ObjectStore {
     ///
     pub fn iter_a(&self) -> impl Iterator<Item = Rc<RefCell<A>>> + '_ {
         let len = self.a.len();
-        (0..len).map(move |i| self.a[i].as_ref().map(|a| a.clone()).unwrap())
+        (0..len)
+            .filter(|i| self.a[*i].is_some())
+            .map(move |i| self.a[i].as_ref().map(|a| a.clone()).unwrap())
     }
 
     /// Inter (insert) [`B`] into the store.
@@ -113,14 +130,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<B>>,
     {
-        if let Some(_index) = self.b_free_list.pop() {
-            let b = b(_index);
-            self.b[_index] = Some(b.clone());
-            b
+        let _index = if let Some(_index) = self.b_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.b.len();
-            let b = b(_index);
-            self.b.push(Some(b.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.b.push(None);
+            _index
+        };
+        let b = b(_index);
+        if let Some(Some(b)) = self.b.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *b.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {b:?}.");
+            self.b_free_list.push(_index);
+            b.clone()
+        } else {
+            log::debug!(target: "store", "interring {b:?}.");
+            self.b[_index] = Some(b.clone());
             b
         }
     }
@@ -146,7 +178,9 @@ impl ObjectStore {
     ///
     pub fn iter_b(&self) -> impl Iterator<Item = Rc<RefCell<B>>> + '_ {
         let len = self.b.len();
-        (0..len).map(move |i| self.b[i].as_ref().map(|b| b.clone()).unwrap())
+        (0..len)
+            .filter(|i| self.b[*i].is_some())
+            .map(move |i| self.b[i].as_ref().map(|b| b.clone()).unwrap())
     }
 
     /// Inter (insert) [`C`] into the store.
@@ -155,14 +189,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<C>>,
     {
-        if let Some(_index) = self.c_free_list.pop() {
-            let c = c(_index);
-            self.c[_index] = Some(c.clone());
-            c
+        let _index = if let Some(_index) = self.c_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.c.len();
-            let c = c(_index);
-            self.c.push(Some(c.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.c.push(None);
+            _index
+        };
+        let c = c(_index);
+        if let Some(Some(c)) = self.c.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *c.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {c:?}.");
+            self.c_free_list.push(_index);
+            c.clone()
+        } else {
+            log::debug!(target: "store", "interring {c:?}.");
+            self.c[_index] = Some(c.clone());
             c
         }
     }
@@ -188,7 +237,9 @@ impl ObjectStore {
     ///
     pub fn iter_c(&self) -> impl Iterator<Item = Rc<RefCell<C>>> + '_ {
         let len = self.c.len();
-        (0..len).map(move |i| self.c[i].as_ref().map(|c| c.clone()).unwrap())
+        (0..len)
+            .filter(|i| self.c[*i].is_some())
+            .map(move |i| self.c[i].as_ref().map(|c| c.clone()).unwrap())
     }
 
     /// Inter (insert) [`D`] into the store.
@@ -197,14 +248,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<D>>,
     {
-        if let Some(_index) = self.d_free_list.pop() {
-            let d = d(_index);
-            self.d[_index] = Some(d.clone());
-            d
+        let _index = if let Some(_index) = self.d_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.d.len();
-            let d = d(_index);
-            self.d.push(Some(d.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.d.push(None);
+            _index
+        };
+        let d = d(_index);
+        if let Some(Some(d)) = self.d.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *d.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {d:?}.");
+            self.d_free_list.push(_index);
+            d.clone()
+        } else {
+            log::debug!(target: "store", "interring {d:?}.");
+            self.d[_index] = Some(d.clone());
             d
         }
     }
@@ -230,7 +296,9 @@ impl ObjectStore {
     ///
     pub fn iter_d(&self) -> impl Iterator<Item = Rc<RefCell<D>>> + '_ {
         let len = self.d.len();
-        (0..len).map(move |i| self.d[i].as_ref().map(|d| d.clone()).unwrap())
+        (0..len)
+            .filter(|i| self.d[*i].is_some())
+            .map(move |i| self.d[i].as_ref().map(|d| d.clone()).unwrap())
     }
 
     /// Inter (insert) [`Referent`] into the store.
@@ -239,14 +307,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Referent>>,
     {
-        if let Some(_index) = self.referent_free_list.pop() {
-            let referent = referent(_index);
-            self.referent[_index] = Some(referent.clone());
-            referent
+        let _index = if let Some(_index) = self.referent_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.referent.len();
-            let referent = referent(_index);
-            self.referent.push(Some(referent.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.referent.push(None);
+            _index
+        };
+        let referent = referent(_index);
+        if let Some(Some(referent)) = self.referent.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *referent.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {referent:?}.");
+            self.referent_free_list.push(_index);
+            referent.clone()
+        } else {
+            log::debug!(target: "store", "interring {referent:?}.");
+            self.referent[_index] = Some(referent.clone());
             referent
         }
     }
@@ -272,12 +355,14 @@ impl ObjectStore {
     ///
     pub fn iter_referent(&self) -> impl Iterator<Item = Rc<RefCell<Referent>>> + '_ {
         let len = self.referent.len();
-        (0..len).map(move |i| {
-            self.referent[i]
-                .as_ref()
-                .map(|referent| referent.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.referent[*i].is_some())
+            .map(move |i| {
+                self.referent[i]
+                    .as_ref()
+                    .map(|referent| referent.clone())
+                    .unwrap()
+            })
     }
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

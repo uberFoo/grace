@@ -18,7 +18,7 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -56,14 +56,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Nunchuck>>,
     {
-        if let Some(_index) = self.nunchuck_free_list.lock().unwrap().pop() {
-            let nunchuck = nunchuck(_index);
-            self.nunchuck.write().unwrap()[_index] = Some(nunchuck.clone());
-            nunchuck
+        let _index = if let Some(_index) = self.nunchuck_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.nunchuck.read().unwrap().len();
-            let nunchuck = nunchuck(_index);
-            self.nunchuck.write().unwrap().push(Some(nunchuck.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.nunchuck.write().unwrap().push(None);
+            _index
+        };
+
+        let nunchuck = nunchuck(_index);
+
+        let found = if let Some(nunchuck) = self.nunchuck.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *nunchuck.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            nunchuck.clone()
+        } else {
+            None
+        };
+
+        if let Some(nunchuck) = found {
+            log::debug!(target: "store", "found duplicate {nunchuck:?}.");
+            self.nunchuck_free_list.lock().unwrap().push(_index);
+            nunchuck.clone()
+        } else {
+            log::debug!(target: "store", "interring {nunchuck:?}.");
+            self.nunchuck.write().unwrap()[_index] = Some(nunchuck.clone());
             nunchuck
         }
     }
@@ -89,12 +112,14 @@ impl ObjectStore {
     ///
     pub fn iter_nunchuck(&self) -> impl Iterator<Item = Arc<RwLock<Nunchuck>>> + '_ {
         let len = self.nunchuck.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.nunchuck.read().unwrap()[i]
-                .as_ref()
-                .map(|nunchuck| nunchuck.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.nunchuck.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.nunchuck.read().unwrap()[i]
+                    .as_ref()
+                    .map(|nunchuck| nunchuck.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Timestamp`] into the store.
@@ -103,17 +128,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Timestamp>>,
     {
-        if let Some(_index) = self.timestamp_free_list.lock().unwrap().pop() {
-            let timestamp = timestamp(_index);
-            self.timestamp.write().unwrap()[_index] = Some(timestamp.clone());
-            timestamp
+        let _index = if let Some(_index) = self.timestamp_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.timestamp.read().unwrap().len();
-            let timestamp = timestamp(_index);
-            self.timestamp
-                .write()
-                .unwrap()
-                .push(Some(timestamp.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.timestamp.write().unwrap().push(None);
+            _index
+        };
+
+        let timestamp = timestamp(_index);
+
+        let found = if let Some(timestamp) = self.timestamp.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *timestamp.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            timestamp.clone()
+        } else {
+            None
+        };
+
+        if let Some(timestamp) = found {
+            log::debug!(target: "store", "found duplicate {timestamp:?}.");
+            self.timestamp_free_list.lock().unwrap().push(_index);
+            timestamp.clone()
+        } else {
+            log::debug!(target: "store", "interring {timestamp:?}.");
+            self.timestamp.write().unwrap()[_index] = Some(timestamp.clone());
             timestamp
         }
     }
@@ -139,12 +184,14 @@ impl ObjectStore {
     ///
     pub fn iter_timestamp(&self) -> impl Iterator<Item = Arc<RwLock<Timestamp>>> + '_ {
         let len = self.timestamp.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.timestamp.read().unwrap()[i]
-                .as_ref()
-                .map(|timestamp| timestamp.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.timestamp.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.timestamp.read().unwrap()[i]
+                    .as_ref()
+                    .map(|timestamp| timestamp.clone())
+                    .unwrap()
+            })
     }
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

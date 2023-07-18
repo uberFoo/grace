@@ -24,15 +24,11 @@ pub struct RandoObject {
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-implementation"}}}
 impl RandoObject {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-new"}}}
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-new_"}}}
     /// Inter a new 'Rando Object' in the store, and return it's `id`.
     pub fn new(name: String, store: &mut EverythingStore) -> RandoObject {
         let id = Uuid::new_v4();
         let new = RandoObject { id, name };
         store.inter_rando_object(new.clone());
-        // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-new"}}}
-        // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-impl-new_"}}}
         new
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

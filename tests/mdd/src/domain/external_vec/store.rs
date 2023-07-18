@@ -18,7 +18,7 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -56,14 +56,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Nunchuck>>,
     {
-        if let Some(_index) = self.nunchuck_free_list.pop() {
-            let nunchuck = nunchuck(_index);
-            self.nunchuck[_index] = Some(nunchuck.clone());
-            nunchuck
+        let _index = if let Some(_index) = self.nunchuck_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.nunchuck.len();
-            let nunchuck = nunchuck(_index);
-            self.nunchuck.push(Some(nunchuck.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.nunchuck.push(None);
+            _index
+        };
+        let nunchuck = nunchuck(_index);
+        if let Some(Some(nunchuck)) = self.nunchuck.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *nunchuck.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {nunchuck:?}.");
+            self.nunchuck_free_list.push(_index);
+            nunchuck.clone()
+        } else {
+            log::debug!(target: "store", "interring {nunchuck:?}.");
+            self.nunchuck[_index] = Some(nunchuck.clone());
             nunchuck
         }
     }
@@ -89,12 +104,14 @@ impl ObjectStore {
     ///
     pub fn iter_nunchuck(&self) -> impl Iterator<Item = Rc<RefCell<Nunchuck>>> + '_ {
         let len = self.nunchuck.len();
-        (0..len).map(move |i| {
-            self.nunchuck[i]
-                .as_ref()
-                .map(|nunchuck| nunchuck.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.nunchuck[*i].is_some())
+            .map(move |i| {
+                self.nunchuck[i]
+                    .as_ref()
+                    .map(|nunchuck| nunchuck.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Timestamp`] into the store.
@@ -103,14 +120,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Timestamp>>,
     {
-        if let Some(_index) = self.timestamp_free_list.pop() {
-            let timestamp = timestamp(_index);
-            self.timestamp[_index] = Some(timestamp.clone());
-            timestamp
+        let _index = if let Some(_index) = self.timestamp_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.timestamp.len();
-            let timestamp = timestamp(_index);
-            self.timestamp.push(Some(timestamp.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.timestamp.push(None);
+            _index
+        };
+        let timestamp = timestamp(_index);
+        if let Some(Some(timestamp)) = self.timestamp.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *timestamp.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {timestamp:?}.");
+            self.timestamp_free_list.push(_index);
+            timestamp.clone()
+        } else {
+            log::debug!(target: "store", "interring {timestamp:?}.");
+            self.timestamp[_index] = Some(timestamp.clone());
             timestamp
         }
     }
@@ -136,12 +168,14 @@ impl ObjectStore {
     ///
     pub fn iter_timestamp(&self) -> impl Iterator<Item = Rc<RefCell<Timestamp>>> + '_ {
         let len = self.timestamp.len();
-        (0..len).map(move |i| {
-            self.timestamp[i]
-                .as_ref()
-                .map(|timestamp| timestamp.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.timestamp[*i].is_some())
+            .map(move |i| {
+                self.timestamp[i]
+                    .as_ref()
+                    .map(|timestamp| timestamp.clone())
+                    .unwrap()
+            })
     }
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -180,34 +180,64 @@ impl DomainStoreVec {
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
                             StdRwLock | NDRwLock => {
-                                emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
+                                emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
                                 emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
-                                emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
-                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
-                                emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
-                                emit!(buffer, "{obj_ident}");
+                                emit!(buffer, "_index");
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "let _index = self.{obj_ident}{read}.len();");
                                 emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
+                                emit!(buffer, "self.{obj_ident}{write}.push(None);");
+                                emit!(buffer, "_index");
+                                emit!(buffer, "}};");
+                                emit!(buffer, "");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "");
+                                emit!(buffer, "let found = if let Some({obj_ident}) = self.{obj_ident}{read}.iter().find(|stored| {{");
+                                emit!(buffer, "if let Some(stored) = stored {{");
+                                emit!(buffer, "*stored{read} == *{obj_ident}{read}");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "false");
+                                emit!(buffer, "}}");
+                                emit!(buffer, "}}) {{");
+                                emit!(buffer, "{obj_ident}.clone()");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "None");
+                                emit!(buffer, "}};");
+                                emit!(buffer, "");
+                                emit!(buffer, "if let Some({obj_ident}) = found {{");
+                                emit!(buffer, "log::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(_index);");
+                                emit!(buffer, "{obj_ident}.clone()");
+                                emit!(buffer, "}} else {{");
                                 emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
-                                emit!(buffer, "self.{obj_ident}{write}.push(Some({obj_ident}.clone()));");
+                                emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
                             },
                             Single => {
-                                emit!(buffer, "if let Some(_index) = self.{obj_ident}_free_list.pop() {{");
+                                emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.pop() {{");
                                 emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
-                                emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
-                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
-                                emit!(buffer, "self.{obj_ident}[_index] = Some({obj_ident}.clone());");
-                                emit!(buffer, "{obj_ident}");
+                                emit!(buffer, "_index");
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "let _index = self.{obj_ident}.len();");
                                 emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
+                                emit!(buffer, "self.{obj_ident}.push(None);");
+                                emit!(buffer, "_index");
+                                emit!(buffer, "}};");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "if let Some(Some({obj_ident})) = self.{obj_ident}.iter().find(|stored| {{");
+                                emit!(buffer, "if let Some(stored) = stored {{");
+                                emit!(buffer, "*stored{read} == *{obj_ident}{read}");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "false");
+                                emit!(buffer, "}}");
+                                emit!(buffer, "}}) {{");
+                                emit!(buffer, "log::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "self.{obj_ident}_free_list.push(_index);");
+                                emit!(buffer, "{obj_ident}.clone()");
+                                emit!(buffer, "}} else {{");
                                 emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
-                                emit!(buffer, "self.{obj_ident}.push(Some({obj_ident}.clone()));");
+                                emit!(buffer, "self.{obj_ident}[_index] = Some({obj_ident}.clone());");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
                             },
@@ -606,7 +636,7 @@ impl DomainStoreVec {
                             );
                             emit!(
                                 buffer,
-                                "(0..len).map(move|i| values[i].clone())",
+                                "(0..len).filter(|i| values[*i].is_some()).map(move|i| values[i].clone())",
                             );
                         } else {
                             let (read, _write) = get_uber_read_write(config);
@@ -619,7 +649,7 @@ impl DomainStoreVec {
                                     );
                                     emit!(
                                         buffer,
-                                        "(0..len).map(move|i|{{self.{obj_ident}{read}[i].as_ref().map(|{obj_ident}| {obj_ident}.clone()).unwrap()}})",
+                                        "(0..len).filter(|i| self.{obj_ident}{read}[*i].is_some()).map(move|i|{{self.{obj_ident}{read}[i].as_ref().map(|{obj_ident}| {obj_ident}.clone()).unwrap()}})",
                                     );
                                 },
                                 Single => {
@@ -629,7 +659,7 @@ impl DomainStoreVec {
                                     );
                                     emit!(
                                         buffer,
-                                        "(0..len).map(move|i|{{self.{obj_ident}[i].as_ref().map(|{obj_ident}| {obj_ident}.clone()).unwrap()}})",
+                                        "(0..len).filter(|i| self.{obj_ident}[*i].is_some()).map(move|i|{{self.{obj_ident}[i].as_ref().map(|{obj_ident}| {obj_ident}.clone()).unwrap()}})",
                                     );
                                 },
                                 store => panic!("{store} is not currently supported"),

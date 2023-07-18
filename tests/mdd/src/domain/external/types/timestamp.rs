@@ -20,7 +20,6 @@ pub struct Timestamp {
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-ee-impl"}}}
 impl Timestamp {
-    // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-struct-impl-new"}}}
     pub fn new(store: &mut ExternalStore) -> Timestamp {
         let inner = SystemTime::now();
         let id = Uuid::new_v5(&UUID_NS, format!("{:?}", inner).as_bytes());
@@ -31,6 +30,5 @@ impl Timestamp {
         store.inter_timestamp(new.clone());
         new
     }
-    // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

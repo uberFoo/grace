@@ -34,8 +34,8 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap as HashMap;
 use heck::ToUpperCamelCase;
+use rustc_hash::FxHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

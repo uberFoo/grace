@@ -32,7 +32,7 @@ impl C {
         let new = C {
             id,
             like_water,
-            ptr: ptr.map(|referent| referent.id),
+            ptr: ptr.as_ref().map(|referent| referent.id),
         };
         store.inter_c(new.clone());
         new

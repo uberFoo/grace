@@ -33,7 +33,7 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -153,14 +153,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Alpha>>,
     {
-        if let Some(_index) = self.alpha_free_list.lock().unwrap().pop() {
-            let alpha = alpha(_index);
-            self.alpha.write().unwrap()[_index] = Some(alpha.clone());
-            alpha
+        let _index = if let Some(_index) = self.alpha_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.alpha.read().unwrap().len();
-            let alpha = alpha(_index);
-            self.alpha.write().unwrap().push(Some(alpha.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.alpha.write().unwrap().push(None);
+            _index
+        };
+
+        let alpha = alpha(_index);
+
+        let found = if let Some(alpha) = self.alpha.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *alpha.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            alpha.clone()
+        } else {
+            None
+        };
+
+        if let Some(alpha) = found {
+            log::debug!(target: "store", "found duplicate {alpha:?}.");
+            self.alpha_free_list.lock().unwrap().push(_index);
+            alpha.clone()
+        } else {
+            log::debug!(target: "store", "interring {alpha:?}.");
+            self.alpha.write().unwrap()[_index] = Some(alpha.clone());
             alpha
         }
     }
@@ -186,12 +209,14 @@ impl ObjectStore {
     ///
     pub fn iter_alpha(&self) -> impl Iterator<Item = Arc<RwLock<Alpha>>> + '_ {
         let len = self.alpha.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.alpha.read().unwrap()[i]
-                .as_ref()
-                .map(|alpha| alpha.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.alpha.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.alpha.read().unwrap()[i]
+                    .as_ref()
+                    .map(|alpha| alpha.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Baz`] into the store.
@@ -200,14 +225,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Baz>>,
     {
-        if let Some(_index) = self.baz_free_list.lock().unwrap().pop() {
-            let baz = baz(_index);
-            self.baz.write().unwrap()[_index] = Some(baz.clone());
-            baz
+        let _index = if let Some(_index) = self.baz_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.baz.read().unwrap().len();
-            let baz = baz(_index);
-            self.baz.write().unwrap().push(Some(baz.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.baz.write().unwrap().push(None);
+            _index
+        };
+
+        let baz = baz(_index);
+
+        let found = if let Some(baz) = self.baz.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *baz.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            baz.clone()
+        } else {
+            None
+        };
+
+        if let Some(baz) = found {
+            log::debug!(target: "store", "found duplicate {baz:?}.");
+            self.baz_free_list.lock().unwrap().push(_index);
+            baz.clone()
+        } else {
+            log::debug!(target: "store", "interring {baz:?}.");
+            self.baz.write().unwrap()[_index] = Some(baz.clone());
             baz
         }
     }
@@ -233,12 +281,14 @@ impl ObjectStore {
     ///
     pub fn iter_baz(&self) -> impl Iterator<Item = Arc<RwLock<Baz>>> + '_ {
         let len = self.baz.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.baz.read().unwrap()[i]
-                .as_ref()
-                .map(|baz| baz.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.baz.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.baz.read().unwrap()[i]
+                    .as_ref()
+                    .map(|baz| baz.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Beta`] into the store.
@@ -247,14 +297,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Beta>>,
     {
-        if let Some(_index) = self.beta_free_list.lock().unwrap().pop() {
-            let beta = beta(_index);
-            self.beta.write().unwrap()[_index] = Some(beta.clone());
-            beta
+        let _index = if let Some(_index) = self.beta_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.beta.read().unwrap().len();
-            let beta = beta(_index);
-            self.beta.write().unwrap().push(Some(beta.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.beta.write().unwrap().push(None);
+            _index
+        };
+
+        let beta = beta(_index);
+
+        let found = if let Some(beta) = self.beta.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *beta.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            beta.clone()
+        } else {
+            None
+        };
+
+        if let Some(beta) = found {
+            log::debug!(target: "store", "found duplicate {beta:?}.");
+            self.beta_free_list.lock().unwrap().push(_index);
+            beta.clone()
+        } else {
+            log::debug!(target: "store", "interring {beta:?}.");
+            self.beta.write().unwrap()[_index] = Some(beta.clone());
             beta
         }
     }
@@ -280,12 +353,14 @@ impl ObjectStore {
     ///
     pub fn iter_beta(&self) -> impl Iterator<Item = Arc<RwLock<Beta>>> + '_ {
         let len = self.beta.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.beta.read().unwrap()[i]
-                .as_ref()
-                .map(|beta| beta.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.beta.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.beta.read().unwrap()[i]
+                    .as_ref()
+                    .map(|beta| beta.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Borrowed`] into the store.
@@ -294,14 +369,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Borrowed>>,
     {
-        if let Some(_index) = self.borrowed_free_list.lock().unwrap().pop() {
-            let borrowed = borrowed(_index);
-            self.borrowed.write().unwrap()[_index] = Some(borrowed.clone());
-            borrowed
+        let _index = if let Some(_index) = self.borrowed_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.borrowed.read().unwrap().len();
-            let borrowed = borrowed(_index);
-            self.borrowed.write().unwrap().push(Some(borrowed.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.borrowed.write().unwrap().push(None);
+            _index
+        };
+
+        let borrowed = borrowed(_index);
+
+        let found = if let Some(borrowed) = self.borrowed.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *borrowed.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            borrowed.clone()
+        } else {
+            None
+        };
+
+        if let Some(borrowed) = found {
+            log::debug!(target: "store", "found duplicate {borrowed:?}.");
+            self.borrowed_free_list.lock().unwrap().push(_index);
+            borrowed.clone()
+        } else {
+            log::debug!(target: "store", "interring {borrowed:?}.");
+            self.borrowed.write().unwrap()[_index] = Some(borrowed.clone());
             borrowed
         }
     }
@@ -327,12 +425,14 @@ impl ObjectStore {
     ///
     pub fn iter_borrowed(&self) -> impl Iterator<Item = Arc<RwLock<Borrowed>>> + '_ {
         let len = self.borrowed.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.borrowed.read().unwrap()[i]
-                .as_ref()
-                .map(|borrowed| borrowed.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.borrowed.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.borrowed.read().unwrap()[i]
+                    .as_ref()
+                    .map(|borrowed| borrowed.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Gamma`] into the store.
@@ -341,14 +441,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Gamma>>,
     {
-        if let Some(_index) = self.gamma_free_list.lock().unwrap().pop() {
-            let gamma = gamma(_index);
-            self.gamma.write().unwrap()[_index] = Some(gamma.clone());
-            gamma
+        let _index = if let Some(_index) = self.gamma_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.gamma.read().unwrap().len();
-            let gamma = gamma(_index);
-            self.gamma.write().unwrap().push(Some(gamma.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.gamma.write().unwrap().push(None);
+            _index
+        };
+
+        let gamma = gamma(_index);
+
+        let found = if let Some(gamma) = self.gamma.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *gamma.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            gamma.clone()
+        } else {
+            None
+        };
+
+        if let Some(gamma) = found {
+            log::debug!(target: "store", "found duplicate {gamma:?}.");
+            self.gamma_free_list.lock().unwrap().push(_index);
+            gamma.clone()
+        } else {
+            log::debug!(target: "store", "interring {gamma:?}.");
+            self.gamma.write().unwrap()[_index] = Some(gamma.clone());
             gamma
         }
     }
@@ -374,12 +497,14 @@ impl ObjectStore {
     ///
     pub fn iter_gamma(&self) -> impl Iterator<Item = Arc<RwLock<Gamma>>> + '_ {
         let len = self.gamma.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.gamma.read().unwrap()[i]
-                .as_ref()
-                .map(|gamma| gamma.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.gamma.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.gamma.read().unwrap()[i]
+                    .as_ref()
+                    .map(|gamma| gamma.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Henry`] into the store.
@@ -388,14 +513,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Henry>>,
     {
-        if let Some(_index) = self.henry_free_list.lock().unwrap().pop() {
-            let henry = henry(_index);
-            self.henry.write().unwrap()[_index] = Some(henry.clone());
-            henry
+        let _index = if let Some(_index) = self.henry_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.henry.read().unwrap().len();
-            let henry = henry(_index);
-            self.henry.write().unwrap().push(Some(henry.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.henry.write().unwrap().push(None);
+            _index
+        };
+
+        let henry = henry(_index);
+
+        let found = if let Some(henry) = self.henry.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *henry.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            henry.clone()
+        } else {
+            None
+        };
+
+        if let Some(henry) = found {
+            log::debug!(target: "store", "found duplicate {henry:?}.");
+            self.henry_free_list.lock().unwrap().push(_index);
+            henry.clone()
+        } else {
+            log::debug!(target: "store", "interring {henry:?}.");
+            self.henry.write().unwrap()[_index] = Some(henry.clone());
             henry
         }
     }
@@ -421,12 +569,14 @@ impl ObjectStore {
     ///
     pub fn iter_henry(&self) -> impl Iterator<Item = Arc<RwLock<Henry>>> + '_ {
         let len = self.henry.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.henry.read().unwrap()[i]
-                .as_ref()
-                .map(|henry| henry.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.henry.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.henry.read().unwrap()[i]
+                    .as_ref()
+                    .map(|henry| henry.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`NotImportant`] into the store.
@@ -435,17 +585,38 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<NotImportant>>,
     {
-        if let Some(_index) = self.not_important_free_list.lock().unwrap().pop() {
-            let not_important = not_important(_index);
-            self.not_important.write().unwrap()[_index] = Some(not_important.clone());
-            not_important
+        let _index = if let Some(_index) = self.not_important_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.not_important.read().unwrap().len();
-            let not_important = not_important(_index);
-            self.not_important
-                .write()
-                .unwrap()
-                .push(Some(not_important.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.not_important.write().unwrap().push(None);
+            _index
+        };
+
+        let not_important = not_important(_index);
+
+        let found = if let Some(not_important) =
+            self.not_important.read().unwrap().iter().find(|stored| {
+                if let Some(stored) = stored {
+                    *stored.read().unwrap() == *not_important.read().unwrap()
+                } else {
+                    false
+                }
+            }) {
+            not_important.clone()
+        } else {
+            None
+        };
+
+        if let Some(not_important) = found {
+            log::debug!(target: "store", "found duplicate {not_important:?}.");
+            self.not_important_free_list.lock().unwrap().push(_index);
+            not_important.clone()
+        } else {
+            log::debug!(target: "store", "interring {not_important:?}.");
+            self.not_important.write().unwrap()[_index] = Some(not_important.clone());
             not_important
         }
     }
@@ -471,12 +642,14 @@ impl ObjectStore {
     ///
     pub fn iter_not_important(&self) -> impl Iterator<Item = Arc<RwLock<NotImportant>>> + '_ {
         let len = self.not_important.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.not_important.read().unwrap()[i]
-                .as_ref()
-                .map(|not_important| not_important.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.not_important.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.not_important.read().unwrap()[i]
+                    .as_ref()
+                    .map(|not_important| not_important.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`OhBoy`] into the store.
@@ -485,14 +658,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<OhBoy>>,
     {
-        if let Some(_index) = self.oh_boy_free_list.lock().unwrap().pop() {
-            let oh_boy = oh_boy(_index);
-            self.oh_boy.write().unwrap()[_index] = Some(oh_boy.clone());
-            oh_boy
+        let _index = if let Some(_index) = self.oh_boy_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.oh_boy.read().unwrap().len();
-            let oh_boy = oh_boy(_index);
-            self.oh_boy.write().unwrap().push(Some(oh_boy.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.oh_boy.write().unwrap().push(None);
+            _index
+        };
+
+        let oh_boy = oh_boy(_index);
+
+        let found = if let Some(oh_boy) = self.oh_boy.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *oh_boy.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            oh_boy.clone()
+        } else {
+            None
+        };
+
+        if let Some(oh_boy) = found {
+            log::debug!(target: "store", "found duplicate {oh_boy:?}.");
+            self.oh_boy_free_list.lock().unwrap().push(_index);
+            oh_boy.clone()
+        } else {
+            log::debug!(target: "store", "interring {oh_boy:?}.");
+            self.oh_boy.write().unwrap()[_index] = Some(oh_boy.clone());
             oh_boy
         }
     }
@@ -518,12 +714,14 @@ impl ObjectStore {
     ///
     pub fn iter_oh_boy(&self) -> impl Iterator<Item = Arc<RwLock<OhBoy>>> + '_ {
         let len = self.oh_boy.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.oh_boy.read().unwrap()[i]
-                .as_ref()
-                .map(|oh_boy| oh_boy.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.oh_boy.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.oh_boy.read().unwrap()[i]
+                    .as_ref()
+                    .map(|oh_boy| oh_boy.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Ownership`] into the store.
@@ -532,17 +730,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Ownership>>,
     {
-        if let Some(_index) = self.ownership_free_list.lock().unwrap().pop() {
-            let ownership = ownership(_index);
-            self.ownership.write().unwrap()[_index] = Some(ownership.clone());
-            ownership
+        let _index = if let Some(_index) = self.ownership_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.ownership.read().unwrap().len();
-            let ownership = ownership(_index);
-            self.ownership
-                .write()
-                .unwrap()
-                .push(Some(ownership.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.ownership.write().unwrap().push(None);
+            _index
+        };
+
+        let ownership = ownership(_index);
+
+        let found = if let Some(ownership) = self.ownership.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *ownership.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            ownership.clone()
+        } else {
+            None
+        };
+
+        if let Some(ownership) = found {
+            log::debug!(target: "store", "found duplicate {ownership:?}.");
+            self.ownership_free_list.lock().unwrap().push(_index);
+            ownership.clone()
+        } else {
+            log::debug!(target: "store", "interring {ownership:?}.");
+            self.ownership.write().unwrap()[_index] = Some(ownership.clone());
             ownership
         }
     }
@@ -568,12 +786,14 @@ impl ObjectStore {
     ///
     pub fn iter_ownership(&self) -> impl Iterator<Item = Arc<RwLock<Ownership>>> + '_ {
         let len = self.ownership.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.ownership.read().unwrap()[i]
-                .as_ref()
-                .map(|ownership| ownership.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.ownership.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.ownership.read().unwrap()[i]
+                    .as_ref()
+                    .map(|ownership| ownership.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`Reference`] into the store.
@@ -582,17 +802,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<Reference>>,
     {
-        if let Some(_index) = self.reference_free_list.lock().unwrap().pop() {
-            let reference = reference(_index);
-            self.reference.write().unwrap()[_index] = Some(reference.clone());
-            reference
+        let _index = if let Some(_index) = self.reference_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.reference.read().unwrap().len();
-            let reference = reference(_index);
-            self.reference
-                .write()
-                .unwrap()
-                .push(Some(reference.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.reference.write().unwrap().push(None);
+            _index
+        };
+
+        let reference = reference(_index);
+
+        let found = if let Some(reference) = self.reference.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *reference.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            reference.clone()
+        } else {
+            None
+        };
+
+        if let Some(reference) = found {
+            log::debug!(target: "store", "found duplicate {reference:?}.");
+            self.reference_free_list.lock().unwrap().push(_index);
+            reference.clone()
+        } else {
+            log::debug!(target: "store", "interring {reference:?}.");
+            self.reference.write().unwrap()[_index] = Some(reference.clone());
             reference
         }
     }
@@ -618,12 +858,14 @@ impl ObjectStore {
     ///
     pub fn iter_reference(&self) -> impl Iterator<Item = Arc<RwLock<Reference>>> + '_ {
         let len = self.reference.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.reference.read().unwrap()[i]
-                .as_ref()
-                .map(|reference| reference.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.reference.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.reference.read().unwrap()[i]
+                    .as_ref()
+                    .map(|reference| reference.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`SimpleSubtypeA`] into the store.
@@ -632,17 +874,38 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<SimpleSubtypeA>>,
     {
-        if let Some(_index) = self.simple_subtype_a_free_list.lock().unwrap().pop() {
-            let simple_subtype_a = simple_subtype_a(_index);
-            self.simple_subtype_a.write().unwrap()[_index] = Some(simple_subtype_a.clone());
-            simple_subtype_a
+        let _index = if let Some(_index) = self.simple_subtype_a_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.simple_subtype_a.read().unwrap().len();
-            let simple_subtype_a = simple_subtype_a(_index);
-            self.simple_subtype_a
-                .write()
-                .unwrap()
-                .push(Some(simple_subtype_a.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.simple_subtype_a.write().unwrap().push(None);
+            _index
+        };
+
+        let simple_subtype_a = simple_subtype_a(_index);
+
+        let found = if let Some(simple_subtype_a) =
+            self.simple_subtype_a.read().unwrap().iter().find(|stored| {
+                if let Some(stored) = stored {
+                    *stored.read().unwrap() == *simple_subtype_a.read().unwrap()
+                } else {
+                    false
+                }
+            }) {
+            simple_subtype_a.clone()
+        } else {
+            None
+        };
+
+        if let Some(simple_subtype_a) = found {
+            log::debug!(target: "store", "found duplicate {simple_subtype_a:?}.");
+            self.simple_subtype_a_free_list.lock().unwrap().push(_index);
+            simple_subtype_a.clone()
+        } else {
+            log::debug!(target: "store", "interring {simple_subtype_a:?}.");
+            self.simple_subtype_a.write().unwrap()[_index] = Some(simple_subtype_a.clone());
             simple_subtype_a
         }
     }
@@ -668,12 +931,14 @@ impl ObjectStore {
     ///
     pub fn iter_simple_subtype_a(&self) -> impl Iterator<Item = Arc<RwLock<SimpleSubtypeA>>> + '_ {
         let len = self.simple_subtype_a.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.simple_subtype_a.read().unwrap()[i]
-                .as_ref()
-                .map(|simple_subtype_a| simple_subtype_a.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.simple_subtype_a.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.simple_subtype_a.read().unwrap()[i]
+                    .as_ref()
+                    .map(|simple_subtype_a| simple_subtype_a.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`SimpleSupertype`] into the store.
@@ -682,17 +947,38 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<SimpleSupertype>>,
     {
-        if let Some(_index) = self.simple_supertype_free_list.lock().unwrap().pop() {
-            let simple_supertype = simple_supertype(_index);
-            self.simple_supertype.write().unwrap()[_index] = Some(simple_supertype.clone());
-            simple_supertype
+        let _index = if let Some(_index) = self.simple_supertype_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.simple_supertype.read().unwrap().len();
-            let simple_supertype = simple_supertype(_index);
-            self.simple_supertype
-                .write()
-                .unwrap()
-                .push(Some(simple_supertype.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.simple_supertype.write().unwrap().push(None);
+            _index
+        };
+
+        let simple_supertype = simple_supertype(_index);
+
+        let found = if let Some(simple_supertype) =
+            self.simple_supertype.read().unwrap().iter().find(|stored| {
+                if let Some(stored) = stored {
+                    *stored.read().unwrap() == *simple_supertype.read().unwrap()
+                } else {
+                    false
+                }
+            }) {
+            simple_supertype.clone()
+        } else {
+            None
+        };
+
+        if let Some(simple_supertype) = found {
+            log::debug!(target: "store", "found duplicate {simple_supertype:?}.");
+            self.simple_supertype_free_list.lock().unwrap().push(_index);
+            simple_supertype.clone()
+        } else {
+            log::debug!(target: "store", "interring {simple_supertype:?}.");
+            self.simple_supertype.write().unwrap()[_index] = Some(simple_supertype.clone());
             simple_supertype
         }
     }
@@ -721,12 +1007,14 @@ impl ObjectStore {
     ///
     pub fn iter_simple_supertype(&self) -> impl Iterator<Item = Arc<RwLock<SimpleSupertype>>> + '_ {
         let len = self.simple_supertype.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.simple_supertype.read().unwrap()[i]
-                .as_ref()
-                .map(|simple_supertype| simple_supertype.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.simple_supertype.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.simple_supertype.read().unwrap()[i]
+                    .as_ref()
+                    .map(|simple_supertype| simple_supertype.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`SubtypeA`] into the store.
@@ -735,17 +1023,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<SubtypeA>>,
     {
-        if let Some(_index) = self.subtype_a_free_list.lock().unwrap().pop() {
-            let subtype_a = subtype_a(_index);
-            self.subtype_a.write().unwrap()[_index] = Some(subtype_a.clone());
-            subtype_a
+        let _index = if let Some(_index) = self.subtype_a_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.subtype_a.read().unwrap().len();
-            let subtype_a = subtype_a(_index);
-            self.subtype_a
-                .write()
-                .unwrap()
-                .push(Some(subtype_a.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.subtype_a.write().unwrap().push(None);
+            _index
+        };
+
+        let subtype_a = subtype_a(_index);
+
+        let found = if let Some(subtype_a) = self.subtype_a.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *subtype_a.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            subtype_a.clone()
+        } else {
+            None
+        };
+
+        if let Some(subtype_a) = found {
+            log::debug!(target: "store", "found duplicate {subtype_a:?}.");
+            self.subtype_a_free_list.lock().unwrap().push(_index);
+            subtype_a.clone()
+        } else {
+            log::debug!(target: "store", "interring {subtype_a:?}.");
+            self.subtype_a.write().unwrap()[_index] = Some(subtype_a.clone());
             subtype_a
         }
     }
@@ -771,12 +1079,14 @@ impl ObjectStore {
     ///
     pub fn iter_subtype_a(&self) -> impl Iterator<Item = Arc<RwLock<SubtypeA>>> + '_ {
         let len = self.subtype_a.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.subtype_a.read().unwrap()[i]
-                .as_ref()
-                .map(|subtype_a| subtype_a.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.subtype_a.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.subtype_a.read().unwrap()[i]
+                    .as_ref()
+                    .map(|subtype_a| subtype_a.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`SubtypeB`] into the store.
@@ -785,17 +1095,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<SubtypeB>>,
     {
-        if let Some(_index) = self.subtype_b_free_list.lock().unwrap().pop() {
-            let subtype_b = subtype_b(_index);
-            self.subtype_b.write().unwrap()[_index] = Some(subtype_b.clone());
-            subtype_b
+        let _index = if let Some(_index) = self.subtype_b_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.subtype_b.read().unwrap().len();
-            let subtype_b = subtype_b(_index);
-            self.subtype_b
-                .write()
-                .unwrap()
-                .push(Some(subtype_b.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.subtype_b.write().unwrap().push(None);
+            _index
+        };
+
+        let subtype_b = subtype_b(_index);
+
+        let found = if let Some(subtype_b) = self.subtype_b.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *subtype_b.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            subtype_b.clone()
+        } else {
+            None
+        };
+
+        if let Some(subtype_b) = found {
+            log::debug!(target: "store", "found duplicate {subtype_b:?}.");
+            self.subtype_b_free_list.lock().unwrap().push(_index);
+            subtype_b.clone()
+        } else {
+            log::debug!(target: "store", "interring {subtype_b:?}.");
+            self.subtype_b.write().unwrap()[_index] = Some(subtype_b.clone());
             subtype_b
         }
     }
@@ -821,12 +1151,14 @@ impl ObjectStore {
     ///
     pub fn iter_subtype_b(&self) -> impl Iterator<Item = Arc<RwLock<SubtypeB>>> + '_ {
         let len = self.subtype_b.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.subtype_b.read().unwrap()[i]
-                .as_ref()
-                .map(|subtype_b| subtype_b.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.subtype_b.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.subtype_b.read().unwrap()[i]
+                    .as_ref()
+                    .map(|subtype_b| subtype_b.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`SuperBar`] into the store.
@@ -835,17 +1167,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<SuperBar>>,
     {
-        if let Some(_index) = self.super_bar_free_list.lock().unwrap().pop() {
-            let super_bar = super_bar(_index);
-            self.super_bar.write().unwrap()[_index] = Some(super_bar.clone());
-            super_bar
+        let _index = if let Some(_index) = self.super_bar_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.super_bar.read().unwrap().len();
-            let super_bar = super_bar(_index);
-            self.super_bar
-                .write()
-                .unwrap()
-                .push(Some(super_bar.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.super_bar.write().unwrap().push(None);
+            _index
+        };
+
+        let super_bar = super_bar(_index);
+
+        let found = if let Some(super_bar) = self.super_bar.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *super_bar.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            super_bar.clone()
+        } else {
+            None
+        };
+
+        if let Some(super_bar) = found {
+            log::debug!(target: "store", "found duplicate {super_bar:?}.");
+            self.super_bar_free_list.lock().unwrap().push(_index);
+            super_bar.clone()
+        } else {
+            log::debug!(target: "store", "interring {super_bar:?}.");
+            self.super_bar.write().unwrap()[_index] = Some(super_bar.clone());
             super_bar
         }
     }
@@ -871,12 +1223,14 @@ impl ObjectStore {
     ///
     pub fn iter_super_bar(&self) -> impl Iterator<Item = Arc<RwLock<SuperBar>>> + '_ {
         let len = self.super_bar.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.super_bar.read().unwrap()[i]
-                .as_ref()
-                .map(|super_bar| super_bar.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.super_bar.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.super_bar.read().unwrap()[i]
+                    .as_ref()
+                    .map(|super_bar| super_bar.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`SuperFoo`] into the store.
@@ -885,17 +1239,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<SuperFoo>>,
     {
-        if let Some(_index) = self.super_foo_free_list.lock().unwrap().pop() {
-            let super_foo = super_foo(_index);
-            self.super_foo.write().unwrap()[_index] = Some(super_foo.clone());
-            super_foo
+        let _index = if let Some(_index) = self.super_foo_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.super_foo.read().unwrap().len();
-            let super_foo = super_foo(_index);
-            self.super_foo
-                .write()
-                .unwrap()
-                .push(Some(super_foo.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.super_foo.write().unwrap().push(None);
+            _index
+        };
+
+        let super_foo = super_foo(_index);
+
+        let found = if let Some(super_foo) = self.super_foo.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *super_foo.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            super_foo.clone()
+        } else {
+            None
+        };
+
+        if let Some(super_foo) = found {
+            log::debug!(target: "store", "found duplicate {super_foo:?}.");
+            self.super_foo_free_list.lock().unwrap().push(_index);
+            super_foo.clone()
+        } else {
+            log::debug!(target: "store", "interring {super_foo:?}.");
+            self.super_foo.write().unwrap()[_index] = Some(super_foo.clone());
             super_foo
         }
     }
@@ -921,12 +1295,14 @@ impl ObjectStore {
     ///
     pub fn iter_super_foo(&self) -> impl Iterator<Item = Arc<RwLock<SuperFoo>>> + '_ {
         let len = self.super_foo.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.super_foo.read().unwrap()[i]
-                .as_ref()
-                .map(|super_foo| super_foo.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.super_foo.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.super_foo.read().unwrap()[i]
+                    .as_ref()
+                    .map(|super_foo| super_foo.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`SuperT`] into the store.
@@ -935,14 +1311,37 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Arc<RwLock<SuperT>>,
     {
-        if let Some(_index) = self.super_t_free_list.lock().unwrap().pop() {
-            let super_t = super_t(_index);
-            self.super_t.write().unwrap()[_index] = Some(super_t.clone());
-            super_t
+        let _index = if let Some(_index) = self.super_t_free_list.lock().unwrap().pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.super_t.read().unwrap().len();
-            let super_t = super_t(_index);
-            self.super_t.write().unwrap().push(Some(super_t.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.super_t.write().unwrap().push(None);
+            _index
+        };
+
+        let super_t = super_t(_index);
+
+        let found = if let Some(super_t) = self.super_t.read().unwrap().iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.read().unwrap() == *super_t.read().unwrap()
+            } else {
+                false
+            }
+        }) {
+            super_t.clone()
+        } else {
+            None
+        };
+
+        if let Some(super_t) = found {
+            log::debug!(target: "store", "found duplicate {super_t:?}.");
+            self.super_t_free_list.lock().unwrap().push(_index);
+            super_t.clone()
+        } else {
+            log::debug!(target: "store", "interring {super_t:?}.");
+            self.super_t.write().unwrap()[_index] = Some(super_t.clone());
             super_t
         }
     }
@@ -968,12 +1367,14 @@ impl ObjectStore {
     ///
     pub fn iter_super_t(&self) -> impl Iterator<Item = Arc<RwLock<SuperT>>> + '_ {
         let len = self.super_t.read().unwrap().len();
-        (0..len).map(move |i| {
-            self.super_t.read().unwrap()[i]
-                .as_ref()
-                .map(|super_t| super_t.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.super_t.read().unwrap()[*i].is_some())
+            .map(move |i| {
+                self.super_t.read().unwrap()[i]
+                    .as_ref()
+                    .map(|super_t| super_t.clone())
+                    .unwrap()
+            })
     }
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

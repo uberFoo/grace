@@ -18,7 +18,7 @@ use std::{
     path::Path,
 };
 
-use fnv::FnvHashMap as HashMap;
+use rustc_hash::FxHashMap as HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -56,14 +56,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<Everything>>,
     {
-        if let Some(_index) = self.everything_free_list.pop() {
-            let everything = everything(_index);
-            self.everything[_index] = Some(everything.clone());
-            everything
+        let _index = if let Some(_index) = self.everything_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.everything.len();
-            let everything = everything(_index);
-            self.everything.push(Some(everything.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.everything.push(None);
+            _index
+        };
+        let everything = everything(_index);
+        if let Some(Some(everything)) = self.everything.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *everything.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {everything:?}.");
+            self.everything_free_list.push(_index);
+            everything.clone()
+        } else {
+            log::debug!(target: "store", "interring {everything:?}.");
+            self.everything[_index] = Some(everything.clone());
             everything
         }
     }
@@ -89,12 +104,14 @@ impl ObjectStore {
     ///
     pub fn iter_everything(&self) -> impl Iterator<Item = Rc<RefCell<Everything>>> + '_ {
         let len = self.everything.len();
-        (0..len).map(move |i| {
-            self.everything[i]
-                .as_ref()
-                .map(|everything| everything.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.everything[*i].is_some())
+            .map(move |i| {
+                self.everything[i]
+                    .as_ref()
+                    .map(|everything| everything.clone())
+                    .unwrap()
+            })
     }
 
     /// Inter (insert) [`RandoObject`] into the store.
@@ -103,14 +120,29 @@ impl ObjectStore {
     where
         F: Fn(usize) -> Rc<RefCell<RandoObject>>,
     {
-        if let Some(_index) = self.rando_object_free_list.pop() {
-            let rando_object = rando_object(_index);
-            self.rando_object[_index] = Some(rando_object.clone());
-            rando_object
+        let _index = if let Some(_index) = self.rando_object_free_list.pop() {
+            log::trace!(target: "store", "recycling block {_index}.");
+            _index
         } else {
             let _index = self.rando_object.len();
-            let rando_object = rando_object(_index);
-            self.rando_object.push(Some(rando_object.clone()));
+            log::trace!(target: "store", "allocating block {_index}.");
+            self.rando_object.push(None);
+            _index
+        };
+        let rando_object = rando_object(_index);
+        if let Some(Some(rando_object)) = self.rando_object.iter().find(|stored| {
+            if let Some(stored) = stored {
+                *stored.borrow() == *rando_object.borrow()
+            } else {
+                false
+            }
+        }) {
+            log::debug!(target: "store", "found duplicate {rando_object:?}.");
+            self.rando_object_free_list.push(_index);
+            rando_object.clone()
+        } else {
+            log::debug!(target: "store", "interring {rando_object:?}.");
+            self.rando_object[_index] = Some(rando_object.clone());
             rando_object
         }
     }
@@ -136,12 +168,14 @@ impl ObjectStore {
     ///
     pub fn iter_rando_object(&self) -> impl Iterator<Item = Rc<RefCell<RandoObject>>> + '_ {
         let len = self.rando_object.len();
-        (0..len).map(move |i| {
-            self.rando_object[i]
-                .as_ref()
-                .map(|rando_object| rando_object.clone())
-                .unwrap()
-        })
+        (0..len)
+            .filter(|i| self.rando_object[*i].is_some())
+            .map(move |i| {
+                self.rando_object[i]
+                    .as_ref()
+                    .map(|rando_object| rando_object.clone())
+                    .unwrap()
+            })
     }
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

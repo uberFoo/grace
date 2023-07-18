@@ -30,7 +30,7 @@ impl D {
         let new = D {
             appellation,
             id,
-            ptr: ptr.map(|referent| referent.id),
+            ptr: ptr.as_ref().map(|referent| referent.id),
         };
         store.inter_d(new.clone());
         new
