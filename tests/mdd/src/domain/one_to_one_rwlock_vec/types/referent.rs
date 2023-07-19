@@ -21,7 +21,7 @@ use crate::domain::one_to_one_rwlock_vec::store::ObjectStore as OneToOneRwlockVe
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Referent {
     pub id: usize,
     pub name: String,
@@ -74,6 +74,13 @@ impl Referent {
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-implementation"}}}
+impl PartialEq for Referent {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

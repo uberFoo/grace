@@ -14,14 +14,14 @@ use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-hybrid-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SuperBar {
     pub subtype: SuperBarEnum,
     pub id: usize,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum SuperBarEnum {
     Gamma(usize),
 }
@@ -58,6 +58,13 @@ impl SuperBar {
             .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-implementation"}}}
+impl PartialEq for SuperBar {
+    fn eq(&self, other: &Self) -> bool {
+        self.subtype == other.subtype
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

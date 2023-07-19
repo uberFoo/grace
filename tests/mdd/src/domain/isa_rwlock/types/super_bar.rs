@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-hybrid-struct-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-enum-definition"}}}
-#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Copy, Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum SuperBar {
     Gamma(Uuid),
 }

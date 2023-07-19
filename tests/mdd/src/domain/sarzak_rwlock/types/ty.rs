@@ -24,7 +24,7 @@ use uuid::Uuid;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-enum-definition"}}}
-#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Copy, Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum Ty {
     Boolean(Uuid),
     External(Uuid),

@@ -13,7 +13,7 @@ use crate::domain::associative::store::ObjectStore as AssociativeStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct State {
     pub id: Uuid,
     pub name: String,

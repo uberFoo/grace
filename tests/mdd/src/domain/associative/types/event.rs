@@ -14,7 +14,7 @@ use crate::domain::associative::store::ObjectStore as AssociativeStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Event {
     pub id: Uuid,
     pub name: String,

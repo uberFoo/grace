@@ -16,7 +16,7 @@ use crate::domain::everything_rwlock::store::ObjectStore as EverythingRwlockStor
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Everything {
     pub bool: bool,
     pub float: f64,

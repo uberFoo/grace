@@ -17,7 +17,7 @@ use crate::domain::associative_rwlock_vec::store::ObjectStore as AssociativeRwlo
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Event {
     pub id: usize,
     pub name: String,
@@ -49,6 +49,13 @@ impl Event {
             .collect()
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-implementation"}}}
+impl PartialEq for Event {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

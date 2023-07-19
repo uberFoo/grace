@@ -13,7 +13,7 @@ use crate::domain::isa_vec::store::ObjectStore as IsaVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-hybrid-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Beta {
     pub subtype: BetaEnum,
     pub id: usize,
@@ -21,7 +21,7 @@ pub struct Beta {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum BetaEnum {
     Gamma(usize),
     SuperBar(usize),
@@ -61,6 +61,13 @@ impl Beta {
         })
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-implementation"}}}
+impl PartialEq for Beta {
+    fn eq(&self, other: &Self) -> bool {
+        self.subtype == other.subtype && self.name == other.name
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

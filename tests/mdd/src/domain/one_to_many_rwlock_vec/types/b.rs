@@ -18,7 +18,7 @@ use crate::domain::one_to_many_rwlock_vec::store::ObjectStore as OneToManyRwlock
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct B {
     pub baz: String,
     pub id: usize,
@@ -57,6 +57,13 @@ impl B {
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"b-implementation"}}}
+impl PartialEq for B {
+    fn eq(&self, other: &Self) -> bool {
+        self.baz == other.baz && self.ptr == other.ptr
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

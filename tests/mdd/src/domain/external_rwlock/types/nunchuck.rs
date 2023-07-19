@@ -16,7 +16,7 @@ use crate::domain::external_rwlock::store::ObjectStore as ExternalRwlockStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Nunchuck {
     pub id: Uuid,
     /// R1: [`Nunchuck`] 'needs a' [`Timestamp`]

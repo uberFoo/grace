@@ -18,7 +18,7 @@ use crate::domain::everything_rwlock_vec::store::ObjectStore as EverythingRwlock
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct RandoObject {
     pub id: usize,
     pub name: String,
@@ -50,6 +50,13 @@ impl RandoObject {
             .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-implementation"}}}
+impl PartialEq for RandoObject {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

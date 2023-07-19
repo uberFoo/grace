@@ -23,7 +23,7 @@ use crate::domain::isa_clone::store::ObjectStore as IsaCloneStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct OhBoy {
     pub attribution: String,
     pub id: Uuid,

@@ -22,7 +22,7 @@ use crate::domain::isa_rwlock::store::ObjectStore as IsaRwlockStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct SuperT {
     pub subtype: SuperTEnum,
     pub id: Uuid,
@@ -31,7 +31,7 @@ pub struct SuperT {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum SuperTEnum {
     SubtypeA(Uuid),
     SubtypeB(Uuid),

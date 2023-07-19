@@ -19,10 +19,11 @@ use crate::{
         diff_engine::DirectiveKind,
         emit_object_comments, find_store,
         generator::CodeWriter,
+        get_assoc_referent_from_referrer_sorted,
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
-        get_subtypes_sorted, object_is_hybrid,
+        get_subtypes_sorted, local_object_is_hybrid, object_is_hybrid,
         render::{
             render_associative_attributes, render_attributes, render_binary_referential_attributes,
             RenderIdent, RenderType,
@@ -341,8 +342,8 @@ impl DomainImplBuilder {
         }
     }
 
-    pub(crate) fn make_trait(mut self, trait_name: String) -> Self {
-        self.for_trait = Some(trait_name);
+    pub(crate) fn make_trait<S: AsRef<str>>(mut self, trait_name: S) -> Self {
+        self.for_trait = Some(trait_name.as_ref().to_string());
 
         self
     }
@@ -432,6 +433,82 @@ impl CodeWriter for DomainImplementation {
                 Ok(())
             },
         )
+    }
+}
+
+pub(crate) struct EqImpl;
+
+impl EqImpl {
+    pub(crate) fn new() -> Box<dyn MethodImplementation> {
+        Box::new(Self)
+    }
+}
+
+impl MethodImplementation for EqImpl {}
+
+impl CodeWriter for EqImpl {
+    fn write_code(
+        &self,
+        config: &GraceConfig,
+        domain: &Domain,
+        _woog: &Option<&mut WoogStore>,
+        _imports: &Option<&HashMap<String, Domain>>,
+        _package: &str,
+        _module: &str,
+        obj_id: Option<&Uuid>,
+        buffer: &mut Buffer,
+    ) -> Result<()> {
+        ensure!(
+            obj_id.is_some(),
+            CompilerSnafu {
+                description: "obj_id is required by DomainNewImpl"
+            }
+        );
+
+        let obj_id = obj_id.unwrap();
+        let obj = domain.sarzak().exhume_object(obj_id).unwrap();
+        let skip_id = !config.is_external(obj_id);
+        let is_hybrid = local_object_is_hybrid(obj, config, domain);
+
+        let mut comps = Vec::new();
+
+        if is_hybrid {
+            comps.push("self.subtype == other.subtype".to_string());
+        }
+
+        let mut attrs = obj.r1_attribute(domain.sarzak());
+        attrs.sort_by(|a, b| a.name.cmp(&b.name));
+        for attr in attrs {
+            if !(attr.name == "id" && skip_id) && attr.name != "hack" {
+                comps.push(format!("self.{0} == other.{0}", attr.as_ident()));
+            }
+        }
+        for referrer in get_binary_referrers_sorted!(obj, domain.sarzak()) {
+            comps.push(format!(
+                "self.{0} == other.{0}",
+                referrer.referential_attribute.as_ident()
+            ));
+        }
+
+        for assoc_referrer in obj.r26_associative_referrer(domain.sarzak()) {
+            let assoc = assoc_referrer.r21_associative(domain.sarzak())[0];
+            let referents =
+                get_assoc_referent_from_referrer_sorted!(assoc_referrer, domain.sarzak());
+
+            for referent in referents {
+                let an_ass = referent.r22_an_associative_referent(domain.sarzak())[0];
+                comps.push(format!(
+                    "self.{0} == other.{0}",
+                    an_ass.referential_attribute.as_ident()
+                ));
+            }
+        }
+
+        emit!(buffer, "fn eq(&self, other: &Self) -> bool {{");
+        emit!(buffer, "{}", comps.join("&&"));
+        emit!(buffer, "}}");
+
+        Ok(())
     }
 }
 

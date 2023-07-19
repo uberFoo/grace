@@ -30,7 +30,7 @@ use crate::domain::isa_rwlock::store::ObjectStore as IsaRwlockStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct SimpleSupertype {
     pub subtype: SimpleSupertypeEnum,
     pub id: Uuid,
@@ -38,7 +38,7 @@ pub struct SimpleSupertype {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum SimpleSupertypeEnum {
     SimpleSubtypeA(Uuid),
     SimpleSubtypeB(Uuid),

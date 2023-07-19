@@ -14,7 +14,7 @@ use crate::domain::sarzak_ts::store::ObjectStore as SarzakTsStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Subtype {
     pub id: Uuid,
     /// R27: [`Subtype`] 'formalize an' [`Isa`]

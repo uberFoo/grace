@@ -20,7 +20,7 @@ use crate::domain::associative_vec::store::ObjectStore as AssociativeVecStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SubtypeAnchor {
     pub id: usize,
     /// R10: [`Anchor`] '🚧 Comments are out of order — see sarzak#14.' [`Anchor`]
@@ -61,6 +61,13 @@ impl SubtypeAnchor {
         vec![store.exhume_isa_ui(&self.isaui_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-implementation"}}}
+impl PartialEq for SubtypeAnchor {
+    fn eq(&self, other: &Self) -> bool {
+        self.anchor_id == other.anchor_id && self.isaui_id == other.isaui_id
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

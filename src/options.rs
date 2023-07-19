@@ -323,7 +323,7 @@ impl ModelCompilerOptions for GraceCompilerOptions {
 }
 
 const DEFAULT_TARGET: Target = Target::Application;
-const DEFAULT_DERIVE: &[&str] = &["Debug", "PartialEq"];
+const DEFAULT_DERIVE: &[&str] = &["Debug"];
 const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
 const DEFAULT_DOC_TEST: bool = true;
@@ -831,10 +831,7 @@ mod tests {
             }
 
             // Below are the defaults for compiler options.
-            assert_eq!(
-                config_value.derive,
-                Some(vec!["Debug".to_string(), "PartialEq".to_string(),])
-            );
+            assert_eq!(config_value.derive, Some(vec!["Debug".to_string()]));
             assert_eq!(config_value.use_paths, None);
         }
     }

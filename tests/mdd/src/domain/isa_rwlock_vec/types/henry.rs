@@ -12,7 +12,7 @@ use crate::domain::isa_rwlock_vec::store::ObjectStore as IsaRwlockVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Henry {
     pub id: usize,
     pub last_name: String,
@@ -48,6 +48,13 @@ impl Henry {
         vec![store.exhume_simple_subtype_a(&self.bar).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-implementation"}}}
+impl PartialEq for Henry {
+    fn eq(&self, other: &Self) -> bool {
+        self.last_name == other.last_name && self.bar == other.bar
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

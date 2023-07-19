@@ -23,14 +23,14 @@ use crate::domain::isa_rwlock_vec::store::ObjectStore as IsaRwlockVecStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-hybrid-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SimpleSubtypeA {
     pub subtype: SimpleSubtypeAEnum,
     pub id: usize,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum SimpleSubtypeAEnum {
     OhBoy(usize),
 }
@@ -82,6 +82,13 @@ impl SimpleSubtypeA {
             .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-implementation"}}}
+impl PartialEq for SimpleSubtypeA {
+    fn eq(&self, other: &Self) -> bool {
+        self.subtype == other.subtype
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

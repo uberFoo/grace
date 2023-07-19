@@ -25,6 +25,7 @@ macro_rules! test_target_domain {
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
+                derive.push("PartialEq".to_string());
                 derive.push("Deserialize".to_string());
                 derive.push("Serialize".to_string());
             }
@@ -87,6 +88,7 @@ macro_rules! test_target_domain {
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
+                derive.push("PartialEq".to_string());
                 derive.push("Deserialize".to_string());
                 derive.push("Serialize".to_string());
             }
@@ -426,6 +428,7 @@ macro_rules! test_target_domain_rwlock {
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
+                derive.push("PartialEq".to_string());
                 derive.push("Deserialize".to_string());
                 derive.push("Serialize".to_string());
             }
@@ -488,6 +491,7 @@ macro_rules! test_target_domain_rwlock {
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
+                derive.push("PartialEq".to_string());
                 derive.push("Deserialize".to_string());
                 derive.push("Serialize".to_string());
             }
@@ -559,6 +563,7 @@ macro_rules! test_target_domain_timestamps {
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
+                derive.push("PartialEq".to_string());
                 derive.push("Deserialize".to_string());
                 derive.push("Serialize".to_string());
             }
@@ -623,6 +628,7 @@ macro_rules! test_target_domain_timestamps {
             });
             if let Some(ref mut derive) = options.derive {
                 derive.push("Clone".to_string());
+                derive.push("PartialEq".to_string());
                 derive.push("Deserialize".to_string());
                 derive.push("Serialize".to_string());
             }
@@ -1059,6 +1065,7 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
     });
     if let Some(ref mut derive) = options.derive {
         derive.push("Clone".to_string());
+        derive.push("PartialEq".to_string());
         derive.push("Deserialize".to_string());
         derive.push("Serialize".to_string());
     }

@@ -17,7 +17,7 @@ use crate::domain::associative_ts::store::ObjectStore as AssociativeTsStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct SubtypeAnchor {
     pub id: Uuid,
     /// R10: [`Anchor`] '🚧 Comments are out of order — see sarzak#14.' [`Anchor`]

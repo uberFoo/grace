@@ -12,7 +12,7 @@ use uuid::Uuid;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-ee-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Timestamp {
     pub id: usize,
     inner: SystemTime,
@@ -29,4 +29,11 @@ impl Timestamp {
         })
     }
 }
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"timestamp-implementation"}}}
+impl PartialEq for Timestamp {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -22,7 +22,7 @@ use crate::domain::isa_rwlock_vec::store::ObjectStore as IsaRwlockVecStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SuperT {
     pub subtype: SuperTEnum,
     pub id: usize,
@@ -31,7 +31,7 @@ pub struct SuperT {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum SuperTEnum {
     SubtypeA(usize),
     SubtypeB(usize),
@@ -97,6 +97,13 @@ impl SuperT {
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-implementation"}}}
+impl PartialEq for SuperT {
+    fn eq(&self, other: &Self) -> bool {
+        self.subtype == other.subtype && self.pointer == other.pointer
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

@@ -14,7 +14,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"shared-const-definition"}}}
 pub const SHARED: Uuid = uuid!["8f05f131-50d1-552e-930f-672ae2c316e1"];
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Shared;
 
 impl Shared {

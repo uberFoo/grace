@@ -13,7 +13,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"many-const-definition"}}}
 pub const MANY: Uuid = uuid!["481a6ff0-caee-5817-8812-857f58f7c215"];
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Many;
 
 impl Many {

@@ -22,7 +22,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"s_uuid-const-definition"}}}
 pub const S_UUID: Uuid = uuid!["8d63fc44-28ea-599b-8654-877b133f0640"];
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct SUuid;
 
 impl SUuid {

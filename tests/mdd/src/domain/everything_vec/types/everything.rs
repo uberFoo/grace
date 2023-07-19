@@ -16,7 +16,7 @@ use crate::domain::everything_vec::store::ObjectStore as EverythingVecStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Everything {
     pub bool: bool,
     pub float: f64,
@@ -61,6 +61,17 @@ impl Everything {
         vec![store.exhume_rando_object(&self.rando).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-implementation"}}}
+impl PartialEq for Everything {
+    fn eq(&self, other: &Self) -> bool {
+        self.bool == other.bool
+            && self.float == other.float
+            && self.int == other.int
+            && self.s_string == other.s_string
+            && self.rando == other.rando
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

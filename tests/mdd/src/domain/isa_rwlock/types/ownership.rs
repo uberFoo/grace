@@ -22,7 +22,7 @@ use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-hybrid-enum-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-enum-definition"}}}
-#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Copy, Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum Ownership {
     Borrowed(Uuid),
     Owned(Uuid),

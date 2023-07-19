@@ -24,7 +24,7 @@ use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-hybrid-enum-definition"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-enum-definition"}}}
-#[derive(Copy, Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Copy, Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub enum Borrowed {
     Mutable(Uuid),
     Shared(Uuid),

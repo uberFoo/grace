@@ -30,7 +30,7 @@ use crate::domain::isa_rwlock_vec::store::ObjectStore as IsaRwlockVecStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SimpleSupertype {
     pub subtype: SimpleSupertypeEnum,
     pub id: usize,
@@ -38,7 +38,7 @@ pub struct SimpleSupertype {
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-hybrid-enum-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum SimpleSupertypeEnum {
     SimpleSubtypeA(usize),
     SimpleSubtypeB(Uuid),
@@ -87,6 +87,13 @@ impl SimpleSupertype {
             .unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-implementation"}}}
+impl PartialEq for SimpleSupertype {
+    fn eq(&self, other: &Self) -> bool {
+        self.subtype == other.subtype && self.state == other.state
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

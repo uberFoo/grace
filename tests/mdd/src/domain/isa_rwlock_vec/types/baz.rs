@@ -12,7 +12,7 @@ use crate::domain::isa_rwlock_vec::store::ObjectStore as IsaRwlockVecStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"baz-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Baz {
     pub id: usize,
     pub insanity: f64,
@@ -48,6 +48,13 @@ impl Baz {
         vec![store.exhume_simple_supertype(&self.fugue).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"baz-implementation"}}}
+impl PartialEq for Baz {
+    fn eq(&self, other: &Self) -> bool {
+        self.insanity == other.insanity && self.fugue == other.fugue
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

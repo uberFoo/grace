@@ -8,6 +8,7 @@ use sarzak::{
     v2::domain::Domain,
     woog::{store::ObjectStore as WoogStore, types::Ownership},
 };
+use snafu::prelude::*;
 use uuid::Uuid;
 
 use crate::{
@@ -22,15 +23,35 @@ use crate::{
         },
     },
     options::GraceConfig,
+    types::TypeImplementation,
 };
-use snafu::prelude::*;
 
-pub(crate) struct ExternalGenerator;
+pub(crate) struct ExternalBuilder {
+    implementations: Vec<Box<dyn TypeImplementation>>,
+}
 
-impl ExternalGenerator {
-    pub(crate) fn new() -> Box<dyn FileGenerator> {
-        Box::new(Self)
+impl ExternalBuilder {
+    pub(crate) fn new() -> Self {
+        ExternalBuilder {
+            implementations: Vec::new(),
+        }
     }
+
+    pub(crate) fn implementation(mut self, implementation: Box<dyn TypeImplementation>) -> Self {
+        self.implementations.push(implementation);
+
+        self
+    }
+
+    pub(crate) fn build(self) -> Result<Box<ExternalGenerator>> {
+        Ok(Box::new(ExternalGenerator {
+            implementations: self.implementations,
+        }))
+    }
+}
+
+pub(crate) struct ExternalGenerator {
+    implementations: Vec<Box<dyn TypeImplementation>>,
 }
 
 impl FileGenerator for ExternalGenerator {
@@ -38,9 +59,9 @@ impl FileGenerator for ExternalGenerator {
         &self,
         config: &GraceConfig,
         domain: &Domain,
-        woog: &Option<&mut WoogStore>,
+        woog_opt: &Option<&mut WoogStore>,
         imports: &Option<&HashMap<String, Domain>>,
-        _package: &str,
+        package: &str,
         module: &str,
         obj_id: Option<&Uuid>,
         buffer: &mut Buffer,
@@ -53,12 +74,12 @@ impl FileGenerator for ExternalGenerator {
         );
         let obj_id = obj_id.unwrap();
         ensure!(
-            woog.is_some(),
+            woog_opt.is_some(),
             CompilerSnafu {
                 description: "woog is required by DomainStruct"
             }
         );
-        let woog = woog.as_ref().unwrap();
+        let woog = woog_opt.as_ref().unwrap();
         ensure!(
             imports.is_some(),
             CompilerSnafu {
@@ -293,6 +314,19 @@ impl FileGenerator for ExternalGenerator {
 
                 emit!(buffer, "}}");
                 emit!(buffer, "}}");
+
+                for implementation in &self.implementations {
+                    implementation.write_code(
+                        config,
+                        domain,
+                        woog_opt,
+                        imports,
+                        package,
+                        module,
+                        Some(obj_id),
+                        buffer,
+                    )?;
+                }
 
                 Ok(())
             },

@@ -11,7 +11,7 @@ use crate::domain::sarzak_ts::store::ObjectStore as SarzakTsStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Associative {
     pub id: Uuid,
     pub number: i64,

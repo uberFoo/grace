@@ -35,6 +35,7 @@ use crate::{
     options::{GraceConfig, UberStoreOptions},
     todo::{GType, LValue, ObjectMethod, Parameter, RValue},
     types::{CodeWriter, MethodImplementation, TypeDefinition},
+    OptimizationLevel,
 };
 
 const SUBTYPE_ATTR: &str = "subtype";
@@ -325,6 +326,12 @@ impl CodeWriter for Hybrid {
                     write!(buffer, "#[derive(").context(FormatSnafu)?;
                     for d in derives {
                         write!(buffer, "{},", d).context(FormatSnafu)?;
+                    }
+                    // 🚧 I don't love this. Really we should do this regardless of
+                    // there being some derives in the config. And really this just
+                    // feels wrong.
+                    if config.get_optimization_level() != &OptimizationLevel::None {
+                        write!(buffer, "PartialEq,").context(FormatSnafu)?;
                     }
                     emit!(buffer, ")]");
                 }

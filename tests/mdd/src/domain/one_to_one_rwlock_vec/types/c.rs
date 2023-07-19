@@ -18,7 +18,7 @@ use crate::domain::one_to_one_rwlock_vec::store::ObjectStore as OneToOneRwlockVe
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct C {
     pub id: usize,
     pub like_water: f64,
@@ -57,6 +57,13 @@ impl C {
         }
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-implementation"}}}
+impl PartialEq for C {
+    fn eq(&self, other: &Self) -> bool {
+        self.like_water == other.like_water && self.ptr == other.ptr
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

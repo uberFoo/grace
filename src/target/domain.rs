@@ -20,10 +20,12 @@ use snafu::prelude::*;
 
 use crate::{
     codegen::{
-        generator::GeneratorBuilder, local_object_is_hybrid, local_object_is_singleton,
-        local_object_is_supertype, object_is_enum, render::RenderIdent,
+        generator::{FileGenerator, GeneratorBuilder},
+        local_object_is_hybrid, local_object_is_singleton, local_object_is_supertype,
+        object_is_enum,
+        render::RenderIdent,
     },
-    options::{FromDomain, GraceCompilerOptions, GraceConfig},
+    options::{FromDomain, GraceCompilerOptions, GraceConfig, OptimizationLevel},
     target::Target,
     types::{
         default::{DefaultModule, DefaultModuleBuilder, DefaultStructBuilder},
@@ -34,9 +36,11 @@ use crate::{
             hybrid::{Hybrid, HybridNewImpl},
             store::{DomainStore, DomainStoreBuilder},
             store_vec::DomainStoreVec,
-            structs::{DomainImplBuilder, Imports, Struct, StructNewImpl, StructRelNavImpl},
+            structs::{
+                DomainImplBuilder, EqImpl, Imports, Struct, StructNewImpl, StructRelNavImpl,
+            },
         },
-        external::ExternalGenerator,
+        external::ExternalBuilder,
         null::NullGenerator,
     },
     woog::{init_woog, populate_woog},
@@ -187,7 +191,7 @@ impl<'a> DomainTarget<'a> {
             }
         }
 
-        if let crate::options::OptimizationLevel::Vec = config.get_optimization_level() {
+        if let OptimizationLevel::Vec = config.get_optimization_level() {
             let objects = domain.sarzak().iter_object().cloned().collect::<Vec<_>>();
             // Find all the enums and add an id attribute so that they become hybrids.
             for obj in objects {
@@ -230,6 +234,8 @@ impl<'a> DomainTarget<'a> {
 
         let cwd = env::current_dir().unwrap();
 
+        let gen_partial_eq = !(self.config.get_optimization_level() == &OptimizationLevel::None);
+
         // Sort the objects -- I need to figure out how to do this automagically.
         let mut objects: Vec<&Object> = self.domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
@@ -262,86 +268,133 @@ impl<'a> DomainTarget<'a> {
                 };
 
                 // Test if the object is a supertype. For those we generate as enums.
-                let generator = if local_object_is_supertype(obj, &self.config, &self.domain) {
-                    // Unless it's got referential attributes. Then we generate what
-                    // I now dub, a _hybrid_. What about regular attributes you ask?
-                    // Well, I don't have a use case for that at the moment, so they
-                    // will be done in due time.
-                    if local_object_is_hybrid(obj, &self.config, &self.domain) {
-                        display_output!(obj, &types, Colour::Cyan, "hybrid");
+                let generator: Box<dyn FileGenerator> =
+                    if local_object_is_supertype(obj, &self.config, &self.domain) {
+                        // Unless it's got referential attributes. Then we generate what
+                        // I now dub, a _hybrid_. What about regular attributes you ask?
+                        // Well, I don't have a use case for that at the moment, so they
+                        // will be done in due time.
+                        if local_object_is_hybrid(obj, &self.config, &self.domain) {
+                            display_output!(obj, &types, Colour::Cyan, "hybrid");
 
-                        DefaultStructBuilder::new()
-                            .definition(Hybrid::new())
-                            .implementation(
+                            let builder = DefaultStructBuilder::new()
+                                .definition(Hybrid::new())
+                                .implementation(
+                                    DomainImplBuilder::new()
+                                        .method(HybridNewImpl::new())
+                                        // The struct implementation suffices -- thankfully. Reuse FTW!
+                                        .method(StructRelNavImpl::new())
+                                        .build(),
+                                );
+
+                            let builder = if gen_partial_eq {
+                                builder.implementation(
+                                    DomainImplBuilder::new()
+                                        .make_trait("PartialEq")
+                                        .method(EqImpl::new())
+                                        .build(),
+                                )
+                            } else {
+                                builder
+                            };
+
+                            builder.build()?
+                        } else {
+                            display_output!(obj, &types, Colour::Green, "enumeration");
+
+                            let builder = DefaultStructBuilder::new()
+                                .definition(Enum::new())
+                                .implementation(
+                                    DomainImplBuilder::new()
+                                        .method(EnumNewImpl::new())
+                                        .method(EnumGetIdImpl::new())
+                                        .method(EnumRelNavImpl::new())
+                                        .build(),
+                                );
+
+                            let builder = if gen_partial_eq {
+                                builder.implementation(
+                                    DomainImplBuilder::new()
+                                        .make_trait("PartialEq")
+                                        .method(EqImpl::new())
+                                        .build(),
+                                )
+                            } else {
+                                builder
+                            };
+
+                            builder.build()?
+                        }
+                    } else if self.config.is_imported(&obj.id) {
+                        // If the object is imported, we don't generate anything...here.
+                        // I'd like to amend this position. Wouldn't it be cool if we could
+                        // generate relationship navigation methods for imported objects?
+                        // I think we can.
+                        // We can create an implementation of the relationship navigation
+                        // methods. We'd need to make sure that the names don't collide.
+                        // They won't because the store would be different.
+                        // DefaultStructBuilder::new()
+                        //     .imports(Imports::new())
+                        //     .implementation(
+                        //         DomainImplBuilder::new()
+                        //             .method(StructRelNavImpl::new())
+                        //             .build(),
+                        //     )
+                        //     .build()?
+                        NullGenerator::new()
+                    } else if self.config.is_external(&obj.id) {
+                        // If the object is external, we create a newtype to wrap it.
+                        display_output!(obj, &types, Colour::Red, "external");
+
+                        if gen_partial_eq {
+                            ExternalBuilder::new().implementation(
                                 DomainImplBuilder::new()
-                                    .method(HybridNewImpl::new())
-                                    // The struct implementation suffices -- thankfully. Reuse FTW!
-                                    .method(StructRelNavImpl::new())
+                                    .make_trait("PartialEq")
+                                    .method(EqImpl::new())
                                     .build(),
                             )
+                        } else {
+                            ExternalBuilder::new()
+                        }
+                        .build()?
+                    } else if local_object_is_singleton(obj, &self.config, &self.domain) {
+                        // Look for naked objects, and generate a singleton for them.
+                        display_output!(obj, &types, Colour::Purple, "constant");
+
+                        log::debug!("Generating singleton for {}", obj.name);
+                        DefaultStructBuilder::new()
+                            .definition(DomainConst::new())
                             .build()?
                     } else {
-                        display_output!(obj, &types, Colour::Green, "enumeration");
+                        display_output!(obj, &types, Colour::Yellow, "struct");
 
-                        DefaultStructBuilder::new()
-                            .definition(Enum::new())
+                        let builder = DefaultStructBuilder::new()
+                            .imports(Imports::new())
+                            // Definition type
+                            .definition(Struct::new())
                             .implementation(
                                 DomainImplBuilder::new()
-                                    .method(EnumNewImpl::new())
-                                    .method(EnumGetIdImpl::new())
-                                    .method(EnumRelNavImpl::new())
+                                    // New implementation
+                                    .method(StructNewImpl::new())
+                                    // Relationship navigation implementations
+                                    .method(StructRelNavImpl::new())
+                                    .build(),
+                            );
+
+                        let builder = if gen_partial_eq {
+                            builder.implementation(
+                                DomainImplBuilder::new()
+                                    .make_trait("PartialEq")
+                                    .method(EqImpl::new())
                                     .build(),
                             )
-                            .build()?
-                    }
-                } else if self.config.is_imported(&obj.id) {
-                    // If the object is imported, we don't generate anything...here.
-                    // I'd like to amend this position. Wouldn't it be cool if we could
-                    // generate relationship navigation methods for imported objects?
-                    // I think we can.
-                    // We can create an implementation of the relationship navigation
-                    // methods. We'd need to make sure that the names don't collide.
-                    // They won't because the store would be different.
-                    // DefaultStructBuilder::new()
-                    //     .imports(Imports::new())
-                    //     .implementation(
-                    //         DomainImplBuilder::new()
-                    //             .method(StructRelNavImpl::new())
-                    //             .build(),
-                    //     )
-                    //     .build()?
-                    NullGenerator::new()
-                } else if self.config.is_external(&obj.id) {
-                    // If the object is external, we create a newtype to wrap it.
-                    display_output!(obj, &types, Colour::Red, "external");
+                        } else {
+                            builder
+                        };
 
-                    ExternalGenerator::new()
-                } else if local_object_is_singleton(obj, &self.config, &self.domain) {
-                    // Look for naked objects, and generate a singleton for them.
-                    display_output!(obj, &types, Colour::Purple, "constant");
-
-                    log::debug!("Generating singleton for {}", obj.name);
-                    DefaultStructBuilder::new()
-                        .definition(DomainConst::new())
-                        .build()?
-                } else {
-                    display_output!(obj, &types, Colour::Yellow, "struct");
-
-                    DefaultStructBuilder::new()
-                        .imports(Imports::new())
-                        // Definition type
-                        .definition(Struct::new())
-                        .implementation(
-                            DomainImplBuilder::new()
-                                // New implementation
-                                .method(StructNewImpl::new())
-                                // Relationship navigation implementations
-                                .method(StructRelNavImpl::new())
-                                .build(),
-                        )
                         // Go!
-                        .build()?
-                };
+                        builder.build()?
+                    };
 
                 let mut woog = self.woog.clone();
 

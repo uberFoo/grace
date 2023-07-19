@@ -16,7 +16,7 @@ use crate::domain::external_rwlock_vec::store::ObjectStore as ExternalRwlockVecS
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Nunchuck {
     pub id: usize,
     /// R1: [`Nunchuck`] 'needs a' [`Timestamp`]
@@ -49,6 +49,13 @@ impl Nunchuck {
         vec![store.exhume_timestamp(&self.time).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-implementation"}}}
+impl PartialEq for Nunchuck {
+    fn eq(&self, other: &Self) -> bool {
+        self.time == other.time
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

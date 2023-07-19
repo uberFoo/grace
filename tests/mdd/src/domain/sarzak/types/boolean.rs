@@ -16,7 +16,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"boolean-const-definition"}}}
 pub const BOOLEAN: Uuid = uuid!["b1a060e2-a30e-5291-8ef3-7fad8a6311d4"];
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Boolean;
 
 impl Boolean {

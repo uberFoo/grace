@@ -21,7 +21,7 @@ use crate::domain::isa_rwlock::store::ObjectStore as IsaRwlockStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Gamma {
     pub id: Uuid,
     pub x_value: f64,

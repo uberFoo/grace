@@ -19,7 +19,7 @@ use crate::domain::associative_vec::store::ObjectStore as AssociativeVecStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AcknowledgedEvent {
     pub id: usize,
     /// R20: [`Event`] '🚧 Comments are out of order — see sarzak#14.' [`Event`]
@@ -60,6 +60,13 @@ impl AcknowledgedEvent {
         vec![store.exhume_state(&self.state_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-implementation"}}}
+impl PartialEq for AcknowledgedEvent {
+    fn eq(&self, other: &Self) -> bool {
+        self.event_id == other.event_id && self.state_id == other.state_id
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

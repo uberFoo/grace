@@ -16,7 +16,7 @@ use crate::domain::one_to_many_rwlock_vec::store::ObjectStore as OneToManyRwlock
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct A {
     pub id: usize,
     pub name: String,
@@ -52,6 +52,13 @@ impl A {
         vec![store.exhume_referent(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+}
+// {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
+// {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-implementation"}}}
+impl PartialEq for A {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.ptr == other.ptr
+    }
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"End":{"directive":"allow-editing"}}}

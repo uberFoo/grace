@@ -21,7 +21,7 @@ use crate::domain::one_to_one_rwlock::store::ObjectStore as OneToOneRwlockStore;
 ///
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-definition"}}}
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct A {
     pub id: Uuid,
     pub number: i64,

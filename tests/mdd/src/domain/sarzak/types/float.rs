@@ -16,7 +16,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"float-const-definition"}}}
 pub const FLOAT: Uuid = uuid!["1fe11221-b8be-5f99-a161-e378f90b094d"];
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Float;
 
 impl Float {

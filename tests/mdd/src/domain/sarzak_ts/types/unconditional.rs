@@ -13,7 +13,7 @@ use uuid::{uuid, Uuid};
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"unconditional-const-definition"}}}
 pub const UNCONDITIONAL: Uuid = uuid!["17ee33a9-33bb-5998-ba89-7a9f2fe12080"];
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 pub struct Unconditional;
 
 impl Unconditional {
