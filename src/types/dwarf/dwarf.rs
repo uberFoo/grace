@@ -278,6 +278,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
     let lu_dog = &LU_DOG;
 
     match *s_read!(ty) {
+        ValueType::Char(_) => "char".to_string(),
         ValueType::Empty(_) => "()".to_string(),
         ValueType::Error(_) => "maybe error type wasn't a good idea".to_string(),
         ValueType::Function(_) => "<function>".to_string(),
@@ -291,6 +292,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
                 import.name.clone()
             }
         }
+        ValueType::Lambda(_) => "<lambda>".to_string(),
         ValueType::List(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();

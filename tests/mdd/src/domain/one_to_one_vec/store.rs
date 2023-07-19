@@ -80,7 +80,9 @@ impl ObjectStore {
             self.a.push(None);
             _index
         };
+
         let a = a(_index);
+
         if let Some(Some(a)) = self.a.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *a.borrow()
@@ -139,7 +141,9 @@ impl ObjectStore {
             self.b.push(None);
             _index
         };
+
         let b = b(_index);
+
         if let Some(Some(b)) = self.b.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *b.borrow()
@@ -198,7 +202,9 @@ impl ObjectStore {
             self.c.push(None);
             _index
         };
+
         let c = c(_index);
+
         if let Some(Some(c)) = self.c.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *c.borrow()
@@ -257,7 +263,9 @@ impl ObjectStore {
             self.parameter.push(None);
             _index
         };
+
         let parameter = parameter(_index);
+
         if let Some(Some(parameter)) = self.parameter.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *parameter.borrow()
@@ -321,7 +329,9 @@ impl ObjectStore {
             self.referent.push(None);
             _index
         };
+
         let referent = referent(_index);
+
         if let Some(Some(referent)) = self.referent.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *referent.borrow()

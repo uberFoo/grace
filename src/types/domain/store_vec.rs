@@ -172,10 +172,6 @@ impl DomainStoreVec {
                     };
 
                     if is_uber {
-                        if object_has_name(obj, domain) {
-                            emit!(buffer, "let {obj_ident} = ");
-                        }
-
                         let (read, write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
@@ -204,6 +200,9 @@ impl DomainStoreVec {
                                 emit!(buffer, "None");
                                 emit!(buffer, "}};");
                                 emit!(buffer, "");
+                                if object_has_name(obj, domain) {
+                                    emit!(buffer, "let {obj_ident} = ");
+                                }
                                 emit!(buffer, "if let Some({obj_ident}) = found {{");
                                 emit!(buffer, "log::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(_index);");
@@ -224,7 +223,12 @@ impl DomainStoreVec {
                                 emit!(buffer, "self.{obj_ident}.push(None);");
                                 emit!(buffer, "_index");
                                 emit!(buffer, "}};");
+                                emit!(buffer, "");
                                 emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "");
+                                if object_has_name(obj, domain) {
+                                    emit!(buffer, "let {obj_ident} = ");
+                                }
                                 emit!(buffer, "if let Some(Some({obj_ident})) = self.{obj_ident}.iter().find(|stored| {{");
                                 emit!(buffer, "if let Some(stored) = stored {{");
                                 emit!(buffer, "*stored{read} == *{obj_ident}{read}");

@@ -17,3 +17,4 @@ serde_json = "1.0.93"
 tracy-client = "0.15.2"
 uuid = { version = "1.2.2", features = ["v4", "v5", "serde"] }
 no_deadlocks = { git = "https://github.com/uberFoo/no-deadlocks" }
+env_logger = "0.10.0"

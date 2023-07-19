@@ -22,6 +22,7 @@ mod tests {
     #[test]
     fn test_r1() {
         Client::start();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let mut store = ObjectStore::new();
 
@@ -43,6 +44,7 @@ mod tests {
     #[test]
     fn test_r2() {
         Client::start();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let mut store = ObjectStore::new();
 
@@ -67,6 +69,7 @@ mod tests {
     #[test]
     fn test_r3() {
         Client::start();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let mut store = ObjectStore::new();
 
@@ -93,6 +96,7 @@ mod tests {
     #[test]
     fn test_r8() {
         Client::start();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         // This one is the reflexive relationship
         let mut store = ObjectStore::new();

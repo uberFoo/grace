@@ -24,7 +24,7 @@ use crate::{
         object_is_supertype,
         render::{RenderConst, RenderIdent, RenderType},
     },
-    options::{GraceConfig, UberStoreOptions},
+    options::{GraceConfig, OptimizationLevel, UberStoreOptions},
     types::{
         domain::rels::{
             generate_assoc_referent_rels, generate_assoc_referrer_rels,
@@ -775,6 +775,7 @@ impl CodeWriter for EnumNewImpl {
                                     emit!(buffer, "store.inter_{obj_ident}(new.clone()).await;");
                                 } else {
                                     use UberStoreOptions::*;
+                                    use OptimizationLevel::*;
                                     match config.get_uber_store().unwrap() {
                                         StdRwLock => {
                                             emit!(
@@ -790,17 +791,35 @@ impl CodeWriter for EnumNewImpl {
                                             emit!(buffer, "new");
                                         }
                                         Single => {
-                                            emit!(
-                                                buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(id) {{"
-                                            );
-                                            emit!(buffer, "{s_obj_ident}");
-                                            emit!(buffer, "}} else {{");
-                                            emit!(buffer, "store.inter_{obj_ident}(|id| {{");
-                                            emit!(
-                                                buffer,
-                                                "{ctor}(id){tail}"
-                                            );
-                                            emit!(buffer, "}})");
+                                            match config.get_optimization_level() {
+                                                None => {
+                                                    emit!(
+                                                        buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(&id) {{"
+                                                    );
+                                                    emit!(buffer, "{s_obj_ident}");
+                                                    emit!(buffer, "}} else {{");
+                                                    emit!(
+                                                        buffer,
+                                                        "let new = {ctor}(id){tail};"
+                                                    );
+                                                    emit!(buffer, "store.inter_{obj_ident}(new.clone());");
+                                                    emit!(buffer, "new");
+                                                }
+                                                Vec => {
+                                                    emit!(
+                                                        buffer, "if let Some({s_obj_ident}) = store.exhume_{obj_ident}(id) {{"
+                                                    );
+                                                    emit!(buffer, "{s_obj_ident}");
+                                                    emit!(buffer, "}} else {{");
+                                                    emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                                                    emit!(
+                                                        buffer,
+                                                        "{ctor}(id){tail}"
+                                                    );
+                                                    emit!(buffer, "}})");
+                                                }
+                                                Unsafe => panic!("`Unsafe` optimization is not currently supported"),
+                                            }
                                         }
                                         store => panic!("{store} is not currently supported"),
                                     }

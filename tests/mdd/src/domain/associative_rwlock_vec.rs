@@ -21,6 +21,7 @@ mod tests {
     #[test]
     fn test_r10() {
         Client::start();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let mut store = ObjectStore::new();
 
@@ -61,6 +62,7 @@ mod tests {
     #[test]
     fn test_r20() {
         Client::start();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let mut store = ObjectStore::new();
 

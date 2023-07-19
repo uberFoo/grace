@@ -20,6 +20,7 @@ mod tests {
     #[test]
     fn test_r10() {
         let mut store = ObjectStore::new();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let ui0 = IsaUi::new(0, &mut store);
         let a0 = Anchor::new(0, &mut store);
@@ -58,6 +59,7 @@ mod tests {
     #[test]
     fn test_r20() {
         let mut store = ObjectStore::new();
+        let _ = env_logger::builder().is_test(true).try_init();
 
         let s0 = State::new("foo".to_owned(), &mut store);
         let s1 = State::new("bar".to_owned(), &mut store);

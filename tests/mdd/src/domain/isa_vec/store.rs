@@ -162,7 +162,9 @@ impl ObjectStore {
             self.alpha.push(None);
             _index
         };
+
         let alpha = alpha(_index);
+
         if let Some(Some(alpha)) = self.alpha.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *alpha.borrow()
@@ -221,7 +223,9 @@ impl ObjectStore {
             self.baz.push(None);
             _index
         };
+
         let baz = baz(_index);
+
         if let Some(Some(baz)) = self.baz.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *baz.borrow()
@@ -280,7 +284,9 @@ impl ObjectStore {
             self.beta.push(None);
             _index
         };
+
         let beta = beta(_index);
+
         if let Some(Some(beta)) = self.beta.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *beta.borrow()
@@ -339,7 +345,9 @@ impl ObjectStore {
             self.borrowed.push(None);
             _index
         };
+
         let borrowed = borrowed(_index);
+
         if let Some(Some(borrowed)) = self.borrowed.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *borrowed.borrow()
@@ -403,7 +411,9 @@ impl ObjectStore {
             self.gamma.push(None);
             _index
         };
+
         let gamma = gamma(_index);
+
         if let Some(Some(gamma)) = self.gamma.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *gamma.borrow()
@@ -462,7 +472,9 @@ impl ObjectStore {
             self.henry.push(None);
             _index
         };
+
         let henry = henry(_index);
+
         if let Some(Some(henry)) = self.henry.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *henry.borrow()
@@ -521,7 +533,9 @@ impl ObjectStore {
             self.not_important.push(None);
             _index
         };
+
         let not_important = not_important(_index);
+
         if let Some(Some(not_important)) = self.not_important.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *not_important.borrow()
@@ -585,7 +599,9 @@ impl ObjectStore {
             self.oh_boy.push(None);
             _index
         };
+
         let oh_boy = oh_boy(_index);
+
         if let Some(Some(oh_boy)) = self.oh_boy.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *oh_boy.borrow()
@@ -649,7 +665,9 @@ impl ObjectStore {
             self.ownership.push(None);
             _index
         };
+
         let ownership = ownership(_index);
+
         if let Some(Some(ownership)) = self.ownership.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *ownership.borrow()
@@ -713,7 +731,9 @@ impl ObjectStore {
             self.reference.push(None);
             _index
         };
+
         let reference = reference(_index);
+
         if let Some(Some(reference)) = self.reference.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *reference.borrow()
@@ -777,7 +797,9 @@ impl ObjectStore {
             self.simple_subtype_a.push(None);
             _index
         };
+
         let simple_subtype_a = simple_subtype_a(_index);
+
         if let Some(Some(simple_subtype_a)) = self.simple_subtype_a.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *simple_subtype_a.borrow()
@@ -841,7 +863,9 @@ impl ObjectStore {
             self.simple_supertype.push(None);
             _index
         };
+
         let simple_supertype = simple_supertype(_index);
+
         if let Some(Some(simple_supertype)) = self.simple_supertype.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *simple_supertype.borrow()
@@ -908,7 +932,9 @@ impl ObjectStore {
             self.subtype_a.push(None);
             _index
         };
+
         let subtype_a = subtype_a(_index);
+
         if let Some(Some(subtype_a)) = self.subtype_a.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *subtype_a.borrow()
@@ -972,7 +998,9 @@ impl ObjectStore {
             self.subtype_b.push(None);
             _index
         };
+
         let subtype_b = subtype_b(_index);
+
         if let Some(Some(subtype_b)) = self.subtype_b.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *subtype_b.borrow()
@@ -1036,7 +1064,9 @@ impl ObjectStore {
             self.super_bar.push(None);
             _index
         };
+
         let super_bar = super_bar(_index);
+
         if let Some(Some(super_bar)) = self.super_bar.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *super_bar.borrow()
@@ -1100,7 +1130,9 @@ impl ObjectStore {
             self.super_foo.push(None);
             _index
         };
+
         let super_foo = super_foo(_index);
+
         if let Some(Some(super_foo)) = self.super_foo.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *super_foo.borrow()
@@ -1164,7 +1196,9 @@ impl ObjectStore {
             self.super_t.push(None);
             _index
         };
+
         let super_t = super_t(_index);
+
         if let Some(Some(super_t)) = self.super_t.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *super_t.borrow()

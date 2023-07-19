@@ -65,7 +65,9 @@ impl ObjectStore {
             self.nunchuck.push(None);
             _index
         };
+
         let nunchuck = nunchuck(_index);
+
         if let Some(Some(nunchuck)) = self.nunchuck.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *nunchuck.borrow()
@@ -129,7 +131,9 @@ impl ObjectStore {
             self.timestamp.push(None);
             _index
         };
+
         let timestamp = timestamp(_index);
+
         if let Some(Some(timestamp)) = self.timestamp.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *timestamp.borrow()

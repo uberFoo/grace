@@ -65,7 +65,9 @@ impl ObjectStore {
             self.everything.push(None);
             _index
         };
+
         let everything = everything(_index);
+
         if let Some(Some(everything)) = self.everything.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *everything.borrow()
@@ -129,7 +131,9 @@ impl ObjectStore {
             self.rando_object.push(None);
             _index
         };
+
         let rando_object = rando_object(_index);
+
         if let Some(Some(rando_object)) = self.rando_object.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *rando_object.borrow()

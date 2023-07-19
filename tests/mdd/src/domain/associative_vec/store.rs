@@ -90,7 +90,9 @@ impl ObjectStore {
             self.acknowledged_event.push(None);
             _index
         };
+
         let acknowledged_event = acknowledged_event(_index);
+
         if let Some(Some(acknowledged_event)) = self.acknowledged_event.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *acknowledged_event.borrow()
@@ -159,7 +161,9 @@ impl ObjectStore {
             self.anchor.push(None);
             _index
         };
+
         let anchor = anchor(_index);
+
         if let Some(Some(anchor)) = self.anchor.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *anchor.borrow()
@@ -223,7 +227,9 @@ impl ObjectStore {
             self.event.push(None);
             _index
         };
+
         let event = event(_index);
+
         if let Some(Some(event)) = self.event.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *event.borrow()
@@ -282,7 +288,9 @@ impl ObjectStore {
             self.isa_ui.push(None);
             _index
         };
+
         let isa_ui = isa_ui(_index);
+
         if let Some(Some(isa_ui)) = self.isa_ui.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *isa_ui.borrow()
@@ -346,7 +354,9 @@ impl ObjectStore {
             self.state.push(None);
             _index
         };
+
         let state = state(_index);
+
         if let Some(Some(state)) = self.state.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *state.borrow()
@@ -405,7 +415,9 @@ impl ObjectStore {
             self.subtype_anchor.push(None);
             _index
         };
+
         let subtype_anchor = subtype_anchor(_index);
+
         if let Some(Some(subtype_anchor)) = self.subtype_anchor.iter().find(|stored| {
             if let Some(stored) = stored {
                 *stored.borrow() == *subtype_anchor.borrow()
