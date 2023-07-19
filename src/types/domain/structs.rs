@@ -329,14 +329,22 @@ impl CodeWriter for Struct {
 }
 
 pub(crate) struct DomainImplBuilder {
+    for_trait: Option<String>,
     methods: Vec<Box<dyn MethodImplementation>>,
 }
 
 impl DomainImplBuilder {
     pub(crate) fn new() -> DomainImplBuilder {
         Self {
+            for_trait: None,
             methods: Vec::new(),
         }
+    }
+
+    pub(crate) fn make_trait(mut self, trait_name: String) -> Self {
+        self.for_trait = Some(trait_name);
+
+        self
     }
 
     pub(crate) fn method(mut self, method: Box<dyn MethodImplementation>) -> Self {
@@ -347,12 +355,14 @@ impl DomainImplBuilder {
 
     pub(crate) fn build(self) -> Box<dyn TypeImplementation> {
         Box::new(DomainImplementation {
+            for_trait: self.for_trait,
             methods: self.methods,
         })
     }
 }
 
 pub(crate) struct DomainImplementation {
+    for_trait: Option<String>,
     methods: Vec<Box<dyn MethodImplementation>>,
 }
 
@@ -389,11 +399,20 @@ impl CodeWriter for DomainImplementation {
             DirectiveKind::IgnoreOrig,
             format!("{}-implementation", object.as_ident()),
             |buffer| {
-                emit!(
-                    buffer,
-                    "impl {} {{",
-                    object.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
-                );
+                if let Some(trait_name) = &self.for_trait {
+                    emit!(
+                        buffer,
+                        "impl {} for {} {{",
+                        trait_name,
+                        object.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
+                    );
+                } else {
+                    emit!(
+                        buffer,
+                        "impl {} {{",
+                        object.as_type(&Ownership::new_borrowed(), woog.as_ref().unwrap(), domain)
+                    );
+                }
 
                 for method in &self.methods {
                     method.write_code(

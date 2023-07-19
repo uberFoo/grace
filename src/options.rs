@@ -194,7 +194,7 @@ const DOMAIN_IS_META_MODEL: bool = false;
 /// are most appropriate for domains that aren't meta-models.
 ///
 /// I'm not sure why I wrote that. I don't know what the difference might be. I
-/// guess we could compare these defaults to what's in the `salzak.toml` file.
+/// guess we could compare these defaults to what's in the `sarzak.toml` file.
 impl Default for DomainConfig {
     fn default() -> Self {
         DomainConfig {
@@ -238,14 +238,14 @@ impl fmt::Display for OptimizationLevel {
     }
 }
 
-/// Dowarf Target Configuration
+/// Dwarf Target Configuration
 ///
 /// The dwarf target has the following, target-specific, configuration options.
 #[derive(Args, Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DwarfConfig {
     /// Store Path
     ///
-    /// Path to the parnet directory contiining the store to load. The store
+    /// Path to the parent directory containing the store to load. The store
     /// type needs to match the domain that is being compiled.
     ///
     /// Note that the store contains instances of the domain, whereas the domain
