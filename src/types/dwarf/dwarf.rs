@@ -3,7 +3,7 @@
 //! This is where we generate code for use in the next stage of the compiler.
 use std::{fmt::Write, sync::Arc};
 
-use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
+use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
@@ -19,7 +19,8 @@ use crate::{
         buffer::{emit, Buffer},
         collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
-        render::RenderType,
+        get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid, object_is_singleton,
+        render::{RenderIdent, RenderType},
         AttributeBuilder,
     },
     options::GraceConfig,
@@ -113,7 +114,7 @@ impl CodeWriter for DwarfFile {
         config: &GraceConfig,
         domain: &Domain,
         woog: &Option<&mut WoogStore>,
-        _imports: &Option<&HashMap<String, Domain>>,
+        imports: &Option<&HashMap<String, Domain>>,
         _package: &str,
         module: &str,
         _obj_id: Option<&Uuid>,
@@ -140,27 +141,43 @@ impl CodeWriter for DwarfFile {
             }
         }
 
-        // buffer.block(
-        //     DirectiveKind::IgnoreOrig,
-        //     format!("{}-dwarf-output", module),
-        //     |buffer| {
         // Add an import statement for each imported domain
-        let mut imports = HashSet::default();
-        for imported in domain
-            .sarzak()
-            .iter_object()
-            .filter(|obj| config.is_imported(&obj.id))
-        {
-            let imported_object = config.get_imported(&imported.id).unwrap();
-            imports.insert(imported_object.domain.as_str());
-        }
-        // Insert ourselves
-        imports.insert(module);
+        // let mut imports = HashSet::default();
+        // for imported in domain
+        //     .sarzak()
+        //     .iter_object()
+        //     .filter(|obj| config.is_imported(&obj.id))
+        // {
+        //     let imported_object = config.get_imported(&imported.id).unwrap();
+        //     imports.insert(imported_object.domain.as_str());
+        // }
+        // // Insert ourselves
+        // imports.insert(module);
 
-        for import in imports {
-            emit!(buffer, "use {};", import);
-        }
-        emit!(buffer, "");
+        // for import in imports {
+        //     emit!(buffer, "use {};", import);
+        // }
+        // emit!(buffer, "");
+
+        // Generate code for the ObjectStore
+        let store_type = module.as_type(&Ownership::new_owned(), woog, domain);
+        emit!(
+            buffer,
+            r#"// This annotation tells the interpreter that the struct will be a proxy for
+// an `ObjectStore` called {module}. It will find the plugin based on the name.
+#[store(model = "{module}")]
+struct {store_type}Store {{}}
+
+// This is just to keep the type checking happy.
+#[store(model = "{module}")]
+impl {store_type}Store {{
+    // This is a function that exists on the ObjectStore, and the interpreter
+    // will invoke it in the plugin.
+    #[proxy(store = "{module}", object = "ObjectStore", func = "new")]
+    fn new() -> Self;
+}}
+"#
+        );
 
         let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
@@ -173,11 +190,22 @@ impl CodeWriter for DwarfFile {
             .collect::<Vec<_>>();
 
         for obj in &objects {
+            let is_enum = object_is_enum(obj, config, imports, domain)?;
+            let is_hybrid = object_is_hybrid(obj, config, imports, domain)?;
+            let is_imported = config.is_imported(&obj.id);
+            let is_singleton = object_is_singleton(obj, config, imports, domain)?;
+
             //
             // Emit the type definition
             //
             let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
             emit_object_comments(&obj.description, "// ", "", buffer)?;
+            emit!(
+                buffer,
+                r#"// This tells the interpreter that this struct is a proxy for an object called
+// "{obj_type}" in the store named "{module}"; declared above.
+#[proxy(store = "{module}", object = "{obj_type}")]"#
+            );
             emit!(buffer, "struct {} {{", obj_type,);
 
             let attrs: Vec<Attribute> = collect_attributes(obj, domain);
@@ -185,8 +213,7 @@ impl CodeWriter for DwarfFile {
                 let ty = value_type_to_string(&attr.ty, woog, domain);
                 emit!(buffer, "    {}: {},", attr.name, ty);
             }
-            emit!(buffer, "    proxy: {}Proxy,", obj_type);
-            emit!(buffer, "}}");
+            emit!(buffer, "}}\n");
 
             //
             // Emit the impl block
@@ -196,43 +223,93 @@ impl CodeWriter for DwarfFile {
             //
             // Emit the constructor
             //
-            write!(buffer, "    fn new(").context(FormatSnafu)?;
+            if !is_enum && !is_hybrid {
+                emit!(
+                    buffer,
+                    r#"    #[proxy(store = "{module}", object = "{obj_type}", func = "new")]"#
+                );
+                write!(buffer, "    fn new(").context(FormatSnafu)?;
 
-            let mut args = String::new();
-            let mut ft = true;
-            let mut iter = attrs.iter();
-            loop {
-                match iter.next() {
-                    Some(attr) => {
-                        if attr.name == "id" {
-                            continue;
+                let mut ft = true;
+                let mut iter = attrs.iter();
+                loop {
+                    match iter.next() {
+                        Some(attr) => {
+                            if attr.name == "id" {
+                                continue;
+                            }
+                            if !ft {
+                                write!(buffer, ", ").context(FormatSnafu)?;
+                            } else {
+                                ft = false;
+                            }
+                            let ty = value_type_to_string(&attr.ty, woog, domain);
+                            write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
                         }
+                        None => break,
+                    }
+                }
+                writeln!(buffer, ") -> Self;\n").context(FormatSnafu)?;
+            } else {
+                let (subtypes, domain) = if is_imported {
+                    let imported = config.get_imported(&obj.id).unwrap();
+                    let domain = imports.unwrap().get(&imported.domain).unwrap();
+                    (
+                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
+                        domain,
+                    )
+                } else {
+                    (
+                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
+                        domain,
+                    )
+                };
+
+                for subtype in subtypes {
+                    let s_obj = subtype.r15_object(domain.sarzak())[0];
+                    let s_obj_type = s_obj.as_type(&Ownership::new_owned(), woog, domain);
+                    let s_obj_ident = s_obj.as_ident();
+
+                    emit!(
+                        buffer,
+                        r#"    #[proxy(store = "{module}", object = "{obj_type}", func = "new_{s_obj_ident}")]"#
+                    );
+                    write!(buffer, "    fn new_{s_obj_ident}(").context(FormatSnafu)?;
+                    let mut ft = true;
+                    let mut iter = attrs.iter();
+                    loop {
+                        match iter.next() {
+                            Some(attr) => {
+                                if attr.name == "id" {
+                                    continue;
+                                }
+                                if !ft {
+                                    write!(buffer, ", ").context(FormatSnafu)?;
+                                } else {
+                                    ft = false;
+                                }
+                                let ty = value_type_to_string(&attr.ty, woog, domain);
+                                write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
+                            }
+                            None => break,
+                        }
+                    }
+                    if !is_singleton && !is_enum {
                         if !ft {
                             write!(buffer, ", ").context(FormatSnafu)?;
-                            args.extend([", ".to_string()]);
-                        } else {
-                            ft = false;
                         }
-                        let ty = value_type_to_string(&attr.ty, woog, domain);
-                        write!(buffer, "{}: {}", attr.name, ty).context(FormatSnafu)?;
-                        args.extend([attr.name.clone()]);
+                        writeln!(buffer, "{s_obj_ident}: {s_obj_type}").context(FormatSnafu)?;
                     }
-                    None => break,
+                    writeln!(buffer, ") -> Self;\n").context(FormatSnafu)?;
                 }
             }
-            writeln!(buffer, ") -> {obj_type} {{").context(FormatSnafu)?;
-            emit!(buffer, "        let id = Uuid::new();");
-            emit!(buffer, "        {obj_type} {{");
-            for attr in &attrs {
-                emit!(buffer, "            {}: {},", attr.name, attr.name);
-            }
 
-            emit!(buffer, "            proxy: {obj_type}Proxy::new({args}),",);
-
-            emit!(buffer, "        }}");
-            emit!(buffer, "    }}");
-            emit!(buffer, "");
-
+            emit!(
+                buffer,
+                r#"    #[proxy(store = "{module}", object = "{obj_type}", func = "instances")]
+    fn instances() -> [Self];
+"#
+            );
             //
             // Generate the help() method
             //

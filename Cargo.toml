@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.1.4", features = ["derive"] }
 serde = { version = "1.0.152", features = ["derive"] }
-sarzak = { git = "https://github.com/uberFoo/sarzak", default-features = false, branch = "develop", features = [
+sarzak = { git = "https://github.com/uberFoo/sarzak", default-features = false, tag = "v2.0.0", features = [
     "lu-dog-rwlock",
 ] }
 # sarzak = { git = "https://gitlab-runner:7kzem8nVeizSJQnLPWFY@git.uberfoo.com/sarzak/sarzak.git", branch = "develop", default-features = false, features = [

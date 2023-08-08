@@ -1363,7 +1363,11 @@ impl CodeWriter for DomainStoreVec {
 /// name. Or maybe we don't do one at all, and let the end user sort it out.
 /// I sort of like that option better. I wonder how many errors will ensue...
 fn object_has_name(obj: &Object, _domain: &Domain) -> bool {
-    obj.name == "Object" || obj.name == "Struct" || obj.name == "Function" || obj.name == "Field"
+    obj.name == "Object"
+        || obj.name == "Struct"
+        || obj.name == "Function"
+        || obj.name == "Field"
+        || obj.name == "Object Store"
     // obj.r1_attribute(domain.sarzak())
     //     .iter()
     //     .find(|attr| {

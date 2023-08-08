@@ -271,7 +271,7 @@ impl FileGenerator for ExternalGenerator {
                             Single => {
                                 emit!(
                                     buffer,
-                                    "let new = std::rt::Rc::new(std::cell::RefCell::new({}{{",
+                                    "let new = std::rc::Rc::new(std::cell::RefCell::new({}{{",
                                     object.as_type(&Ownership::new_borrowed(), woog, domain)
                                 );
                                 emit!(buffer, "id: id,");

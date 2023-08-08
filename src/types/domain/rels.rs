@@ -300,7 +300,7 @@ fn forward(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number,
             );
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             if is_uber {
                 let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
@@ -373,7 +373,7 @@ fn forward_conditional(
             referrer.referential_attribute.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -482,7 +482,7 @@ fn backward_one(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
             let rhs = {
                 let cond = referrer.r11_conditionality(domain.sarzak())[0];
                 if let Conditionality::Conditional(_) = cond {
@@ -595,7 +595,7 @@ fn backward_one_conditional(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -713,7 +713,7 @@ fn backward_one_biconditional(
             obj.as_ident(),
         ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -836,7 +836,7 @@ fn backward_1_m(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -945,7 +945,7 @@ fn backward_1_mc(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -1052,7 +1052,7 @@ fn forward_assoc(
             referential_attribute.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -1123,7 +1123,7 @@ fn backward_assoc_one(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -1211,7 +1211,7 @@ fn backward_assoc_one_conditional(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -1298,7 +1298,7 @@ fn backward_assoc_many(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&r_obj.id);
+            let is_uber = config.is_uber_store();
 
             emit!(
                 buffer,
@@ -1385,7 +1385,7 @@ fn subtype_to_supertype(
             "{obj_ident}-impl-nav-subtype-to-supertype-{s_obj_ident}"
         ),
         |buffer| {
-            let is_uber = config.is_uber_store() && !config.is_imported(&s_obj.id);
+            let is_uber = config.is_uber_store();
             let is_hybrid = local_object_is_hybrid(s_obj, config, domain);
 
             emit!(
