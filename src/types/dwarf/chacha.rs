@@ -231,13 +231,13 @@ pub fn id() -> RStr<'static> {{
 pub fn new(args: RVec<FfiValue>) -> RResult<PluginType, Error> {{
     let this = if args.len() == 0 {{
         MerlinStore {{
-            store: ObjectStore::new(),
+            store: Rc::new(RefCell::new(ObjectStore::new())),
         }}
     }} else if args.len() == 1 {{
         if let FfiValue::String(path) = &args[0] {{
             {domain_type}Store {{
                 // 🚧 fix this unwrap
-                store: ObjectStore::load(Path::new(&path.as_str())).unwrap(),
+                store: Rc::new(RefCell::new(ObjectStore::load(Path::new(&path.as_str())).unwrap())),
             }}
         }} else {{
             return RErr(Error::Uber("Invalid arguments".into()));
@@ -255,7 +255,7 @@ pub fn new(args: RVec<FfiValue>) -> RResult<PluginType, Error> {{
             buffer,
             r#"#[derive(Clone, Debug)]
 struct {domain_type}Store {{
-    store: ObjectStore,
+    store: Rc<RefCell<ObjectStore>>,
 }}
 "#
         );
@@ -311,8 +311,8 @@ struct {domain_type}Store {{
 
                         if let FfiValue::PlugIn({obj_ident}) = args.pop().unwrap() {{
                             let {obj_ident} = {obj_ident}.obj.downcast_into::<{obj_type}Proxy>().unwrap();
-                            self.store
-                                .inter_{obj_ident}(Rc::new(RefCell::new({obj_ident}.inner.clone())));
+                            self.store.borrow_mut()
+                                .inter_{obj_ident}({obj_ident}.inner.clone());
                             Ok(FfiValue::Empty)
                         }} else {{
                             Err(Error::Uber("Invalid {obj_type}".into()))
@@ -327,13 +327,14 @@ struct {domain_type}Store {{
                             return Err(Error::Uber("Expected 1 argument".into()));
                         }}
                         if let FfiValue::Uuid(id) = args.pop().unwrap() {{
-                            let {obj_ident} = self.store.exhume_{obj_ident}(&id.into()).unwrap();
+                            let {obj_ident} = self.store.borrow().exhume_{obj_ident}(&id.into()).unwrap();
                             let {obj_ident} = {obj_type}Proxy {{
                                 // 🚧 This bothers me deeply. I know that I've given
                                 // this some thought already, and I really need to
                                 // document the outcome so that I can stop worrying
                                 // over it.
-                                inner: (*{obj_ident}).clone().into_inner(),
+                                inner: {obj_ident},
+                                store: self.store.clone(),
                             }};
                             let plugin = Plugin_TO::from_value({obj_ident}, TD_CanDowncast);
                             let proxy = FfiProxy {{
@@ -423,9 +424,10 @@ struct {domain_type}Store {{
                 buffer,
                 r#""instances" => {{
                         let mut instances = Vec::new();
-                        for {obj_ident} in self.store.iter_{obj_ident}() {{
+                        for {obj_ident} in self.store.borrow().iter_{obj_ident}() {{
                             let this = {obj_type}Proxy {{
-                                inner: (*{obj_ident}.borrow()).clone(),
+                                inner: {obj_ident}.clone(),
+                                store: self.store.clone(),
                             }};
                             let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                             let proxy = FfiProxy {{
@@ -497,7 +499,8 @@ struct {domain_type}Store {{
             // Generate the proxy type
             emit!(buffer, "#[derive(Clone, Debug)]",);
             emit!(buffer, "pub struct {obj_type}Proxy {{");
-            emit!(buffer, "inner: {obj_type},");
+            emit!(buffer, "inner: Rc<RefCell<{obj_type}>>,");
+            emit!(buffer, "store: Rc<RefCell<ObjectStore>>,");
             emit!(buffer, "}}\n");
 
             //
@@ -531,37 +534,60 @@ struct {domain_type}Store {{
 
             for attr in &attrs {
                 let attr_name = attr.name.as_ident();
-                let ty = value_type_to_string(&attr.ty, woog, domain).0;
+
+                let (ty, type_type) = value_type_to_string(&attr.ty, woog, domain);
 
                 emit!(buffer, r#""{attr_name}" => "#);
                 if attr_name == "id" {
-                    emit!(buffer, "Ok(FfiValue::Uuid(self.inner.{id}.into())),");
+                    emit!(
+                        buffer,
+                        "Ok(FfiValue::Uuid(self.inner.borrow().{id}.into())),"
+                    );
                 } else {
                     match ty {
                         "Boolean" => emit!(
                             buffer,
-                            "Ok(FfiValue::Boolean(self.inner.{attr_name}.into())),"
+                            "Ok(FfiValue::Boolean(self.inner.borrow().{attr_name}.into())),"
                         ),
                         "Float" => emit!(
                             buffer,
-                            "Ok(FfiValue::Float(self.inner.{attr_name}.into())),"
+                            "Ok(FfiValue::Float(self.inner.borrow().{attr_name}.into())),"
                         ),
                         "Integer" => emit!(
                             buffer,
-                            "Ok(FfiValue::Integer(self.inner.{attr_name}.into())),"
+                            "Ok(FfiValue::Integer(self.inner.borrow().{attr_name}.into())),"
                         ),
                         "String" => emit!(
                             buffer,
-                            "Ok(FfiValue::String(self.inner.{attr_name}.clone().into())),"
+                            "Ok(FfiValue::String(self.inner.borrow().{attr_name}.clone().into())),"
                         ),
                         "UserType" => {
+                            let type_const = type_type.as_const();
+                            let type_ident = type_type.as_ident();
+
                             emit!(
                                 buffer,
-                                "Ok(FfiValue::UserType(self.inner.{attr_name}.into())),"
-                            )
+                                r#"{{let {attr_name} =
+                                        self.store.borrow().exhume_{type_ident}(&self.inner.borrow().{attr_name}).unwrap();
+
+                                    let this = {type_type}Proxy {{
+                                        inner: {attr_name},
+                                        store: self.store.clone(),
+                                    }};
+                                    let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
+                                    let proxy = FfiProxy {{
+                                        uuid: {type_const}_ID.into(),
+                                        plugin: plugin.clone(),
+                                    }};
+                                    Ok(FfiValue::ProxyType(proxy))
+                                }}"#
+                            );
                         }
                         "Uuid" => {
-                            emit!(buffer, "Ok(FfiValue::Uuid(self.inner.{attr_name}.into())),")
+                            emit!(
+                                buffer,
+                                "Ok(FfiValue::Uuid(self.inner.borrow().{attr_name}.into())),"
+                            )
                         }
                         foo => {
                             dbg!(foo);
@@ -603,7 +629,7 @@ struct {domain_type}Store {{
                 emit!(
                     buffer,
                     r#""{attr_ident}" => {{
-                                    self.inner.{attr_ident} = value.try_into().map_err(|e| {{
+                                    self.inner.borrow_mut().{attr_ident} = value.try_into().map_err(|e| {{
                                         Error::Uber(
                                             format!("Error converting value: {{e}}").into(),
                                         )
@@ -657,7 +683,7 @@ struct {domain_type}Store {{
                 let attr_name = attr.name.as_ident();
 
                 if idx == 0 {
-                    emit!(buffer, "writeln!(f, \"{obj_type}Proxy({{{{\")?;",);
+                    emit!(buffer, "writeln!(f, \"{obj_type}({{{{\")?;",);
                 } else {
                     emit!(buffer, "?;");
                 }
@@ -665,13 +691,13 @@ struct {domain_type}Store {{
                 if attr_name == "id" {
                     write!(
                         buffer,
-                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self.inner.{id})",
+                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self.inner.borrow().{id})",
                     )
                     .context(FormatSnafu)?;
                 } else {
                     write!(
                         buffer,
-                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self.inner.{attr_name})",
+                        "writeln!(f, \"\t{attr_name}: {{:?}},\", self.inner.borrow().{attr_name})",
                     )
                     .context(FormatSnafu)?;
                 }
@@ -738,31 +764,13 @@ fn render_ctor(
 
             emit!(
                 buffer,
-                r#"match (|| -> Result<{parent_type}, Error> {{
-                            let {obj_ident} = self
-                                .invoke_func(
-                                    "ObjectStore".into(),
-                                    "exhume_{parent_ident}".into(),
-                                    vec![FfiValue::Uuid({obj_const}.into())].into(),
-                                )
-                                .unwrap();
-                            let {obj_ident} = match {obj_ident} {{
-                                FfiValue::ProxyType(proxy) => {{
-                                    let plugin = proxy.plugin;
-                                    let this = plugin.obj.downcast_into::<{parent_type}Proxy>().unwrap();
-                                    this.inner.clone()
-                                }}
-                                _ => {{
-                                    return Err(Error::Uber(
-                                        "Expected ProxyType".to_string().into(),
-                                    ))
-                                }}
-                            }};
+                r#"match (|| -> Result<Rc<RefCell<{parent_type}>>, Error> {{
+                            let {obj_ident} = self.store.borrow().exhume_{parent_ident}(&{obj_const}).unwrap();
 
                             Ok({obj_ident})
                         }})() {{
                             Ok({obj_ident}) => {{
-                                let this = {parent_type}Proxy {{ inner: {obj_ident} }};
+                                let this = {parent_type}Proxy {{ inner: {obj_ident}, store: self.store.clone() }};
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
                                     uuid: {obj_const}.into(),
@@ -852,18 +860,15 @@ fn render_ctor(
                             Ok({obj_ident})
                         }})() {{
                             Ok({obj_ident}) => {{
-                                let this = {parent_type}Proxy {{ inner: {obj_ident} }};
+                                let {obj_ident} = Rc::new(RefCell::new({obj_ident}));
+                                self.store.borrow_mut().inter_{parent_ident}({obj_ident}.clone());
+                                let this = {parent_type}Proxy {{ inner: {obj_ident}, store: self.store.clone() }};
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
                                     uuid: {parent_const}_ID.into(),
                                     plugin: plugin.clone(),
                                 }};
-                                self.invoke_func(
-                                    "ObjectStore".into(),
-                                    "inter_{parent_ident}".into(),
-                                    vec![FfiValue::PlugIn(plugin)].into(),
-                                )
-                                .unwrap();
+
                                 Ok(FfiValue::ProxyType(proxy))
                             }}
                             Err(e) => Err(e),
@@ -877,18 +882,15 @@ fn render_ctor(
                             Ok({obj_ident})
                         }})() {{
                             Ok({obj_ident}) => {{
-                                let this = {obj_type}Proxy {{ inner: {obj_ident} }};
+                                let {obj_ident} = Rc::new(RefCell::new({obj_ident}));
+                                self.store.borrow_mut().inter_{obj_ident}({obj_ident}.clone());
+                                let this = {obj_type}Proxy {{ inner: {obj_ident}, store: self.store.clone() }};
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
                                     uuid: {obj_const}_ID.into(),
                                     plugin: plugin.clone(),
                                 }};
-                                self.invoke_func(
-                                    "ObjectStore".into(),
-                                    "inter_{obj_ident}".into(),
-                                    vec![FfiValue::PlugIn(plugin)].into(),
-                                )
-                                .unwrap();
+
                                 Ok(FfiValue::ProxyType(proxy))
                             }}
                             Err(e) => Err(e),
