@@ -1,9 +1,13 @@
 {
     "cSpell.words": [
         "dwarfc",
+        "krate",
         "rels",
         "rustc",
-        "rwlock"
+        "rwlock",
+        "sabi",
+        "shouty",
+        "Shouty"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false
 }

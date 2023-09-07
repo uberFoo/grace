@@ -3,6 +3,7 @@
 //! This is where we generate code for use in the next stage of the compiler.
 use std::{fmt::Write, sync::Arc};
 
+use heck::ToUpperCamelCase;
 use rustc_hash::FxHashMap as HashMap;
 use sarzak::{
     lu_dog::types::ValueType,
@@ -20,6 +21,7 @@ use crate::{
         collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid, object_is_singleton,
+        object_is_supertype,
         render::{RenderIdent, RenderType},
         AttributeBuilder,
     },
@@ -141,6 +143,16 @@ impl CodeWriter for DwarfFile {
             }
         }
 
+        let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
+        objects.sort_by(|a, b| a.name.cmp(&b.name));
+        let objects = objects
+            .iter()
+            .filter(|obj| {
+                // Don't include imported objects
+                !config.is_imported(&obj.id)
+            })
+            .collect::<Vec<_>>();
+
         // Add an import statement for each imported domain
         // let mut imports = HashSet::default();
         // for imported in domain
@@ -160,7 +172,8 @@ impl CodeWriter for DwarfFile {
         // emit!(buffer, "");
 
         // Generate code for the ObjectStore
-        let store_type = module.as_type(&Ownership::new_owned(), woog, domain);
+        // let store_type = module.as_type(&Ownership::new_owned(), woog, domain);
+        let store_type = module.to_upper_camel_case();
         emit!(
             buffer,
             r#"// This annotation tells the interpreter that the struct will be a proxy for
@@ -175,19 +188,35 @@ impl {store_type}Store {{
     // will invoke it in the plugin.
     #[proxy(store = "{module}", object = "ObjectStore", func = "new")]
     fn new() -> Self;
-}}
+    #[proxy(store = "{module}", object = "ObjectStore", func = "load")]
+    fn load(path: string) -> Self;
+    #[proxy(store = "{module}", object = "ObjectStore", func = "persist")]
+    fn save(self) -> Self;
 "#
         );
 
-        let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
-        objects.sort_by(|a, b| a.name.cmp(&b.name));
-        let objects = objects
-            .iter()
-            .filter(|obj| {
-                // Don't include imported objects
-                !config.is_imported(&obj.id)
-            })
-            .collect::<Vec<_>>();
+        for obj in &objects {
+            let is_imported = config.is_imported(&obj.id);
+            let is_singleton = object_is_singleton(obj, config, imports, domain)?;
+
+            let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
+            let obj_ident = obj.as_ident();
+
+            if is_imported || is_singleton {
+                continue;
+            }
+
+            emit!(
+                buffer,
+                r#"
+    #[proxy(store = "{module}", object = "ObjectStore", func = "inter_{obj_ident}")]
+    fn inter_{obj_ident}(self, {obj_ident}: {obj_type});
+    #[proxy(store = "{module}", object = "ObjectStore", func = "exhume_{obj_ident}")]
+    fn exhume_{obj_ident}(self, {obj_ident}: Uuid) -> {obj_type};"#
+            );
+        }
+
+        emit!(buffer, "}}\n");
 
         for obj in &objects {
             let is_enum = object_is_enum(obj, config, imports, domain)?;
@@ -213,6 +242,15 @@ impl {store_type}Store {{
                 let ty = value_type_to_string(&attr.ty, woog, domain);
                 emit!(buffer, "    {}: {},", attr.name, ty);
             }
+            emit!(buffer, "    // Non-formalizing relationships");
+
+            // 🚧 We need to attach reverse pointers for relationships that we
+            // don't formalize. We also need to add pointers on the super- and
+            // sub-types
+            // if is_super || is_hybrid {
+            //     emit!(buffer, "    subtype")
+            // }
+
             emit!(buffer, "}}\n");
 
             //
@@ -310,6 +348,7 @@ impl {store_type}Store {{
     fn instances() -> [Self];
 "#
             );
+
             //
             // Generate the help() method
             //
@@ -433,10 +472,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
                 zobject_store.domain.to_owned()
             };
 
-            format!(
-                "{}Store",
-                domain_name.as_type(&Ownership::new_owned(), woog, domain)
-            )
+            format!("{}Store", domain_name.to_upper_camel_case())
         }
     }
 }

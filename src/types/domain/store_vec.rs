@@ -148,7 +148,7 @@ impl DomainStoreVec {
                             AsyncRwLock => {
                                 emit!(
                                     buffer,
-                                    "pub async fn inter_{obj_ident}(&mut self, {obj_ident}: {thing}) {{"
+                                    "pub async fn inter_{obj_ident}<F>(&mut self, {obj_ident}: F) -> {thing} where F: Fn(usize) -> {thing}, {{"
                                 );
                             }
                             _ => {
@@ -175,6 +175,54 @@ impl DomainStoreVec {
                         let (read, write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
+                            AsyncRwLock => {
+                                emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.lock().await.pop() {{");
+                                emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
+                                emit!(buffer, "_index");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "let _index = self.{obj_ident}{read}.len();");
+                                emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
+                                emit!(buffer, "self.{obj_ident}{write}.push(None);");
+                                emit!(buffer, "_index");
+                                emit!(buffer, "}};");
+                                emit!(buffer, "");
+                                emit!(buffer, "let {obj_ident} = {obj_ident}(_index);");
+                                emit!(buffer, "");
+                                emit!(buffer, "let iter = self.{obj_ident}{read};");
+                                emit!(buffer, "let iter = iter.iter();");
+                                emit!(buffer, "let iter = stream::iter(iter);");
+                                emit!(buffer, "let found = iter.filter_map(|stored| {{");
+                                emit!(buffer, "Box::pin({{");
+                                emit!(buffer, "let stored = stored.clone();");
+                                emit!(buffer, "async {{");
+                                emit!(buffer, "if let Some(stored) = stored {{");
+                                emit!(buffer, "if *stored{read} == *{obj_ident}{read} {{");
+                                emit!(buffer, "Some(stored)");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "None");
+                                emit!(buffer, "}}");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "None");
+                                emit!(buffer, "}}");
+                                emit!(buffer, "}}");
+                                emit!(buffer, "}})");
+                                emit!(buffer, "}})");
+                                emit!(buffer, ".next()");
+                                emit!(buffer, ".await;");
+                                emit!(buffer, "");
+                                if object_has_name(obj, domain) {
+                                    emit!(buffer, "let {obj_ident} = ");
+                                }
+                                emit!(buffer, "if let Some({obj_ident}) = found {{");
+                                emit!(buffer, "log::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "self.{obj_ident}_free_list.lock().await.push(_index);");
+                                emit!(buffer, "{obj_ident}.clone()");
+                                emit!(buffer, "}} else {{");
+                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
+                                emit!(buffer, "{obj_ident}");
+                                emit!(buffer, "}}");
+                            },
                             StdRwLock | NDRwLock => {
                                 emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
                                 emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
@@ -271,7 +319,7 @@ impl DomainStoreVec {
                                 let (_read, write) = get_uber_read_write(config);
                                 emit!(
                                     buffer,
-                                    "self.{obj_ident}_id_by_name{write}.insert(read.name.to_upper_camel_case(), (read.{id}, value.1));",
+                                    "self.{obj_ident}_id_by_name{write}.insert(read.name.to_owned(), (read.{id}, value.1));",
                                 );
                                 emit!(
                                     buffer,
@@ -280,7 +328,7 @@ impl DomainStoreVec {
                             } else {
                                 emit!(
                                     buffer,
-                                    "self.{obj_ident}_id_by_name.insert(value.0.name.to_upper_camel_case(), (value.0.{id}, value.1));",
+                                    "self.{obj_ident}_id_by_name.insert(value.0.name.to_owned(), (value.0.{id}, value.1));",
                                 );
                                 emit!(
                                     buffer,
@@ -305,16 +353,16 @@ impl DomainStoreVec {
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock | NDRwLock => {
+                                AsyncRwLock | StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
-                                        "self.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});",
+                                        "self.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_owned(), {obj_ident}{read}.{id});",
                                     );
                                 }
                                 Single => {
                                     emit!(
                                         buffer,
-                                        "self.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});",
+                                        "self.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_owned(), {obj_ident}{read}.{id});",
                                     );
                                 }
                                 store => panic!("{store} is not currently supported"),
@@ -323,7 +371,7 @@ impl DomainStoreVec {
                         } else {
                             emit!(
                                 buffer,
-                                "self.{obj_ident}_id_by_name.insert({obj_ident}.name.to_upper_camel_case(), {obj_ident}.{id});",
+                                "self.{obj_ident}_id_by_name.insert({obj_ident}.name.to_owned(), {obj_ident}.{id});",
                             );
                             emit!(
                                 buffer,
@@ -357,7 +405,7 @@ impl DomainStoreVec {
                             AsyncRwLock => {
                                 emit!(
                                     buffer,
-                                    "pub async fn exhume_{obj_ident}(&self, id: &Uuid) -> Option<{thing}> {{",
+                                    "pub async fn exhume_{obj_ident}(&self, id: &usize) -> Option<{thing}> {{",
                                 );
                             }
                             _ => {
@@ -387,7 +435,7 @@ impl DomainStoreVec {
                         } else {
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock | NDRwLock =>  {
+                                AsyncRwLock | StdRwLock | NDRwLock =>  {
                                     emit!(
                                         buffer,
                                         "match self.{obj_ident}{read}.get(*id) {{",
@@ -442,7 +490,7 @@ impl DomainStoreVec {
                             AsyncRwLock => {
                                 emit!(
                                     buffer,
-                                    "pub async fn exorcise_{obj_ident}(&mut self, id: &Uuid) -> Option<{thing}> {{",
+                                    "pub async fn exorcise_{obj_ident}(&mut self, id: &usize) -> Option<{thing}> {{",
                                 );
                             }
                             _ => {
@@ -459,8 +507,10 @@ impl DomainStoreVec {
                         );
                     }
 
+                    emit!(buffer, "log::debug!(target: \"store\", \"exorcising {obj_ident} slot: {{id}}.\");");
+
                     if is_uber {
-                        let (read, write) = get_uber_read_write(config);
+                        let (_read, write) = get_uber_read_write(config);
                         if timestamp {
                             emit!(
                                 buffer,
@@ -470,7 +520,11 @@ impl DomainStoreVec {
                         } else {
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock | NDRwLock =>  {
+                                AsyncRwLock  =>  {
+                                    emit!(buffer, "let result = self.{obj_ident}{write}[*id].take();");
+                                    emit!(buffer, "self.{obj_ident}_free_list.lock().await.push(*id);");
+                                },
+                                AsyncRwLock | StdRwLock | NDRwLock =>  {
                                     emit!(buffer, "let result = self.{obj_ident}{write}[*id].take();");
                                     emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(*id);");
                                 },
@@ -526,9 +580,8 @@ impl DomainStoreVec {
                                     obj_ident
                                 );
                             } else {
-                                // use UberStoreOptions::*;
                                 match config.get_uber_store().unwrap() {
-                                    StdRwLock | NDRwLock => {
+                                    AsyncRwLock | StdRwLock | NDRwLock => {
                                         emit!(buffer, "self.{0}_id_by_name{read}.get(name).map(|{0}| *{0})", obj_ident);
                                     }
                                     Single => {
@@ -547,7 +600,7 @@ impl DomainStoreVec {
                                 "self.{obj_ident}_id_by_name.get(name).map(|{obj_ident}| {obj_ident}.0)",
                             );
                         } else {
-                            // 🚧 Is this right? We are changing the signaature of the method, which
+                            // 🚧 Is this right? We are changing the signature of the method, which
                             // i think is bad as it will break existing code.
                             emit!(
                                 buffer,
@@ -593,7 +646,7 @@ impl DomainStoreVec {
                             AsyncRwLock => {
                                 emit!(
                                     buffer,
-                                    "pub async fn iter_{obj_ident}(&self) -> impl Iterator<Item = {store_type}> + '_ {{",
+                                    "pub async fn iter_{obj_ident}(&self) -> impl stream::Stream<Item = {store_type}> + '_ {{",
                                 );
                             }
                             _ => {
@@ -646,6 +699,16 @@ impl DomainStoreVec {
                             let (read, _write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
+                                AsyncRwLock => {
+                                    emit!(
+                                        buffer,
+                                        "let len = self.{obj_ident}{read}.len();"
+                                    );
+                                    emit!(
+                                        buffer,
+                                        "stream::iter((0..len)).filter_map(move |i| async move {{if self.{obj_ident}{read}[i].is_some(){{self.{obj_ident}{read}[i].clone()}} else {{ None }} }} )",
+                                    );
+                                },
                                 StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
@@ -927,7 +990,8 @@ impl CodeWriter for DomainStoreVec {
                             emit!(buffer, "use async_std::sync::Arc;");
                             emit!(buffer, "use async_std::sync::RwLock;");
                             emit!(buffer, "use std::fmt;");
-                            emit!(buffer, "use serde::{{ser::SerializeMap, Serializer, Deserializer, de::{{self, Visitor, MapAccess, SeqAccess}}}};");
+                            emit!(buffer, "use serde::{{ser::SerializeStruct, Serializer, Deserializer, de::{{self, Visitor, MapAccess}}}};");
+                            emit!(buffer, "use futures::stream::{{self, StreamExt}};");
                         }
                         NDRwLock => {
                             emit!(buffer, "use std::sync::Arc;");
@@ -988,7 +1052,7 @@ impl CodeWriter for DomainStoreVec {
 
                 use UberStoreOptions::*;
                 match config.get_uber_store().unwrap() {
-                    AsyncRwLock => emit!(buffer, "#[derive(Clone, Debug)]"),
+                    AsyncRwLock => emit!(buffer, "#[derive(Debug)]"),
                     Single | StdRwLock => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]"),
                     NDRwLock=> emit!(buffer, "#[derive(Debug)]"),
                     _ => emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]")
@@ -1002,6 +1066,8 @@ impl CodeWriter for DomainStoreVec {
                     match config.get_uber_store().unwrap() {
                         StdRwLock
                         | NDRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex<Vec<usize>>,"),
+                        AsyncRwLock => emit!(buffer, "{obj_ident}_free_list: async_std::sync::Mutex<Vec<usize>>,"),
+
                         Single => emit!(buffer, "{obj_ident}_free_list: Vec<usize>,"),
                         store => panic!("{store} is not currently supported"),
                     }
@@ -1087,24 +1153,42 @@ impl CodeWriter for DomainStoreVec {
                     emit!(buffer, "impl Serialize for ObjectStore {{");
                     emit!(buffer, "fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>");
                     emit!(buffer, "where S: Serializer, {{");
+                    emit!(buffer, "let mut map = serializer.serialize_struct(\"ObjectStore\", {})?;", objects.len());
                     for obj in &objects {
                         let obj_ident = obj.as_ident();
-
-                        emit!(buffer, "let {obj_ident} = (*futures::executor::block_on(async {{self.{obj_ident}.read().await}})).clone();");
-                        emit!(buffer, "let mut map = serializer.serialize_map(Some({obj_ident}.len()))?;");
-                        emit!(buffer, "for (k, v) in {obj_ident} {{");
-                        emit!(buffer, "map.serialize_entry(&k, &((*futures::executor::block_on(async {{v.0.read().await}})).clone(), v.1))?;");
-                        emit!(buffer, "}}");
-                        emit!(buffer, "let result = map.end();\n");
+                        let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+                        emit!(buffer, r#"
+        let {obj_ident} = futures::executor::block_on(async {{ self.{obj_ident}.read().await }}).clone();
+        let values: Vec<{obj_type}> = {obj_ident}
+            .into_iter()
+            .filter_map(|{obj_ident}| {{
+                if let Some({obj_ident}) = {obj_ident} {{
+                    Some(futures::executor::block_on(async {{ {obj_ident}.read().await }}).clone())
+                }} else {{
+                    None
+                }}
+            }})
+            .collect();
+        map.serialize_field("{obj_ident}", &values)?;
+"#);
+                        // emit!(buffer, "let {obj_ident} = (*futures::executor::block_on(async {{self.{obj_ident}.read().await}})).clone();");
+                        // emit!(buffer, r#"map.serialize_entry("{obj_ident}".to_owned());"#);
+                        // emit!(buffer, "for v in {obj_ident}.iter() {{");
+                        // emit!(buffer, "// may as well compress it while we are here");
+                        // emit!(buffer, "if let Some(v) = v {{");
+                        // emit!(buffer, "seq.serialize_element(&(*futures::executor::block_on(async {{v.read().await}})).clone())?;");
+                        // emit!(buffer, "}}");
+                        // emit!(buffer, "}}");
+                        // emit!(buffer, "let result = map.end();\n");
                     }
-                    emit!(buffer, "result");
+                    emit!(buffer, "map.end()");
                     emit!(buffer, "}}");
                     emit!(buffer, "}}\n");
 
                     emit!(buffer, "impl<'de> Deserialize<'de> for ObjectStore {{");
                     emit!(buffer, "fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>");
                     emit!(buffer, "where D: Deserializer<'de>, {{");
-                    emit!(buffer, "enum Field {{");
+                    emit!(buffer, "enum SerdeField {{");
                     for obj in &objects {
                         let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
                         emit!(
@@ -1113,16 +1197,16 @@ impl CodeWriter for DomainStoreVec {
                         );
                     }
                     emit!(buffer, "}}");
-                    emit!(buffer, "impl<'de> Deserialize<'de> for Field {{");
-                    emit!(buffer, "fn deserialize<D>(deserializer: D) -> Result<Field, D::Error>");
+                    emit!(buffer, "impl<'de> Deserialize<'de> for SerdeField {{");
+                    emit!(buffer, "fn deserialize<D>(deserializer: D) -> Result<SerdeField, D::Error>");
                     emit!(buffer, "where D: Deserializer<'de>, {{");
                     emit!(buffer, "struct FieldVisitor;");
                     emit!(buffer, "impl<'de> Visitor<'de> for FieldVisitor {{");
-                    emit!(buffer, "type Value = Field;");
+                    emit!(buffer, "type Value = SerdeField;");
                     emit!(buffer, "fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {{");
                     emit!(buffer, "formatter.write_str(\"field identifier\")");
                     emit!(buffer, "}}");
-                    emit!(buffer, "fn visit_str<E>(self, value: &str) -> Result<Field, E>");
+                    emit!(buffer, "fn visit_str<E>(self, value: &str) -> Result<SerdeField, E>");
                     emit!(buffer, "where E: de::Error, {{");
                     emit!(buffer, "match value {{");
                     for obj in &objects {
@@ -1130,7 +1214,7 @@ impl CodeWriter for DomainStoreVec {
                         let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
                         emit!(
                             buffer,
-                            "\"{obj_ident}\" => Ok(Field::{obj_type}),"
+                            "\"{obj_ident}\" => Ok(SerdeField::{obj_type}),"
                         );
                     }
                     emit!(buffer, "_ => Err(de::Error::unknown_field(value, FIELDS)),");
@@ -1143,12 +1227,15 @@ impl CodeWriter for DomainStoreVec {
                     emit!(buffer, "struct ObjectStoreVisitor;");
                     emit!(buffer, "impl<'de> Visitor<'de> for ObjectStoreVisitor {{");
                     emit!(buffer, "type Value = ObjectStore;");
+
                     emit!(buffer, "fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {{");
                     emit!(buffer, "formatter.write_str(\"struct ObjectStore\")");
                     emit!(buffer, "}}");
+
                     emit!(buffer, "fn visit_map<A>(self, mut map: A) -> Result<ObjectStore, A::Error>");
                     emit!(buffer, "where A: MapAccess<'de>, {{");
-                    emit!(buffer, "let mut result = ObjectStore::new();");
+                    emit!(buffer, "let result = ObjectStore::new();");
+                    emit!(buffer, "let mut result = futures::executor::block_on(async {{ result.await }});");
                     emit!(buffer, "while let Some(key) = map.next_key()? {{");
                     emit!(buffer, "match key {{");
                     for obj in &objects {
@@ -1157,28 +1244,56 @@ impl CodeWriter for DomainStoreVec {
 
                         emit!(
                             buffer,
-                            "Field::{obj_type} => result.{obj_ident} = map.next_value()?,",
+                            r#"SerdeField::{obj_type} => {{
+                                let mut guard = futures::executor::block_on(result.{obj_ident}.write());
+                                let values: Vec<{obj_type}> = map.next_value()?;
+                                for value in values {{
+                                    guard.push(Some(Arc::new(RwLock::new(value))));
+                                }}
+                            }}"#
                         );
                     }
                     emit!(buffer, "}}");
                     emit!(buffer, "}}");
                     emit!(buffer, "Ok(result)");
                     emit!(buffer, "}}\n");
-                    emit!(buffer, "fn visit_seq<A>(self, mut seq: A) -> Result<ObjectStore, A::Error>");
-                    emit!(buffer, "where A: SeqAccess<'de>, {{");
-                    emit!(buffer, "let mut result = ObjectStore::new();");
-                    for (n, obj) in objects.iter().enumerate() {
-                        let obj_ident = obj.as_ident();
 
-                        if n == 0 {
-                            emit!(
-                                buffer,
-                                "result.{obj_ident} = Arc::new(RwLock::new(seq.next_element()?)).ok_or_else(|| de::Error::invalid_length({n}, &self))?;;",
-                            );
-                        }
-                    }
-                    emit!(buffer, "Ok(result)");
-                    emit!(buffer, "}}}}\n");
+                    // emit!(buffer, "fn visit_seq<A>(self, mut seq: A) -> Result<ObjectStore, A::Error>");
+                    // emit!(buffer, "where A: SeqAccess<'de>, {{");
+                    // emit!(buffer, "let result = ObjectStore::new();");
+                    // emit!(buffer, "let mut result = futures::executor::block_on(async {{ result.await }});");
+                    // // for obj in &objects {
+                    // //     let obj_ident = obj.as_ident();
+                    // //     let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+
+                    // //     emit!(
+                    // //         buffer,
+                    // //         r#"SerdeField::{obj_type} => futures::executor::block_on(async {{
+                    // //         let guard = result.{obj_ident}.write().await;
+                    // //         // This unwrap is unfortunate.
+                    // //         for value in map.next_value::<Vec<Option<{obj_type}>>>().unwrap() {{
+                    // //             let value = match value {{
+                    // //                 Some(value) => Some(Arc::new(RwLock::new(value))),
+                    // //                 None => None,
+                    // //             }};
+                    // //             guard.push(value);
+                    // //         }}
+                    // //     }}),"#,
+                    // //     );
+                    // // }
+                    // for (n, obj) in objects.iter().enumerate() {
+                    //     let obj_ident = obj.as_ident();
+
+                    //     if n == 0 {
+                    //         emit!(
+                    //             buffer,
+                    //             "result.{obj_ident} = Arc::new(RwLock::new(seq.next_element()?)).ok_or_else(|| de::Error::invalid_length({n}, &self))?;;",
+                    //         );
+                    //     }
+                    // }
+                    // emit!(buffer, "Ok(result)");
+                    // emit!(buffer, "}}");
+                    emit!(buffer, "}}\n");
 
                     for obj in &objects {
                         let _obj_ident = obj.as_ident();
@@ -1186,15 +1301,17 @@ impl CodeWriter for DomainStoreVec {
 
                         emit!(buffer, "struct {obj_type}Visitor;");
                         emit!(buffer, "impl<'de> Visitor<'de> for {obj_type}Visitor {{");
-                        emit!(buffer, "type Value = Arc<RwLock<HashMap<Uuid, (Arc<RwLock<{obj_type}>>, SystemTime)>>>;");
+                        emit!(buffer, "type Value = Arc<RwLock<HashMap<Uuid, Arc<RwLock<{obj_type}>>>>>;");
+                        // emit!(buffer, "type Value = Arc<RwLock<HashMap<Uuid, (Arc<RwLock<{obj_type}>>, SystemTime)>>>;");
                         emit!(buffer, "fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {{");
                         emit!(buffer, "formatter.write_str(\"{obj_type} map\")");
                         emit!(buffer, "}}");
                         emit!(buffer, "fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>");
                         emit!(buffer, "where M: MapAccess<'de>, {{");
                         emit!(buffer, "let mut map = HashMap::default();");
-                        emit!(buffer, "while let Some((key, value)) = access.next_entry::<Uuid, ({obj_type}, SystemTime)>()? {{");
-                        emit!(buffer, "map.insert(key, (Arc::new(RwLock::new(value.0)), value.1));");
+                        emit!(buffer, "while let Some((key, value)) = access.next_entry::<Uuid, {obj_type}>()? {{");
+                        // emit!(buffer, "while let Some((key, value)) = access.next_entry::<Uuid, ({obj_type}, SystemTime)>()? {{");
+                        emit!(buffer, "map.insert(key, Arc::new(RwLock::new(value)));");
                         emit!(buffer, "}}");
                         emit!(buffer, "Ok(Arc::new(RwLock::new(map)))");
                         emit!(buffer, "}}}}\n");
@@ -1212,7 +1329,20 @@ impl CodeWriter for DomainStoreVec {
 
                 // impl ObjectStore
                 emit!(buffer, "impl ObjectStore {{");
-                emit!(buffer, "pub fn new() -> Self {{");
+                if is_uber {
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        AsyncRwLock => {
+                            emit!(buffer, "pub async fn new() -> Self {{");
+                        }
+                        _ => {
+                            emit!(buffer, "pub fn new() -> Self {{");
+                        }
+                    }
+                } else {
+                    emit!(buffer, "pub fn new() -> Self {{");
+                }
                 if singleton_subs {
                     emit!(buffer, "let mut store = Self {{");
                 } else {
@@ -1224,11 +1354,11 @@ impl CodeWriter for DomainStoreVec {
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
                             StdRwLock | NDRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
+                            AsyncRwLock => emit!(buffer, "{obj_ident}_free_list: async_std::sync::Mutex::new(Vec::new()),"),
                             Single => emit!(buffer, "{obj_ident}_free_list: Vec::new(),"),
                             store => panic!("{store} is not currently supported"),
                         }
 
-                        use UberStoreOptions::*;
                         let ctor = match config.get_uber_store().unwrap() {
                             Disabled => unreachable!(),
                             Single => "Vec::new()",
@@ -1243,7 +1373,7 @@ impl CodeWriter for DomainStoreVec {
 
                         if object_has_name(obj, domain) {
                             match config.get_uber_store().unwrap() {
-                                StdRwLock | NDRwLock => {
+                                AsyncRwLock | StdRwLock | NDRwLock => {
                                     emit!(buffer, "{obj_ident}_id_by_name: Arc::new(RwLock::new(HashMap::default())),");
                                 }
                                 Single => {
@@ -1267,6 +1397,8 @@ impl CodeWriter for DomainStoreVec {
                 emit!(buffer, "// I remember having a bit of a struggle making it work. It's recursive, with");
                 emit!(buffer, "// a lot of special cases, and I think it calls other recursive functions...💥");
                 for obj in &supertypes {
+                    let obj_ident = obj.as_ident();
+
                     if is_uber {
                         use UberStoreOptions::*;
                         let (ctor, tail) = match config.get_uber_store().unwrap() {
@@ -1284,7 +1416,12 @@ impl CodeWriter for DomainStoreVec {
                                 ",id}))});"
                             ),
                             ParkingLotRwLock => ("Arc::new(RwLock::new(".to_owned(), "))});"),
-                            AsyncRwLock => ("Arc::new(RwLock::new(".to_owned(), "))).await;"),
+                            AsyncRwLock => (
+                                format!(
+                                    "Arc::new(RwLock::new({} {{ subtype: ",
+                                    obj.as_type(&Ownership::new_borrowed(), woog, domain)),
+                                ",id}))}).await;"
+                            ),
                             StdMutex | ParkingLotMutex => ("Arc::new(Mutex::new(".to_owned(), ")));"),
                         };
 
@@ -1303,7 +1440,7 @@ impl CodeWriter for DomainStoreVec {
                         if attr_len < 2 {
                             emit_singleton_subtype_instances(
                                 obj,
-                                &format!("store.inter_{}(|id| {{ {ctor}", obj.as_ident()),
+                                &format!("store.inter_{obj_ident}(|id| {{ {ctor}"),
                                 tail,
                                 config,
                                 domain,
@@ -1314,7 +1451,7 @@ impl CodeWriter for DomainStoreVec {
                     } else {
                         emit_singleton_subtype_instances(
                             obj,
-                            &format!("store.inter_{}(", obj.as_ident()),
+                            &format!("store.inter_{obj_ident}("),
                             ");",
                             config,
                             domain,
@@ -1368,6 +1505,7 @@ fn object_has_name(obj: &Object, _domain: &Domain) -> bool {
         || obj.name == "Function"
         || obj.name == "Field"
         || obj.name == "Object Store"
+        || obj.name == "Enumeration"
     // obj.r1_attribute(domain.sarzak())
     //     .iter()
     //     .find(|attr| {
@@ -1646,7 +1784,7 @@ fn generate_store_persistence(
                         let (read, _write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            StdRwLock | NDRwLock => {
+                            AsyncRwLock | StdRwLock | NDRwLock => {
                                 emit!(buffer, "for {obj_ident} in &*self.{obj_ident}{read} {{");
                             },
                             Single => {
@@ -1675,12 +1813,30 @@ fn generate_store_persistence(
 
                     emit!(buffer, "let file = fs::File::create(path)?;");
                     emit!(buffer, "let mut writer = io::BufWriter::new(file);");
-                    emit!(
-                        buffer,
-                        "serde_json::to_writer_pretty(&mut writer, &{obj_ident})?;"
-                    );
                     if is_uber {
-                        emit!(buffer, "}}");
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            AsyncRwLock => {
+                                emit!(
+                                    buffer,
+                                    "serde_json::to_writer_pretty(&mut writer, &({obj_ident}.read().await).clone())?;"
+                                );
+                                emit!(buffer, "}}");
+
+                            }
+                            _   => {
+                                emit!(
+                                    buffer,
+                                    "serde_json::to_writer_pretty(&mut writer, &{obj_ident})?;"
+                                );
+                                emit!(buffer, "}}");
+                            }
+                        }
+                    } else {
+                        emit!(
+                            buffer,
+                            "serde_json::to_writer_pretty(&mut writer, &{obj_ident})?;"
+                        );
                     }
 
                     emit!(buffer, "}}");
@@ -1750,7 +1906,8 @@ fn generate_store_persistence(
             emit!(buffer, "let path = path.as_ref();");
             emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
             emit!(buffer, "");
-            emit!(buffer, "let mut store = Self::new();");
+            emit!(buffer, "let store = Self::new();");
+            emit!(buffer, "let mut store = store.await;");
             emit!(buffer, "");
 
             for obj in objects {
@@ -1806,16 +1963,16 @@ fn generate_store_persistence(
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock | NDRwLock => {
+                                AsyncRwLock | StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
-                                        "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.to_upper_camel_case(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
+                                        "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.to_owned(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
                                     );
                                 }
                                 Single => {
                                     emit!(
                                         buffer,
-                                        "store.{obj_ident}_id_by_name.insert({obj_ident}.0{read}.name.to_upper_camel_case(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
+                                        "store.{obj_ident}_id_by_name.insert({obj_ident}.0{read}.name.to_owned(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
                                     );
                                 }
                                 store => panic!("{store} is not currently supported"),
@@ -1823,7 +1980,7 @@ fn generate_store_persistence(
                         } else {
                             emit!(
                                 buffer,
-                                "store.{obj_ident}_id_by_name.insert({obj_ident}.0.name.to_upper_camel_case(), ({obj_ident}.0.{id}, {obj_ident}.1));"
+                                "store.{obj_ident}_id_by_name.insert({obj_ident}.0.name.to_owned(), ({obj_ident}.0.{id}, {obj_ident}.1));"
                             );
                         }
                     }
@@ -1847,7 +2004,7 @@ fn generate_store_persistence(
                             AsyncRwLock => {
                                 emit!(
                                     buffer,
-                                    "let {obj_ident}: {} = serde_json::from_reader(reader).map(|a| Arc::new(RwLock::new(a)), b))?;",
+                                    "let {obj_ident}: {} = serde_json::from_reader(reader).map(|a| Arc::new(RwLock::new(a)))?;",
                                     store_type,
                                 );
                             }
@@ -1872,16 +2029,16 @@ fn generate_store_persistence(
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                StdRwLock | NDRwLock => {
+                                AsyncRwLock| StdRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
-                                        "store.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});"
+                                        "store.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_owned(), {obj_ident}{read}.{id});"
                                     );
                                 }
                                 Single => {
                                     emit!(
                                         buffer,
-                                        "store.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});"
+                                        "store.{obj_ident}_id_by_name.insert({obj_ident}{read}.name.to_owned(), {obj_ident}{read}.{id});"
                                     );
                                 }
                                 store => panic!("{store} is not currently supported"),
@@ -1889,7 +2046,7 @@ fn generate_store_persistence(
                         } else {
                             emit!(
                                 buffer,
-                                "store.{obj_ident}_id_by_name.insert({obj_ident}.name.to_upper_camel_case(), {obj_ident}.{id});"
+                                "store.{obj_ident}_id_by_name.insert({obj_ident}.name.to_owned(), {obj_ident}.{id});"
                             );
                         }
                     }
@@ -1897,7 +2054,7 @@ fn generate_store_persistence(
                         let (read, write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            StdRwLock | NDRwLock => {
+                            AsyncRwLock | StdRwLock | NDRwLock => {
                                 emit!(
                                     buffer,
                                     "store.{obj_ident}{write}.insert({obj_ident}{read}.{id}, Some({obj_ident}.clone()));"

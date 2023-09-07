@@ -286,6 +286,9 @@ fn forward(
 ) -> Result<()> {
     let obj_ident = r_obj.as_ident();
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -300,10 +303,9 @@ fn forward(
                 r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
                 binary.number,
             );
-            let is_uber = config.is_uber_store();
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -365,6 +367,9 @@ fn forward_conditional(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -373,8 +378,6 @@ fn forward_conditional(
             referrer.referential_attribute.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*c)",
@@ -383,7 +386,7 @@ fn forward_conditional(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -426,13 +429,23 @@ fn forward_conditional(
 
             if is_uber {
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                    emit!(
-                        buffer,
-                        "Some(ref {}) => vec![store.exhume_{}({}).await.unwrap()],",
-                        referrer.referential_attribute.as_ident(),
-                        r_obj.as_ident(),
-                        referrer.referential_attribute.as_ident()
-                    );
+                    if is_imported {
+                        emit!(
+                            buffer,
+                            "Some(ref {}) => vec![store.exhume_{}({}).unwrap()],",
+                            referrer.referential_attribute.as_ident(),
+                            r_obj.as_ident(),
+                            referrer.referential_attribute.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "Some(ref {}) => vec![store.exhume_{}({}).await.unwrap()],",
+                            referrer.referential_attribute.as_ident(),
+                            r_obj.as_ident(),
+                            referrer.referential_attribute.as_ident()
+                        );
+                    }
                 } else {
                     emit!(
                         buffer,
@@ -475,6 +488,18 @@ fn backward_one(
 ) -> Result<()> {
     let obj_ident = r_obj.as_ident();
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
+    let rhs = {
+        let cond = referrer.r11_conditionality(domain.sarzak())[0];
+        if let Conditionality::Conditional(_) = cond {
+            format!("Some(self.{id})")
+        } else {
+            format!("self.{id}")
+        }
+    };
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -482,16 +507,6 @@ fn backward_one(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-            let rhs = {
-                let cond = referrer.r11_conditionality(domain.sarzak())[0];
-                if let Conditionality::Conditional(_) = cond {
-                    format!("Some(self.{id})")
-                } else {
-                    format!("self.{id}")
-                }
-            };
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
@@ -500,7 +515,7 @@ fn backward_one(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 let (read, _write) = get_uber_read_write(config);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
@@ -514,21 +529,20 @@ fn backward_one(
                         "span!(\"r{}_{obj_ident}\");",
                         binary.number,
                     );
-
-                    emit!(buffer, "let mut result = Vec::new();");
                     emit!(
                         buffer,
-                        "for {obj_ident} in store.iter_{obj_ident}().await {{"
+                        "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async {{"
                     );
                     emit!(
                         buffer,
                         "if {obj_ident}.read().await.{} == {rhs} {{",
                         referrer.referential_attribute.as_ident()
                     );
-                    emit!(buffer, "result.push({obj_ident});");
+                    emit!(buffer, "Some({obj_ident})");
+                    emit!(buffer, "}} else {{");
+                    emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}");
-                    emit!(buffer, "result");
+                    emit!(buffer, "}}).collect().await");
                 } else {
                     emit!(
                         buffer,
@@ -588,6 +602,9 @@ fn backward_one_conditional(
 ) -> Result<()> {
     let obj_ident = r_obj.as_ident();
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -595,8 +612,6 @@ fn backward_one_conditional(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
@@ -605,7 +620,7 @@ fn backward_one_conditional(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -615,20 +630,18 @@ fn backward_one_conditional(
                     );
                     emit!(
                         buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
+                        "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async {{"
                     );
-                    emit!(buffer, "let mut result = Vec::new();");
-                    emit!(buffer, "for {obj_ident} in store.iter_{obj_ident}().await {{");
                     emit!(
                         buffer,
                         "if {obj_ident}.read().await.{} == self.{id} {{",
                         referrer.referential_attribute.as_ident()
                     );
-                    emit!(buffer, "result.push({obj_ident})");
+                    emit!(buffer, "Some({obj_ident})");
+                    emit!(buffer, "}} else {{");
+                    emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}");
-                    emit!(buffer, "result");
+                    emit!(buffer, "}}).collect().await");
                 } else {
                     emit!(
                         buffer,
@@ -706,6 +719,9 @@ fn backward_one_biconditional(
 ) -> Result<()> {
     let obj_ident = r_obj.as_ident();
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -713,8 +729,6 @@ fn backward_one_biconditional(
             obj.as_ident(),
         ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1c-1c)",
@@ -723,7 +737,7 @@ fn backward_one_biconditional(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 let (read, _write) = get_uber_read_write(config);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
@@ -737,20 +751,20 @@ fn backward_one_biconditional(
                         "span!(\"r{}_{obj_ident}\");",
                         binary.number,
                     );
-                    emit!(buffer, "let mut result = Vec::new();");
                     emit!(
                         buffer,
-                        "for {obj_ident} in store.iter_{obj_ident}().await {{"
+                        "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async move {{"
                     );
                     emit!(
                         buffer,
                         "if {obj_ident}.read().await.{} == Some(self.{id}) {{",
                         referrer.referential_attribute.as_ident(),
                     );
-                    emit!(buffer, "result.push({obj_ident}.clone());");
+                    emit!(buffer, "Some({obj_ident}.clone())");
+                    emit!(buffer, "}} else {{");
+                    emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}");
-                    emit!(buffer, "result");
+                    emit!(buffer, "}}).collect().await");
                 } else {
                     emit!(
                         buffer,
@@ -829,6 +843,9 @@ fn backward_1_m(
 ) -> Result<()> {
     let obj_ident = r_obj.as_ident();
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -836,8 +853,6 @@ fn backward_1_m(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
@@ -846,7 +861,7 @@ fn backward_1_m(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 let (read, _write) = get_uber_read_write(config);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
@@ -856,20 +871,20 @@ fn backward_1_m(
                         store.name
                     );
                     emit!(buffer, "span!(\"r{}_{obj_ident}\");", binary.number,);
-                    emit!(buffer, "let mut result = Vec::new();");
                     emit!(
                         buffer,
-                        "for {obj_ident} in store.iter_{obj_ident}().await {{"
+                        "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async {{"
                     );
                     emit!(
                         buffer,
                         "if {obj_ident}.read().await.{} == self.{id} {{",
                         referrer.referential_attribute.as_ident()
                     );
-                    emit!(buffer, "result.push({obj_ident})");
+                    emit!(buffer, "Some({obj_ident})");
+                    emit!(buffer, "}} else {{");
+                    emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}");
-                    emit!(buffer, "result");
+                    emit!(buffer, "}}).collect().await");
                 } else {
                     emit!(
                         buffer,
@@ -878,12 +893,7 @@ fn backward_1_m(
                         r_obj.as_ident(),
                         store.name
                     );
-                    emit!(
-                        buffer,
-                        "span!(\"r{}_{}\");",
-                        binary.number,
-                        r_obj.as_ident()
-                    );
+                    emit!(buffer, "span!(\"r{}_{obj_ident}\");", binary.number,);
                     emit!(buffer, "store.iter_{obj_ident}()");
                     emit!(buffer, ".filter(|{obj_ident}| {{");
                     emit!(
@@ -938,6 +948,9 @@ fn backward_1_mc(
     let obj_ident = r_obj.as_ident();
     let ref_ident = referrer.referential_attribute.as_ident();
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -945,8 +958,6 @@ fn backward_1_mc(
             obj.as_ident(),
             ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-Mc)",
@@ -955,15 +966,7 @@ fn backward_1_mc(
             );
 
             if is_uber {
-                if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                } else {
-                }
-
-            } else {
-            }
-
-            if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 let (read, _write) = get_uber_read_write(config);
 
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
@@ -975,25 +978,19 @@ fn backward_1_mc(
                     );
                     emit!(
                         buffer,
-                        "use futures::stream::{{self, StreamExt}};"
-                    );
-                    emit!(
-                        buffer,
                         "span!(\"r{}_{obj_ident}\");",
                         binary.number,
                     );
                     emit!(
                         buffer,
-                        "stream::iter(store.iter_{obj_ident}().await.collect::<Vec<Arc<RwLock<{}>>>>())",
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async move {{"
                     );
-                    emit!(
-                        buffer,
-                        ".filter(|{obj_ident}: Arc<RwLock<{}>>| async move {{",
-                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    );
-                    emit!(buffer, "{obj_ident}.read().await.{ref_ident} == Some(self.{id}).collect().await}})",
-                    );
+                    emit!(buffer, "if {obj_ident}.read().await.{ref_ident} == Some(self.{id}) {{");
+                    emit!(buffer, "Some({obj_ident}.clone())");
+                    emit!(buffer, "}} else {{");
+                    emit!(buffer, "None");
+                    emit!(buffer, "}}");
+                    emit!(buffer, "}}).collect().await");
                 } else {
                     emit!(
                         buffer,
@@ -1044,6 +1041,9 @@ fn forward_assoc(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -1052,8 +1052,6 @@ fn forward_assoc(
             referential_attribute.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-*)",
@@ -1062,7 +1060,7 @@ fn forward_assoc(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -1070,6 +1068,22 @@ fn forward_assoc(
                         r_obj.as_ident(),
                         store.name
                     );
+                    emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                    if is_imported {
+                        emit!(
+                            buffer,
+                            "vec![store.exhume_{}(&self.{}).unwrap()]",
+                            r_obj.as_ident(),
+                            referential_attribute.as_ident()
+                        );
+                    } else {
+                        emit!(
+                            buffer,
+                            "vec![store.exhume_{}(&self.{}).await.unwrap()]",
+                            r_obj.as_ident(),
+                            referential_attribute.as_ident()
+                        );
+                    }
                 } else {
                     emit!(
                         buffer,
@@ -1077,9 +1091,15 @@ fn forward_assoc(
                         r_obj.as_ident(),
                         store.name
                     );
+                    emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                    emit!(
+                        buffer,
+                        "vec![store.exhume_{}(&self.{}).unwrap()]",
+                        r_obj.as_ident(),
+                        referential_attribute.as_ident()
+                    );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
             } else {
                 emit!(
                     buffer,
@@ -1089,13 +1109,14 @@ fn forward_assoc(
                     store.name,
                     r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
+                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                emit!(
+                    buffer,
+                    "vec![store.exhume_{}(&self.{}).unwrap()]",
+                    r_obj.as_ident(),
+                    referential_attribute.as_ident()
+                );
             }
-            emit!(
-                buffer,
-                "vec![store.exhume_{}(&self.{}).unwrap()]",
-                r_obj.as_ident(),
-                referential_attribute.as_ident()
-            );
             emit!(buffer, "}}");
 
             Ok(())
@@ -1115,6 +1136,9 @@ fn backward_assoc_one(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -1123,8 +1147,6 @@ fn backward_assoc_one(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1)",
@@ -1133,7 +1155,7 @@ fn backward_assoc_one(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -1203,6 +1225,9 @@ fn backward_assoc_one_conditional(
 ) -> Result<()> {
     let obj_ident = r_obj.as_ident();
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -1211,8 +1236,6 @@ fn backward_assoc_one_conditional(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-1c)",
@@ -1221,7 +1244,7 @@ fn backward_assoc_one_conditional(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -1290,6 +1313,9 @@ fn backward_assoc_many(
     woog: &WoogStore,
     domain: &Domain,
 ) -> Result<()> {
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&r_obj.id);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
@@ -1298,8 +1324,6 @@ fn backward_assoc_many(
             r_obj.as_ident()
         ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-
             emit!(
                 buffer,
                 "/// Navigate to [`{}`] across R{}(1-M)",
@@ -1308,7 +1332,7 @@ fn backward_assoc_many(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, r_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -1340,6 +1364,9 @@ fn backward_assoc_many(
             emit!(buffer, "store.iter_{}()", r_obj.as_ident());
 
             let lhs = if is_uber {
+                if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                    emit!(buffer, ".await");
+                }
                 let (read, _write) = get_uber_read_write(config);
                 format!(
                     "{}{read}.{}",
@@ -1350,12 +1377,31 @@ fn backward_assoc_many(
                 format!("{}.{}", r_obj.as_ident(), referential_attribute.as_ident())
             };
 
-            emit!(
-                buffer,
-                ".filter(|{}| {lhs} == self.{id})",
-                r_obj.as_ident()
-            );
-            emit!(buffer, ".collect()");
+            if is_uber {
+                if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                    emit!(
+                        buffer,
+                        ".filter_map(|{}| async {{ if {lhs} == self.{id} {{ Some({}) }} else {{ None }}}})",
+                        r_obj.as_ident(),
+                        r_obj.as_ident(),
+                    );
+                    emit!(buffer, ".collect().await");
+                } else {
+                    emit!(
+                        buffer,
+                        ".filter(|{}| {lhs} == self.{id})",
+                        r_obj.as_ident()
+                    );
+                    emit!(buffer, ".collect()");
+                }
+            } else {
+                emit!(
+                    buffer,
+                    ".filter(|{}| {lhs} == self.{id})",
+                    r_obj.as_ident()
+                );
+                emit!(buffer, ".collect()");
+            }
             emit!(buffer, "}}");
 
             Ok(())
@@ -1379,14 +1425,16 @@ fn subtype_to_supertype(
     let s_obj_type = s_obj.as_type(&Ownership::new_borrowed(), woog, domain);
     let store_name = &store.name;
 
+    let is_uber = config.is_uber_store();
+    let is_imported = config.is_imported(&s_obj.id);
+    let is_hybrid = local_object_is_hybrid(s_obj, config, domain);
+
     buffer.block(
         DirectiveKind::IgnoreOrig,
         format!(
             "{obj_ident}-impl-nav-subtype-to-supertype-{s_obj_ident}"
         ),
         |buffer| {
-            let is_uber = config.is_uber_store();
-            let is_hybrid = local_object_is_hybrid(s_obj, config, domain);
 
             emit!(
                 buffer,
@@ -1394,7 +1442,7 @@ fn subtype_to_supertype(
             );
 
             if is_uber {
-                let store_type = get_value_wrapper(is_uber, config, s_obj, woog, domain);
+                let store_type = get_value_wrapper(is_imported, config, s_obj, woog, domain);
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
@@ -1426,19 +1474,19 @@ fn subtype_to_supertype(
                 if is_uber {
                     let (read, _write) = get_uber_read_write(config);
                     if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                        emit!(buffer, "let mut result = Vec::new();");
                         emit!(
                             buffer,
-                            "for {s_obj_ident} in store.iter_{s_obj_ident}().await {{"
+                            "store.iter_{s_obj_ident}().await.filter_map(|{s_obj_ident}| async move {{"
                         );
                         emit!(
                             buffer,
                             "if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}{read}.subtype {{",
                           );
-                        emit!(buffer, "result.push({s_obj_ident}.clone());");
+                        emit!(buffer, "Some({s_obj_ident}.clone())");
+                        emit!(buffer, "}} else {{");
+                        emit!(buffer, "None");
                         emit!(buffer, "}}");
-                        emit!(buffer, "}}");
-                        emit!(buffer, "result");
+                        emit!(buffer, "}}).collect().await");
                     } else {
                         emit!(buffer, "vec![store.iter_{s_obj_ident}().find(|{s_obj_ident}| {{");
                         emit!(buffer, "if let {s_obj_type}Enum::{obj_type}(id) = {s_obj_ident}{read}.subtype {{");
@@ -1504,13 +1552,18 @@ fn get_uber_read_write(config: &GraceConfig) -> (&str, &str) {
 }
 
 fn get_value_wrapper(
-    is_uber: bool,
+    is_imported: bool,
     config: &GraceConfig,
     obj: &Object,
     woog: &WoogStore,
     domain: &Domain,
 ) -> String {
-    if is_uber {
+    if is_imported {
+        format!(
+            "std::rc::Rc<std::cell::RefCell<{}>>",
+            obj.as_type(&Ownership::new_borrowed(), woog, domain)
+        )
+    } else {
         use UberStoreOptions::*;
         match config.get_uber_store().unwrap() {
             Disabled => unreachable!(),
@@ -1527,7 +1580,5 @@ fn get_value_wrapper(
                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
             ),
         }
-    } else {
-        obj.as_type(&Ownership::new_borrowed(), woog, domain)
     }
 }

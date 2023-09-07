@@ -119,6 +119,7 @@ impl CodeWriter for Imports {
                         AsyncRwLock => {
                             emit!(buffer, "use async_std::sync::Arc;");
                             emit!(buffer, "use async_std::sync::RwLock;");
+                            emit!(buffer, "use futures::stream::{{self, StreamExt}};");
                         }
                         NDRwLock => {
                             emit!(buffer, "use std::sync::Arc;");
@@ -167,7 +168,7 @@ impl CodeWriter for Imports {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
                         imported_obj.insert(imported_object.domain.as_str());
                         uses.insert(format!(
-                            "use crate::{}::types::{}::{};",
+                            "use {}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -188,7 +189,7 @@ impl CodeWriter for Imports {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
                         imported_obj.insert(imported_object.domain.as_str());
                         uses.insert(format!(
-                            "use crate::{}::types::{}::{};",
+                            "use {}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -566,34 +567,6 @@ impl CodeWriter for StructNewImpl {
 
         let obj_id = obj_id.unwrap();
         let obj = domain.sarzak().exhume_object(obj_id).unwrap();
-
-        // 🚧 Put this back in once I'm done moving to v2.
-        // if options.get_doc_test() {
-        //     buffer.block(
-        //         DirectiveKind::IgnoreGenerated,
-        //         format!("{}-struct-test-new", obj.as_ident()),
-        //         |buffer| {
-        //             let mut uses = HashSet::new();
-        //             let stmts =
-        //                 method.as_statement(package, module, woog, domain, &mut uses);
-        //             emit!(buffer, "/// # Example");
-        //             emit!(buffer, "///");
-        //             emit!(buffer, "///```ignore");
-        //             // for s in use_stmts.split_terminator('\n') {
-        //             for s in uses.iter() {
-        //                 emit!(buffer, "/// {}", s);
-        //             }
-        //             emit!(buffer, "///");
-        //             // for s in stmts.split_terminator('\n') {
-        //             for s in stmts.iter() {
-        //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
-        //             }
-        //             emit!(buffer, "///```");
-
-        //             Ok(())
-        //         },
-        //     )?;
-        // }
 
         render_methods(buffer, obj, config, imports, woog, domain)
     }

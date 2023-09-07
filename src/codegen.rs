@@ -39,6 +39,7 @@ use crate::{
     options::{GraceConfig, UberStoreOptions},
     target::dwarf::LU_DOG,
     todo::{GType, LValue, ObjectMethod, RValue},
+    types::domain::hybrid::SUBTYPE_ATTR,
     Lock,
 };
 
@@ -746,20 +747,59 @@ pub(crate) fn render_new_instance(
                                     "id"
                                 };
 
-                                if is_uber && !imported {
+                                if is_uber {
                                     let (read, _write) = get_uber_read_write(config);
-                                    emit!(
-                                        buffer,
-                                        "{}: {}Enum::{}({}{read}.{id}),",
-                                        field.name,
-                                        foo_super_obj.unwrap().as_type(
-                                            &Ownership::new_borrowed(),
-                                            woog,
-                                            domain
-                                        ),
-                                        r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        rval.name
-                                    )
+
+                                    if rval.name != SUBTYPE_ATTR {
+                                        if imported {
+                                            emit!(
+                                                buffer,
+                                                "{}: {}Enum::{}({}.{id}),",
+                                                field.name,
+                                                foo_super_obj.unwrap().as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                r_obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                rval.name
+                                            )
+                                        } else {
+                                            emit!(
+                                                buffer,
+                                                "{}: {}Enum::{}({}{read}.{id}),",
+                                                field.name,
+                                                foo_super_obj.unwrap().as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                r_obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                rval.name
+                                            )
+                                        }
+                                    } else {
+                                        emit!(
+                                            buffer,
+                                            "{}: {}Enum::{}({}),",
+                                            field.name,
+                                            foo_super_obj.unwrap().as_type(
+                                                &Ownership::new_borrowed(),
+                                                woog,
+                                                domain
+                                            ),
+                                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                            field.name
+                                        )
+                                    }
                                 } else {
                                     emit!(
                                         buffer,
@@ -776,16 +816,58 @@ pub(crate) fn render_new_instance(
                                 }
                             }
                             _ => {
-                                if is_uber && !imported {
+                                if is_uber {
                                     let (read, _write) = get_uber_read_write(config);
-                                    emit!(
-                                        buffer,
-                                        "{}: {}Enum::{}({}{read}.id),",
-                                        field.name,
-                                        super_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                        rval.name
-                                    )
+                                    if rval.name != SUBTYPE_ATTR {
+                                        if imported {
+                                            emit!(
+                                                buffer,
+                                                "{}: {}Enum::{}({}.id),",
+                                                field.name,
+                                                super_obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                rval.name
+                                            )
+                                        } else {
+                                            emit!(
+                                                buffer,
+                                                "{}: {}Enum::{}({}{read}.id),",
+                                                field.name,
+                                                super_obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                rval.name
+                                            )
+                                        }
+                                    } else {
+                                        emit!(
+                                            buffer,
+                                            "{}: {}Enum::{}({}),",
+                                            field.name,
+                                            super_obj.as_type(
+                                                &Ownership::new_borrowed(),
+                                                woog,
+                                                domain
+                                            ),
+                                            obj.as_type(&Ownership::new_borrowed(), woog, domain),
+                                            field.name
+                                        )
+                                    }
                                 } else {
                                     emit!(
                                         buffer,
@@ -811,7 +893,6 @@ pub(crate) fn render_new_instance(
                 GType::Uuid => emit!(buffer, "{}: {},", field.name, rval.name),
                 GType::Reference(obj_id) => {
                     let obj = domain.sarzak().exhume_object(obj_id).unwrap();
-
                     let id = if local_object_is_enum(obj, config, domain) {
                         "id()"
                     } else {
@@ -820,7 +901,11 @@ pub(crate) fn render_new_instance(
 
                     if is_uber && !imported {
                         let (read, _write) = get_uber_read_write(config);
-                        emit!(buffer, "{}: {}{read}.{id},", field.name, rval.name)
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            emit!(buffer, "{},", field.name)
+                        } else {
+                            emit!(buffer, "{}: {}{read}.{id},", field.name, rval.name)
+                        }
                     } else {
                         emit!(buffer, "{}: {}.{id},", field.name, rval.name)
                     }
@@ -853,12 +938,13 @@ pub(crate) fn render_new_instance(
                             let (read, _write) = get_uber_read_write(config);
                             if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap()
                             {
-                                emit!(
-                                    buffer,
-                                    "{}: futures::future::OptionFuture::from({}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await,",
-                                    field.name,
-                                    rval.name,
-                                )
+                                emit!(buffer, "{},", field.name)
+                                // emit!(
+                                //     buffer,
+                                //     "{}: futures::future::OptionFuture::from({}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await,",
+                                //     field.name,
+                                //     rval.name,
+                                // )
                             } else {
                                 emit!(
                                     buffer,
@@ -1022,13 +1108,14 @@ pub(crate) fn render_new_instance_new(
 
     for (field, rval) in tuples {
         let f = field.r27_field(woog)[0];
+        let f_ident = f.as_ident();
         let ty = f.r29_grace_type(woog)[0];
         let rval_string = typecheck_and_coerce(ty, rval, config, imports, woog, domain)?;
 
-        if f.as_ident() == rval_string {
+        if f_ident == rval_string {
             emit!(buffer, "{rval_string},");
         } else {
-            emit!(buffer, "{}: {rval_string},", f.as_ident());
+            emit!(buffer, "{f_ident}: {rval_string},");
         }
     }
 
@@ -1093,14 +1180,28 @@ fn typecheck_and_coerce(
                                 if let UberStoreOptions::AsyncRwLock =
                                     config.get_uber_store().unwrap()
                                 {
-                                    format!(
-                                    "futures::future::OptionFuture::from({rhs_ident}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await"
-                                )
+                                    format!("{obj_ident}")
+                                    // format!(
+                                    // "futures::future::OptionFuture::from({rhs_ident}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await"
+                                    // )
                                 } else {
                                     format!("{rhs_ident}.map(|{obj_ident}| {obj_ident}{read}.{id})")
                                 }
                             } else {
-                                format!("{rhs_ident}.as_ref().map(|{obj_ident}| {obj_ident}.{id})")
+                                // 🚧 I know that this is terrible. I'm hacking
+                                if is_uber {
+                                    if let UberStoreOptions::AsyncRwLock =
+                                        config.get_uber_store().unwrap()
+                                    {
+                                        format!("{obj_ident}")
+                                    } else {
+                                        format!("{rhs_ident}.as_ref().map(|{obj_ident}| {obj_ident}.{id})")
+                                    }
+                                } else {
+                                    format!(
+                                        "{rhs_ident}.as_ref().map(|{obj_ident}| {obj_ident}.{id})"
+                                    )
+                                }
                             }
                         }
                         _ => {
@@ -1113,7 +1214,7 @@ fn typecheck_and_coerce(
                                     )
                                 }
                             );
-                            rhs.as_ident()
+                            rhs_ident
                         }
                     }
                 }
@@ -1127,7 +1228,7 @@ fn typecheck_and_coerce(
                             )
                         }
                     );
-                    rhs.as_ident()
+                    rhs_ident
                 }
             }
         }
@@ -1150,10 +1251,18 @@ fn typecheck_and_coerce(
                     };
 
                     if is_uber && !is_imported {
-                        let (read, _write) = get_uber_read_write(config);
-                        format!("{}{read}.{id}", rhs.as_ident())
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            format!("{rhs_ident}")
+                        } else {
+                            let (read, _write) = get_uber_read_write(config);
+                            format!("{rhs_ident}{read}.{id}")
+                        }
                     } else {
-                        format!("{}.{id}", rhs.as_ident())
+                        if is_uber {
+                            format!("{rhs_ident}")
+                        } else {
+                            format!("{rhs_ident}.{id}")
+                        }
                     }
                 }
                 _ => {
@@ -1166,7 +1275,7 @@ fn typecheck_and_coerce(
                             )
                         }
                     );
-                    rhs.as_ident()
+                    rhs_ident
                 }
             }
         }
@@ -1193,10 +1302,16 @@ fn typecheck_and_coerce(
                             };
 
                             if is_uber && !is_imported {
-                                let (read, _write) = get_uber_read_write(config);
-                                format!("{}{read}.{id}", rhs.as_ident())
+                                if let UberStoreOptions::AsyncRwLock =
+                                    config.get_uber_store().unwrap()
+                                {
+                                    format!("{rhs_ident}")
+                                } else {
+                                    let (read, _write) = get_uber_read_write(config);
+                                    format!("{rhs_ident}{read}.{id}")
+                                }
                             } else {
-                                format!("{}.{id}", rhs.as_ident())
+                                format!("{rhs_ident}.{id}")
                             }
                         }
                         _ => {
@@ -1209,7 +1324,7 @@ fn typecheck_and_coerce(
                                     )
                                 }
                             );
-                            rhs.as_ident()
+                            rhs_ident
                         }
                     }
                 }
@@ -1225,9 +1340,9 @@ fn typecheck_and_coerce(
                     );
                     match config.get_optimization_level() {
                         crate::options::OptimizationLevel::Vec => {
-                            format!("{}.to_owned()", rhs.as_ident())
+                            format!("{rhs_ident}.to_owned()")
                         }
-                        _ => rhs.as_ident(),
+                        _ => rhs_ident,
                     }
                 }
                 _ => {
@@ -1240,7 +1355,7 @@ fn typecheck_and_coerce(
                             )
                         }
                     );
-                    rhs.as_ident()
+                    rhs_ident
                 }
             }
         }
@@ -1257,9 +1372,9 @@ fn typecheck_and_coerce(
 
             if is_uber {
                 let (read, _write) = get_uber_read_write(config);
-                format!("{}{read}.to_owned()", rhs.as_ident())
+                format!("{rhs_ident}{read}.to_owned()")
             } else {
-                rhs.as_ident()
+                rhs_ident
             }
         }
     })
@@ -1436,7 +1551,93 @@ pub(crate) fn render_methods(
                     }
                     emit!(buffer, "new");
                 } else {
-                    emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                    if config.is_uber_store() {
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            for var in &table.r20_variable(woog) {
+                                match var.subtype {
+                                    VariableEnum::Local(_) => {}
+                                    VariableEnum::Parameter(_) => {
+                                        let ty = var.r7_x_value(woog)[0].r3_grace_type(woog)[0];
+                                        match ty {
+                                            GraceType::WoogOption(ref id) => {
+                                                let opt = woog.exhume_woog_option(id).unwrap();
+                                                let opt_ty = opt.r20_grace_type(woog)[0];
+                                                match &opt_ty {
+                                                    GraceType::Reference(ref id) => {
+                                                        let reference =
+                                                            woog.exhume_reference(id).unwrap();
+                                                        let object = reference
+                                                            .r13_object(domain.sarzak())[0];
+                                                        let obj_ident = object.as_ident();
+
+                                                        let id = if object_is_enum(
+                                                            obj, config, imports, domain,
+                                                        )? {
+                                                            "id()"
+                                                        } else {
+                                                            "id"
+                                                        };
+
+                                                        let name = &var.name;
+                                                        // 🚧 I'm cheating here, just FYI. I want the
+                                                        // storage location called {name}, but I can't
+                                                        // figure out where it's rendered, so I did this.
+                                                        emit!(
+                                                            buffer,
+                                                            "let {obj_ident} = match {name} {{"
+                                                        );
+                                                        if config.is_imported(&object.id) {
+                                                            emit!(buffer, "Some({obj_ident}) => Some({obj_ident}.{id}),");
+                                                        } else {
+                                                            emit!(buffer, "Some({obj_ident}) => Some({obj_ident}.read().await.{id}),");
+                                                        }
+                                                        emit!(buffer, "None => None");
+                                                        emit!(buffer, "}};");
+                                                    }
+                                                    _ => {}
+                                                }
+                                            }
+                                            GraceType::Reference(ref id) => {
+                                                let reference =
+                                                    woog.exhume_reference(id).unwrap();
+                                                let object = reference
+                                                    .r13_object(domain.sarzak())[0];
+                                                let id = if object_is_enum(
+                                                    obj, config, imports, domain,
+                                                )? {
+                                                    "id()"
+                                                } else {
+                                                    "id"
+                                                };
+
+                                                let name = &var.name;
+                                                if name != "store" {
+                                                    if config.is_imported(&object.id) {
+                                                        emit!(
+                                                            buffer,
+                                                            "let {name} = {name}.{id};"
+                                                        );
+                                                    } else {
+                                                        emit!(
+                                                        buffer,
+                                                        "let {name} = {name}.read().await.{id};"
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                            }
+
+                            emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                        } else {
+                            emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                        }
+                    } else {
+                        emit!(buffer, "store.inter_{obj_ident}(|id| {{");
+                    }
                     render_new_instance_new(
                         buffer,
                         obj,
@@ -1455,6 +1656,11 @@ pub(crate) fn render_methods(
                         domain,
                     )?;
                     emit!(buffer, "}})");
+                    if config.is_uber_store() {
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            emit!(buffer, ".await");
+                        }
+                    }
                 }
                 emit!(buffer, "}}");
 

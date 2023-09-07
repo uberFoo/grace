@@ -96,7 +96,9 @@ impl<'a> DomainTarget<'a> {
         let mut external = HashSet::default();
 
         // This is the object store for _this_ domain.
-        external.insert(module.replace('/', "::"));
+        let mut import = module.replace('/', "::");
+        import = ["crate::", import.as_str()].concat();
+        external.insert(import);
 
         if let Some(domains) = options.imported_domains.as_ref() {
             for domain in domains {
@@ -121,14 +123,14 @@ impl<'a> DomainTarget<'a> {
                 // and hardcode what I need. It's really not that gross, since
                 // all the as_type stuff is overly complicated, in order to be
                 // used to generate code in places that maybe I don't know
-                // what it should be. Like here.
+                // what it should be.
                 "new".to_owned(),
                 format!(
                     "{}Store",
                     // name.as_type(&Ownership::new_borrowed(), &woog, &domain)
                     name.to_upper_camel_case()
                 ),
-                format!("crate::{}::store::ObjectStore", store,),
+                format!("{store}::store::ObjectStore",),
                 domain.sarzak_mut(),
             );
 

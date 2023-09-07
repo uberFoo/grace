@@ -39,12 +39,13 @@ macro_rules! s_write {
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const BUILD_TIME: &str = include!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
 
-pub(crate) const RS_EXT: &str = "rs";
-pub(crate) const TYPES: &str = "types";
-pub(crate) const TARGET_DIR: &str = "target";
-pub(crate) const BUILD_DIR: &str = "sarzak";
-pub(crate) const SVM: &str = "svm";
 pub(crate) const BIN: &str = "bin";
+pub(crate) const BUILD_DIR: &str = "sarzak";
+pub(crate) const LIB_NAME: &str = "lib";
+pub(crate) const RS_EXT: &str = "rs";
+pub(crate) const SVM: &str = "svm";
+pub(crate) const TARGET_DIR: &str = "target";
+pub(crate) const TYPES: &str = "types";
 
 #[derive(Default)]
 pub struct ModelCompiler {}

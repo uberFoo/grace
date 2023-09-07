@@ -1,7 +1,7 @@
 //! Domain Enum with extras Generation
 //!
 //! Here we are.
-use std::fmt::Write;
+use std::{fmt::Write, iter::zip};
 
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
@@ -24,8 +24,8 @@ use crate::{
         get_assoc_referrer_obj_from_obj_via_assoc_referent, get_binary_referents_sorted,
         get_binary_referrers_sorted, get_objs_for_assoc_referrers_sorted,
         get_objs_for_binary_referents_sorted, get_objs_for_binary_referrers_sorted,
-        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, object_is_hybrid,
-        object_is_singleton, object_is_supertype,
+        get_subtypes_sorted, get_subtypes_sorted_from_super_obj, local_object_is_enum,
+        object_is_enum, object_is_hybrid, object_is_singleton, object_is_supertype,
         render::{
             render_associative_attributes, render_attributes, render_binary_referential_attributes,
             RenderConst, RenderIdent, RenderType,
@@ -38,7 +38,7 @@ use crate::{
     OptimizationLevel,
 };
 
-const SUBTYPE_ATTR: &str = "subtype";
+pub(crate) const SUBTYPE_ATTR: &str = "subtype";
 
 /// Domain Hybrid Generator / CodeWriter
 ///
@@ -122,7 +122,7 @@ impl CodeWriter for Hybrid {
                         AsyncRwLock => {
                             emit!(buffer, "use async_std::sync::Arc;");
                             emit!(buffer, "use async_std::sync::RwLock;");
-                            // emit!(buffer, "use futures::{{future::OptionFuture}};");
+                            emit!(buffer, "use futures::stream::{{self, StreamExt}};");
                         }
                         NDRwLock => {
                             emit!(buffer, "use std::sync::Arc;");
@@ -173,14 +173,14 @@ impl CodeWriter for Hybrid {
                         let imported_object = config.get_imported(&s_obj.id).unwrap();
                         if is_singleton && !is_supertype {
                             uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
+                                "use {}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
                                 s_obj.as_const()
                             ));
                         } else {
                             uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
+                                "use {}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -209,7 +209,7 @@ impl CodeWriter for Hybrid {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
                         imported_domains.insert(imported_object.domain.as_str());
                         uses.insert(format!(
-                            "use crate::{}::types::{}::{};",
+                            "use {}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -583,6 +583,8 @@ impl CodeWriter for HybridNewImpl {
 
             let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
             let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
+            let is_enum = object_is_enum(s_obj, config, imports, domain)?;
+            let is_imported = config.is_imported(&s_obj.id);
 
             // We don't want a parameter for a const, and we'll need to change the rval...
             if is_singleton && !is_supertype {
@@ -590,10 +592,6 @@ impl CodeWriter for HybridNewImpl {
                 rvals.pop();
                 rvals.push(RValue::new(&s_obj.as_const(), GType::Uuid));
             }
-
-            // Fuck me. I'm starting to regret not merging feature/recurse. Although, it probably
-            // would be more work than this. It's just that this is ugly.
-            let _params_no_store = params_.clone();
 
             // Add the store to the end of the  input parameters
             let store = find_store(module, woog, domain);
@@ -707,9 +705,75 @@ impl CodeWriter for HybridNewImpl {
                     //         emit!(buffer, "let id = {}.id;", SUBTYPE_ATTR);
                     //     }
                     // }
-
+                    let async_rwlock =
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            true
+                        } else {
+                            false
+                        };
                     if let crate::options::OptimizationLevel::Vec = config.get_optimization_level()
                     {
+                        if async_rwlock {
+                            let id = if is_enum { "id()" } else { "id" };
+                            // The compiler can sort this out.
+                            if async_rwlock && !(is_singleton && !is_supertype) {
+                                if is_imported {
+                                    emit!(buffer, "let s_id = subtype.{id};",);
+                                } else {
+                                    emit!(buffer, "let s_id = subtype.read().await.{id};",);
+                                }
+                            } else if !(is_singleton && !is_supertype) {
+                                emit!(buffer, "let s_id = subtype.{id};");
+                            }
+
+                            for (field, rval) in zip(&fields_, &rvals) {
+                                match &rval.ty {
+                                    GType::Option(option) => {
+                                        if let GType::Reference(obj_id) = **option {
+                                            let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
+                                            let obj_ident = obj.as_ident();
+                                            let id = if is_enum {
+                                                "id()"
+                                            } else {
+                                                "id"
+                                            };
+                                            emit!(
+                                                buffer,
+                                                "let {} = match {} {{ Some({obj_ident}) => Some({obj_ident}.read().await.{id}), None => None }};",
+                                                field.name,
+                                                rval.name,
+                                            )
+                                        }
+                                    }
+                                    GType::Reference(obj_id) => {
+                                        let obj = domain.sarzak().exhume_object(&obj_id).unwrap();
+                                        // let obj_ident = obj.as_ident();
+                                        let id = if is_enum {
+                                            "id()"
+                                        } else {
+                                            "id"
+                                        };
+                                        if is_imported {
+                                            emit!(
+                                                buffer,
+                                                "let {} = {}.{id};",
+                                                field.name,
+                                                rval.name,
+                                            )
+                                        } else {
+                                            emit!(
+                                                buffer,
+                                                "let {} = {}.read().await.{id};",
+                                                field.name,
+                                                rval.name,
+                                            )
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+
                         emit!(buffer, "store.inter_{obj_ident}(|id| {{");
                         render_new_instance(
                             buffer,
@@ -723,7 +787,11 @@ impl CodeWriter for HybridNewImpl {
                             woog,
                             domain,
                         )?;
-                        emit!(buffer, "}})");
+                        if async_rwlock {
+                            emit!(buffer, "}}).await");
+                        } else {
+                            emit!(buffer, "}})");
+                        }
                         emit!(buffer, "}}");
                     } else {
                         emit!(buffer, "let id = Uuid::new_v4();");
@@ -760,121 +828,6 @@ impl CodeWriter for HybridNewImpl {
                     Ok(())
                 },
             )?;
-
-            //     // Link the params. The result is the head of the list.
-            //     let param = if params_no_store.len() > 0 {
-            //         let mut iter = params_no_store.iter_mut().rev();
-            //         let mut last = iter.next().unwrap();
-            //         loop {
-            //             match iter.next() {
-            //                 Some(param) => {
-            //                     param.next = Some(last);
-            //                     last = param;
-            //                 }
-            //                 None => break,
-            //             }
-            //         }
-            //         log::trace!("param: {:?}", last);
-            //         Some(last.clone())
-            //     } else {
-            //         None
-            //     };
-
-            //     let method_name = format!("new_{}_", s_obj.as_ident());
-
-            //     // Create an ObjectMethod
-            //     // The uniqueness of this instance depends on the inputs to it's
-            //     // new method. Param can be None, and two methods on the same
-            //     // object will have the same obj. So it comes down to a unique
-            //     // name for each object. So just "new" should suffice for name,
-            //     // because it's scoped by obj already.
-            //     let method = ObjectMethod::new(
-            //         param.as_ref(),
-            //         obj.id,
-            //         GType::Object(obj.id),
-            //         PUBLIC,
-            //         method_name.clone(),
-            //         "Create a new instance".to_owned(),
-            //     );
-
-            //     buffer.block(
-            //         DirectiveKind::IgnoreOrig,
-            //         format!("{}-struct-impl-{}", obj.as_ident(), method_name),
-            //         |buffer| {
-            //             // Output a docstring
-            //             emit!(
-            //                 buffer,
-            //                 "/// Inter a new {} in the store, and return it's `id`.",
-            //                 obj.as_type(&Ownership::new_borrowed(), woog, domain)
-            //             );
-
-            //             // 🚧 Put this back in once I'm done moving to v2.
-            //             // if options.get_doc_test() {
-            //             //     buffer.block(
-            //             //         DirectiveKind::IgnoreGenerated,
-            //             //         format!("{}-struct-test-new", obj.as_ident()),
-            //             //         |buffer| {
-            //             //             let mut uses = HashSet::new();
-            //             //             let stmts =
-            //             //                 method.as_statement(package, module, woog, domain, &mut uses);
-            //             //             emit!(buffer, "/// # Example");
-            //             //             emit!(buffer, "///");
-            //             //             emit!(buffer, "///```ignore");
-            //             //             // for s in use_stmts.split_terminator('\n') {
-            //             //             for s in uses.iter() {
-            //             //                 emit!(buffer, "/// {}", s);
-            //             //             }
-            //             //             emit!(buffer, "///");
-            //             //             // for s in stmts.split_terminator('\n') {
-            //             //             for s in stmts.iter() {
-            //             //                 emit!(buffer, "/// {} = {}", s.lvalue.name, s.rvalue.name);
-            //             //             }
-            //             //             emit!(buffer, "///```");
-
-            //             //             Ok(())
-            //             //         },
-            //             //     )?;
-            //             // }
-
-            //             // Output the top of the function definition
-            //             render_method_definition(buffer, &method, config, woog, domain)?;
-
-            //             // Take the ID from the subtype
-            //             // We shouldn't be doing this sort of thing here -- getting the testing
-            //             // stuff working will allow this to be done in a uniform manner.
-            //             emit!(buffer, "// 🚧 I'm not using id below with subtype because that's rendered where it doesn't know");
-            //             emit!(buffer,"// about this local. This should be fixed in the near future.");
-            //             if object_is_enum(s_obj, config, imports, domain)? {
-            //                 emit!(buffer, "let id = subtype.id();");
-            //             } else if object_is_singleton(s_obj, config, imports, domain)? {
-            //                 if !object_is_supertype(s_obj, config, imports, domain)? {
-            //                     emit!(buffer, "let id = {};", rvals.last().unwrap().name);
-            //                 } else {
-            //                     emit!(buffer, "let id = subtype;");
-            //                 }
-            //             } else {
-            //                 emit!(buffer, "let id = subtype.id;");
-            //             }
-
-            //             // Output code to create the instance
-            //             let new = LValue::new("new", GType::Reference(obj.id), None);
-            //             render_new_instance(
-            //                 buffer,
-            //                 obj,
-            //                 Some(&new),
-            //                 &fields_,
-            //                 &rvals,
-            //                 config,
-            //                 woog,
-            //                 domain,
-            //             )?;
-
-            //             emit!(buffer, "new");
-            //             emit!(buffer, "}}");
-
-            //             Ok(())
-            //         },
-            //     )?;
         }
 
         Ok(())

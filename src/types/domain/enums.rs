@@ -167,7 +167,7 @@ impl CodeWriter for Enum {
                         let imported_object = config.get_imported(&r_obj.id).unwrap();
                         stores.insert(imported_object.domain.as_str());
                         uses.insert(format!(
-                            "use crate::{}::types::{}::{};",
+                            "use {}::types::{}::{};",
                             imported_object.domain,
                             r_obj.as_ident(),
                             r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -200,14 +200,24 @@ impl CodeWriter for Enum {
                     let supertype = isa.r13_supertype(domain.sarzak())[0];
                     let s_obj = supertype.r14_object(domain.sarzak())[0];
 
-                    import_store = true;
-
-                    uses.insert(format!(
-                        "use crate::{}::types::{}::{};",
-                        module,
-                        s_obj.as_ident(),
-                        s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
-                    ));
+                    if config.is_imported(&s_obj.id) {
+                        let imported_object = config.get_imported(&s_obj.id).unwrap();
+                        stores.insert(imported_object.domain.as_str());
+                        uses.insert(format!(
+                            "use {}::types::{}::{};",
+                            imported_object.domain,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    } else {
+                        import_store = true;
+                        uses.insert(format!(
+                            "use crate::{}::types::{}::{};",
+                            module,
+                            s_obj.as_ident(),
+                            s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
+                        ));
+                    }
 
                     if object_is_hybrid(s_obj, config, imports, domain)? {
                         uses.insert(format!(
@@ -230,7 +240,7 @@ impl CodeWriter for Enum {
                         let imported_object = config.get_imported(&s_obj.id).unwrap();
                         if is_singleton && !is_supertype {
                             uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
+                                "use {}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
                                 s_obj.as_const()
@@ -238,7 +248,7 @@ impl CodeWriter for Enum {
                         } else {
                             only_singletons = false;
                             uses.insert(format!(
-                                "use crate::{}::types::{}::{};",
+                                "use {}::types::{}::{};",
                                 imported_object.domain,
                                 s_obj.as_ident(),
                                 s_obj.as_type(&Ownership::new_borrowed(), woog, domain)
@@ -547,7 +557,6 @@ impl CodeWriter for EnumNewImpl {
 
                     let is_singleton = object_is_singleton(s_obj, config, imports, domain)?;
                     let is_supertype = object_is_supertype(s_obj, config, imports, domain)?;
-                    let _is_imported = config.is_imported(&s_obj.id);
 
                     emit!(
                         buffer,
@@ -816,7 +825,11 @@ impl CodeWriter for EnumNewImpl {
                                                         buffer,
                                                         "{ctor}(id){tail}"
                                                     );
-                                                    emit!(buffer, "}})");
+                                                    if let AsyncRwLock = config.get_uber_store().unwrap() {
+                                                        emit!(buffer, "}}).await");
+                                                    } else {
+                                                        emit!(buffer, "}})//Huh?");
+                                                    }
                                                 }
                                                 Unsafe => panic!("`Unsafe` optimization is not currently supported"),
                                             }
@@ -837,7 +850,7 @@ impl CodeWriter for EnumNewImpl {
                             emit!(buffer, "new");
                         };
 
-                        emit!(buffer, "}}");
+                        emit!(buffer, "}} // wtf?");
                         emit!(buffer, "");
                     }
                 }

@@ -22,7 +22,7 @@ use crate::{
     target::Target,
     types::dwarf::{ChaChaBuilder, ChaChaFile, DwarfBuilder, DwarfFile},
     woog::init_woog,
-    BUILD_DIR, RS_EXT, TARGET_DIR,
+    BUILD_DIR, LIB_NAME, RS_EXT, TARGET_DIR,
 };
 
 // pub(crate) const DWARF_EXT: &str = "道";
@@ -78,25 +78,35 @@ impl<'a> DwarfTarget<'a> {
 
 impl<'a> Target for DwarfTarget<'a> {
     fn compile(&mut self) -> Result<usize, ModelCompilerError> {
-        let mut path = PathBuf::from(self.src_path);
-        path.pop();
-        path.push(TARGET_DIR);
-        path.push(BUILD_DIR);
-        path.push(self.domain.name());
+        let path = PathBuf::from(self.src_path);
+        // path.pop();
+        // path.push(TARGET_DIR);
+        // path.push(BUILD_DIR);
+        // path.push(self.domain.name());
 
-        fs::create_dir_all(&path).context(FileSnafu {
-            description: "creating dwarf output directory".to_owned(),
-            path: &path,
-        })?;
+        // fs::create_dir_all(&path).context(FileSnafu {
+        //     description: "creating dwarf output directory".to_owned(),
+        //     path: &path,
+        // })?;
 
         let mut dwarf_file = path.clone();
+        dwarf_file.pop();
+        dwarf_file.push(DWARF_EXT);
+
+        fs::create_dir_all(&dwarf_file).context(FileSnafu {
+            description: "creating dwarf output directory".to_owned(),
+            path: &dwarf_file,
+        })?;
+
         dwarf_file.push("discard");
         dwarf_file.set_file_name(self.domain.name().as_ident());
         dwarf_file.set_extension(DWARF_EXT);
 
         let mut chacha_file = path.clone();
+        // chacha_file.push(self.domain.name().as_ident());
         chacha_file.push("discard");
         chacha_file.set_file_name(self.domain.name().as_ident());
+        // chacha_file.set_file_name(LIB_NAME);
         chacha_file.set_extension(RS_EXT);
 
         // Sort the objects -- I need to figure out how to do this automagically.

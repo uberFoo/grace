@@ -168,39 +168,53 @@ impl CodeWriter for ChaChaFile {
         emit!(buffer, "use uuid::{{uuid, Uuid}};");
         emit!(buffer, "");
 
-        emit!(buffer, "mod {domain_name};");
-        emit!(buffer, "use {domain_name}::{{ObjectStore,");
-        for object in &objects {
-            if config.is_imported(&object.id) {
-                continue;
-            }
-
-            if object_is_hybrid(object, config, imports, domain)? {
-                emit!(
-                    buffer,
-                    "{}Enum,",
-                    object.as_type(&Ownership::new_owned(), woog, domain)
-                );
-            }
-            if object_is_singleton(object, config, imports, domain)? {
-                emit!(buffer, "{},", object.as_const());
-            }
+        emit!(buffer, "pub mod store;");
+        emit!(buffer, "pub mod types;");
+        emit!(buffer, "pub use store::ObjectStore;");
+        emit!(buffer, "pub use types::*;");
+        if config.is_sarzak() {
             emit!(
                 buffer,
-                "{},",
-                object.as_type(&Ownership::new_owned(), woog, domain)
+                r#"pub const MODEL: &[u8] = include_bytes!("../models/sarzak.bin");"#
             );
         }
-        emit!(buffer, "}};");
+        // emit!(buffer, "use crate::{domain_name}::{{ObjectStore,");
+        // for object in &objects {
+        //     if config.is_imported(&object.id) {
+        //         continue;
+        //     }
+
+        //     if object_is_hybrid(object, config, imports, domain)? {
+        //         emit!(
+        //             buffer,
+        //             "{}Enum,",
+        //             object.as_type(&Ownership::new_owned(), woog, domain)
+        //         );
+        //     }
+        //     if object_is_singleton(object, config, imports, domain)? {
+        //         emit!(buffer, "{},", object.as_const());
+        //     }
+        //     emit!(
+        //         buffer,
+        //         "{},",
+        //         object.as_type(&Ownership::new_owned(), woog, domain)
+        //     );
+        // }
+        // emit!(buffer, "}};");
         emit!(buffer, "");
 
         emit!(
             buffer,
             r#"/// Exports the root module of this library.
 ///
-/// This code isn't run until the layout of the type it returns is checked.
-#[export_root_module]
-fn instantiate_root_module() -> PluginModRef {{
+/// This code isn't run until the layout of the type it returns is checked."#
+        );
+        if !config.is_meta_model() {
+            emit!(buffer, "#[export_root_module]");
+        }
+        emit!(
+            buffer,
+            r#"pub fn instantiate_root_module() -> PluginModRef {{
     PluginModule {{ name, id, new }}.leak_into_prefix()
 }}
 "#
@@ -229,24 +243,27 @@ pub fn id() -> RStr<'static> {{
             r#"/// Instantiates the plugin.
 #[sabi_extern_fn]
 pub fn new(args: RVec<FfiValue>) -> RResult<PluginType, Error> {{
-    let this = if args.len() == 0 {{
-        MerlinStore {{
-            store: Rc::new(RefCell::new(ObjectStore::new())),
-        }}
-    }} else if args.len() == 1 {{
-        if let FfiValue::String(path) = &args[0] {{
-            {domain_type}Store {{
-                // 🚧 fix this unwrap
-                store: Rc::new(RefCell::new(ObjectStore::load(Path::new(&path.as_str())).unwrap())),
+    match (|| {{
+        if args.len() == 0 {{
+            Ok({domain_type}Store {{
+                store: Rc::new(RefCell::new(ObjectStore::new())),
+            }})
+        }} else if args.len() == 1 {{
+            if let FfiValue::String(path) = &args[0] {{
+                let store = ObjectStore::load(Path::new(&path.as_str())).unwrap();
+                Ok({domain_type}Store {{
+                    store: Rc::new(RefCell::new(store)),
+                }})
+            }} else {{
+                Err(Error::Uber("Invalid arguments".into()))
             }}
         }} else {{
-            return RErr(Error::Uber("Invalid arguments".into()));
+            Err(Error::Uber("Invalid arguments".into()))
         }}
-    }} else {{
-        return RErr(Error::Uber("Invalid arguments".into()));
-    }};
-
-    ROk(Plugin_TO::from_value(this, TD_Opaque))
+    }})() {{
+        Ok(this) => ROk(Plugin_TO::from_value(this, TD_Opaque)),
+        Err(e) => RErr(e.into()),
+    }}
 }}
 "#
         );
@@ -275,6 +292,7 @@ struct {domain_type}Store {{
             r#"impl Plugin for {domain_type}Store {{
     fn invoke_func(
         &mut self,
+        module: RStr<'_>,
         ty: RStr<'_>,
         func: RStr<'_>,
         mut args: RVec<FfiValue>,
@@ -285,6 +303,18 @@ struct {domain_type}Store {{
             debug!("type: {{ty}}, func: {{func}}, args: {{args:?}}");
             match ty {{
                 "ObjectStore" => match func {{
+                    "persist" => {{
+                        if args.len() != 1 {{
+                            return Err(Error::Uber("Expected 1 argument".into()));
+                        }}
+
+                        if let FfiValue::String(path) = args.pop().unwrap() {{
+                            self.store.borrow().persist(Path::new(&path.as_str())).unwrap();
+                            Ok(FfiValue::Empty)
+                        }} else {{
+                            Err(Error::Uber("Invalid path".into()))
+                        }}
+                    }}
 "#
         );
 
@@ -294,13 +324,15 @@ struct {domain_type}Store {{
             let is_singleton = object_is_singleton(obj, config, imports, domain)?;
             let is_enum = object_is_enum(obj, config, imports, domain)?;
 
+            if is_imported || is_singleton {
+                continue;
+            }
+
             let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
             let obj_ident = obj.as_ident();
             let obj_const = obj.as_const();
 
-            if is_imported || is_singleton {
-                continue;
-            }
+            let id = if is_enum { "id()" } else { "id" };
 
             emit!(
                 buffer,
@@ -328,17 +360,19 @@ struct {domain_type}Store {{
                         }}
                         if let FfiValue::Uuid(id) = args.pop().unwrap() {{
                             let {obj_ident} = self.store.borrow().exhume_{obj_ident}(&id.into()).unwrap();
-                            let {obj_ident} = {obj_type}Proxy {{
+                            let {obj_ident}_proxy = {obj_type}Proxy {{
                                 // 🚧 This bothers me deeply. I know that I've given
                                 // this some thought already, and I really need to
                                 // document the outcome so that I can stop worrying
                                 // over it.
-                                inner: {obj_ident},
+                                inner: {obj_ident}.clone(),
                                 store: self.store.clone(),
                             }};
-                            let plugin = Plugin_TO::from_value({obj_ident}, TD_CanDowncast);
+                            let plugin = Plugin_TO::from_value({obj_ident}_proxy, TD_CanDowncast);
                             let proxy = FfiProxy {{
+                                module: module.into(),
                                 uuid: {obj_const}_ID.into(),
+                                id: {obj_ident}.borrow().{id}.into(), // a
                                 plugin: plugin.clone(),
                             }};
 
@@ -359,9 +393,6 @@ struct {domain_type}Store {{
 
         // This is for the constructor function(s) on the ObjectStore.
         for obj in &objects {
-            let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
-            let obj_ident = obj.as_ident();
-            let obj_const = obj.as_const();
             let is_hybrid = object_is_hybrid(obj, config, imports, domain)?;
             let is_imported = config.is_imported(&obj.id);
             let is_singleton = object_is_singleton(obj, config, imports, domain)?;
@@ -371,6 +402,16 @@ struct {domain_type}Store {{
             if is_imported || is_singleton {
                 continue;
             }
+
+            let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
+            let obj_ident = obj.as_ident();
+            let obj_const = obj.as_const();
+
+            let id = if is_enum || is_singleton {
+                "id()"
+            } else {
+                "id"
+            };
 
             let attrs: Vec<Attribute> = collect_attributes(obj, domain);
 
@@ -431,7 +472,9 @@ struct {domain_type}Store {{
                             }};
                             let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                             let proxy = FfiProxy {{
+                                module: module.into(),
                                 uuid: {obj_const}_ID.into(),
+                                id: {obj_ident}.borrow().{id}.into(), // b
                                 plugin: plugin.clone(),
                             }};
 
@@ -469,10 +512,8 @@ struct {domain_type}Store {{
 
         for obj in &objects {
             let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
-            let obj_ident = obj.as_ident();
             let obj_const = obj.as_const();
             let is_enum = object_is_enum(obj, config, imports, domain)?;
-            let is_hybrid = object_is_hybrid(obj, config, imports, domain)?;
             let is_singleton = object_is_singleton(obj, config, imports, domain)?;
             let is_imported = config.is_imported(&obj.id);
 
@@ -512,6 +553,7 @@ struct {domain_type}Store {{
                 r#"impl Plugin for {obj_type}Proxy {{
     fn invoke_func(
         &mut self,
+        module: RStr<'_>,
         ty: RStr<'_>,
         func: RStr<'_>,
         mut args: RVec<FfiValue>,
@@ -535,7 +577,7 @@ struct {domain_type}Store {{
             for attr in &attrs {
                 let attr_name = attr.name.as_ident();
 
-                let (ty, type_type) = value_type_to_string(&attr.ty, woog, domain);
+                let (ty, ty_ty) = value_type_to_string(&attr.ty, woog, config, domain);
 
                 emit!(buffer, r#""{attr_name}" => "#);
                 if attr_name == "id" {
@@ -553,30 +595,40 @@ struct {domain_type}Store {{
                             buffer,
                             "Ok(FfiValue::Float(self.inner.borrow().{attr_name}.into())),"
                         ),
+                        "Imported" => emit!(
+                            buffer,
+                            r#"Err(Error::Uber("Imported object not supported.".into())),"#
+                        ),
                         "Integer" => emit!(
                             buffer,
                             "Ok(FfiValue::Integer(self.inner.borrow().{attr_name}.into())),"
+                        ),
+                        "Option" => emit!(
+                            buffer,
+                            "Ok(FfiValue::Option(self.inner.borrow().{attr_name}.into())),"
                         ),
                         "String" => emit!(
                             buffer,
                             "Ok(FfiValue::String(self.inner.borrow().{attr_name}.clone().into())),"
                         ),
                         "UserType" => {
-                            let type_const = type_type.as_const();
-                            let type_ident = type_type.as_ident();
+                            let type_const = ty_ty.as_const();
+                            let type_ident = ty_ty.as_ident();
 
                             emit!(
                                 buffer,
                                 r#"{{let {attr_name} =
                                         self.store.borrow().exhume_{type_ident}(&self.inner.borrow().{attr_name}).unwrap();
 
-                                    let this = {type_type}Proxy {{
+                                    let this = {ty_ty}Proxy {{
                                         inner: {attr_name},
                                         store: self.store.clone(),
                                     }};
                                     let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                     let proxy = FfiProxy {{
+                                        module: module.into(),
                                         uuid: {type_const}_ID.into(),
+                                        id: self.inner.borrow().{id}.into(), // c
                                         plugin: plugin.clone(),
                                     }};
                                     Ok(FfiValue::ProxyType(proxy))
@@ -591,7 +643,7 @@ struct {domain_type}Store {{
                         }
                         foo => {
                             dbg!(foo);
-                            unreachable!()
+                            // unreachable!()
                         }
                     }
                 }
@@ -737,7 +789,15 @@ fn render_ctor(
 
     emit!(buffer, "\"{}\" => {{", method_name);
 
-    let len = attrs.len() - 1;
+    let len = if let Some(parent) = parent_obj {
+        if object_is_enum(parent, config, imports, domain)? {
+            1
+        } else {
+            attrs.len() - 1
+        }
+    } else {
+        attrs.len() - 1
+    };
 
     emit!(
         buffer,
@@ -757,6 +817,8 @@ fn render_ctor(
         );
     }
 
+    // dbg!(&obj_ident, is_enum, is_singleton, is_hybrid);
+
     if is_enum || is_singleton && !is_hybrid {
         if let Some(parent) = parent_obj {
             let parent_type = parent.as_type(&Ownership::new_owned(), woog, domain);
@@ -770,10 +832,12 @@ fn render_ctor(
                             Ok({obj_ident})
                         }})() {{
                             Ok({obj_ident}) => {{
-                                let this = {parent_type}Proxy {{ inner: {obj_ident}, store: self.store.clone() }};
+                                let this = {parent_type}Proxy {{ inner: {obj_ident}.clone(), store: self.store.clone() }};
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
+                                    module: module.into(),
                                     uuid: {obj_const}.into(),
+                                    id: {obj_ident}.borrow().id().into(),
                                     plugin: plugin.clone(),
                                 }};
                                 Ok(FfiValue::ProxyType(proxy))
@@ -785,12 +849,26 @@ fn render_ctor(
         }
     } else {
         if let Some(parent) = parent_obj {
+            let is_singleton = object_is_singleton(parent, config, imports, domain)?;
+            let is_enum = object_is_enum(parent, config, imports, domain)?;
+
+            // dbg!(&parent, is_singleton, is_enum);
+
             let parent_type = parent.as_type(&Ownership::new_owned(), woog, domain);
-            let prelude = format!(
-                "let id = Uuid::new_v4();
+            // let prelude = format!(
+            //     "let id = Uuid::new_v4();
+            //  let {obj_ident} = {parent_type} {{
+            //     id,"
+            // );
+            let prelude = if is_enum {
+                format!("let {obj_ident} = {parent_type}")
+            } else {
+                format!(
+                    "let id = Uuid::new_v4();
              let {obj_ident} = {parent_type} {{
                 id,"
-            );
+                )
+            };
 
             emit!(
                 buffer,
@@ -798,6 +876,7 @@ fn render_ctor(
                 {prelude}"
             );
 
+            //                                                 v yes! v
             // If this is a singleton (should we be checking enum too?) then we don't
             // expect the subtype to be passed in. This is actually sort of silly because
             // it's making things overly complex here. I could move that to the dwarf
@@ -807,6 +886,13 @@ fn render_ctor(
                     buffer,
                     "subtype: {parent_type}Enum::{obj_type}({obj_const}),"
                 )
+            } else if is_enum {
+                emit!(
+                    buffer,
+                    r#"::{obj_type}(value_args.pop().unwrap().try_into().map_err(|e| {{
+                        Error::Uber(format!("Error converting value: {{e}}").into())
+                    }})?);"#
+                );
             } else {
                 emit!(
                     buffer,
@@ -852,20 +938,33 @@ fn render_ctor(
             let parent_type = parent.as_type(&Ownership::new_owned(), woog, domain);
             let parent_const = parent.as_const();
             let parent_ident = parent.as_ident();
+            let is_enum = object_is_enum(parent, config, imports, domain)?;
+            let is_singleton = object_is_singleton(parent, config, imports, domain)?;
+
+            if !is_enum {
+                emit!(buffer, "}};");
+            }
+
+            let id = if is_singleton || is_enum {
+                "id()"
+            } else {
+                "id"
+            };
 
             emit!(
                 buffer,
-                r#"}};
-
-                            Ok({obj_ident})
+                r#"
+                    Ok({obj_ident})
                         }})() {{
                             Ok({obj_ident}) => {{
                                 let {obj_ident} = Rc::new(RefCell::new({obj_ident}));
                                 self.store.borrow_mut().inter_{parent_ident}({obj_ident}.clone());
-                                let this = {parent_type}Proxy {{ inner: {obj_ident}, store: self.store.clone() }};
+                                let this = {parent_type}Proxy {{ inner: {obj_ident}.clone(), store: self.store.clone() }};
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
+                                    module: module.into(),
                                     uuid: {parent_const}_ID.into(),
+                                    id: {obj_ident}.borrow().{id}.into(), // d
                                     plugin: plugin.clone(),
                                 }};
 
@@ -875,6 +974,12 @@ fn render_ctor(
                         }}}},"#
             );
         } else {
+            let id = if is_enum || is_singleton {
+                "id()"
+            } else {
+                "id"
+            };
+
             emit!(
                 buffer,
                 r#"}};
@@ -884,10 +989,12 @@ fn render_ctor(
                             Ok({obj_ident}) => {{
                                 let {obj_ident} = Rc::new(RefCell::new({obj_ident}));
                                 self.store.borrow_mut().inter_{obj_ident}({obj_ident}.clone());
-                                let this = {obj_type}Proxy {{ inner: {obj_ident}, store: self.store.clone() }};
+                                let this = {obj_type}Proxy {{ inner: {obj_ident}.clone(), store: self.store.clone() }};
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
+                                    module: module.into(),
                                     uuid: {obj_const}_ID.into(),
+                                    id: {obj_ident}.borrow().{id}.into(), // e
                                     plugin: plugin.clone(),
                                 }};
 
@@ -905,6 +1012,7 @@ fn render_ctor(
 fn value_type_to_string<'a>(
     ty: &Arc<Lock<ValueType>>,
     woog: &WoogStore,
+    config: &GraceConfig,
     domain: &Domain,
 ) -> (&'a str, String) {
     let lu_dog = &LU_DOG;
@@ -918,14 +1026,31 @@ fn value_type_to_string<'a>(
                 reference.r35_value_type(&lu_dog)[0].clone()
             };
 
-            ("UserType", value_type_to_string(&inner, woog, domain).1)
+            let (ty, ty_ty) = value_type_to_string(&inner, woog, config, domain);
+            // dbg!(ty, ty_ty);
+            if ty == "Imported" {
+                ("Imported", ty_ty)
+            } else {
+                ("UserType", ty_ty)
+            }
+            // (
+            //     "UserType",
+            //     value_type_to_string(&inner, woog, config, domain).1,
+            // )
         }
         ValueType::Ty(ref id) => {
             let ty = domain.sarzak().exhume_ty(id).unwrap();
             match ty {
                 Ty::Object(ref id) => {
                     let obj = domain.sarzak().exhume_object(id).unwrap();
-                    ("Object", obj.as_type(&Ownership::new_owned(), woog, domain))
+                    if config.is_imported(id) {
+                        (
+                            "Imported",
+                            obj.as_type(&Ownership::new_owned(), woog, domain),
+                        )
+                    } else {
+                        ("Object", obj.as_type(&Ownership::new_owned(), woog, domain))
+                    }
                 }
                 Ty::SString(_) => ("String", "".to_owned()),
                 Ty::Boolean(_) => ("Boolean", "".to_owned()),
@@ -942,7 +1067,10 @@ fn value_type_to_string<'a>(
                 let option = s_read!(option);
                 option.r2_value_type(&lu_dog)[0].clone()
             };
-            ("Option", value_type_to_string(&inner, woog, domain).1)
+            (
+                "Option",
+                value_type_to_string(&inner, woog, config, domain).1,
+            )
         }
         ValueType::WoogStruct(ref id) => {
             let lu_dog = lu_dog.read().unwrap();

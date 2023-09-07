@@ -243,15 +243,18 @@ impl fmt::Display for OptimizationLevel {
 /// The dwarf target has the following, target-specific, configuration options.
 #[derive(Args, Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DwarfConfig {
-    /// Store Path
+    /// This Domain is Sarzak
     ///
-    /// Path to the parent directory containing the store to load. The store
-    /// type needs to match the domain that is being compiled.
+    /// There can be only one! 💥😱🤣
+    #[arg(long, action=ArgAction::SetFalse)]
+    pub is_sarzak: bool,
+    /// This Domain is a Meta Model
     ///
-    /// Note that the store contains instances of the domain, whereas the domain
-    /// being compiled is comprised of instances of the meta-model.
-    #[arg(short, long)]
-    pub store_path: PathBuf,
+    /// With capital letters.
+    ///
+    /// Don't use this unless you mean it.
+    #[arg(long, action=ArgAction::SetFalse)]
+    pub is_meta_model: bool,
 }
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
@@ -387,14 +390,6 @@ impl GraceConfig {
         }
     }
 
-    pub(crate) fn get_store_path(&self) -> Option<&PathBuf> {
-        if let Target::Dwarf(config) = self.get_target() {
-            Some(&config.store_path)
-        } else {
-            None
-        }
-    }
-
     /// Get the `from_domain` value for the target.
     ///
     /// This is sort of a special purpose function, because the target is assumed
@@ -451,6 +446,7 @@ impl GraceConfig {
     pub(crate) fn is_sarzak(&self) -> bool {
         match self.get_target() {
             Target::Domain(config) => config.is_sarzak,
+            Target::Dwarf(config) => config.is_sarzak,
             _ => false,
         }
     }
@@ -465,6 +461,7 @@ impl GraceConfig {
     pub(crate) fn is_meta_model(&self) -> bool {
         match self.get_target() {
             Target::Domain(config) => config.is_meta_model,
+            Target::Dwarf(config) => config.is_meta_model,
             _ => false,
         }
     }
