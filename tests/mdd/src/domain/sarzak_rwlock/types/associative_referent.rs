@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::sarzak_rwlock::types::an_associative_referent::AnAssociativeReferent;
@@ -63,7 +62,6 @@ impl AssociativeReferent {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Cardinality>>> {
-        span!("r88_cardinality");
         vec![store.exhume_cardinality(&self.cardinality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -73,14 +71,12 @@ impl AssociativeReferent {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Conditionality>>> {
-        span!("r77_conditionality");
         vec![store.exhume_conditionality(&self.conditionality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referent-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R25(1-*)
     pub fn r25_object<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Object>>> {
-        span!("r25_object");
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -90,7 +86,6 @@ impl AssociativeReferent {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<AnAssociativeReferent>>> {
-        span!("r22_an_associative_referent");
         vec![store
             .iter_an_associative_referent()
             .find(|an_associative_referent| {

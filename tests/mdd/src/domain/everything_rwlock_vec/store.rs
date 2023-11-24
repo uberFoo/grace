@@ -52,6 +52,7 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::everything_rwlock_vec-object-store-methods"}}}
     /// Inter (insert) [`Everything`] into the store.
     ///
+    #[inline]
     pub fn inter_everything<F>(&mut self, everything: F) -> Arc<RwLock<Everything>>
     where
         F: Fn(usize) -> Arc<RwLock<Everything>>,
@@ -94,6 +95,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Everything`] from the store.
     ///
+    #[inline]
     pub fn exhume_everything(&self, id: &usize) -> Option<Arc<RwLock<Everything>>> {
         match self.everything.read().unwrap().get(*id) {
             Some(everything) => everything.clone(),
@@ -103,7 +105,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Everything`] from the store.
     ///
+    #[inline]
     pub fn exorcise_everything(&mut self, id: &usize) -> Option<Arc<RwLock<Everything>>> {
+        log::debug!(target: "store", "exorcising everything slot: {id}.");
         let result = self.everything.write().unwrap()[*id].take();
         self.everything_free_list.lock().unwrap().push(*id);
         result
@@ -111,6 +115,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Everything>`.
     ///
+    #[inline]
     pub fn iter_everything(&self) -> impl Iterator<Item = Arc<RwLock<Everything>>> + '_ {
         let len = self.everything.read().unwrap().len();
         (0..len)
@@ -125,6 +130,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`RandoObject`] into the store.
     ///
+    #[inline]
     pub fn inter_rando_object<F>(&mut self, rando_object: F) -> Arc<RwLock<RandoObject>>
     where
         F: Fn(usize) -> Arc<RwLock<RandoObject>>,
@@ -167,6 +173,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`RandoObject`] from the store.
     ///
+    #[inline]
     pub fn exhume_rando_object(&self, id: &usize) -> Option<Arc<RwLock<RandoObject>>> {
         match self.rando_object.read().unwrap().get(*id) {
             Some(rando_object) => rando_object.clone(),
@@ -176,7 +183,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`RandoObject`] from the store.
     ///
+    #[inline]
     pub fn exorcise_rando_object(&mut self, id: &usize) -> Option<Arc<RwLock<RandoObject>>> {
+        log::debug!(target: "store", "exorcising rando_object slot: {id}.");
         let result = self.rando_object.write().unwrap()[*id].take();
         self.rando_object_free_list.lock().unwrap().push(*id);
         result
@@ -184,6 +193,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, RandoObject>`.
     ///
+    #[inline]
     pub fn iter_rando_object(&self) -> impl Iterator<Item = Arc<RwLock<RandoObject>>> + '_ {
         let len = self.rando_object.read().unwrap().len();
         (0..len)

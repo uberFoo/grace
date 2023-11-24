@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::one_to_one_vec::types::a::A;
@@ -43,7 +42,6 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-cond-to-a"}}}
     /// Navigate to [`A`] across R1(1-1c)
     pub fn r1c_a<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<A>>> {
-        span!("r1_a");
         let a = store.iter_a().find(|a| a.borrow().ptr == self.id);
         match a {
             Some(ref a) => vec![a.clone()],
@@ -54,14 +52,12 @@ impl Referent {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-to-b"}}}
     /// Navigate to [`B`] across R2(1-1)
     pub fn r2_b<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<B>>> {
-        span!("r2_b");
         vec![store.iter_b().find(|b| b.borrow().ptr == self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-bi-cond-to-c"}}}
     /// Navigate to [`C`] across R3(1c-1c)
     pub fn r3c_c<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<C>>> {
-        span!("r3_c");
         let c = store.iter_c().find(|c| c.borrow().ptr == Some(self.id));
         match c {
             Some(ref c) => vec![c.clone()],

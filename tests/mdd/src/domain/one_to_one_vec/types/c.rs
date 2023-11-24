@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::one_to_one_vec::types::referent::Referent;
@@ -47,7 +46,6 @@ impl C {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R3(1-*c)
     pub fn r3_referent<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<Referent>>> {
-        span!("r3_referent");
         match self.ptr {
             Some(ref ptr) => vec![store.exhume_referent(&ptr).unwrap()],
             None => Vec::new(),

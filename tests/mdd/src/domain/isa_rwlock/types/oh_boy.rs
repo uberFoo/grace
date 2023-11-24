@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"oh_boy-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock::types::simple_subtype_a::SimpleSubtypeA;
@@ -49,7 +48,6 @@ impl OhBoy {
         &'a self,
         store: &'a IsaRwlockStore,
     ) -> Vec<Arc<RwLock<SimpleSubtypeA>>> {
-        span!("r8_simple_subtype_a");
         vec![store.exhume_simple_subtype_a(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

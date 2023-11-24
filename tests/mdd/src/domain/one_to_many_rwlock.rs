@@ -17,12 +17,9 @@ pub const UUID_NS: Uuid = uuid!("f2633df4-8cb2-5d43-b4aa-0ec7150bd928");
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tracy_client::Client;
 
     #[test]
     fn test_r1() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let tgt_0 = Referent::new("Woogie".to_owned(), &mut store);
@@ -69,8 +66,6 @@ mod tests {
 
     #[test]
     fn test_r2() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let b_0 = B::new("oh no".to_owned(), None, &mut store);
@@ -111,8 +106,6 @@ mod tests {
 
     #[test]
     fn test_r3() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let tgt_0 = Referent::new("last".to_owned(), &mut store);
@@ -153,8 +146,6 @@ mod tests {
 
     #[test]
     fn test_r4() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let tgt_0 = Referent::new("lonely".to_owned(), &mut store);

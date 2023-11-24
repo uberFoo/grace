@@ -29,7 +29,7 @@ impl Ownership {
         let new = Self::Borrowed(borrowed.id());
         store.inter_ownership(new.clone());
         new
-    }
+    } // wtf?
 
     /// Create a new instance of Ownership::Owned
     pub fn new_owned() -> Self {

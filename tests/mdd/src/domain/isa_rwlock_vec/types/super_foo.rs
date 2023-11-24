@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock_vec::types::gamma::Gamma;
@@ -34,7 +33,7 @@ impl SuperFoo {
     ) -> Arc<RwLock<SuperFoo>> {
         store.inter_super_foo(|id| {
             Arc::new(RwLock::new(SuperFoo {
-                subtype: SuperFooEnum::Gamma(subtype.read().unwrap().id),
+                subtype: SuperFooEnum::Gamma(subtype.read().unwrap().id), // b
                 id,
             }))
         })

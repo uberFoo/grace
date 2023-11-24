@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::everything_vec::types::rando_object::RandoObject;
@@ -57,7 +56,6 @@ impl Everything {
         &'a self,
         store: &'a EverythingVecStore,
     ) -> Vec<Rc<RefCell<RandoObject>>> {
-        span!("r1_rando_object");
         vec![store.exhume_rando_object(&self.rando).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

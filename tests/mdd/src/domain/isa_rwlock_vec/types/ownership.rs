@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock_vec::types::borrowed::Borrowed;
@@ -43,7 +42,7 @@ impl Ownership {
     ) -> Arc<RwLock<Ownership>> {
         store.inter_ownership(|id| {
             Arc::new(RwLock::new(Ownership {
-                subtype: OwnershipEnum::Borrowed(subtype.read().unwrap().id),
+                subtype: OwnershipEnum::Borrowed(subtype.read().unwrap().id), // b
                 id,
             }))
         })

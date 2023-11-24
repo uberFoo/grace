@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"everything-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::everything_rwlock_vec::types::rando_object::RandoObject;
@@ -57,7 +56,6 @@ impl Everything {
         &'a self,
         store: &'a EverythingRwlockVecStore,
     ) -> Vec<Arc<RwLock<RandoObject>>> {
-        span!("r1_rando_object");
         vec![store.exhume_rando_object(&self.rando).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

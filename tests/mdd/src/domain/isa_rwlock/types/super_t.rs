@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock::types::not_important::NotImportant;
@@ -49,7 +48,7 @@ impl SuperT {
         let id = Uuid::new_v4();
         let new = Arc::new(RwLock::new(SuperT {
             pointer: pointer.read().unwrap().id,
-            subtype: SuperTEnum::SubtypeA(subtype.read().unwrap().id),
+            subtype: SuperTEnum::SubtypeA(subtype.read().unwrap().id), // b
             id,
         }));
         store.inter_super_t(new.clone());
@@ -66,7 +65,7 @@ impl SuperT {
         let id = Uuid::new_v4();
         let new = Arc::new(RwLock::new(SuperT {
             pointer: pointer.read().unwrap().id,
-            subtype: SuperTEnum::SubtypeB(subtype.read().unwrap().id),
+            subtype: SuperTEnum::SubtypeB(subtype.read().unwrap().id), // b
             id,
         }));
         store.inter_super_t(new.clone());
@@ -76,7 +75,6 @@ impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-nav-forward-to-pointer"}}}
     /// Navigate to [`Reference`] across R88(1-*)
     pub fn r88_reference<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<Reference>>> {
-        span!("r88_reference");
         vec![store.exhume_reference(&self.pointer).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -86,7 +84,6 @@ impl SuperT {
         &'a self,
         store: &'a IsaRwlockStore,
     ) -> Vec<Arc<RwLock<NotImportant>>> {
-        span!("r888_not_important");
         let not_important = store
             .iter_not_important()
             .find(|not_important| not_important.read().unwrap().x_ref == self.id);

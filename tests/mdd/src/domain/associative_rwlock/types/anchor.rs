@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_rwlock::types::subtype_anchor::SubtypeAnchor;
@@ -49,7 +48,6 @@ impl Anchor {
         &'a self,
         store: &'a AssociativeRwlockStore,
     ) -> Vec<Arc<RwLock<SubtypeAnchor>>> {
-        span!("r10_subtype_anchor");
         let subtype_anchor = store
             .iter_subtype_anchor()
             .find(|subtype_anchor| subtype_anchor.read().unwrap().anchor_id == self.id);

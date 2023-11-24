@@ -146,7 +146,10 @@ impl CodeWriter for Imports {
                             emit!(buffer, "use parking_lot::Mutex;")
                         }
                     };
-                    emit!(buffer, "use tracy_client::span;");
+
+                    if config.get_tracy() {
+                        emit!(buffer, "use tracy_client::span;");
+                    }
                 }
 
                 // Everything has an `id`, everything needs this.

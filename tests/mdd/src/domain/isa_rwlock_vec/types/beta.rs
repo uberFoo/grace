@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock_vec::types::gamma::Gamma;
@@ -39,7 +38,7 @@ impl Beta {
         store.inter_beta(|id| {
             Arc::new(RwLock::new(Beta {
                 name: name.to_owned(),
-                subtype: BetaEnum::Gamma(subtype.read().unwrap().id),
+                subtype: BetaEnum::Gamma(subtype.read().unwrap().id), // b
                 id,
             }))
         })
@@ -55,7 +54,7 @@ impl Beta {
         store.inter_beta(|id| {
             Arc::new(RwLock::new(Beta {
                 name: name.to_owned(),
-                subtype: BetaEnum::SuperBar(subtype.read().unwrap().id),
+                subtype: BetaEnum::SuperBar(subtype.read().unwrap().id), // b
                 id,
             }))
         })

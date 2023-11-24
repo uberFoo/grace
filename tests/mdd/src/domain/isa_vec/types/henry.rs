@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::simple_subtype_a::SimpleSubtypeA;
@@ -44,7 +43,6 @@ impl Henry {
         &'a self,
         store: &'a IsaVecStore,
     ) -> Vec<Rc<RefCell<SimpleSubtypeA>>> {
-        span!("r3_simple_subtype_a");
         vec![store.exhume_simple_subtype_a(&self.bar).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

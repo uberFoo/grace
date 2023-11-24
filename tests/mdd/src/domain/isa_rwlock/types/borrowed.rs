@@ -7,7 +7,6 @@ use crate::domain::isa_rwlock::types::shared::SHARED;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -59,7 +58,6 @@ impl Borrowed {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-impl-nav-subtype-to-supertype-ownership"}}}
     // Navigate to [`Ownership`] across R9(isa)
     pub fn r9_ownership<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<Ownership>>> {
-        span!("r9_ownership");
         vec![store.exhume_ownership(&self.id()).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

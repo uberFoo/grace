@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::one_to_one_rwlock::types::referent::Referent;
@@ -48,7 +47,6 @@ impl C {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"c-struct-impl-nav-forward-cond-to-ptr"}}}
     /// Navigate to [`Referent`] across R3(1-*c)
     pub fn r3_referent<'a>(&'a self, store: &'a OneToOneRwlockStore) -> Vec<Arc<RwLock<Referent>>> {
-        span!("r3_referent");
         match self.ptr {
             Some(ref ptr) => vec![store.exhume_referent(&ptr).unwrap()],
             None => Vec::new(),

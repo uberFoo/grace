@@ -74,6 +74,7 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::associative_vec-object-store-methods"}}}
     /// Inter (insert) [`AcknowledgedEvent`] into the store.
     ///
+    #[inline]
     pub fn inter_acknowledged_event<F>(
         &mut self,
         acknowledged_event: F,
@@ -112,6 +113,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`AcknowledgedEvent`] from the store.
     ///
+    #[inline]
     pub fn exhume_acknowledged_event(&self, id: &usize) -> Option<Rc<RefCell<AcknowledgedEvent>>> {
         match self.acknowledged_event.get(*id) {
             Some(acknowledged_event) => acknowledged_event.clone(),
@@ -121,10 +123,12 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`AcknowledgedEvent`] from the store.
     ///
+    #[inline]
     pub fn exorcise_acknowledged_event(
         &mut self,
         id: &usize,
     ) -> Option<Rc<RefCell<AcknowledgedEvent>>> {
+        log::debug!(target: "store", "exorcising acknowledged_event slot: {id}.");
         let result = self.acknowledged_event[*id].take();
         self.acknowledged_event_free_list.push(*id);
         result
@@ -132,6 +136,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, AcknowledgedEvent>`.
     ///
+    #[inline]
     pub fn iter_acknowledged_event(
         &self,
     ) -> impl Iterator<Item = Rc<RefCell<AcknowledgedEvent>>> + '_ {
@@ -148,6 +153,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Anchor`] into the store.
     ///
+    #[inline]
     pub fn inter_anchor<F>(&mut self, anchor: F) -> Rc<RefCell<Anchor>>
     where
         F: Fn(usize) -> Rc<RefCell<Anchor>>,
@@ -183,6 +189,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Anchor`] from the store.
     ///
+    #[inline]
     pub fn exhume_anchor(&self, id: &usize) -> Option<Rc<RefCell<Anchor>>> {
         match self.anchor.get(*id) {
             Some(anchor) => anchor.clone(),
@@ -192,7 +199,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Anchor`] from the store.
     ///
+    #[inline]
     pub fn exorcise_anchor(&mut self, id: &usize) -> Option<Rc<RefCell<Anchor>>> {
+        log::debug!(target: "store", "exorcising anchor slot: {id}.");
         let result = self.anchor[*id].take();
         self.anchor_free_list.push(*id);
         result
@@ -200,6 +209,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Anchor>`.
     ///
+    #[inline]
     pub fn iter_anchor(&self) -> impl Iterator<Item = Rc<RefCell<Anchor>>> + '_ {
         let len = self.anchor.len();
         (0..len)
@@ -214,6 +224,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Event`] into the store.
     ///
+    #[inline]
     pub fn inter_event<F>(&mut self, event: F) -> Rc<RefCell<Event>>
     where
         F: Fn(usize) -> Rc<RefCell<Event>>,
@@ -249,6 +260,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Event`] from the store.
     ///
+    #[inline]
     pub fn exhume_event(&self, id: &usize) -> Option<Rc<RefCell<Event>>> {
         match self.event.get(*id) {
             Some(event) => event.clone(),
@@ -258,7 +270,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Event`] from the store.
     ///
+    #[inline]
     pub fn exorcise_event(&mut self, id: &usize) -> Option<Rc<RefCell<Event>>> {
+        log::debug!(target: "store", "exorcising event slot: {id}.");
         let result = self.event[*id].take();
         self.event_free_list.push(*id);
         result
@@ -266,6 +280,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Event>`.
     ///
+    #[inline]
     pub fn iter_event(&self) -> impl Iterator<Item = Rc<RefCell<Event>>> + '_ {
         let len = self.event.len();
         (0..len)
@@ -275,6 +290,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`IsaUi`] into the store.
     ///
+    #[inline]
     pub fn inter_isa_ui<F>(&mut self, isa_ui: F) -> Rc<RefCell<IsaUi>>
     where
         F: Fn(usize) -> Rc<RefCell<IsaUi>>,
@@ -310,6 +326,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`IsaUi`] from the store.
     ///
+    #[inline]
     pub fn exhume_isa_ui(&self, id: &usize) -> Option<Rc<RefCell<IsaUi>>> {
         match self.isa_ui.get(*id) {
             Some(isa_ui) => isa_ui.clone(),
@@ -319,7 +336,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`IsaUi`] from the store.
     ///
+    #[inline]
     pub fn exorcise_isa_ui(&mut self, id: &usize) -> Option<Rc<RefCell<IsaUi>>> {
+        log::debug!(target: "store", "exorcising isa_ui slot: {id}.");
         let result = self.isa_ui[*id].take();
         self.isa_ui_free_list.push(*id);
         result
@@ -327,6 +346,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, IsaUi>`.
     ///
+    #[inline]
     pub fn iter_isa_ui(&self) -> impl Iterator<Item = Rc<RefCell<IsaUi>>> + '_ {
         let len = self.isa_ui.len();
         (0..len)
@@ -341,6 +361,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`State`] into the store.
     ///
+    #[inline]
     pub fn inter_state<F>(&mut self, state: F) -> Rc<RefCell<State>>
     where
         F: Fn(usize) -> Rc<RefCell<State>>,
@@ -376,6 +397,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`State`] from the store.
     ///
+    #[inline]
     pub fn exhume_state(&self, id: &usize) -> Option<Rc<RefCell<State>>> {
         match self.state.get(*id) {
             Some(state) => state.clone(),
@@ -385,7 +407,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`State`] from the store.
     ///
+    #[inline]
     pub fn exorcise_state(&mut self, id: &usize) -> Option<Rc<RefCell<State>>> {
+        log::debug!(target: "store", "exorcising state slot: {id}.");
         let result = self.state[*id].take();
         self.state_free_list.push(*id);
         result
@@ -393,6 +417,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, State>`.
     ///
+    #[inline]
     pub fn iter_state(&self) -> impl Iterator<Item = Rc<RefCell<State>>> + '_ {
         let len = self.state.len();
         (0..len)
@@ -402,6 +427,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SubtypeAnchor`] into the store.
     ///
+    #[inline]
     pub fn inter_subtype_anchor<F>(&mut self, subtype_anchor: F) -> Rc<RefCell<SubtypeAnchor>>
     where
         F: Fn(usize) -> Rc<RefCell<SubtypeAnchor>>,
@@ -437,6 +463,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SubtypeAnchor`] from the store.
     ///
+    #[inline]
     pub fn exhume_subtype_anchor(&self, id: &usize) -> Option<Rc<RefCell<SubtypeAnchor>>> {
         match self.subtype_anchor.get(*id) {
             Some(subtype_anchor) => subtype_anchor.clone(),
@@ -446,7 +473,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SubtypeAnchor`] from the store.
     ///
+    #[inline]
     pub fn exorcise_subtype_anchor(&mut self, id: &usize) -> Option<Rc<RefCell<SubtypeAnchor>>> {
+        log::debug!(target: "store", "exorcising subtype_anchor slot: {id}.");
         let result = self.subtype_anchor[*id].take();
         self.subtype_anchor_free_list.push(*id);
         result
@@ -454,6 +483,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeAnchor>`.
     ///
+    #[inline]
     pub fn iter_subtype_anchor(&self) -> impl Iterator<Item = Rc<RefCell<SubtypeAnchor>>> + '_ {
         let len = self.subtype_anchor.len();
         (0..len)

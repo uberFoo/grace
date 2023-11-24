@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"event-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_vec::types::acknowledged_event::AcknowledgedEvent;
@@ -42,7 +41,6 @@ impl Event {
         &'a self,
         store: &'a AssociativeVecStore,
     ) -> Vec<Rc<RefCell<AcknowledgedEvent>>> {
-        span!("r20_acknowledged_event");
         store
             .iter_acknowledged_event()
             .filter(|acknowledged_event| acknowledged_event.borrow().event_id == self.id)

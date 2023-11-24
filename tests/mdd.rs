@@ -9,14 +9,14 @@ use grace::{
 };
 use log;
 use sarzak::domain::DomainBuilder;
-use tracy_client::Client;
+
+const VERBOSITY: u8 = 0;
 
 macro_rules! test_target_domain {
     ($name:ident, $domain:literal, $path:literal) => {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -54,6 +54,7 @@ macro_rules! test_target_domain {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 ).map_err(|e| {
                     println!("Compiler exited with: {}", e);
                     std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
@@ -79,7 +80,6 @@ macro_rules! test_target_domain {
         /// This one handles imports
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -122,6 +122,7 @@ macro_rules! test_target_domain {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 )
                 .map_err(|e| {
                     println!("Compiler exited with: {}", e);
@@ -150,7 +151,6 @@ macro_rules! test_target_domain_vec_store {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -189,6 +189,7 @@ macro_rules! test_target_domain_vec_store {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 ).map_err(|e| {
                     println!("Compiler exited with: {}", e);
                     std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
@@ -214,7 +215,6 @@ macro_rules! test_target_domain_vec_store {
         /// This one handles imports
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -256,6 +256,7 @@ macro_rules! test_target_domain_vec_store {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 )
                 .map_err(|e| {
                     println!("Compiler exited with: {}", e);
@@ -284,7 +285,6 @@ macro_rules! test_target_domain_rwlock_vec_store {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -323,6 +323,7 @@ macro_rules! test_target_domain_rwlock_vec_store {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 ).map_err(|e| {
                     println!("Compiler exited with: {}", e);
                     std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
@@ -348,7 +349,6 @@ macro_rules! test_target_domain_rwlock_vec_store {
         /// This one handles imports
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -390,6 +390,7 @@ macro_rules! test_target_domain_rwlock_vec_store {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 )
                 .map_err(|e| {
                     println!("Compiler exited with: {}", e);
@@ -418,7 +419,6 @@ macro_rules! test_target_domain_rwlock {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -457,6 +457,7 @@ macro_rules! test_target_domain_rwlock {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 ).map_err(|e| {
                     println!("Compiler exited with: {}", e);
                     std::io::Error::new(std::io::ErrorKind::Other, "Compiler exited with error")
@@ -482,7 +483,6 @@ macro_rules! test_target_domain_rwlock {
         /// This one handles imports
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -525,6 +525,7 @@ macro_rules! test_target_domain_rwlock {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 )
                 .map_err(|e| {
                     println!("Compiler exited with: {}", e);
@@ -553,7 +554,6 @@ macro_rules! test_target_domain_timestamps {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -592,6 +592,7 @@ macro_rules! test_target_domain_timestamps {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 )
                 .map_err(|e| {
                     println!("Compiler exited with: {}", e);
@@ -618,7 +619,6 @@ macro_rules! test_target_domain_timestamps {
         /// This one handles imports
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.target = Target::Domain(DomainConfig {
@@ -662,6 +662,7 @@ macro_rules! test_target_domain_timestamps {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 )
                 .map_err(|e| {
                     println!("Compiler exited with: {}", e);
@@ -690,7 +691,6 @@ macro_rules! test_target_application {
         #[test]
         fn $name() -> Result<ExitCode, std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
             options.always_process = Some(true);
@@ -744,13 +744,8 @@ macro_rules! test_target_dwarf {
         #[test]
         fn $name() -> Result<(), std::io::Error> {
             let _ = env_logger::builder().is_test(true).try_init();
-            let _ = Client::start();
 
             let mut options = GraceCompilerOptions::default();
-            options.target = Target::Dwarf(DwarfConfig {
-                store_path: $path.into(),
-            });
-
             options.always_process = Some(true);
             let grace = ModelCompiler::default();
 
@@ -774,6 +769,7 @@ macro_rules! test_target_dwarf {
                     "tests/mdd/src",
                     Box::new(&options),
                     false,
+                    VERBOSITY,
                 )
                 .map_err(|e| {
                     println!("Compiler exited with: {}", e);
@@ -1052,7 +1048,6 @@ test_target_dwarf!(
 #[test]
 fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
     let _ = env_logger::builder().is_test(true).try_init();
-    let _ = Client::start();
 
     let mut options = GraceCompilerOptions::default();
     options.target = Target::Domain(DomainConfig {
@@ -1095,6 +1090,7 @@ fn test_from_extrude() -> Result<ExitCode, std::io::Error> {
             "tests/mdd/src",
             Box::new(&options),
             false,
+            VERBOSITY,
         )
         .map_err(|e| {
             println!("Compiler exited with: {}", e);

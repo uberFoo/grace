@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::sarzak_rwlock::types::binary::Binary;
@@ -60,7 +59,6 @@ impl Referent {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Cardinality>>> {
-        span!("r8_cardinality");
         vec![store.exhume_cardinality(&self.cardinality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -70,21 +68,18 @@ impl Referent {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Conditionality>>> {
-        span!("r12_conditionality");
         vec![store.exhume_conditionality(&self.conditionality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R16(1-*)
     pub fn r16_object<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Object>>> {
-        span!("r16_object");
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"referent-struct-impl-nav-backward-one-to-binary"}}}
     /// Navigate to [`Binary`] across R5(1-1)
     pub fn r5_binary<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Binary>>> {
-        span!("r5_binary");
         vec![store
             .iter_binary()
             .find(|binary| binary.read().unwrap().to == self.id)

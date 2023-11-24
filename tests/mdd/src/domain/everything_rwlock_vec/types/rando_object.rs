@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::everything_rwlock_vec::types::everything::Everything;
@@ -43,7 +42,6 @@ impl RandoObject {
         &'a self,
         store: &'a EverythingRwlockVecStore,
     ) -> Vec<Arc<RwLock<Everything>>> {
-        span!("r1_everything");
         vec![store
             .iter_everything()
             .find(|everything| everything.read().unwrap().rando == self.id)

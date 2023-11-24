@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"beta-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::gamma::Gamma;
@@ -39,7 +38,7 @@ impl Beta {
         store.inter_beta(|id| {
             Rc::new(RefCell::new(Beta {
                 name: name.to_owned(),
-                subtype: BetaEnum::Gamma(subtype.borrow().id),
+                subtype: BetaEnum::Gamma(subtype.borrow().id), // b
                 id,
             }))
         })
@@ -55,7 +54,7 @@ impl Beta {
         store.inter_beta(|id| {
             Rc::new(RefCell::new(Beta {
                 name: name.to_owned(),
-                subtype: BetaEnum::SuperBar(subtype.borrow().id),
+                subtype: BetaEnum::SuperBar(subtype.borrow().id), // b
                 id,
             }))
         })

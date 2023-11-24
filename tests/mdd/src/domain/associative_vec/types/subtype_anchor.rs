@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_vec::types::anchor::Anchor;
@@ -50,14 +49,12 @@ impl SubtypeAnchor {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-anchor_id"}}}
     /// Navigate to [`Anchor`] across R10(1-*)
     pub fn r10_anchor<'a>(&'a self, store: &'a AssociativeVecStore) -> Vec<Rc<RefCell<Anchor>>> {
-        span!("r10_anchor");
         vec![store.exhume_anchor(&self.anchor_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-struct-impl-nav-forward-assoc-to-isaui_id"}}}
     /// Navigate to [`IsaUi`] across R10(1-*)
     pub fn r10_isa_ui<'a>(&'a self, store: &'a AssociativeVecStore) -> Vec<Rc<RefCell<IsaUi>>> {
-        span!("r10_isa_ui");
         vec![store.exhume_isa_ui(&self.isaui_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

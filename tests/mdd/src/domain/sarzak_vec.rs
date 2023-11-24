@@ -15,12 +15,9 @@ pub const UUID_NS: Uuid = uuid!("88cd70e0-c065-5c4b-b1ce-69194ab4d0cb");
 mod tests {
     use super::*;
     use std::fs;
-    use tracy_client::Client;
 
     #[test]
     fn test_persist() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let t = Ty::new_s_string(&mut store);

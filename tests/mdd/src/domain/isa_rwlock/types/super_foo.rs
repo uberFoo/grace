@@ -5,7 +5,6 @@ use crate::domain::isa_rwlock::types::gamma::Gamma;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -32,7 +31,7 @@ impl SuperFoo {
             store.inter_super_foo(new.clone());
             new
         }
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-get-id-impl"}}}

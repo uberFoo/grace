@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"baz-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::simple_supertype::SimpleSupertype;
@@ -44,7 +43,6 @@ impl Baz {
         &'a self,
         store: &'a IsaVecStore,
     ) -> Vec<Rc<RefCell<SimpleSupertype>>> {
-        span!("r4_simple_supertype");
         vec![store.exhume_simple_supertype(&self.fugue).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -22,7 +22,7 @@ impl SuperBar {
         let new = Self::Gamma(gamma.id);
         store.inter_super_bar(new.clone());
         new
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-get-id-impl"}}}

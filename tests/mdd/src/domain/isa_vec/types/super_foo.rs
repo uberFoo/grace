@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::gamma::Gamma;
@@ -34,7 +33,7 @@ impl SuperFoo {
     ) -> Rc<RefCell<SuperFoo>> {
         store.inter_super_foo(|id| {
             Rc::new(RefCell::new(SuperFoo {
-                subtype: SuperFooEnum::Gamma(subtype.borrow().id),
+                subtype: SuperFooEnum::Gamma(subtype.borrow().id), // b
                 id,
             }))
         })

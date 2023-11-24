@@ -149,6 +149,7 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::isa_rwlock_vec-object-store-methods"}}}
     /// Inter (insert) [`Alpha`] into the store.
     ///
+    #[inline]
     pub fn inter_alpha<F>(&mut self, alpha: F) -> Arc<RwLock<Alpha>>
     where
         F: Fn(usize) -> Arc<RwLock<Alpha>>,
@@ -190,6 +191,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Alpha`] from the store.
     ///
+    #[inline]
     pub fn exhume_alpha(&self, id: &usize) -> Option<Arc<RwLock<Alpha>>> {
         match self.alpha.read().unwrap().get(*id) {
             Some(alpha) => alpha.clone(),
@@ -199,7 +201,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Alpha`] from the store.
     ///
+    #[inline]
     pub fn exorcise_alpha(&mut self, id: &usize) -> Option<Arc<RwLock<Alpha>>> {
+        log::debug!(target: "store", "exorcising alpha slot: {id}.");
         let result = self.alpha.write().unwrap()[*id].take();
         self.alpha_free_list.lock().unwrap().push(*id);
         result
@@ -207,6 +211,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Alpha>`.
     ///
+    #[inline]
     pub fn iter_alpha(&self) -> impl Iterator<Item = Arc<RwLock<Alpha>>> + '_ {
         let len = self.alpha.read().unwrap().len();
         (0..len)
@@ -221,6 +226,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Baz`] into the store.
     ///
+    #[inline]
     pub fn inter_baz<F>(&mut self, baz: F) -> Arc<RwLock<Baz>>
     where
         F: Fn(usize) -> Arc<RwLock<Baz>>,
@@ -262,6 +268,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Baz`] from the store.
     ///
+    #[inline]
     pub fn exhume_baz(&self, id: &usize) -> Option<Arc<RwLock<Baz>>> {
         match self.baz.read().unwrap().get(*id) {
             Some(baz) => baz.clone(),
@@ -271,7 +278,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Baz`] from the store.
     ///
+    #[inline]
     pub fn exorcise_baz(&mut self, id: &usize) -> Option<Arc<RwLock<Baz>>> {
+        log::debug!(target: "store", "exorcising baz slot: {id}.");
         let result = self.baz.write().unwrap()[*id].take();
         self.baz_free_list.lock().unwrap().push(*id);
         result
@@ -279,6 +288,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Baz>`.
     ///
+    #[inline]
     pub fn iter_baz(&self) -> impl Iterator<Item = Arc<RwLock<Baz>>> + '_ {
         let len = self.baz.read().unwrap().len();
         (0..len)
@@ -293,6 +303,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Beta`] into the store.
     ///
+    #[inline]
     pub fn inter_beta<F>(&mut self, beta: F) -> Arc<RwLock<Beta>>
     where
         F: Fn(usize) -> Arc<RwLock<Beta>>,
@@ -334,6 +345,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Beta`] from the store.
     ///
+    #[inline]
     pub fn exhume_beta(&self, id: &usize) -> Option<Arc<RwLock<Beta>>> {
         match self.beta.read().unwrap().get(*id) {
             Some(beta) => beta.clone(),
@@ -343,7 +355,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Beta`] from the store.
     ///
+    #[inline]
     pub fn exorcise_beta(&mut self, id: &usize) -> Option<Arc<RwLock<Beta>>> {
+        log::debug!(target: "store", "exorcising beta slot: {id}.");
         let result = self.beta.write().unwrap()[*id].take();
         self.beta_free_list.lock().unwrap().push(*id);
         result
@@ -351,6 +365,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Beta>`.
     ///
+    #[inline]
     pub fn iter_beta(&self) -> impl Iterator<Item = Arc<RwLock<Beta>>> + '_ {
         let len = self.beta.read().unwrap().len();
         (0..len)
@@ -365,6 +380,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Borrowed`] into the store.
     ///
+    #[inline]
     pub fn inter_borrowed<F>(&mut self, borrowed: F) -> Arc<RwLock<Borrowed>>
     where
         F: Fn(usize) -> Arc<RwLock<Borrowed>>,
@@ -406,6 +422,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Borrowed`] from the store.
     ///
+    #[inline]
     pub fn exhume_borrowed(&self, id: &usize) -> Option<Arc<RwLock<Borrowed>>> {
         match self.borrowed.read().unwrap().get(*id) {
             Some(borrowed) => borrowed.clone(),
@@ -415,7 +432,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Borrowed`] from the store.
     ///
+    #[inline]
     pub fn exorcise_borrowed(&mut self, id: &usize) -> Option<Arc<RwLock<Borrowed>>> {
+        log::debug!(target: "store", "exorcising borrowed slot: {id}.");
         let result = self.borrowed.write().unwrap()[*id].take();
         self.borrowed_free_list.lock().unwrap().push(*id);
         result
@@ -423,6 +442,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Borrowed>`.
     ///
+    #[inline]
     pub fn iter_borrowed(&self) -> impl Iterator<Item = Arc<RwLock<Borrowed>>> + '_ {
         let len = self.borrowed.read().unwrap().len();
         (0..len)
@@ -437,6 +457,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Gamma`] into the store.
     ///
+    #[inline]
     pub fn inter_gamma<F>(&mut self, gamma: F) -> Arc<RwLock<Gamma>>
     where
         F: Fn(usize) -> Arc<RwLock<Gamma>>,
@@ -478,6 +499,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Gamma`] from the store.
     ///
+    #[inline]
     pub fn exhume_gamma(&self, id: &usize) -> Option<Arc<RwLock<Gamma>>> {
         match self.gamma.read().unwrap().get(*id) {
             Some(gamma) => gamma.clone(),
@@ -487,7 +509,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Gamma`] from the store.
     ///
+    #[inline]
     pub fn exorcise_gamma(&mut self, id: &usize) -> Option<Arc<RwLock<Gamma>>> {
+        log::debug!(target: "store", "exorcising gamma slot: {id}.");
         let result = self.gamma.write().unwrap()[*id].take();
         self.gamma_free_list.lock().unwrap().push(*id);
         result
@@ -495,6 +519,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Gamma>`.
     ///
+    #[inline]
     pub fn iter_gamma(&self) -> impl Iterator<Item = Arc<RwLock<Gamma>>> + '_ {
         let len = self.gamma.read().unwrap().len();
         (0..len)
@@ -509,6 +534,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Henry`] into the store.
     ///
+    #[inline]
     pub fn inter_henry<F>(&mut self, henry: F) -> Arc<RwLock<Henry>>
     where
         F: Fn(usize) -> Arc<RwLock<Henry>>,
@@ -550,6 +576,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Henry`] from the store.
     ///
+    #[inline]
     pub fn exhume_henry(&self, id: &usize) -> Option<Arc<RwLock<Henry>>> {
         match self.henry.read().unwrap().get(*id) {
             Some(henry) => henry.clone(),
@@ -559,7 +586,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Henry`] from the store.
     ///
+    #[inline]
     pub fn exorcise_henry(&mut self, id: &usize) -> Option<Arc<RwLock<Henry>>> {
+        log::debug!(target: "store", "exorcising henry slot: {id}.");
         let result = self.henry.write().unwrap()[*id].take();
         self.henry_free_list.lock().unwrap().push(*id);
         result
@@ -567,6 +596,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Henry>`.
     ///
+    #[inline]
     pub fn iter_henry(&self) -> impl Iterator<Item = Arc<RwLock<Henry>>> + '_ {
         let len = self.henry.read().unwrap().len();
         (0..len)
@@ -581,6 +611,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`NotImportant`] into the store.
     ///
+    #[inline]
     pub fn inter_not_important<F>(&mut self, not_important: F) -> Arc<RwLock<NotImportant>>
     where
         F: Fn(usize) -> Arc<RwLock<NotImportant>>,
@@ -623,6 +654,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`NotImportant`] from the store.
     ///
+    #[inline]
     pub fn exhume_not_important(&self, id: &usize) -> Option<Arc<RwLock<NotImportant>>> {
         match self.not_important.read().unwrap().get(*id) {
             Some(not_important) => not_important.clone(),
@@ -632,7 +664,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`NotImportant`] from the store.
     ///
+    #[inline]
     pub fn exorcise_not_important(&mut self, id: &usize) -> Option<Arc<RwLock<NotImportant>>> {
+        log::debug!(target: "store", "exorcising not_important slot: {id}.");
         let result = self.not_important.write().unwrap()[*id].take();
         self.not_important_free_list.lock().unwrap().push(*id);
         result
@@ -640,6 +674,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, NotImportant>`.
     ///
+    #[inline]
     pub fn iter_not_important(&self) -> impl Iterator<Item = Arc<RwLock<NotImportant>>> + '_ {
         let len = self.not_important.read().unwrap().len();
         (0..len)
@@ -654,6 +689,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`OhBoy`] into the store.
     ///
+    #[inline]
     pub fn inter_oh_boy<F>(&mut self, oh_boy: F) -> Arc<RwLock<OhBoy>>
     where
         F: Fn(usize) -> Arc<RwLock<OhBoy>>,
@@ -695,6 +731,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`OhBoy`] from the store.
     ///
+    #[inline]
     pub fn exhume_oh_boy(&self, id: &usize) -> Option<Arc<RwLock<OhBoy>>> {
         match self.oh_boy.read().unwrap().get(*id) {
             Some(oh_boy) => oh_boy.clone(),
@@ -704,7 +741,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`OhBoy`] from the store.
     ///
+    #[inline]
     pub fn exorcise_oh_boy(&mut self, id: &usize) -> Option<Arc<RwLock<OhBoy>>> {
+        log::debug!(target: "store", "exorcising oh_boy slot: {id}.");
         let result = self.oh_boy.write().unwrap()[*id].take();
         self.oh_boy_free_list.lock().unwrap().push(*id);
         result
@@ -712,6 +751,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, OhBoy>`.
     ///
+    #[inline]
     pub fn iter_oh_boy(&self) -> impl Iterator<Item = Arc<RwLock<OhBoy>>> + '_ {
         let len = self.oh_boy.read().unwrap().len();
         (0..len)
@@ -726,6 +766,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Ownership`] into the store.
     ///
+    #[inline]
     pub fn inter_ownership<F>(&mut self, ownership: F) -> Arc<RwLock<Ownership>>
     where
         F: Fn(usize) -> Arc<RwLock<Ownership>>,
@@ -767,6 +808,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Ownership`] from the store.
     ///
+    #[inline]
     pub fn exhume_ownership(&self, id: &usize) -> Option<Arc<RwLock<Ownership>>> {
         match self.ownership.read().unwrap().get(*id) {
             Some(ownership) => ownership.clone(),
@@ -776,7 +818,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Ownership`] from the store.
     ///
+    #[inline]
     pub fn exorcise_ownership(&mut self, id: &usize) -> Option<Arc<RwLock<Ownership>>> {
+        log::debug!(target: "store", "exorcising ownership slot: {id}.");
         let result = self.ownership.write().unwrap()[*id].take();
         self.ownership_free_list.lock().unwrap().push(*id);
         result
@@ -784,6 +828,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Ownership>`.
     ///
+    #[inline]
     pub fn iter_ownership(&self) -> impl Iterator<Item = Arc<RwLock<Ownership>>> + '_ {
         let len = self.ownership.read().unwrap().len();
         (0..len)
@@ -798,6 +843,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Reference`] into the store.
     ///
+    #[inline]
     pub fn inter_reference<F>(&mut self, reference: F) -> Arc<RwLock<Reference>>
     where
         F: Fn(usize) -> Arc<RwLock<Reference>>,
@@ -839,6 +885,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Reference`] from the store.
     ///
+    #[inline]
     pub fn exhume_reference(&self, id: &usize) -> Option<Arc<RwLock<Reference>>> {
         match self.reference.read().unwrap().get(*id) {
             Some(reference) => reference.clone(),
@@ -848,7 +895,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Reference`] from the store.
     ///
+    #[inline]
     pub fn exorcise_reference(&mut self, id: &usize) -> Option<Arc<RwLock<Reference>>> {
+        log::debug!(target: "store", "exorcising reference slot: {id}.");
         let result = self.reference.write().unwrap()[*id].take();
         self.reference_free_list.lock().unwrap().push(*id);
         result
@@ -856,6 +905,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Reference>`.
     ///
+    #[inline]
     pub fn iter_reference(&self) -> impl Iterator<Item = Arc<RwLock<Reference>>> + '_ {
         let len = self.reference.read().unwrap().len();
         (0..len)
@@ -870,6 +920,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SimpleSubtypeA`] into the store.
     ///
+    #[inline]
     pub fn inter_simple_subtype_a<F>(&mut self, simple_subtype_a: F) -> Arc<RwLock<SimpleSubtypeA>>
     where
         F: Fn(usize) -> Arc<RwLock<SimpleSubtypeA>>,
@@ -912,6 +963,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SimpleSubtypeA`] from the store.
     ///
+    #[inline]
     pub fn exhume_simple_subtype_a(&self, id: &usize) -> Option<Arc<RwLock<SimpleSubtypeA>>> {
         match self.simple_subtype_a.read().unwrap().get(*id) {
             Some(simple_subtype_a) => simple_subtype_a.clone(),
@@ -921,7 +973,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SimpleSubtypeA`] from the store.
     ///
+    #[inline]
     pub fn exorcise_simple_subtype_a(&mut self, id: &usize) -> Option<Arc<RwLock<SimpleSubtypeA>>> {
+        log::debug!(target: "store", "exorcising simple_subtype_a slot: {id}.");
         let result = self.simple_subtype_a.write().unwrap()[*id].take();
         self.simple_subtype_a_free_list.lock().unwrap().push(*id);
         result
@@ -929,6 +983,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSubtypeA>`.
     ///
+    #[inline]
     pub fn iter_simple_subtype_a(&self) -> impl Iterator<Item = Arc<RwLock<SimpleSubtypeA>>> + '_ {
         let len = self.simple_subtype_a.read().unwrap().len();
         (0..len)
@@ -943,6 +998,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SimpleSupertype`] into the store.
     ///
+    #[inline]
     pub fn inter_simple_supertype<F>(&mut self, simple_supertype: F) -> Arc<RwLock<SimpleSupertype>>
     where
         F: Fn(usize) -> Arc<RwLock<SimpleSupertype>>,
@@ -985,6 +1041,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SimpleSupertype`] from the store.
     ///
+    #[inline]
     pub fn exhume_simple_supertype(&self, id: &usize) -> Option<Arc<RwLock<SimpleSupertype>>> {
         match self.simple_supertype.read().unwrap().get(*id) {
             Some(simple_supertype) => simple_supertype.clone(),
@@ -994,10 +1051,12 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SimpleSupertype`] from the store.
     ///
+    #[inline]
     pub fn exorcise_simple_supertype(
         &mut self,
         id: &usize,
     ) -> Option<Arc<RwLock<SimpleSupertype>>> {
+        log::debug!(target: "store", "exorcising simple_supertype slot: {id}.");
         let result = self.simple_supertype.write().unwrap()[*id].take();
         self.simple_supertype_free_list.lock().unwrap().push(*id);
         result
@@ -1005,6 +1064,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SimpleSupertype>`.
     ///
+    #[inline]
     pub fn iter_simple_supertype(&self) -> impl Iterator<Item = Arc<RwLock<SimpleSupertype>>> + '_ {
         let len = self.simple_supertype.read().unwrap().len();
         (0..len)
@@ -1019,6 +1079,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SubtypeA`] into the store.
     ///
+    #[inline]
     pub fn inter_subtype_a<F>(&mut self, subtype_a: F) -> Arc<RwLock<SubtypeA>>
     where
         F: Fn(usize) -> Arc<RwLock<SubtypeA>>,
@@ -1060,6 +1121,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SubtypeA`] from the store.
     ///
+    #[inline]
     pub fn exhume_subtype_a(&self, id: &usize) -> Option<Arc<RwLock<SubtypeA>>> {
         match self.subtype_a.read().unwrap().get(*id) {
             Some(subtype_a) => subtype_a.clone(),
@@ -1069,7 +1131,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SubtypeA`] from the store.
     ///
+    #[inline]
     pub fn exorcise_subtype_a(&mut self, id: &usize) -> Option<Arc<RwLock<SubtypeA>>> {
+        log::debug!(target: "store", "exorcising subtype_a slot: {id}.");
         let result = self.subtype_a.write().unwrap()[*id].take();
         self.subtype_a_free_list.lock().unwrap().push(*id);
         result
@@ -1077,6 +1141,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeA>`.
     ///
+    #[inline]
     pub fn iter_subtype_a(&self) -> impl Iterator<Item = Arc<RwLock<SubtypeA>>> + '_ {
         let len = self.subtype_a.read().unwrap().len();
         (0..len)
@@ -1091,6 +1156,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SubtypeB`] into the store.
     ///
+    #[inline]
     pub fn inter_subtype_b<F>(&mut self, subtype_b: F) -> Arc<RwLock<SubtypeB>>
     where
         F: Fn(usize) -> Arc<RwLock<SubtypeB>>,
@@ -1132,6 +1198,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SubtypeB`] from the store.
     ///
+    #[inline]
     pub fn exhume_subtype_b(&self, id: &usize) -> Option<Arc<RwLock<SubtypeB>>> {
         match self.subtype_b.read().unwrap().get(*id) {
             Some(subtype_b) => subtype_b.clone(),
@@ -1141,7 +1208,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SubtypeB`] from the store.
     ///
+    #[inline]
     pub fn exorcise_subtype_b(&mut self, id: &usize) -> Option<Arc<RwLock<SubtypeB>>> {
+        log::debug!(target: "store", "exorcising subtype_b slot: {id}.");
         let result = self.subtype_b.write().unwrap()[*id].take();
         self.subtype_b_free_list.lock().unwrap().push(*id);
         result
@@ -1149,6 +1218,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SubtypeB>`.
     ///
+    #[inline]
     pub fn iter_subtype_b(&self) -> impl Iterator<Item = Arc<RwLock<SubtypeB>>> + '_ {
         let len = self.subtype_b.read().unwrap().len();
         (0..len)
@@ -1163,6 +1233,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SuperBar`] into the store.
     ///
+    #[inline]
     pub fn inter_super_bar<F>(&mut self, super_bar: F) -> Arc<RwLock<SuperBar>>
     where
         F: Fn(usize) -> Arc<RwLock<SuperBar>>,
@@ -1204,6 +1275,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SuperBar`] from the store.
     ///
+    #[inline]
     pub fn exhume_super_bar(&self, id: &usize) -> Option<Arc<RwLock<SuperBar>>> {
         match self.super_bar.read().unwrap().get(*id) {
             Some(super_bar) => super_bar.clone(),
@@ -1213,7 +1285,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SuperBar`] from the store.
     ///
+    #[inline]
     pub fn exorcise_super_bar(&mut self, id: &usize) -> Option<Arc<RwLock<SuperBar>>> {
+        log::debug!(target: "store", "exorcising super_bar slot: {id}.");
         let result = self.super_bar.write().unwrap()[*id].take();
         self.super_bar_free_list.lock().unwrap().push(*id);
         result
@@ -1221,6 +1295,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SuperBar>`.
     ///
+    #[inline]
     pub fn iter_super_bar(&self) -> impl Iterator<Item = Arc<RwLock<SuperBar>>> + '_ {
         let len = self.super_bar.read().unwrap().len();
         (0..len)
@@ -1235,6 +1310,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SuperFoo`] into the store.
     ///
+    #[inline]
     pub fn inter_super_foo<F>(&mut self, super_foo: F) -> Arc<RwLock<SuperFoo>>
     where
         F: Fn(usize) -> Arc<RwLock<SuperFoo>>,
@@ -1276,6 +1352,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SuperFoo`] from the store.
     ///
+    #[inline]
     pub fn exhume_super_foo(&self, id: &usize) -> Option<Arc<RwLock<SuperFoo>>> {
         match self.super_foo.read().unwrap().get(*id) {
             Some(super_foo) => super_foo.clone(),
@@ -1285,7 +1362,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SuperFoo`] from the store.
     ///
+    #[inline]
     pub fn exorcise_super_foo(&mut self, id: &usize) -> Option<Arc<RwLock<SuperFoo>>> {
+        log::debug!(target: "store", "exorcising super_foo slot: {id}.");
         let result = self.super_foo.write().unwrap()[*id].take();
         self.super_foo_free_list.lock().unwrap().push(*id);
         result
@@ -1293,6 +1372,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SuperFoo>`.
     ///
+    #[inline]
     pub fn iter_super_foo(&self) -> impl Iterator<Item = Arc<RwLock<SuperFoo>>> + '_ {
         let len = self.super_foo.read().unwrap().len();
         (0..len)
@@ -1307,6 +1387,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`SuperT`] into the store.
     ///
+    #[inline]
     pub fn inter_super_t<F>(&mut self, super_t: F) -> Arc<RwLock<SuperT>>
     where
         F: Fn(usize) -> Arc<RwLock<SuperT>>,
@@ -1348,6 +1429,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`SuperT`] from the store.
     ///
+    #[inline]
     pub fn exhume_super_t(&self, id: &usize) -> Option<Arc<RwLock<SuperT>>> {
         match self.super_t.read().unwrap().get(*id) {
             Some(super_t) => super_t.clone(),
@@ -1357,7 +1439,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`SuperT`] from the store.
     ///
+    #[inline]
     pub fn exorcise_super_t(&mut self, id: &usize) -> Option<Arc<RwLock<SuperT>>> {
+        log::debug!(target: "store", "exorcising super_t slot: {id}.");
         let result = self.super_t.write().unwrap()[*id].take();
         self.super_t_free_list.lock().unwrap().push(*id);
         result
@@ -1365,6 +1449,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, SuperT>`.
     ///
+    #[inline]
     pub fn iter_super_t(&self) -> impl Iterator<Item = Arc<RwLock<SuperT>>> + '_ {
         let len = self.super_t.read().unwrap().len();
         (0..len)

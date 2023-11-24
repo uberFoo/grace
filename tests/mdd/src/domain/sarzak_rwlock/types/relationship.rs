@@ -7,7 +7,6 @@ use crate::domain::sarzak_rwlock::types::isa::Isa;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -46,7 +45,7 @@ impl Relationship {
             store.inter_relationship(new.clone());
             new
         }
-    }
+    } // wtf?
 
     /// Create a new instance of Relationship::Binary
     pub fn new_binary(
@@ -61,7 +60,7 @@ impl Relationship {
             store.inter_relationship(new.clone());
             new
         }
-    }
+    } // wtf?
 
     /// Create a new instance of Relationship::Isa
     pub fn new_isa(isa: &Arc<RwLock<Isa>>, store: &mut SarzakRwlockStore) -> Arc<RwLock<Self>> {
@@ -73,7 +72,7 @@ impl Relationship {
             store.inter_relationship(new.clone());
             new
         }
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-get-id-impl"}}}

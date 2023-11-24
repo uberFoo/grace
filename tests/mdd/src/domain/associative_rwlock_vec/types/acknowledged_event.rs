@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"acknowledged_event-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_rwlock_vec::types::event::Event;
@@ -52,7 +51,6 @@ impl AcknowledgedEvent {
         &'a self,
         store: &'a AssociativeRwlockVecStore,
     ) -> Vec<Arc<RwLock<Event>>> {
-        span!("r20_event");
         vec![store.exhume_event(&self.event_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -62,7 +60,6 @@ impl AcknowledgedEvent {
         &'a self,
         store: &'a AssociativeRwlockVecStore,
     ) -> Vec<Arc<RwLock<State>>> {
-        span!("r20_state");
         vec![store.exhume_state(&self.state_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

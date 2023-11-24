@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock_vec::types::mutable::MUTABLE;
@@ -63,7 +62,6 @@ impl Borrowed {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-impl-nav-subtype-to-supertype-ownership"}}}
     // Navigate to [`Ownership`] across R9(isa)
     pub fn r9_ownership<'a>(&'a self, store: &'a IsaRwlockVecStore) -> Vec<Arc<RwLock<Ownership>>> {
-        span!("r9_ownership");
         vec![store
             .iter_ownership()
             .find(|ownership| {

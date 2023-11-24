@@ -6,7 +6,6 @@ use crate::domain::isa_rwlock::types::owned::OWNED;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -45,7 +44,7 @@ impl Ownership {
             store.inter_ownership(new.clone());
             new
         }
-    }
+    } // wtf?
 
     /// Create a new instance of Ownership::Owned
     pub fn new_owned(store: &IsaRwlockStore) -> Arc<RwLock<Self>> {

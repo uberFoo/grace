@@ -16,12 +16,9 @@ pub const UUID_NS: Uuid = uuid!("78411374-4d65-54a9-a68a-cecf90597189");
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tracy_client::Client;
 
     #[test]
     fn test_r10() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let ui0 = IsaUi::new(0, &mut store);
@@ -60,8 +57,6 @@ mod tests {
 
     #[test]
     fn test_r20() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let s0 = State::new("foo".to_owned(), &mut store);

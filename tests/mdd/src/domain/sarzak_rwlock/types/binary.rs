@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::sarzak_rwlock::types::referent::Referent;
@@ -61,14 +60,12 @@ impl Binary {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-from"}}}
     /// Navigate to [`Referrer`] across R6(1-*)
     pub fn r6_referrer<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Referrer>>> {
-        span!("r6_referrer");
         vec![store.exhume_referrer(&self.from).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"binary-struct-impl-nav-forward-to-to"}}}
     /// Navigate to [`Referent`] across R5(1-*)
     pub fn r5_referent<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Referent>>> {
-        span!("r5_referent");
         vec![store.exhume_referent(&self.to).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -78,7 +75,6 @@ impl Binary {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Relationship>>> {
-        span!("r4_relationship");
         vec![store.exhume_relationship(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

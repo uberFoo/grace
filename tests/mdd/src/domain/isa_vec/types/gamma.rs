@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::alpha::Alpha;
@@ -40,7 +39,6 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
     // Navigate to [`Alpha`] across R10(isa)
     pub fn r10_alpha<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Alpha>>> {
-        span!("r10_alpha");
         vec![store
             .iter_alpha()
             .find(|alpha| {
@@ -56,7 +54,6 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     // Navigate to [`Beta`] across R11(isa)
     pub fn r11_beta<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Beta>>> {
-        span!("r11_beta");
         vec![store
             .iter_beta()
             .find(|beta| {
@@ -72,7 +69,6 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_bar"}}}
     // Navigate to [`SuperBar`] across R12(isa)
     pub fn r12_super_bar<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<SuperBar>>> {
-        span!("r12_super_bar");
         vec![store
             .iter_super_bar()
             .find(|super_bar| {
@@ -88,7 +84,6 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
     // Navigate to [`SuperFoo`] across R13(isa)
     pub fn r13_super_foo<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<SuperFoo>>> {
-        span!("r13_super_foo");
         vec![store
             .iter_super_foo()
             .find(|super_foo| {

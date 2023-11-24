@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock::types::alpha::Alpha;
@@ -41,7 +40,6 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-alpha"}}}
     // Navigate to [`Alpha`] across R10(isa)
     pub fn r10_alpha<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<Alpha>>> {
-        span!("r10_alpha");
         vec![store
             .iter_alpha()
             .find(|alpha| {
@@ -57,7 +55,6 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-beta"}}}
     // Navigate to [`Beta`] across R11(isa)
     pub fn r11_beta<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<Beta>>> {
-        span!("r11_beta");
         vec![store
             .iter_beta()
             .find(|beta| {
@@ -73,14 +70,12 @@ impl Gamma {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_bar"}}}
     // Navigate to [`SuperBar`] across R12(isa)
     pub fn r12_super_bar<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<SuperBar>>> {
-        span!("r12_super_bar");
         vec![store.exhume_super_bar(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"gamma-impl-nav-subtype-to-supertype-super_foo"}}}
     // Navigate to [`SuperFoo`] across R13(isa)
     pub fn r13_super_foo<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<SuperFoo>>> {
-        span!("r13_super_foo");
         vec![store.exhume_super_foo(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

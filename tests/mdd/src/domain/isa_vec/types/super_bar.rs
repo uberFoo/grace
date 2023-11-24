@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::beta::Beta;
@@ -36,7 +35,7 @@ impl SuperBar {
     ) -> Rc<RefCell<SuperBar>> {
         store.inter_super_bar(|id| {
             Rc::new(RefCell::new(SuperBar {
-                subtype: SuperBarEnum::Gamma(subtype.borrow().id),
+                subtype: SuperBarEnum::Gamma(subtype.borrow().id), // b
                 id,
             }))
         })
@@ -45,7 +44,6 @@ impl SuperBar {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-impl-nav-subtype-to-supertype-beta"}}}
     // Navigate to [`Beta`] across R11(isa)
     pub fn r11_beta<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Beta>>> {
-        span!("r11_beta");
         vec![store
             .iter_beta()
             .find(|beta| {

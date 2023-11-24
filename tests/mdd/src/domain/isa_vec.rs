@@ -15,12 +15,9 @@ pub const UUID_NS: Uuid = uuid!("fdd6c56b-f3fb-59ba-b387-31dd1ff762ea");
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tracy_client::Client;
 
     #[test]
     fn test_r1() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let oh_boy = OhBoy::new("The Wall Street Journal".to_owned(), &mut store);
@@ -50,8 +47,6 @@ mod tests {
 
     #[test]
     fn test_r3() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let oh_boy = OhBoy::new("The Wall Street Journal".to_owned(), &mut store);
@@ -64,8 +59,6 @@ mod tests {
 
     #[test]
     fn test_r4() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let b = SimpleSupertype::new_simple_subtype_b(false, &mut store);
@@ -77,8 +70,6 @@ mod tests {
 
     #[test]
     fn test_init() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let mutable = Borrowed::new_mutable(&mut store);
@@ -99,8 +90,6 @@ mod tests {
 
     #[test]
     fn test_multi_super_sub() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         #[allow(non_snake_case)]

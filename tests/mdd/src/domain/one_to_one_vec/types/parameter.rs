@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
@@ -48,7 +47,6 @@ impl Parameter {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-nav-forward-cond-to-next"}}}
     /// Navigate to [`Parameter`] across R8(1-*c)
     pub fn r8_parameter<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<Parameter>>> {
-        span!("r8_parameter");
         match self.next {
             Some(ref next) => vec![store.exhume_parameter(&next).unwrap()],
             None => Vec::new(),
@@ -58,7 +56,6 @@ impl Parameter {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-struct-impl-nav-backward-one-bi-cond-to-parameter"}}}
     /// Navigate to [`Parameter`] across R8(1c-1c)
     pub fn r8c_parameter<'a>(&'a self, store: &'a OneToOneVecStore) -> Vec<Rc<RefCell<Parameter>>> {
-        span!("r8_parameter");
         let parameter = store
             .iter_parameter()
             .find(|parameter| parameter.borrow().next == Some(self.id));

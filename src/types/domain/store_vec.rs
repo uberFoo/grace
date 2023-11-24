@@ -140,6 +140,7 @@ impl DomainStoreVec {
                         "/// Inter (insert) [`{obj_type}`] into the store.",
                     );
                     emit!(buffer, "///");
+                    emit!(buffer, "#[inline]");
 
                     if is_uber {
                         use UberStoreOptions::*;
@@ -397,6 +398,7 @@ impl DomainStoreVec {
                         "/// Exhume (get) [`{obj_type}`] from the store.",
                     );
                     emit!(buffer, "///");
+                    emit!(buffer, "#[inline]");
 
                     if is_uber {
                         use UberStoreOptions::*;
@@ -482,6 +484,7 @@ impl DomainStoreVec {
                         "/// Exorcise (remove) [`{obj_type}`] from the store.",
                     );
                     emit!(buffer, "///");
+                    emit!(buffer, "#[inline]");
 
                     if is_uber {
                         use UberStoreOptions::*;
@@ -555,6 +558,8 @@ impl DomainStoreVec {
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         emit!(buffer, "///");
+                        emit!(buffer, "#[inline]");
+
                         if is_uber {
                             let (read, _write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
@@ -620,6 +625,7 @@ impl DomainStoreVec {
                         obj.as_type(&Ownership::new_borrowed(), woog, domain)
                     );
                     emit!(buffer, "///");
+                    emit!(buffer, "#[inline]");
 
                     if is_uber {
                         use UberStoreOptions::*;
@@ -753,6 +759,8 @@ impl DomainStoreVec {
                             obj.as_type(&Ownership::new_borrowed(), woog, domain)
                         );
                         emit!(buffer, "///");
+                        emit!(buffer, "#[inline]");
+
                         if is_uber {
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
@@ -1906,8 +1914,14 @@ fn generate_store_persistence(
             emit!(buffer, "let path = path.as_ref();");
             emit!(buffer, "let path = path.join(\"{}.json\");", domain.name());
             emit!(buffer, "");
-            emit!(buffer, "let store = Self::new();");
-            emit!(buffer, "let mut store = store.await;");
+            emit!(buffer, "let mut store = Self::new();");
+            if is_uber {
+                use UberStoreOptions::*;
+                match config.get_uber_store().unwrap() {
+                    AsyncRwLock => emit!(buffer, "let mut store = store.await;"),
+                    _ => {}
+                }
+            }
             emit!(buffer, "");
 
             for obj in objects {

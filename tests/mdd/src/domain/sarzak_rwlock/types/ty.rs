@@ -12,7 +12,6 @@ use crate::domain::sarzak_rwlock::types::s_uuid::S_UUID;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -57,7 +56,7 @@ impl Ty {
             store.inter_ty(new.clone());
             new
         }
-    }
+    } // wtf?
 
     /// Create a new instance of Ty::Float
     pub fn new_float(store: &SarzakRwlockStore) -> Arc<RwLock<Self>> {
@@ -84,7 +83,7 @@ impl Ty {
             store.inter_ty(new.clone());
             new
         }
-    }
+    } // wtf?
 
     /// Create a new instance of Ty::SString
     pub fn new_s_string(store: &SarzakRwlockStore) -> Arc<RwLock<Self>> {
@@ -115,7 +114,6 @@ impl Ty {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ty-struct-impl-nav-backward-one-to-attribute"}}}
     /// Navigate to [`Attribute`] across R2(1-1)
     pub fn r2_attribute<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Attribute>>> {
-        span!("r2_attribute");
         vec![store
             .iter_attribute()
             .find(|attribute| attribute.read().unwrap().ty == self.id())

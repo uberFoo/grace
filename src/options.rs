@@ -143,20 +143,13 @@ pub struct DomainConfig {
     ///
     /// This enables multi-threaded support in the store. It also integrates better
     /// overall by persisting changes to the store without having to inter things,
-    /// etc. Basically every instance returned by the store is wrapped in an
-    /// `Arc<RwLock<>>`, so the references are all shared and protected. It's
+    /// etc. Basically every instance returned by the store is wrapped in a
+    /// smart pointer type, so that the references are shared. Inside the smart
+    /// pointer is a means of mutation, e.g., a `RefCell` or an `RwLock`. It's
     /// just a pain in the ass to use.
     ///
     /// The thought is that this will be abstracted away by writing dwarf files
     /// to interact with the store, not Rust code.
-    ///
-    /// Eventually this option will go away in favor of making it the default.
-    /// That requires rewriting big chunks of the compiler, so I'm going to
-    /// do it piecemeal.
-    ///
-    /// Things change. I want to optionally enable threading, and I want to be
-    /// able to change the RwLock between std and parking_lot. Heck, let's also
-    /// add Mutex, from both crates.
     #[arg(short, long, value_enum, default_value_t=UberStoreOptions::Disabled)]
     pub uber_store: UberStoreOptions,
     /// Optimization Level
@@ -255,6 +248,19 @@ pub struct DwarfConfig {
     /// Don't use this unless you mean it.
     #[arg(long, action=ArgAction::SetFalse)]
     pub is_meta_model: bool,
+    /// Better Store
+    ///
+    /// This enables multi-threaded support in the store. It also integrates better
+    /// overall by persisting changes to the store without having to inter things,
+    /// etc. Basically every instance returned by the store is wrapped in a
+    /// smart pointer type, so that the references are shared. Inside the smart
+    /// pointer is a means of mutation, e.g., a `RefCell` or an `RwLock`. It's
+    /// just a pain in the ass to use.
+    ///
+    /// The thought is that this will be abstracted away by writing dwarf files
+    /// to interact with the store, not Rust code.
+    #[arg(short, long, value_enum, default_value_t=UberStoreOptions::Disabled)]
+    pub uber_store: UberStoreOptions,
 }
 
 #[derive(Args, Clone, Debug, Deserialize, Serialize)]
@@ -317,6 +323,11 @@ pub struct GraceCompilerOptions {
     /// model elements will be processed.
     #[arg(long, short)]
     pub always_process: Option<bool>,
+    /// Enable Tracy Profiler
+    ///
+    /// More info at [GitHub](https://github.com/wolfpld/tracy).
+    #[arg(long)]
+    pub tracy: Option<bool>,
 }
 
 impl ModelCompilerOptions for GraceCompilerOptions {
@@ -331,6 +342,7 @@ const DEFAULT_USE_PATHS: Option<Vec<String>> = None;
 const DEFAULT_IMPORTED_DOMAINS: Option<Vec<String>> = None;
 const DEFAULT_DOC_TEST: bool = true;
 const DEFAULT_ALWAYS_PROCESS: bool = false;
+const DEFAULT_TRACY: bool = false;
 
 impl Default for GraceCompilerOptions {
     fn default() -> Self {
@@ -341,6 +353,7 @@ impl Default for GraceCompilerOptions {
             imported_domains: DEFAULT_IMPORTED_DOMAINS,
             doc_test: Some(DEFAULT_DOC_TEST),
             always_process: Some(DEFAULT_ALWAYS_PROCESS),
+            tracy: Some(DEFAULT_TRACY),
         }
     }
 }
@@ -439,6 +452,7 @@ impl GraceConfig {
     pub(crate) fn get_uber_store(&self) -> Option<&UberStoreOptions> {
         match self.get_target() {
             Target::Domain(config) => Some(&config.uber_store),
+            Target::Dwarf(config) => Some(&config.uber_store),
             _ => None,
         }
     }
@@ -487,6 +501,18 @@ impl GraceConfig {
             }
         } else {
             DEFAULT_ALWAYS_PROCESS
+        }
+    }
+
+    pub(crate) fn get_tracy(&self) -> bool {
+        if let Some(config_value) = self.get(_TARGET_) {
+            if let Some(tracy) = config_value.tracy {
+                tracy
+            } else {
+                DEFAULT_TRACY
+            }
+        } else {
+            DEFAULT_TRACY
         }
     }
 
@@ -596,6 +622,9 @@ impl From<(&GraceCompilerOptions, &Domain)> for GraceConfig {
 ///
 /// Note that there is the special key _TARGET_, which is used to pass target
 /// specific options. We also use this key to store compiler-wide options.
+///
+/// Additionally note that these are all `Option<T>`s so that partial configuration
+/// is possible.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 pub(crate) struct ConfigValue {
     pub(crate) target: Option<Target>,
@@ -605,6 +634,7 @@ pub(crate) struct ConfigValue {
     pub(crate) use_paths: Option<Vec<String>>,
     pub(crate) doc_test: Option<bool>,
     pub(crate) always_process: Option<bool>,
+    pub(crate) tracy: Option<bool>,
 }
 
 impl ConfigValue {
@@ -617,6 +647,7 @@ impl ConfigValue {
             use_paths: None,
             doc_test: None,
             always_process: None,
+            tracy: None,
         }
     }
 }
@@ -635,6 +666,7 @@ impl From<&GraceCompilerOptions> for ConfigValue {
             use_paths: options.use_paths.clone(),
             doc_test: options.doc_test,
             always_process: options.always_process,
+            tracy: options.tracy,
         }
     }
 }

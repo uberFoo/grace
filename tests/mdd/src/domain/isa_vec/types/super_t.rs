@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::not_important::NotImportant;
@@ -49,7 +48,7 @@ impl SuperT {
         store.inter_super_t(|id| {
             Rc::new(RefCell::new(SuperT {
                 pointer: pointer.borrow().id,
-                subtype: SuperTEnum::SubtypeA(subtype.borrow().id),
+                subtype: SuperTEnum::SubtypeA(subtype.borrow().id), // b
                 id,
             }))
         })
@@ -65,7 +64,7 @@ impl SuperT {
         store.inter_super_t(|id| {
             Rc::new(RefCell::new(SuperT {
                 pointer: pointer.borrow().id,
-                subtype: SuperTEnum::SubtypeB(subtype.borrow().id),
+                subtype: SuperTEnum::SubtypeB(subtype.borrow().id), // b
                 id,
             }))
         })
@@ -74,7 +73,6 @@ impl SuperT {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-struct-impl-nav-forward-to-pointer"}}}
     /// Navigate to [`Reference`] across R88(1-*)
     pub fn r88_reference<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Reference>>> {
-        span!("r88_reference");
         vec![store.exhume_reference(&self.pointer).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -84,7 +82,6 @@ impl SuperT {
         &'a self,
         store: &'a IsaVecStore,
     ) -> Vec<Rc<RefCell<NotImportant>>> {
-        span!("r888_not_important");
         let not_important = store
             .iter_not_important()
             .find(|not_important| not_important.borrow().x_ref == self.id);

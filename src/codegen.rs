@@ -723,6 +723,13 @@ pub(crate) fn render_new_instance(
                         (local_object_is_hybrid(super_obj, config, domain), None)
                     };
 
+                    let is_async =
+                        if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                            true
+                        } else {
+                            false
+                        };
+
                     if is_hybrid {
                         match rval.ty {
                             GType::Uuid => {
@@ -750,7 +757,7 @@ pub(crate) fn render_new_instance(
                                 if is_uber {
                                     let (read, _write) = get_uber_read_write(config);
 
-                                    if rval.name != SUBTYPE_ATTR {
+                                    if rval.name != { SUBTYPE_ATTR } {
                                         if imported {
                                             emit!(
                                                 buffer,
@@ -771,7 +778,7 @@ pub(crate) fn render_new_instance(
                                         } else {
                                             emit!(
                                                 buffer,
-                                                "{}: {}Enum::{}({}{read}.{id}),",
+                                                "{}: {}Enum::{}({}{read}.{id}), // a",
                                                 field.name,
                                                 foo_super_obj.unwrap().as_type(
                                                     &Ownership::new_borrowed(),
@@ -787,18 +794,61 @@ pub(crate) fn render_new_instance(
                                             )
                                         }
                                     } else {
-                                        emit!(
-                                            buffer,
-                                            "{}: {}Enum::{}({}),",
-                                            field.name,
-                                            foo_super_obj.unwrap().as_type(
-                                                &Ownership::new_borrowed(),
-                                                woog,
-                                                domain
-                                            ),
-                                            r_obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                            field.name
-                                        )
+                                        if is_async {
+                                            emit!(
+                                                buffer,
+                                                "{}: {}Enum::{}({}),",
+                                                field.name,
+                                                foo_super_obj.unwrap().as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                r_obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                field.name
+                                            )
+                                        } else {
+                                            // 🚧 this is such a bowl of spaghetti
+                                            if !imported {
+                                                emit!(
+                                                    buffer,
+                                                    "{}: {}Enum::{}({}{read}.{id}), // b",
+                                                    field.name,
+                                                    foo_super_obj.unwrap().as_type(
+                                                        &Ownership::new_borrowed(),
+                                                        woog,
+                                                        domain
+                                                    ),
+                                                    r_obj.as_type(
+                                                        &Ownership::new_borrowed(),
+                                                        woog,
+                                                        domain
+                                                    ),
+                                                    rval.name
+                                                )
+                                            } else {
+                                                emit!(
+                                                    buffer,
+                                                    "{}: {}Enum::{}({}.read().unwrap().{id}),",
+                                                    field.name,
+                                                    foo_super_obj.unwrap().as_type(
+                                                        &Ownership::new_borrowed(),
+                                                        woog,
+                                                        domain
+                                                    ),
+                                                    r_obj.as_type(
+                                                        &Ownership::new_borrowed(),
+                                                        woog,
+                                                        domain
+                                                    ),
+                                                    rval.name
+                                                )
+                                            }
+                                        }
                                     }
                                 } else {
                                     emit!(
@@ -855,18 +905,41 @@ pub(crate) fn render_new_instance(
                                             )
                                         }
                                     } else {
-                                        emit!(
-                                            buffer,
-                                            "{}: {}Enum::{}({}),",
-                                            field.name,
-                                            super_obj.as_type(
-                                                &Ownership::new_borrowed(),
-                                                woog,
-                                                domain
-                                            ),
-                                            obj.as_type(&Ownership::new_borrowed(), woog, domain),
-                                            field.name
-                                        )
+                                        if is_async {
+                                            emit!(
+                                                buffer,
+                                                "{}: {}Enum::{}({}),",
+                                                field.name,
+                                                super_obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                field.name
+                                            )
+                                        } else {
+                                            emit!(
+                                                buffer,
+                                                "{}: {}Enum::{}({}{read}.id),",
+                                                field.name,
+                                                super_obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                obj.as_type(
+                                                    &Ownership::new_borrowed(),
+                                                    woog,
+                                                    domain
+                                                ),
+                                                rval.name
+                                            )
+                                        }
                                     }
                                 } else {
                                     emit!(
@@ -902,7 +975,7 @@ pub(crate) fn render_new_instance(
                     if is_uber && !imported {
                         let (read, _write) = get_uber_read_write(config);
                         if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                            emit!(buffer, "{},", field.name)
+                            emit!(buffer, "{}, // (b)", field.name)
                         } else {
                             emit!(buffer, "{}: {}{read}.{id},", field.name, rval.name)
                         }
@@ -938,7 +1011,7 @@ pub(crate) fn render_new_instance(
                             let (read, _write) = get_uber_read_write(config);
                             if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap()
                             {
-                                emit!(buffer, "{},", field.name)
+                                emit!(buffer, "{}, // (a)", field.name)
                                 // emit!(
                                 //     buffer,
                                 //     "{}: futures::future::OptionFuture::from({}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await,",
@@ -1153,6 +1226,12 @@ fn typecheck_and_coerce(
     let is_uber = config.is_uber_store();
     let rhs_ident = rhs.as_ident();
 
+    let is_async = if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+        true
+    } else {
+        false
+    };
+
     Ok(match &lhs_ty {
         GraceType::WoogOption(_) => {
             // ✨ Until this comment changes, i.e., until this is used by more than
@@ -1177,9 +1256,7 @@ fn typecheck_and_coerce(
 
                             if is_uber && !is_imported {
                                 let (read, _write) = get_uber_read_write(config);
-                                if let UberStoreOptions::AsyncRwLock =
-                                    config.get_uber_store().unwrap()
-                                {
+                                if is_async {
                                     format!("{obj_ident}")
                                     // format!(
                                     // "futures::future::OptionFuture::from({rhs_ident}.map(|{obj_ident}| async {{{obj_ident}{read}.{id}}})).await"
@@ -1190,9 +1267,7 @@ fn typecheck_and_coerce(
                             } else {
                                 // 🚧 I know that this is terrible. I'm hacking
                                 if is_uber {
-                                    if let UberStoreOptions::AsyncRwLock =
-                                        config.get_uber_store().unwrap()
-                                    {
+                                    if is_async {
                                         format!("{obj_ident}")
                                     } else {
                                         format!("{rhs_ident}.as_ref().map(|{obj_ident}| {obj_ident}.{id})")
@@ -1258,7 +1333,7 @@ fn typecheck_and_coerce(
                             format!("{rhs_ident}{read}.{id}")
                         }
                     } else {
-                        if is_uber {
+                        if is_uber && is_async {
                             format!("{rhs_ident}")
                         } else {
                             format!("{rhs_ident}.{id}")

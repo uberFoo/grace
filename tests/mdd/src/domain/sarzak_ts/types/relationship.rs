@@ -35,21 +35,21 @@ impl Relationship {
         let new = Self::Associative(associative.id);
         store.inter_relationship(new.clone());
         new
-    }
+    } // wtf?
 
     /// Create a new instance of Relationship::Binary
     pub fn new_binary(binary: &Binary, store: &mut SarzakTsStore) -> Self {
         let new = Self::Binary(binary.id);
         store.inter_relationship(new.clone());
         new
-    }
+    } // wtf?
 
     /// Create a new instance of Relationship::Isa
     pub fn new_isa(isa: &Isa, store: &mut SarzakTsStore) -> Self {
         let new = Self::Isa(isa.id);
         store.inter_relationship(new.clone());
         new
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"relationship-get-id-impl"}}}

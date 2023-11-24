@@ -31,7 +31,7 @@ impl SimpleSubtypeA {
         let new = Self::OhBoy(oh_boy.id);
         store.inter_simple_subtype_a(new.clone());
         new
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-get-id-impl"}}}

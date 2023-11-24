@@ -35,7 +35,7 @@ pub struct External {
     pub ctor: String,
     pub id: Uuid,
     pub name: String,
-    pub path: String,
+    pub x_path: String,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-implementation"}}}
@@ -43,13 +43,13 @@ impl External {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-struct-impl-new"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-struct-impl-new_"}}}
     /// Inter a new 'External' in the store, and return it's `id`.
-    pub fn new(ctor: String, name: String, path: String, store: &mut SarzakTsStore) -> External {
+    pub fn new(ctor: String, name: String, x_path: String, store: &mut SarzakTsStore) -> External {
         let id = Uuid::new_v4();
         let new = External {
             ctor,
             id,
             name,
-            path,
+            x_path,
         };
         store.inter_external(new.clone());
         // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

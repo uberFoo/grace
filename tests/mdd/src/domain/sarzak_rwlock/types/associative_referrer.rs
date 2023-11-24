@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::sarzak_rwlock::types::associative::Associative;
@@ -55,14 +54,12 @@ impl AssociativeReferrer {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Cardinality>>> {
-        span!("r89_cardinality");
         vec![store.exhume_cardinality(&self.cardinality).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"associative_referrer-struct-impl-nav-forward-to-obj_id"}}}
     /// Navigate to [`Object`] across R26(1-*)
     pub fn r26_object<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Object>>> {
-        span!("r26_object");
         vec![store.exhume_object(&self.obj_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -72,7 +69,6 @@ impl AssociativeReferrer {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Associative>>> {
-        span!("r21_associative");
         vec![store
             .iter_associative()
             .find(|associative| associative.read().unwrap().from == self.id)

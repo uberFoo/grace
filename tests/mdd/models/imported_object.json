@@ -1,1 +1,187 @@
-{"paper":{"ids":["f1b24300-39bc-5928-ab66-116fd36296b1"],"entities":{"f1b24300-39bc-5928-ab66-116fd36296b1":{"id":"f1b24300-39bc-5928-ab66-116fd36296b1","description":"Domain to test importing an Object.\n\nWe are importing an object from the sarzak domain. We do some sick stuff importing objects...","domain_name":"imported_object","domain_ns":"b49d6fe1-e5e9-5896-bd42-b72012429e52","width":4000,"height":3200,"offset":{"x":-69,"y":-11},"objects":{"7178e7a4-5131-504b-a7b3-c2c0cfedf343":{"x":429,"y":408,"width":216,"height":155},"0e3094c7-3d15-5dd9-93ca-26b37ee71d3a":{"x":935,"y":403,"width":281,"height":162},"d01f2378-3539-5b5f-ad97-0d0558f7d40e":{"x":1436,"y":414,"width":271,"height":125,"id":"d01f2378-3539-5b5f-ad97-0d0558f7d40e"}},"relationships":{"0c2c0855-f162-5c0d-97c6-5609a2c86f58":{"BinaryUI":{"from":{"id":"0e3094c7-3d15-5dd9-93ca-26b37ee71d3a","dir":"West","x":935,"y":489,"offset":{"x":-124,"y":-51}},"to":{"id":"7178e7a4-5131-504b-a7b3-c2c0cfedf343","dir":"East","x":645,"y":490,"offset":{"x":29,"y":34}}}},"21456cd2-c2ca-5a7f-ab6d-cef452710e8b":{"BinaryUI":{"from":{"id":"0e3094c7-3d15-5dd9-93ca-26b37ee71d3a","x":1216,"y":495,"offset":{"x":13,"y":45},"dir":"East"},"to":{"id":"d01f2378-3539-5b5f-ad97-0d0558f7d40e","x":1436,"y":495,"offset":{"x":-58,"y":-39},"dir":"West"}}}},"config":null}}},"objects":{"ids":["7178e7a4-5131-504b-a7b3-c2c0cfedf343","0e3094c7-3d15-5dd9-93ca-26b37ee71d3a","d01f2378-3539-5b5f-ad97-0d0558f7d40e"],"entities":{"0e3094c7-3d15-5dd9-93ca-26b37ee71d3a":{"id":"0e3094c7-3d15-5dd9-93ca-26b37ee71d3a","key_letter":"AO","name":"Another Object","description":"This is another object, but different.\n\nAs a side effect, this is going to test being able to collapse a type with a space. It will break, and I’ll have a new feature.\n","attributes":{"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"}}},"7178e7a4-5131-504b-a7b3-c2c0cfedf343":{"id":"7178e7a4-5131-504b-a7b3-c2c0cfedf343","key_letter":"OBJ","name":"Object","description":"Imported Object\n\n🐶 { \"imported_object\": { \"domain\": \"domain::sarzak\", \"model_file\": \"../sarzak/models/sarzak.json\", \"id\": \"7178e7a4-5131-504b-a7b3-c2c0cfedf343\" }}\n\n","attributes":{"4717289d-ed9c-5931-94ce-a73a66b88856":{"id":"4717289d-ed9c-5931-94ce-a73a66b88856","name":"id","type":"Uuid"}}},"d01f2378-3539-5b5f-ad97-0d0558f7d40e":{"id":"d01f2378-3539-5b5f-ad97-0d0558f7d40e","key_letter":"SS","name":"Simple Supertype","description":"Another Imported Object\n\nThis one is a supertype, and the code to access it's id needs to be different:\n\n```rust\n// Good\nsuper_t.id()\n// Bad\nsuper_t.id\n```\n\n🐶 { \"imported_object\": { \"domain\": \"domain::isa\", \"model_file\": \"tests/mdd/models/isa.json\", \"id\": \"6339b18b-3929-51ae-ad1a-f0cb4dc73362\" }}\n","attributes":{"7946cc86-f91d-5a3d-858d-b8dc226573f3":{"id":"7946cc86-f91d-5a3d-858d-b8dc226573f3","name":"id","type":"Uuid"}}}}},"relationships":{"ids":["0c2c0855-f162-5c0d-97c6-5609a2c86f58","21456cd2-c2ca-5a7f-ab6d-cef452710e8b"],"entities":{"0c2c0855-f162-5c0d-97c6-5609a2c86f58":{"Binary":{"id":"0c2c0855-f162-5c0d-97c6-5609a2c86f58","number":1,"from":{"obj_id":"0e3094c7-3d15-5dd9-93ca-26b37ee71d3a","description":"points at","cardinality":"One","conditionality":"Unconditional","formalizing_attribute_name":"ptr"},"to":{"obj_id":"7178e7a4-5131-504b-a7b3-c2c0cfedf343","description":"is pointed at by","cardinality":"One","conditionality":"Conditional"}}},"21456cd2-c2ca-5a7f-ab6d-cef452710e8b":{"Binary":{"id":"21456cd2-c2ca-5a7f-ab6d-cef452710e8b","number":2,"from":{"obj_id":"0e3094c7-3d15-5dd9-93ca-26b37ee71d3a","description":"has a","cardinality":"One","conditionality":"Unconditional","formalizing_attribute_name":"edge"},"to":{"obj_id":"d01f2378-3539-5b5f-ad97-0d0558f7d40e","description":"has nothing to do with","cardinality":"One","conditionality":"Conditional"}}}}}}
+{
+    "paper": {
+        "ids": [
+            "f1b24300-39bc-5928-ab66-116fd36296b1"
+        ],
+        "entities": {
+            "f1b24300-39bc-5928-ab66-116fd36296b1": {
+                "id": "f1b24300-39bc-5928-ab66-116fd36296b1",
+                "description": "Domain to test importing an Object.\n\nWe are importing an object from the sarzak domain. We do some sick stuff importing objects...",
+                "domain_name": "imported_object",
+                "domain_ns": "b49d6fe1-e5e9-5896-bd42-b72012429e52",
+                "width": 4000,
+                "height": 3200,
+                "offset": {
+                    "x": -69,
+                    "y": -11
+                },
+                "objects": {
+                    "7178e7a4-5131-504b-a7b3-c2c0cfedf343": {
+                        "x": 429,
+                        "y": 408,
+                        "width": 216,
+                        "height": 155
+                    },
+                    "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a": {
+                        "x": 935,
+                        "y": 403,
+                        "width": 281,
+                        "height": 162
+                    },
+                    "d01f2378-3539-5b5f-ad97-0d0558f7d40e": {
+                        "x": 1436,
+                        "y": 414,
+                        "width": 271,
+                        "height": 125,
+                        "id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e"
+                    }
+                },
+                "relationships": {
+                    "0c2c0855-f162-5c0d-97c6-5609a2c86f58": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+                                "dir": "West",
+                                "x": 935,
+                                "y": 489,
+                                "offset": {
+                                    "x": -124,
+                                    "y": -51
+                                }
+                            },
+                            "to": {
+                                "id": "7178e7a4-5131-504b-a7b3-c2c0cfedf343",
+                                "dir": "East",
+                                "x": 645,
+                                "y": 490,
+                                "offset": {
+                                    "x": 29,
+                                    "y": 34
+                                }
+                            }
+                        }
+                    },
+                    "21456cd2-c2ca-5a7f-ab6d-cef452710e8b": {
+                        "BinaryUI": {
+                            "from": {
+                                "id": "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+                                "x": 1216,
+                                "y": 495,
+                                "offset": {
+                                    "x": 13,
+                                    "y": 45
+                                },
+                                "dir": "East"
+                            },
+                            "to": {
+                                "id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e",
+                                "x": 1436,
+                                "y": 495,
+                                "offset": {
+                                    "x": -58,
+                                    "y": -39
+                                },
+                                "dir": "West"
+                            }
+                        }
+                    }
+                },
+                "config": null
+            }
+        }
+    },
+    "objects": {
+        "ids": [
+            "7178e7a4-5131-504b-a7b3-c2c0cfedf343",
+            "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+            "d01f2378-3539-5b5f-ad97-0d0558f7d40e"
+        ],
+        "entities": {
+            "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a": {
+                "id": "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+                "key_letter": "AO",
+                "name": "Another Object",
+                "description": "This is another object, but different.\n\nAs a side effect, this is going to test being able to collapse a type with a space. It will break, and I’ll have a new feature.\n",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "7178e7a4-5131-504b-a7b3-c2c0cfedf343": {
+                "id": "7178e7a4-5131-504b-a7b3-c2c0cfedf343",
+                "key_letter": "OBJ",
+                "name": "Object",
+                "description": "Imported Object\n\n🐶 { \"imported_object\": { \"domain\": \"crate::domain::sarzak\", \"model_file\": \"../sarzak/models/sarzak.json\", \"id\": \"7178e7a4-5131-504b-a7b3-c2c0cfedf343\" }}\n\n",
+                "attributes": {
+                    "4717289d-ed9c-5931-94ce-a73a66b88856": {
+                        "id": "4717289d-ed9c-5931-94ce-a73a66b88856",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            },
+            "d01f2378-3539-5b5f-ad97-0d0558f7d40e": {
+                "id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e",
+                "key_letter": "SS",
+                "name": "Simple Supertype",
+                "description": "Another Imported Object\n\nThis one is a supertype, and the code to access it's id needs to be different:\n\n```rust\n// Good\nsuper_t.id()\n// Bad\nsuper_t.id\n```\n\n🐶 { \"imported_object\": { \"domain\": \"crate::domain::isa\", \"model_file\": \"tests/mdd/models/isa.json\", \"id\": \"6339b18b-3929-51ae-ad1a-f0cb4dc73362\" }}\n",
+                "attributes": {
+                    "7946cc86-f91d-5a3d-858d-b8dc226573f3": {
+                        "id": "7946cc86-f91d-5a3d-858d-b8dc226573f3",
+                        "name": "id",
+                        "type": "Uuid"
+                    }
+                }
+            }
+        }
+    },
+    "relationships": {
+        "ids": [
+            "0c2c0855-f162-5c0d-97c6-5609a2c86f58",
+            "21456cd2-c2ca-5a7f-ab6d-cef452710e8b"
+        ],
+        "entities": {
+            "0c2c0855-f162-5c0d-97c6-5609a2c86f58": {
+                "Binary": {
+                    "id": "0c2c0855-f162-5c0d-97c6-5609a2c86f58",
+                    "number": 1,
+                    "from": {
+                        "obj_id": "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+                        "description": "points at",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional",
+                        "formalizing_attribute_name": "ptr"
+                    },
+                    "to": {
+                        "obj_id": "7178e7a4-5131-504b-a7b3-c2c0cfedf343",
+                        "description": "is pointed at by",
+                        "cardinality": "One",
+                        "conditionality": "Conditional"
+                    }
+                }
+            },
+            "21456cd2-c2ca-5a7f-ab6d-cef452710e8b": {
+                "Binary": {
+                    "id": "21456cd2-c2ca-5a7f-ab6d-cef452710e8b",
+                    "number": 2,
+                    "from": {
+                        "obj_id": "0e3094c7-3d15-5dd9-93ca-26b37ee71d3a",
+                        "description": "has a",
+                        "cardinality": "One",
+                        "conditionality": "Unconditional",
+                        "formalizing_attribute_name": "edge"
+                    },
+                    "to": {
+                        "obj_id": "d01f2378-3539-5b5f-ad97-0d0558f7d40e",
+                        "description": "has nothing to do with",
+                        "cardinality": "One",
+                        "conditionality": "Conditional"
+                    }
+                }
+            }
+        }
+    }
+}

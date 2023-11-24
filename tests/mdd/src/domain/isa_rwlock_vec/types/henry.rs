@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"henry-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock_vec::types::simple_subtype_a::SimpleSubtypeA;
@@ -44,7 +43,6 @@ impl Henry {
         &'a self,
         store: &'a IsaRwlockVecStore,
     ) -> Vec<Arc<RwLock<SimpleSubtypeA>>> {
-        span!("r3_simple_subtype_a");
         vec![store.exhume_simple_subtype_a(&self.bar).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"d-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::one_to_many_rwlock_vec::types::referent::Referent;
@@ -48,7 +47,6 @@ impl D {
         &'a self,
         store: &'a OneToManyRwlockVecStore,
     ) -> Vec<Arc<RwLock<Referent>>> {
-        span!("r4_referent");
         match self.ptr {
             Some(ref ptr) => vec![store.exhume_referent(&ptr).unwrap()],
             None => Vec::new(),

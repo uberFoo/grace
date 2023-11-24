@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::baz::Baz;
@@ -56,7 +55,7 @@ impl SimpleSupertype {
         store.inter_simple_supertype(|id| {
             Rc::new(RefCell::new(SimpleSupertype {
                 state: state,
-                subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.borrow().id),
+                subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.borrow().id), // b
                 id,
             }))
         })
@@ -80,7 +79,6 @@ impl SimpleSupertype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-nav-backward-one-to-baz"}}}
     /// Navigate to [`Baz`] across R4(1-1)
     pub fn r4_baz<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Baz>>> {
-        span!("r4_baz");
         vec![store
             .iter_baz()
             .find(|baz| baz.borrow().fugue == self.id)

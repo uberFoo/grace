@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock_vec::types::beta::Beta;
@@ -36,7 +35,7 @@ impl SuperBar {
     ) -> Arc<RwLock<SuperBar>> {
         store.inter_super_bar(|id| {
             Arc::new(RwLock::new(SuperBar {
-                subtype: SuperBarEnum::Gamma(subtype.read().unwrap().id),
+                subtype: SuperBarEnum::Gamma(subtype.read().unwrap().id), // b
                 id,
             }))
         })
@@ -45,7 +44,6 @@ impl SuperBar {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-impl-nav-subtype-to-supertype-beta"}}}
     // Navigate to [`Beta`] across R11(isa)
     pub fn r11_beta<'a>(&'a self, store: &'a IsaRwlockVecStore) -> Vec<Arc<RwLock<Beta>>> {
-        span!("r11_beta");
         vec![store
             .iter_beta()
             .find(|beta| {

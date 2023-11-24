@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::sarzak_rwlock::types::relationship::Relationship;
@@ -47,14 +46,12 @@ impl Isa {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Supertype>>> {
-        span!("r13_supertype");
         vec![store.exhume_supertype(&self.supertype).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa-struct-impl-nav-backward-1_M-to-subtype"}}}
     /// Navigate to [`Subtype`] across R27(1-M)
     pub fn r27_subtype<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Subtype>>> {
-        span!("r27_subtype");
         store
             .iter_subtype()
             .filter(|subtype| subtype.read().unwrap().isa == self.id)
@@ -67,7 +64,6 @@ impl Isa {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Relationship>>> {
-        span!("r4_relationship");
         vec![store.exhume_relationship(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

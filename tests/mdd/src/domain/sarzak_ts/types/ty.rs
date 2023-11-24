@@ -46,7 +46,7 @@ impl Ty {
         let new = Self::External(external.id);
         store.inter_ty(new.clone());
         new
-    }
+    } // wtf?
 
     /// Create a new instance of Ty::Float
     pub fn new_float() -> Self {
@@ -65,7 +65,7 @@ impl Ty {
         let new = Self::Object(object.id);
         store.inter_ty(new.clone());
         new
-    }
+    } // wtf?
 
     /// Create a new instance of Ty::SString
     pub fn new_s_string() -> Self {

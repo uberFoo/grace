@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"ownership-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::borrowed::Borrowed;
@@ -46,7 +45,7 @@ impl Ownership {
     ) -> Rc<RefCell<Ownership>> {
         store.inter_ownership(|id| {
             Rc::new(RefCell::new(Ownership {
-                subtype: OwnershipEnum::Borrowed(subtype.borrow().id),
+                subtype: OwnershipEnum::Borrowed(subtype.borrow().id), // b
                 id,
             }))
         })

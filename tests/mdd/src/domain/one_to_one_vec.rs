@@ -17,12 +17,9 @@ pub const UUID_NS: Uuid = uuid!("2b22547d-74d3-5dd4-94a9-122a2ac9341f");
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tracy_client::Client;
 
     #[test]
     fn test_r1() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let tgt_0 = Referent::new("fred".to_owned(), &mut store);
@@ -42,8 +39,6 @@ mod tests {
 
     #[test]
     fn test_r2() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let tgt_0 = Referent::new("hugh".to_owned(), &mut store);
@@ -66,8 +61,6 @@ mod tests {
 
     #[test]
     fn test_r3() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let tgt_0 = Referent::new("jerry".to_owned(), &mut store);
@@ -92,8 +85,6 @@ mod tests {
 
     #[test]
     fn test_r8() {
-        Client::start();
-
         // This one is the reflexive relationship
         let mut store = ObjectStore::new();
 

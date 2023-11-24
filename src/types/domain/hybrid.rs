@@ -149,7 +149,9 @@ impl CodeWriter for Hybrid {
                             emit!(buffer, "use parking_lot::Mutex;")
                         }
                     };
-                    emit!(buffer, "use tracy_client::span;");
+                    if config.get_tracy() {
+                        emit!(buffer, "use tracy_client::span;");
+                    }
                 }
 
                 // Everything has an `id`, everything needs this.
@@ -718,7 +720,7 @@ impl CodeWriter for HybridNewImpl {
                             // The compiler can sort this out.
                             if async_rwlock && !(is_singleton && !is_supertype) {
                                 if is_imported {
-                                    emit!(buffer, "let s_id = subtype.{id};",);
+                                    emit!(buffer, "let s_id = subtype.read().unwrap().{id};",);
                                 } else {
                                     emit!(buffer, "let s_id = subtype.read().await.{id};",);
                                 }
@@ -756,7 +758,7 @@ impl CodeWriter for HybridNewImpl {
                                         if is_imported {
                                             emit!(
                                                 buffer,
-                                                "let {} = {}.{id};",
+                                                "let {} = {}.read().unwrap().{id};",
                                                 field.name,
                                                 rval.name,
                                             )

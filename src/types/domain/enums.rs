@@ -145,7 +145,10 @@ impl CodeWriter for Enum {
                             emit!(buffer, "use parking_lot::Mutex;")
                         }
                     };
-                    uses.insert("use tracy_client::span;".to_owned());
+
+                    if config.get_tracy() {
+                        uses.insert("use tracy_client::span;".to_owned());
+                    }
                 }
 
                 // Everything has an `id`, everything needs this.

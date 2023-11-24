@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock::types::baz::Baz;
@@ -56,7 +55,7 @@ impl SimpleSupertype {
         let id = Uuid::new_v4();
         let new = Arc::new(RwLock::new(SimpleSupertype {
             state: state,
-            subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.read().unwrap().id()),
+            subtype: SimpleSupertypeEnum::SimpleSubtypeA(subtype.read().unwrap().id()), // b
             id,
         }));
         store.inter_simple_supertype(new.clone());
@@ -82,7 +81,6 @@ impl SimpleSupertype {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_supertype-struct-impl-nav-backward-one-to-baz"}}}
     /// Navigate to [`Baz`] across R4(1-1)
     pub fn r4_baz<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<Baz>>> {
-        span!("r4_baz");
         vec![store
             .iter_baz()
             .find(|baz| baz.read().unwrap().fugue == self.id)

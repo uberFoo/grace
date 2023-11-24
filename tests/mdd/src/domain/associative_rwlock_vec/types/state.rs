@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"state-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_rwlock_vec::types::acknowledged_event::AcknowledgedEvent;
@@ -41,7 +40,6 @@ impl State {
         &'a self,
         store: &'a AssociativeRwlockVecStore,
     ) -> Vec<Arc<RwLock<AcknowledgedEvent>>> {
-        span!("r20_acknowledged_event");
         store
             .iter_acknowledged_event()
             .filter(|acknowledged_event| acknowledged_event.read().unwrap().state_id == self.id)

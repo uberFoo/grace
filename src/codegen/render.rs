@@ -257,7 +257,10 @@ impl ForStore for GType {
                         ),
                     }
                 } else {
-                    format!("&{}", object.as_type(mutability, woog, domain))
+                    format!(
+                        "&std::sync::Arc<std::sync::RwLock<{}>>",
+                        object.as_type(mutability, woog, domain)
+                    )
                 }
             }
             GType::Option(o) => {
@@ -462,9 +465,13 @@ trait Sanitize {
     fn sanitize(&self) -> String;
 }
 
+// 🚧 These should really be a macro.
 impl Sanitize for &str {
     fn sanitize(&self) -> String {
         let result = match *self {
+            "async" => "a_sink".to_owned(),
+            "await" => "a_wait".to_owned(),
+            "Await" => "a_wait".to_owned(),
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
             "break" => "x_break".to_owned(),
@@ -478,6 +485,8 @@ impl Sanitize for &str {
             "Error" => "x_error".to_owned(),
             "false" => "false_literal".to_owned(),
             "False" => "false_literal".to_owned(),
+            "future" => "x_future".to_owned(),
+            "Future" => "x_future".to_owned(),
             "if" => "x_if".to_owned(),
             "If" => "x_if".to_owned(),
             "let" => "x_let".to_owned(),
@@ -492,6 +501,8 @@ impl Sanitize for &str {
             "Object Store" => "z_object_store".to_owned(),
             "option" => "woog_option".to_owned(),
             "Option" => "woog_option".to_owned(),
+            "path" => "x_path".to_owned(),
+            "Path" => "x_path".to_owned(),
             "print" => "x_print".to_owned(),
             "Print" => "x_print".to_owned(),
             "ref" => "x_ref".to_owned(),
@@ -526,6 +537,9 @@ impl Sanitize for &str {
 impl Sanitize for String {
     fn sanitize(&self) -> String {
         let result = match self.as_str() {
+            "async" => "a_sink".to_owned(),
+            "await" => "a_wait".to_owned(),
+            "Await" => "a_wait".to_owned(),
             "box" => "x_box".to_owned(),
             "Box" => "x_box".to_owned(),
             "break" => "x_break".to_owned(),
@@ -539,6 +553,8 @@ impl Sanitize for String {
             "Error" => "x_error".to_owned(),
             "false" => "false_literal".to_owned(),
             "False" => "false_literal".to_owned(),
+            "future" => "x_future".to_owned(),
+            "Future" => "x_future".to_owned(),
             "if" => "x_if".to_owned(),
             "If" => "x_if".to_owned(),
             "let" => "x_let".to_owned(),
@@ -553,6 +569,8 @@ impl Sanitize for String {
             "Object Store" => "z_object_store".to_owned(),
             "option" => "woog_option".to_owned(),
             "Option" => "woog_option".to_owned(),
+            "path" => "x_path".to_owned(),
+            "Path" => "x_path".to_owned(),
             "print" => "x_print".to_owned(),
             "Print" => "x_print".to_owned(),
             "ref" => "x_ref".to_owned(),

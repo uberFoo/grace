@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"anchor-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_vec::types::subtype_anchor::SubtypeAnchor;
@@ -46,7 +45,6 @@ impl Anchor {
         &'a self,
         store: &'a AssociativeVecStore,
     ) -> Vec<Rc<RefCell<SubtypeAnchor>>> {
-        span!("r10_subtype_anchor");
         let subtype_anchor = store
             .iter_subtype_anchor()
             .find(|subtype_anchor| subtype_anchor.borrow().anchor_id == self.id);

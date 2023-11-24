@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"isa_ui-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_vec::types::subtype_anchor::SubtypeAnchor;
@@ -37,7 +36,6 @@ impl IsaUi {
         &'a self,
         store: &'a AssociativeVecStore,
     ) -> Vec<Rc<RefCell<SubtypeAnchor>>> {
-        span!("r10_subtype_anchor");
         store
             .iter_subtype_anchor()
             .filter(|subtype_anchor| subtype_anchor.borrow().isaui_id == self.id)

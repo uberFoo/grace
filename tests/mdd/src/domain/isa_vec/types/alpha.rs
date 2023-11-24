@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"alpha-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::gamma::Gamma;
@@ -37,7 +36,7 @@ impl Alpha {
         store.inter_alpha(|id| {
             Rc::new(RefCell::new(Alpha {
                 name: name.to_owned(),
-                subtype: AlphaEnum::Gamma(subtype.borrow().id),
+                subtype: AlphaEnum::Gamma(subtype.borrow().id), // b
                 id,
             }))
         })

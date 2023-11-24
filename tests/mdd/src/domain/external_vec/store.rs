@@ -52,6 +52,7 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::external_vec-object-store-methods"}}}
     /// Inter (insert) [`Nunchuck`] into the store.
     ///
+    #[inline]
     pub fn inter_nunchuck<F>(&mut self, nunchuck: F) -> Rc<RefCell<Nunchuck>>
     where
         F: Fn(usize) -> Rc<RefCell<Nunchuck>>,
@@ -87,6 +88,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Nunchuck`] from the store.
     ///
+    #[inline]
     pub fn exhume_nunchuck(&self, id: &usize) -> Option<Rc<RefCell<Nunchuck>>> {
         match self.nunchuck.get(*id) {
             Some(nunchuck) => nunchuck.clone(),
@@ -96,7 +98,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Nunchuck`] from the store.
     ///
+    #[inline]
     pub fn exorcise_nunchuck(&mut self, id: &usize) -> Option<Rc<RefCell<Nunchuck>>> {
+        log::debug!(target: "store", "exorcising nunchuck slot: {id}.");
         let result = self.nunchuck[*id].take();
         self.nunchuck_free_list.push(*id);
         result
@@ -104,6 +108,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Nunchuck>`.
     ///
+    #[inline]
     pub fn iter_nunchuck(&self) -> impl Iterator<Item = Rc<RefCell<Nunchuck>>> + '_ {
         let len = self.nunchuck.len();
         (0..len)
@@ -118,6 +123,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Timestamp`] into the store.
     ///
+    #[inline]
     pub fn inter_timestamp<F>(&mut self, timestamp: F) -> Rc<RefCell<Timestamp>>
     where
         F: Fn(usize) -> Rc<RefCell<Timestamp>>,
@@ -153,6 +159,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Timestamp`] from the store.
     ///
+    #[inline]
     pub fn exhume_timestamp(&self, id: &usize) -> Option<Rc<RefCell<Timestamp>>> {
         match self.timestamp.get(*id) {
             Some(timestamp) => timestamp.clone(),
@@ -162,7 +169,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Timestamp`] from the store.
     ///
+    #[inline]
     pub fn exorcise_timestamp(&mut self, id: &usize) -> Option<Rc<RefCell<Timestamp>>> {
+        log::debug!(target: "store", "exorcising timestamp slot: {id}.");
         let result = self.timestamp[*id].take();
         self.timestamp_free_list.push(*id);
         result
@@ -170,6 +179,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Timestamp>`.
     ///
+    #[inline]
     pub fn iter_timestamp(&self) -> impl Iterator<Item = Rc<RefCell<Timestamp>>> + '_ {
         let len = self.timestamp.len();
         (0..len)

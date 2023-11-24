@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"nunchuck-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::external_rwlock_vec::types::timestamp::Timestamp;
@@ -45,7 +44,6 @@ impl Nunchuck {
         &'a self,
         store: &'a ExternalRwlockVecStore,
     ) -> Vec<Arc<RwLock<Timestamp>>> {
-        span!("r1_timestamp");
         vec![store.exhume_timestamp(&self.time).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

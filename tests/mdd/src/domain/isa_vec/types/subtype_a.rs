@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::super_t::SuperT;
@@ -42,7 +41,6 @@ impl SubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_a-impl-nav-subtype-to-supertype-super_t"}}}
     // Navigate to [`SuperT`] across R2(isa)
     pub fn r2_super_t<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<SuperT>>> {
-        span!("r2_super_t");
         vec![store
             .iter_super_t()
             .find(|super_t| {

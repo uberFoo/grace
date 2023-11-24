@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::one_to_many_vec::types::referent::Referent;
@@ -45,7 +44,6 @@ impl A {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"a-struct-impl-nav-forward-to-ptr"}}}
     /// Navigate to [`Referent`] across R1(1-*)
     pub fn r1_referent<'a>(&'a self, store: &'a OneToManyVecStore) -> Vec<Rc<RefCell<Referent>>> {
-        span!("r1_referent");
         vec![store.exhume_referent(&self.ptr).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

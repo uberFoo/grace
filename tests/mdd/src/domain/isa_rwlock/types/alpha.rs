@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"alpha-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock::types::gamma::Gamma;
@@ -37,7 +36,7 @@ impl Alpha {
         let id = Uuid::new_v4();
         let new = Arc::new(RwLock::new(Alpha {
             name: name,
-            subtype: AlphaEnum::Gamma(subtype.read().unwrap().id),
+            subtype: AlphaEnum::Gamma(subtype.read().unwrap().id), // b
             id,
         }));
         store.inter_alpha(new.clone());

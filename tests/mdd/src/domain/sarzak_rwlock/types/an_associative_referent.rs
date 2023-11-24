@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"an_associative_referent-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::sarzak_rwlock::types::associative::Associative;
@@ -50,7 +49,6 @@ impl AnAssociativeReferent {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<Associative>>> {
-        span!("r22_associative");
         vec![store.exhume_associative(&self.associative).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -60,7 +58,6 @@ impl AnAssociativeReferent {
         &'a self,
         store: &'a SarzakRwlockStore,
     ) -> Vec<Arc<RwLock<AssociativeReferent>>> {
-        span!("r22_associative_referent");
         vec![store.exhume_associative_referent(&self.referent).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

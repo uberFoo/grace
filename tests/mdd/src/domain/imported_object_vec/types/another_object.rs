@@ -2,13 +2,13 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-use-statements"}}}
 use uuid::Uuid;
 
-use crate::domain::isa::types::simple_supertype::SimpleSupertype;
-use crate::domain::sarzak::types::object::Object;
+use domain::isa::types::simple_supertype::SimpleSupertype;
+use domain::sarzak::types::object::Object;
 use serde::{Deserialize, Serialize};
 
 use crate::domain::imported_object_vec::store::ObjectStore as ImportedObjectVecStore;
-use crate::domain::isa::store::ObjectStore as IsaStore;
-use crate::domain::sarzak::store::ObjectStore as SarzakStore;
+use domain::isa::store::ObjectStore as IsaStore;
+use domain::sarzak::store::ObjectStore as SarzakStore;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"another_object-struct-documentation"}}}

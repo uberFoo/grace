@@ -309,7 +309,7 @@ fn forward(
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
-                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
+                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> impl futures::Stream<Item = {store_type}> + '_ {{",
                         binary.number,
                         store.name
                     );
@@ -321,11 +321,13 @@ fn forward(
                         store.name
                     );
                 }
-                emit!(
-                    buffer,
-                    "span!(\"r{}_{obj_ident}\");",
-                    binary.number,
-                );
+                if config.get_tracy() {
+                    emit!(
+                        buffer,
+                        "span!(\"r{}_{obj_ident}\");",
+                        binary.number,
+                    );
+                }
             } else {
                 emit!(
                     buffer,
@@ -339,7 +341,7 @@ fn forward(
             if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                 emit!(
                     buffer,
-                    "vec![store.exhume_{obj_ident}(&self.{}).await.unwrap()]",
+                    "stream::iter(vec![store.exhume_{obj_ident}(&self.{}).await.unwrap()].into_iter())",
                     referrer.referential_attribute.as_ident()
                 );
             } else {
@@ -387,14 +389,22 @@ fn forward_conditional(
 
             if is_uber {
                 let store_type = get_value_wrapper(is_imported, config, r_obj, woog, domain);
-                if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                if is_imported {
                     emit!(
                         buffer,
-                        "pub async fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
+                        "pub fn r{}_{}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
                         binary.number,
                         r_obj.as_ident(),
                         store.name
                     );
+                } else if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
+                        emit!(
+                            buffer,
+                            "pub async fn r{}_{}<'a>(&'a self, store: &'a {}) -> impl futures::Stream<Item = {store_type}> + '_ {{",
+                            binary.number,
+                            r_obj.as_ident(),
+                            store.name
+                        );
                 } else {
                     emit!(
                         buffer,
@@ -404,12 +414,14 @@ fn forward_conditional(
                         store.name
                     );
                 }
-                emit!(
-                    buffer,
-                    "span!(\"r{}_{}\");",
-                    binary.number,
-                    r_obj.as_ident()
-                );
+                if config.get_tracy() {
+                    emit!(
+                        buffer,
+                        "span!(\"r{}_{}\");",
+                        binary.number,
+                        r_obj.as_ident()
+                    );
+                }
             } else {
                 emit!(
                     buffer,
@@ -437,14 +449,16 @@ fn forward_conditional(
                             r_obj.as_ident(),
                             referrer.referential_attribute.as_ident()
                         );
+                        emit!(buffer, "None => Vec::new(),");
                     } else {
                         emit!(
                             buffer,
-                            "Some(ref {}) => vec![store.exhume_{}({}).await.unwrap()],",
+                            "Some(ref {}) => stream::iter(vec![store.exhume_{}({}).await.unwrap()].into_iter()),",
                             referrer.referential_attribute.as_ident(),
                             r_obj.as_ident(),
                             referrer.referential_attribute.as_ident()
                         );
+                        emit!(buffer, "None => stream::iter(vec![].into_iter()),");
                     }
                 } else {
                     emit!(
@@ -454,6 +468,7 @@ fn forward_conditional(
                         r_obj.as_ident(),
                         referrer.referential_attribute.as_ident()
                     );
+                    emit!(buffer, "None => Vec::new(),");
                 }
             } else {
                 emit!(
@@ -463,9 +478,9 @@ fn forward_conditional(
                     r_obj.as_ident(),
                     referrer.referential_attribute.as_ident()
                 );
+                emit!(buffer, "None => Vec::new(),");
             }
 
-            emit!(buffer, "None => Vec::new(),");
             emit!(buffer, "}}");
             emit!(buffer, "}}");
 
@@ -520,15 +535,18 @@ fn backward_one(
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
-                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
+                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> impl futures::Stream<Item = {store_type}> + '_ {{",
                         binary.number,
                         store.name
                     );
-                    emit!(
-                        buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
-                    );
+
+                    if config.get_tracy() {
+                        emit!(
+                            buffer,
+                            "span!(\"r{}_{obj_ident}\");",
+                            binary.number,
+                        );
+                    }
                     emit!(
                         buffer,
                         "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async {{"
@@ -542,7 +560,7 @@ fn backward_one(
                     emit!(buffer, "}} else {{");
                     emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}).collect().await");
+                    emit!(buffer, "}})");
                 } else {
                     emit!(
                         buffer,
@@ -550,11 +568,13 @@ fn backward_one(
                         binary.number,
                         store.name
                     );
-                    emit!(
-                        buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
-                    );
+                    if config.get_tracy() {
+                        emit!(
+                            buffer,
+                            "span!(\"r{}_{obj_ident}\");",
+                            binary.number,
+                        );
+                    }
                     emit!(buffer, "vec![store.iter_{obj_ident}()");
                     emit!(
                         buffer,
@@ -649,11 +669,13 @@ fn backward_one_conditional(
                         binary.number,
                         store.name
                     );
-                    emit!(
-                        buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
-                    );
+                    if config.get_tracy() {
+                        emit!(
+                            buffer,
+                            "span!(\"r{}_{obj_ident}\");",
+                            binary.number,
+                        );
+                    }
                     emit!(
                         buffer,
                         "let {obj_ident} = store.iter_{obj_ident}()"
@@ -742,18 +764,20 @@ fn backward_one_biconditional(
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
-                        "pub async fn r{}c_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
+                        "pub async fn r{}c_{obj_ident}<'a>(&'a self, store: &'a {}) -> impl futures::Stream<Item = {store_type}> + '_ {{",
                         binary.number,
                         store.name
                     );
+                    if config.get_tracy() {
+                        emit!(
+                            buffer,
+                            "span!(\"r{}_{obj_ident}\");",
+                            binary.number,
+                        );
+                    }
                     emit!(
                         buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
-                    );
-                    emit!(
-                        buffer,
-                        "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async move {{"
+                        "store.iter_{obj_ident}().await.filter_map(move |{obj_ident}| async move {{"
                     );
                     emit!(
                         buffer,
@@ -764,7 +788,7 @@ fn backward_one_biconditional(
                     emit!(buffer, "}} else {{");
                     emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}).collect().await");
+                    emit!(buffer, "}})");
                 } else {
                     emit!(
                         buffer,
@@ -772,11 +796,13 @@ fn backward_one_biconditional(
                         binary.number,
                         store.name
                     );
-                    emit!(
-                        buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
-                    );
+                    if config.get_tracy() {
+                        emit!(
+                            buffer,
+                            "span!(\"r{}_{obj_ident}\");",
+                            binary.number,
+                        );
+                    }
                     emit!(
                         buffer,
                         "let {obj_ident} = store.iter_{obj_ident}()"
@@ -866,11 +892,13 @@ fn backward_1_m(
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
-                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
+                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> impl futures::Stream<Item = {store_type}> + '_ {{",
                         binary.number,
                         store.name
                     );
-                    emit!(buffer, "span!(\"r{}_{obj_ident}\");", binary.number,);
+                    if config.get_tracy() {
+                        emit!(buffer, "span!(\"r{}_{obj_ident}\");", binary.number,);
+                    }
                     emit!(
                         buffer,
                         "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async {{"
@@ -884,7 +912,7 @@ fn backward_1_m(
                     emit!(buffer, "}} else {{");
                     emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}).collect().await");
+                    emit!(buffer, "}})");
                 } else {
                     emit!(
                         buffer,
@@ -893,7 +921,9 @@ fn backward_1_m(
                         r_obj.as_ident(),
                         store.name
                     );
-                    emit!(buffer, "span!(\"r{}_{obj_ident}\");", binary.number,);
+                    if config.get_tracy() {
+                        emit!(buffer, "span!(\"r{}_{obj_ident}\");", binary.number,);
+                    }
                     emit!(buffer, "store.iter_{obj_ident}()");
                     emit!(buffer, ".filter(|{obj_ident}| {{");
                     emit!(
@@ -972,25 +1002,27 @@ fn backward_1_mc(
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(
                         buffer,
-                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> Vec<{store_type}> {{",
+                        "pub async fn r{}_{obj_ident}<'a>(&'a self, store: &'a {}) -> impl futures::Stream<Item = {store_type}> + '_ {{",
                         binary.number,
                         store.name
                     );
+                    if config.get_tracy() {
+                        emit!(
+                            buffer,
+                            "span!(\"r{}_{obj_ident}\");",
+                            binary.number,
+                        );
+                    }
                     emit!(
                         buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
-                    );
-                    emit!(
-                        buffer,
-                        "store.iter_{obj_ident}().await.filter_map(|{obj_ident}| async move {{"
+                        "store.iter_{obj_ident}().await.filter_map(move |{obj_ident}| async move {{"
                     );
                     emit!(buffer, "if {obj_ident}.read().await.{ref_ident} == Some(self.{id}) {{");
                     emit!(buffer, "Some({obj_ident}.clone())");
                     emit!(buffer, "}} else {{");
                     emit!(buffer, "None");
                     emit!(buffer, "}}");
-                    emit!(buffer, "}}).collect().await");
+                    emit!(buffer, "}})");
                 } else {
                     emit!(
                         buffer,
@@ -998,11 +1030,13 @@ fn backward_1_mc(
                         binary.number,
                         store.name
                     );
-                    emit!(
-                        buffer,
-                        "span!(\"r{}_{obj_ident}\");",
-                        binary.number,
-                    );
+                    if config.get_tracy() {
+                        emit!(
+                            buffer,
+                            "span!(\"r{}_{obj_ident}\");",
+                            binary.number,
+                        );
+                    }
                     emit!(buffer, "store.iter_{}()", r_obj.as_ident());
                     emit!(
                         buffer,
@@ -1068,7 +1102,9 @@ fn forward_assoc(
                         r_obj.as_ident(),
                         store.name
                     );
-                    emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                    if config.get_tracy() {
+                        emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                    }
                     if is_imported {
                         emit!(
                             buffer,
@@ -1091,7 +1127,9 @@ fn forward_assoc(
                         r_obj.as_ident(),
                         store.name
                     );
-                    emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                    if config.get_tracy() {
+                        emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                    }
                     emit!(
                         buffer,
                         "vec![store.exhume_{}(&self.{}).unwrap()]",
@@ -1109,7 +1147,9 @@ fn forward_assoc(
                     store.name,
                     r_obj.as_type(&Ownership::new_borrowed(), woog, domain)
                 );
-                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                if config.get_tracy() {
+                    emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                }
                 emit!(
                     buffer,
                     "vec![store.exhume_{}(&self.{}).unwrap()]",
@@ -1172,7 +1212,9 @@ fn backward_assoc_one(
                     );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                if config.get_tracy() {
+                    emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                }
             } else {
                 emit!(
                     buffer,
@@ -1259,7 +1301,9 @@ fn backward_assoc_one_conditional(
                     );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{obj_ident}\");");
+                if config.get_tracy() {
+                    emit!(buffer, "span!(\"r{number}_{obj_ident}\");");
+                }
             } else {
                 emit!(
                     buffer,
@@ -1349,7 +1393,9 @@ fn backward_assoc_many(
                     );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                if config.get_tracy() {
+                    emit!(buffer, "span!(\"r{number}_{}\");", r_obj.as_ident());
+                }
             } else {
                 emit!(
                     buffer,
@@ -1455,7 +1501,9 @@ fn subtype_to_supertype(
                     );
                 }
 
-                emit!(buffer, "span!(\"r{number}_{s_obj_ident}\");");
+                if config.get_tracy() {
+                    emit!(buffer, "span!(\"r{number}_{s_obj_ident}\");");
+                }
             } else {
                 emit!(
                     buffer,
@@ -1558,9 +1606,10 @@ fn get_value_wrapper(
     woog: &WoogStore,
     domain: &Domain,
 ) -> String {
+    // 🚧 Really we need to be able to check the type of the imported domain's references.
     if is_imported {
         format!(
-            "std::rc::Rc<std::cell::RefCell<{}>>",
+            "std::sync::Arc<std::sync::RwLock<{}>>",
             obj.as_type(&Ownership::new_borrowed(), woog, domain)
         )
     } else {

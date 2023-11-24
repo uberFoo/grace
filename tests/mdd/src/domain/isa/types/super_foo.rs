@@ -20,7 +20,7 @@ impl SuperFoo {
         let new = Self::Gamma(gamma.id);
         store.inter_super_foo(new.clone());
         new
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_foo-get-id-impl"}}}

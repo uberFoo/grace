@@ -15,7 +15,6 @@ pub const UUID_NS: Uuid = uuid!("68f2a75c-4397-5ee0-9bae-86b95bd1b866");
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tracy_client::Client;
 
     use everything::Everything;
     use rando_object::RandoObject;
@@ -23,8 +22,6 @@ mod tests {
 
     #[test]
     fn test_structs() {
-        Client::start();
-
         // Test struct creation ✅
         let r = RandoObject {
             id: Uuid::new_v5(&UUID_NS, b"rando"),
@@ -50,8 +47,6 @@ mod tests {
 
     #[test]
     fn test_new() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let r = RandoObject::new("rando".to_owned(), &mut store);
@@ -72,8 +67,6 @@ mod tests {
 
     #[test]
     fn test_rel_nav() {
-        Client::start();
-
         let mut store = ObjectStore::new();
 
         let r = RandoObject::new("rando".to_owned(), &mut store);

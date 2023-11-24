@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::mutable::MUTABLE;
@@ -67,7 +66,6 @@ impl Borrowed {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"borrowed-impl-nav-subtype-to-supertype-ownership"}}}
     // Navigate to [`Ownership`] across R9(isa)
     pub fn r9_ownership<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Ownership>>> {
-        span!("r9_ownership");
         vec![store
             .iter_ownership()
             .find(|ownership| {

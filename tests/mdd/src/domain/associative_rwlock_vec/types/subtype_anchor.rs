@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_anchor-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::associative_rwlock_vec::types::anchor::Anchor;
@@ -53,7 +52,6 @@ impl SubtypeAnchor {
         &'a self,
         store: &'a AssociativeRwlockVecStore,
     ) -> Vec<Arc<RwLock<Anchor>>> {
-        span!("r10_anchor");
         vec![store.exhume_anchor(&self.anchor_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -63,7 +61,6 @@ impl SubtypeAnchor {
         &'a self,
         store: &'a AssociativeRwlockVecStore,
     ) -> Vec<Arc<RwLock<IsaUi>>> {
-        span!("r10_isa_ui");
         vec![store.exhume_isa_ui(&self.isaui_id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

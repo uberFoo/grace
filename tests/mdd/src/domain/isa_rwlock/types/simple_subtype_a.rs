@@ -8,7 +8,6 @@ use crate::domain::isa_rwlock::types::simple_supertype::SimpleSupertypeEnum;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -47,7 +46,7 @@ impl SimpleSubtypeA {
             store.inter_simple_subtype_a(new.clone());
             new
         }
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-get-id-impl"}}}
@@ -60,7 +59,6 @@ impl SimpleSubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-struct-impl-nav-backward-one-to-henry"}}}
     /// Navigate to [`Henry`] across R3(1-1)
     pub fn r3_henry<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<Henry>>> {
-        span!("r3_henry");
         vec![store
             .iter_henry()
             .find(|henry| henry.read().unwrap().bar == self.id())
@@ -73,7 +71,6 @@ impl SimpleSubtypeA {
         &'a self,
         store: &'a IsaRwlockStore,
     ) -> Vec<Arc<RwLock<SimpleSupertype>>> {
-        span!("r1_simple_supertype");
         vec![store
             .iter_simple_supertype()
             .find(|simple_supertype| {

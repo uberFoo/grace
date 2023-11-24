@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::sarzak_rwlock::types::ty::Ty;
@@ -38,7 +37,7 @@ pub struct External {
     pub ctor: String,
     pub id: Uuid,
     pub name: String,
-    pub path: String,
+    pub x_path: String,
 }
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-implementation"}}}
@@ -48,7 +47,7 @@ impl External {
     pub fn new(
         ctor: String,
         name: String,
-        path: String,
+        x_path: String,
         store: &mut SarzakRwlockStore,
     ) -> Arc<RwLock<External>> {
         let id = Uuid::new_v4();
@@ -56,7 +55,7 @@ impl External {
             ctor,
             id,
             name,
-            path,
+            x_path,
         }));
         store.inter_external(new.clone());
         new
@@ -65,7 +64,6 @@ impl External {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"external-impl-nav-subtype-to-supertype-ty"}}}
     // Navigate to [`Ty`] across R3(isa)
     pub fn r3_ty<'a>(&'a self, store: &'a SarzakRwlockStore) -> Vec<Arc<RwLock<Ty>>> {
-        span!("r3_ty");
         vec![store.exhume_ty(&self.id).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

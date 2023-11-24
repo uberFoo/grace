@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_t-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock_vec::types::not_important::NotImportant;
@@ -49,7 +48,7 @@ impl SuperT {
         store.inter_super_t(|id| {
             Arc::new(RwLock::new(SuperT {
                 pointer: pointer.read().unwrap().id,
-                subtype: SuperTEnum::SubtypeA(subtype.read().unwrap().id),
+                subtype: SuperTEnum::SubtypeA(subtype.read().unwrap().id), // b
                 id,
             }))
         })
@@ -65,7 +64,7 @@ impl SuperT {
         store.inter_super_t(|id| {
             Arc::new(RwLock::new(SuperT {
                 pointer: pointer.read().unwrap().id,
-                subtype: SuperTEnum::SubtypeB(subtype.read().unwrap().id),
+                subtype: SuperTEnum::SubtypeB(subtype.read().unwrap().id), // b
                 id,
             }))
         })
@@ -77,7 +76,6 @@ impl SuperT {
         &'a self,
         store: &'a IsaRwlockVecStore,
     ) -> Vec<Arc<RwLock<Reference>>> {
-        span!("r88_reference");
         vec![store.exhume_reference(&self.pointer).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
@@ -87,7 +85,6 @@ impl SuperT {
         &'a self,
         store: &'a IsaRwlockVecStore,
     ) -> Vec<Arc<RwLock<NotImportant>>> {
-        span!("r888_not_important");
         let not_important = store
             .iter_not_important()
             .find(|not_important| not_important.read().unwrap().x_ref == self.id);

@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::super_t::SuperT;
@@ -82,7 +81,6 @@ impl NotImportant {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"not_important-struct-impl-nav-forward-to-x_ref"}}}
     /// Navigate to [`SuperT`] across R888(1-*)
     pub fn r888_super_t<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<SuperT>>> {
-        span!("r888_super_t");
         vec![store.exhume_super_t(&self.x_ref).unwrap()]
     }
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}

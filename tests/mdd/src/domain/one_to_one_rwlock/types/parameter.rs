@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"parameter-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use serde::{Deserialize, Serialize};
@@ -52,7 +51,6 @@ impl Parameter {
         &'a self,
         store: &'a OneToOneRwlockStore,
     ) -> Vec<Arc<RwLock<Parameter>>> {
-        span!("r8_parameter");
         match self.next {
             Some(ref next) => vec![store.exhume_parameter(&next).unwrap()],
             None => Vec::new(),
@@ -65,7 +63,6 @@ impl Parameter {
         &'a self,
         store: &'a OneToOneRwlockStore,
     ) -> Vec<Arc<RwLock<Parameter>>> {
-        span!("r8_parameter");
         let parameter = store
             .iter_parameter()
             .find(|parameter| parameter.read().unwrap().next == Some(self.id));

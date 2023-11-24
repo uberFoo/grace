@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock::types::super_t::SuperT;
@@ -38,7 +37,6 @@ impl Reference {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"reference-struct-impl-nav-backward-one-to-super_t"}}}
     /// Navigate to [`SuperT`] across R88(1-1)
     pub fn r88_super_t<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<SuperT>>> {
-        span!("r88_super_t");
         vec![store
             .iter_super_t()
             .find(|super_t| super_t.read().unwrap().pointer == self.id)

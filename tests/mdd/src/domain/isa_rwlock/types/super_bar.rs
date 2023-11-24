@@ -7,7 +7,6 @@ use crate::domain::isa_rwlock::types::gamma::Gamma;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
 
@@ -34,7 +33,7 @@ impl SuperBar {
             store.inter_super_bar(new.clone());
             new
         }
-    }
+    } // wtf?
 
     // {"magic":"","directive":{"End":{"directive":"ignore-orig"}}}
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-get-id-impl"}}}
@@ -47,7 +46,6 @@ impl SuperBar {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"super_bar-impl-nav-subtype-to-supertype-beta"}}}
     // Navigate to [`Beta`] across R11(isa)
     pub fn r11_beta<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<Beta>>> {
-        span!("r11_beta");
         vec![store
             .iter_beta()
             .find(|beta| {

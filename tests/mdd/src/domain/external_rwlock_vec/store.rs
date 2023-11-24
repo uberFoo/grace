@@ -52,6 +52,7 @@ impl ObjectStore {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"domain::external_rwlock_vec-object-store-methods"}}}
     /// Inter (insert) [`Nunchuck`] into the store.
     ///
+    #[inline]
     pub fn inter_nunchuck<F>(&mut self, nunchuck: F) -> Arc<RwLock<Nunchuck>>
     where
         F: Fn(usize) -> Arc<RwLock<Nunchuck>>,
@@ -93,6 +94,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Nunchuck`] from the store.
     ///
+    #[inline]
     pub fn exhume_nunchuck(&self, id: &usize) -> Option<Arc<RwLock<Nunchuck>>> {
         match self.nunchuck.read().unwrap().get(*id) {
             Some(nunchuck) => nunchuck.clone(),
@@ -102,7 +104,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Nunchuck`] from the store.
     ///
+    #[inline]
     pub fn exorcise_nunchuck(&mut self, id: &usize) -> Option<Arc<RwLock<Nunchuck>>> {
+        log::debug!(target: "store", "exorcising nunchuck slot: {id}.");
         let result = self.nunchuck.write().unwrap()[*id].take();
         self.nunchuck_free_list.lock().unwrap().push(*id);
         result
@@ -110,6 +114,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Nunchuck>`.
     ///
+    #[inline]
     pub fn iter_nunchuck(&self) -> impl Iterator<Item = Arc<RwLock<Nunchuck>>> + '_ {
         let len = self.nunchuck.read().unwrap().len();
         (0..len)
@@ -124,6 +129,7 @@ impl ObjectStore {
 
     /// Inter (insert) [`Timestamp`] into the store.
     ///
+    #[inline]
     pub fn inter_timestamp<F>(&mut self, timestamp: F) -> Arc<RwLock<Timestamp>>
     where
         F: Fn(usize) -> Arc<RwLock<Timestamp>>,
@@ -165,6 +171,7 @@ impl ObjectStore {
 
     /// Exhume (get) [`Timestamp`] from the store.
     ///
+    #[inline]
     pub fn exhume_timestamp(&self, id: &usize) -> Option<Arc<RwLock<Timestamp>>> {
         match self.timestamp.read().unwrap().get(*id) {
             Some(timestamp) => timestamp.clone(),
@@ -174,7 +181,9 @@ impl ObjectStore {
 
     /// Exorcise (remove) [`Timestamp`] from the store.
     ///
+    #[inline]
     pub fn exorcise_timestamp(&mut self, id: &usize) -> Option<Arc<RwLock<Timestamp>>> {
+        log::debug!(target: "store", "exorcising timestamp slot: {id}.");
         let result = self.timestamp.write().unwrap()[*id].take();
         self.timestamp_free_list.lock().unwrap().push(*id);
         result
@@ -182,6 +191,7 @@ impl ObjectStore {
 
     /// Get an iterator over the internal `HashMap<&Uuid, Timestamp>`.
     ///
+    #[inline]
     pub fn iter_timestamp(&self) -> impl Iterator<Item = Arc<RwLock<Timestamp>>> + '_ {
         let len = self.timestamp.read().unwrap().len();
         (0..len)

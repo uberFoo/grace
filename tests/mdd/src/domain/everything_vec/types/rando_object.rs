@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"rando_object-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::everything_vec::types::everything::Everything;
@@ -43,7 +42,6 @@ impl RandoObject {
         &'a self,
         store: &'a EverythingVecStore,
     ) -> Vec<Rc<RefCell<Everything>>> {
-        span!("r1_everything");
         vec![store
             .iter_everything()
             .find(|everything| everything.borrow().rando == self.id)

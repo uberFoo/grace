@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-use-statements"}}}
 use std::cell::RefCell;
 use std::rc::Rc;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_vec::types::henry::Henry;
@@ -45,7 +44,7 @@ impl SimpleSubtypeA {
     ) -> Rc<RefCell<SimpleSubtypeA>> {
         store.inter_simple_subtype_a(|id| {
             Rc::new(RefCell::new(SimpleSubtypeA {
-                subtype: SimpleSubtypeAEnum::OhBoy(subtype.borrow().id),
+                subtype: SimpleSubtypeAEnum::OhBoy(subtype.borrow().id), // b
                 id,
             }))
         })
@@ -54,7 +53,6 @@ impl SimpleSubtypeA {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"simple_subtype_a-struct-impl-nav-backward-one-to-henry"}}}
     /// Navigate to [`Henry`] across R3(1-1)
     pub fn r3_henry<'a>(&'a self, store: &'a IsaVecStore) -> Vec<Rc<RefCell<Henry>>> {
-        span!("r3_henry");
         vec![store
             .iter_henry()
             .find(|henry| henry.borrow().bar == self.id)
@@ -67,7 +65,6 @@ impl SimpleSubtypeA {
         &'a self,
         store: &'a IsaVecStore,
     ) -> Vec<Rc<RefCell<SimpleSupertype>>> {
-        span!("r1_simple_supertype");
         vec![store
             .iter_simple_supertype()
             .find(|simple_supertype| {

@@ -2,7 +2,6 @@
 // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-use-statements"}}}
 use std::sync::Arc;
 use std::sync::RwLock;
-use tracy_client::span;
 use uuid::Uuid;
 
 use crate::domain::isa_rwlock::types::super_t::SuperT;
@@ -39,7 +38,6 @@ impl SubtypeB {
     // {"magic":"","directive":{"Start":{"directive":"ignore-orig","tag":"subtype_b-impl-nav-subtype-to-supertype-super_t"}}}
     // Navigate to [`SuperT`] across R2(isa)
     pub fn r2_super_t<'a>(&'a self, store: &'a IsaRwlockStore) -> Vec<Arc<RwLock<SuperT>>> {
-        span!("r2_super_t");
         vec![store
             .iter_super_t()
             .find(|super_t| {
