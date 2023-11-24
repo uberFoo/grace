@@ -37,7 +37,6 @@ impl IsaUi {
         &'a self,
         store: &'a AssociativeRwlockVecStore,
     ) -> Vec<Arc<RwLock<SubtypeAnchor>>> {
-        span!("r10_subtype_anchor");
         store
             .iter_subtype_anchor()
             .filter(|subtype_anchor| subtype_anchor.read().unwrap().isaui_id == self.id)
