@@ -21,7 +21,6 @@ use crate::{
         collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid, object_is_singleton,
-        object_is_supertype,
         render::{RenderIdent, RenderType},
         AttributeBuilder,
     },

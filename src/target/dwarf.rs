@@ -26,7 +26,7 @@ use crate::{
 };
 
 // pub(crate) const DWARF_EXT: &str = "道";
-pub(crate) const DWARF_EXT: &str = "tao";
+pub(crate) const DWARF_EXT: &str = "ore";
 
 lazy_static! {
     //

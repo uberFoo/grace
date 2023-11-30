@@ -66,6 +66,8 @@ impl SarzakModelCompiler for ModelCompiler {
             None => GraceCompilerOptions::default(),
         };
 
+        tracy_client::Client::start();
+
         let mut target = match options.target {
             Target::Domain(_) => {
                 DomainTarget::new(&options, package, module, src_path.as_ref(), domain, test)?

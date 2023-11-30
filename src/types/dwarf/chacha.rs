@@ -202,7 +202,7 @@ impl CodeWriter for ChaChaFile {
         emit!(buffer, "use std::{{path::Path, fmt::{{self, Display}}}};");
         emit!(buffer, "");
 
-        emit!(buffer, "use abi_stable::{{export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, RResult, RStr, RString, RVec}}}};");
+        emit!(buffer, "use abi_stable::{{export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, ROption, RBox, RResult, RStr, RString, RVec}}}};");
         emit!(buffer, "use dwarf::{{chacha::value::{{FfiProxy, FfiValue, Value}}, plug_in::{{Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
         emit!(buffer, "use log::debug;");
         emit!(buffer, "use uuid::{{uuid, Uuid}};");
@@ -645,7 +645,14 @@ struct {domain_type}Store {{
                         ),
                         "Option" => emit!(
                             buffer,
-                            "Ok(FfiValue::Option(self.inner.{read}.{attr_name}.into())),"
+                            r#"
+                                    match self.inner.{read}.{attr_name} {{
+                                        Some({attr_name}) => Ok(FfiValue::Option(ROption::RSome(
+                                            RBox::new(FfiValue::Uuid({attr_name}.into())),
+                                        ))),
+                                        None => Ok(FfiValue::Option(ROption::RNone)),
+                                    }}
+                            "#,
                         ),
                         "String" => emit!(
                             buffer,
@@ -820,10 +827,10 @@ fn render_ctor(
     let obj_ident = obj.as_ident();
     let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
     let obj_const = obj.as_const();
+
     let is_singleton = object_is_singleton(obj, config, imports, domain)?;
     let is_enum = object_is_enum(obj, config, imports, domain)?;
-
-    let is_hybrid = if let Some(parent) = parent_obj {
+    let parent_is_hybrid = if let Some(parent) = parent_obj {
         object_is_hybrid(parent, config, imports, domain)?
     } else {
         false
@@ -863,7 +870,8 @@ fn render_ctor(
 
     // dbg!(&obj_ident, is_enum, is_singleton, is_hybrid);
 
-    if is_enum || is_singleton && !is_hybrid {
+    // if (is_enum || is_singleton) && !parent_is_hybrid {
+    if is_singleton && !parent_is_hybrid {
         if let Some(parent) = parent_obj {
             let parent_type = parent.as_type(&Ownership::new_owned(), woog, domain);
             let parent_ident = parent.as_ident();
