@@ -81,6 +81,10 @@ impl FileGenerator for DwarfGenerator {
             emit!(buffer, "// {}", line);
         }
 
+        emit!(buffer, "");
+        emit!(buffer, "use std::prelude::*;");
+        emit!(buffer, "");
+
         // buffer.block(
         // DirectiveKind::AllowEditing,
         // format!("{}-dwarf-file", module),
@@ -172,7 +176,7 @@ impl CodeWriter for DwarfFile {
 
         // Generate code for the ObjectStore
         // let store_type = module.as_type(&Ownership::new_owned(), woog, domain);
-        let store_type = module.to_upper_camel_case();
+        let store_type = module.sanitize().to_upper_camel_case();
         emit!(
             buffer,
             r#"// This annotation tells the interpreter that the struct will be a proxy for
@@ -198,7 +202,7 @@ impl {store_type}Store {{
             let is_imported = config.is_imported(&obj.id);
             let is_singleton = object_is_singleton(obj, config, imports, domain)?;
 
-            let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
+            let obj_type = obj.name.sanitize().to_upper_camel_case();
             let obj_ident = obj.as_ident();
 
             if is_imported || is_singleton {
@@ -226,13 +230,14 @@ impl {store_type}Store {{
             //
             // Emit the type definition
             //
-            let obj_type = obj.as_type(&Ownership::new_owned(), woog, domain);
+            let obj_type = obj.name.sanitize().to_upper_camel_case();
+            let store_type = obj.name.to_owned();
             emit_object_comments(&obj.description, "// ", "", buffer)?;
             emit!(
                 buffer,
                 r#"// This tells the interpreter that this struct is a proxy for an object called
 // "{obj_type}" in the store named "{module}"; declared above.
-#[proxy(store = "{module}", object = "{obj_type}")]"#
+#[proxy(store = "{module}", object = "{store_type}")]"#
             );
             emit!(buffer, "struct {} {{", obj_type,);
 
@@ -263,7 +268,7 @@ impl {store_type}Store {{
             if !is_enum && !is_hybrid {
                 emit!(
                     buffer,
-                    r#"    #[proxy(store = "{module}", object = "{obj_type}", func = "new")]"#
+                    r#"    #[proxy(store = "{module}", object = "{store_type}", func = "new")]"#
                 );
                 write!(buffer, "    fn new(").context(FormatSnafu)?;
 
@@ -304,12 +309,12 @@ impl {store_type}Store {{
 
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];
-                    let s_obj_type = s_obj.as_type(&Ownership::new_owned(), woog, domain);
+                    let s_obj_type = s_obj.name.sanitize().to_upper_camel_case();
                     let s_obj_ident = s_obj.as_ident();
 
                     emit!(
                         buffer,
-                        r#"    #[proxy(store = "{module}", object = "{obj_type}", func = "new_{s_obj_ident}")]"#
+                        r#"    #[proxy(store = "{module}", object = "{store_type}", func = "new_{s_obj_ident}")]"#
                     );
                     write!(buffer, "    fn new_{s_obj_ident}(").context(FormatSnafu)?;
                     let mut ft = true;
@@ -343,7 +348,7 @@ impl {store_type}Store {{
 
             emit!(
                 buffer,
-                r#"    #[proxy(store = "{module}", object = "{obj_type}", func = "instances")]
+                r#"    #[proxy(store = "{module}", object = "{store_type}", func = "instances")]
     fn instances() -> [Self];
 "#
             );
@@ -393,10 +398,10 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
     let lu_dog = &LU_DOG;
 
     match *s_read!(ty) {
-        ValueType::Char(_) => "char".to_string(),
-        ValueType::Empty(_) => "()".to_string(),
-        ValueType::Error(_) => "maybe error type wasn't a good idea".to_string(),
-        ValueType::Function(_) => "<function>".to_string(),
+        ValueType::Char(_) => "char".to_owned(),
+        ValueType::Empty(_) => "()".to_owned(),
+        ValueType::Error(_) => "maybe error type wasn't a good idea".to_owned(),
+        ValueType::Function(_) => "<function>".to_owned(),
         ValueType::Import(ref import) => {
             let lu_dog = lu_dog.read().unwrap();
             let import = lu_dog.exhume_import(import).unwrap();
@@ -407,7 +412,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
                 import.name.clone()
             }
         }
-        ValueType::Lambda(_) => "<lambda>".to_string(),
+        ValueType::Lambda(_) => "<lambda>".to_owned(),
         ValueType::List(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
@@ -417,7 +422,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
             };
             format!("Vec<{}>", &value_type_to_string(&inner, woog, domain))
         }
-        ValueType::Range(_) => "<range>".to_string(),
+        ValueType::Range(_) => "<range>".to_owned(),
         ValueType::Reference(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
@@ -433,17 +438,17 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
             match ty {
                 Ty::Object(ref id) => {
                     let obj = domain.sarzak().exhume_object(id).unwrap();
-                    obj.as_type(&Ownership::new_owned(), woog, domain)
+                    obj.name.sanitize().to_upper_camel_case()
                 }
-                Ty::SString(_) => "string".to_string(),
-                Ty::Boolean(_) => "bool".to_string(),
-                Ty::Integer(_) => "int".to_string(),
-                Ty::Float(_) => "float".to_string(),
-                Ty::SUuid(_) => "Uuid".to_string(),
-                Ty::External(_) => "ext_what_to_do".to_string(),
+                Ty::SString(_) => "string".to_owned(),
+                Ty::Boolean(_) => "bool".to_owned(),
+                Ty::Integer(_) => "int".to_owned(),
+                Ty::Float(_) => "float".to_owned(),
+                Ty::SUuid(_) => "Uuid".to_owned(),
+                Ty::External(_) => "ext_what_to_do".to_owned(),
             }
         }
-        ValueType::Unknown(_) => "<unknown>".to_string(),
+        ValueType::Unknown(_) => "<unknown>".to_owned(),
         ValueType::WoogOption(ref id) => {
             let inner = {
                 let lu_dog = lu_dog.read().unwrap();
@@ -459,9 +464,7 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
             let woog_struct = lu_dog.exhume_woog_struct(id).unwrap();
             let woog_struct = s_read!(woog_struct);
 
-            woog_struct
-                .name
-                .as_type(&Ownership::new_owned(), woog, domain)
+            woog_struct.name.sanitize().to_upper_camel_case()
         }
         ValueType::ZObjectStore(ref id) => {
             let domain_name = {
@@ -471,7 +474,26 @@ fn value_type_to_string(ty: &Arc<Lock<ValueType>>, woog: &WoogStore, domain: &Do
                 zobject_store.domain.to_owned()
             };
 
-            format!("{}Store", domain_name.to_upper_camel_case())
+            format!("{}Store", domain_name.sanitize().to_upper_camel_case())
+        }
+    }
+}
+
+trait Sanitize {
+    fn sanitize(&self) -> String;
+}
+
+impl Sanitize for String {
+    fn sanitize(&self) -> String {
+        self.as_str().sanitize()
+    }
+}
+
+impl Sanitize for &str {
+    fn sanitize(&self) -> String {
+        match *self {
+            "Future" => "XFuture".to_owned(),
+            _ => self.to_string(),
         }
     }
 }

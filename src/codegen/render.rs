@@ -538,71 +538,7 @@ impl Sanitize for &str {
 
 impl Sanitize for String {
     fn sanitize(&self) -> String {
-        let result = match self.as_str() {
-            "async" => "a_sink".to_owned(),
-            "await" => "a_wait".to_owned(),
-            "Await" => "a_wait".to_owned(),
-            "box" => "x_box".to_owned(),
-            "Box" => "x_box".to_owned(),
-            "break" => "x_break".to_owned(),
-            "crate" => "krate".to_owned(),
-            "Crate" => "krate".to_owned(),
-            "const" => "woog_const".to_owned(),
-            "Const" => "woog_const".to_owned(),
-            "enum" => "woog_enum".to_owned(),
-            "Enum" => "woog_enum".to_owned(),
-            "error" => "x_error".to_owned(),
-            "Error" => "x_error".to_owned(),
-            "false" => "false_literal".to_owned(),
-            "False" => "false_literal".to_owned(),
-            "future" => "x_future".to_owned(),
-            "Future" => "x_future".to_owned(),
-            "if" => "x_if".to_owned(),
-            "If" => "x_if".to_owned(),
-            "let" => "x_let".to_owned(),
-            "Let" => "x_let".to_owned(),
-            "macro" => "x_macro".to_owned(),
-            "Macro" => "x_macro".to_owned(),
-            "match" => "x_match".to_owned(),
-            "Match" => "x_match".to_owned(),
-            "model" => "x_model".to_owned(),
-            "Model" => "x_model".to_owned(),
-            "None" => "z_none".to_owned(),
-            "Object Store" => "z_object_store".to_owned(),
-            "option" => "woog_option".to_owned(),
-            "Option" => "woog_option".to_owned(),
-            "path" => "x_path".to_owned(),
-            "Path" => "x_path".to_owned(),
-            "plugin" => "x_plugin".to_owned(),
-            "Plugin" => "x_plugin".to_owned(),
-            "print" => "x_print".to_owned(),
-            "Print" => "x_print".to_owned(),
-            "ref" => "x_ref".to_owned(),
-            "return" => "x_return".to_owned(),
-            "Return" => "x_return".to_owned(),
-            "Some" => "z_some".to_owned(),
-            "String" => "s_string".to_owned(),
-            "string" => "s_string".to_owned(),
-            "struct" => "woog_struct".to_owned(),
-            "Struct" => "woog_struct".to_owned(),
-            "super" => "x_super".to_owned(),
-            "Super" => "x_super".to_owned(),
-            "true" => "true_literal".to_owned(),
-            "True" => "true_literal".to_owned(),
-            "type" => "ty".to_owned(),
-            "Type" => "ty".to_owned(),
-            "uuid" => "s_uuid".to_owned(),
-            "Uuid" => "s_uuid".to_owned(),
-            "UUID" => "s_uuid".to_owned(),
-            "value" => "x_value".to_owned(),
-            "Value" => "x_value".to_owned(),
-            _ => self.to_owned(),
-        };
-
-        if self != &result {
-            debug!("sanitized: {} -> {}", self, result);
-        }
-        result
+        self.as_str().sanitize()
     }
 }
 
