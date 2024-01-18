@@ -456,8 +456,6 @@ impl DomainStore {
                                 "self.{obj_ident}_id_by_name.get(name).map(|{obj_ident}| {obj_ident}.0)",
                             );
                         } else {
-                            // 🚧 Is this right? We are changing the signaature of the method, which
-                            // i think is bad as it will break existing code.
                             emit!(
                                 buffer,
                                 "pub fn exhume_{obj_ident}_id_by_name(&self, name: &str) -> Option<&Uuid> {{",
@@ -1249,7 +1247,12 @@ impl CodeWriter for DomainStore {
 /// name. Or maybe we don't do one at all, and let the end user sort it out.
 /// I sort of like that option better. I wonder how many errors will ensue...
 fn object_has_name(obj: &Object, _domain: &Domain) -> bool {
-    obj.name == "Object" || obj.name == "Struct" || obj.name == "Function" || obj.name == "Field"
+    obj.name == "Object"
+        || obj.name == "Struct"
+        || obj.name == "Function"
+        || obj.name == "Field"
+        || obj.name == "Object Store"
+        || obj.name == "Enumeration"
     // obj.r1_attribute(domain.sarzak())
     //     .iter()
     //     .find(|attr| {

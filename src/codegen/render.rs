@@ -479,6 +479,8 @@ impl Sanitize for &str {
             "Crate" => "krate".to_owned(),
             "const" => "woog_const".to_owned(),
             "Const" => "woog_const".to_owned(),
+            "debugger" => "x_debugger".to_owned(),
+            "Debugger" => "x_debugger".to_owned(),
             "enum" => "woog_enum".to_owned(),
             "Enum" => "woog_enum".to_owned(),
             "error" => "x_error".to_owned(),

@@ -411,7 +411,7 @@ struct {domain_type}Store {{
                             let plugin = Plugin_TO::from_value({obj_ident}_proxy, TD_CanDowncast);
                             let proxy = FfiProxy {{
                                 module: module.into(),
-                                uuid: {obj_const}_ID.into(),
+                                ty: {obj_const}_ID.into(),
                                 id: {obj_ident}.{read}.{id}.into(), // a
                                 plugin: plugin.clone(),
                             }};
@@ -516,7 +516,7 @@ struct {domain_type}Store {{
                             let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                             let proxy = FfiProxy {{
                                 module: module.into(),
-                                uuid: {obj_const}_ID.into(),
+                                ty: {obj_const}_ID.into(),
                                 id: {obj_ident}.{read}.{id}.into(), // b
                                 plugin: plugin.clone(),
                             }};
@@ -674,7 +674,7 @@ struct {domain_type}Store {{
                                     let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                     let proxy = FfiProxy {{
                                         module: module.into(),
-                                        uuid: {type_const}_ID.into(),
+                                        ty: {type_const}_ID.into(),
                                         id: self.inner.{read}.{id}.into(), // c
                                         plugin: plugin.clone(),
                                     }};
@@ -888,7 +888,7 @@ fn render_ctor(
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
                                     module: module.into(),
-                                    uuid: {obj_const}.into(),
+                                    ty: {obj_const}.into(),
                                     id: {obj_ident}.{read}.id().into(),
                                     plugin: plugin.clone(),
                                 }};
@@ -1015,7 +1015,7 @@ fn render_ctor(
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
                                     module: module.into(),
-                                    uuid: {parent_const}_ID.into(),
+                                    ty: {parent_const}_ID.into(),
                                     id: {obj_ident}.{read}.{id}.into(), // d
                                     plugin: plugin.clone(),
                                 }};
@@ -1045,7 +1045,7 @@ fn render_ctor(
                                 let plugin = Plugin_TO::from_value(this, TD_CanDowncast);
                                 let proxy = FfiProxy {{
                                     module: module.into(),
-                                    uuid: {obj_const}_ID.into(),
+                                    ty: {obj_const}_ID.into(),
                                     id: {obj_ident}.{read}.{id}.into(), // e
                                     plugin: plugin.clone(),
                                 }};
