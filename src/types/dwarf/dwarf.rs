@@ -4,13 +4,13 @@
 use std::{fmt::Write, sync::Arc};
 
 use heck::ToUpperCamelCase;
-use rustc_hash::FxHashMap as HashMap;
+use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
 use sarzak::{
     lu_dog::types::ValueType,
     mc::{CompilerSnafu, FormatSnafu, Result},
     sarzak::types::{Object, Ty},
     v2::domain::Domain,
-    woog::{store::ObjectStore as WoogStore, Ownership},
+    woog::store::ObjectStore as WoogStore,
 };
 use snafu::prelude::*;
 use uuid::Uuid;
@@ -21,7 +21,7 @@ use crate::{
         collect_attributes, emit_object_comments,
         generator::{CodeWriter, FileGenerator, GenerationAction},
         get_subtypes_sorted_from_super_obj, object_is_enum, object_is_hybrid, object_is_singleton,
-        render::{RenderIdent, RenderType},
+        render::RenderIdent,
         AttributeBuilder,
     },
     options::GraceConfig,
@@ -148,6 +148,24 @@ impl CodeWriter for DwarfFile {
 
         let mut objects: Vec<&Object> = domain.sarzak().iter_object().collect();
         objects.sort_by(|a, b| a.name.cmp(&b.name));
+        let _ = objects
+            .iter()
+            .filter(|obj| config.is_imported(&obj.id))
+            .map(|obj| -> Result<()> {
+                let imported = config.get_imported(&obj.id).unwrap();
+                let domain = imported.domain.split("::").last().unwrap();
+
+                emit!(
+                    buffer,
+                    "use {domain}::{domain}::{};",
+                    obj.name.to_upper_camel_case()
+                );
+                Ok(())
+            })
+            .collect::<Result<Vec<_>, _>>();
+
+        emit!(buffer, "");
+
         let objects = objects
             .iter()
             .filter(|obj| {
@@ -155,24 +173,6 @@ impl CodeWriter for DwarfFile {
                 !config.is_imported(&obj.id)
             })
             .collect::<Vec<_>>();
-
-        // Add an import statement for each imported domain
-        // let mut imports = HashSet::default();
-        // for imported in domain
-        //     .sarzak()
-        //     .iter_object()
-        //     .filter(|obj| config.is_imported(&obj.id))
-        // {
-        //     let imported_object = config.get_imported(&imported.id).unwrap();
-        //     imports.insert(imported_object.domain.as_str());
-        // }
-        // // Insert ourselves
-        // imports.insert(module);
-
-        // for import in imports {
-        //     emit!(buffer, "use {};", import);
-        // }
-        // emit!(buffer, "");
 
         // Generate code for the ObjectStore
         // let store_type = module.as_type(&Ownership::new_owned(), woog, domain);
@@ -199,13 +199,12 @@ impl {store_type}Store {{
         );
 
         for obj in &objects {
-            let is_imported = config.is_imported(&obj.id);
             let is_singleton = object_is_singleton(obj, config, imports, domain)?;
 
             let obj_type = obj.name.sanitize().to_upper_camel_case();
             let obj_ident = obj.as_ident();
 
-            if is_imported || is_singleton {
+            if is_singleton {
                 continue;
             }
 
@@ -224,7 +223,6 @@ impl {store_type}Store {{
         for obj in &objects {
             let is_enum = object_is_enum(obj, config, imports, domain)?;
             let is_hybrid = object_is_hybrid(obj, config, imports, domain)?;
-            let is_imported = config.is_imported(&obj.id);
             let is_singleton = object_is_singleton(obj, config, imports, domain)?;
 
             //
@@ -293,19 +291,7 @@ impl {store_type}Store {{
                 }
                 writeln!(buffer, ") -> Self;\n").context(FormatSnafu)?;
             } else {
-                let (subtypes, domain) = if is_imported {
-                    let imported = config.get_imported(&obj.id).unwrap();
-                    let domain = imports.unwrap().get(&imported.domain).unwrap();
-                    (
-                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
-                        domain,
-                    )
-                } else {
-                    (
-                        get_subtypes_sorted_from_super_obj!(obj, domain.sarzak()),
-                        domain,
-                    )
-                };
+                let subtypes = get_subtypes_sorted_from_super_obj!(obj, domain.sarzak());
 
                 for subtype in subtypes {
                     let s_obj = subtype.r15_object(domain.sarzak())[0];

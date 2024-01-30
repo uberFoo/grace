@@ -1253,20 +1253,7 @@ fn object_has_name(obj: &Object, _domain: &Domain) -> bool {
         || obj.name == "Field"
         || obj.name == "Object Store"
         || obj.name == "Enumeration"
-    // obj.r1_attribute(domain.sarzak())
-    //     .iter()
-    //     .find(|attr| {
-    //         if attr.name == "name" {
-    //             if let Ty::SString(_) = attr.r2_ty(domain.sarzak())[0] {
-    //                 true
-    //             } else {
-    //                 false
-    //             }
-    //         } else {
-    //             false
-    //         }
-    //     })
-    //     .is_some()
+        || obj.name == "Plugin"
 }
 
 fn generate_store_persistence(
