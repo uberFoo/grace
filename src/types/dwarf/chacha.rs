@@ -203,7 +203,7 @@ impl CodeWriter for ChaChaFile {
         emit!(buffer, "");
 
         emit!(buffer, "use abi_stable::{{export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, ROption, RBox, RResult, RStr, RString, RVec}}}};");
-        emit!(buffer, "use dwarf::{{chacha::value::{{FfiProxy, FfiValue, Value}}, plug_in::{{Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
+        emit!(buffer, "use dwarf::{{chacha::{{ffi_value::{{FfiProxy, FfiValue}}, value::Value}}, plug_in::{{Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
         emit!(buffer, "use log::debug;");
         emit!(buffer, "use uuid::{{uuid, Uuid}};");
         emit!(buffer, "");

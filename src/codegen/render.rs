@@ -654,7 +654,7 @@ pub(crate) fn render_binary_referential_attributes(
                 config.get_optimization_level(),
                 config.get_uber_store().unwrap(),
             ) {
-                (Vec, AsyncRwLock | StdRwLock | Single | NDRwLock) => "usize",
+                (Vec, AsyncRwLock | StdRwLock | Single | NDRwLock | ParkingLotRwLock) => "usize",
                 (None, StdRwLock | Single) => "Uuid",
                 (lvl, store) => {
                     panic!("{store} with optimization {lvl} is not currently supported")

@@ -224,7 +224,7 @@ impl DomainStoreVec {
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
                             },
-                            StdRwLock | NDRwLock => {
+                            StdRwLock | ParkingLotRwLock | NDRwLock => {
                                 emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
                                 emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
                                 emit!(buffer, "_index");
@@ -354,7 +354,7 @@ impl DomainStoreVec {
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                AsyncRwLock | StdRwLock | NDRwLock => {
+                                AsyncRwLock | StdRwLock | ParkingLotRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "self.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_owned(), {obj_ident}{read}.{id});",
@@ -437,7 +437,7 @@ impl DomainStoreVec {
                         } else {
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                AsyncRwLock | StdRwLock | NDRwLock =>  {
+                                AsyncRwLock | StdRwLock | ParkingLotRwLock | NDRwLock =>  {
                                     emit!(
                                         buffer,
                                         "match self.{obj_ident}{read}.get(*id) {{",
@@ -527,7 +527,7 @@ impl DomainStoreVec {
                                     emit!(buffer, "let result = self.{obj_ident}{write}[*id].take();");
                                     emit!(buffer, "self.{obj_ident}_free_list.lock().await.push(*id);");
                                 },
-                                AsyncRwLock | StdRwLock | NDRwLock =>  {
+                                StdRwLock | ParkingLotRwLock | NDRwLock =>  {
                                     emit!(buffer, "let result = self.{obj_ident}{write}[*id].take();");
                                     emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(*id);");
                                 },
@@ -586,7 +586,7 @@ impl DomainStoreVec {
                                 );
                             } else {
                                 match config.get_uber_store().unwrap() {
-                                    AsyncRwLock | StdRwLock | NDRwLock => {
+                                    AsyncRwLock | StdRwLock | ParkingLotRwLock | NDRwLock => {
                                         emit!(buffer, "self.{0}_id_by_name{read}.get(name).map(|{0}| *{0})", obj_ident);
                                     }
                                     Single => {
@@ -715,7 +715,7 @@ impl DomainStoreVec {
                                         "stream::iter((0..len)).filter_map(move |i| async move {{if self.{obj_ident}{read}[i].is_some(){{self.{obj_ident}{read}[i].clone()}} else {{ None }} }} )",
                                     );
                                 },
-                                StdRwLock | NDRwLock => {
+                                StdRwLock | ParkingLotRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "let len = self.{obj_ident}{read}.len();"
@@ -1061,7 +1061,7 @@ impl CodeWriter for DomainStoreVec {
                 use UberStoreOptions::*;
                 match config.get_uber_store().unwrap() {
                     AsyncRwLock => emit!(buffer, "#[derive(Debug)]"),
-                    Single | StdRwLock => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]"),
+                    Single | ParkingLotRwLock | StdRwLock => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]"),
                     NDRwLock=> emit!(buffer, "#[derive(Debug)]"),
                     _ => emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]")
                 }
@@ -1072,7 +1072,7 @@ impl CodeWriter for DomainStoreVec {
 
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
-                        StdRwLock
+                        StdRwLock | ParkingLotRwLock
                         | NDRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex<Vec<usize>>,"),
                         AsyncRwLock => emit!(buffer, "{obj_ident}_free_list: async_std::sync::Mutex<Vec<usize>>,"),
 
@@ -1361,7 +1361,7 @@ impl CodeWriter for DomainStoreVec {
                     if is_uber {
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            StdRwLock | NDRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
+                            StdRwLock | ParkingLotRwLock | NDRwLock => emit!(buffer, "{obj_ident}_free_list: std::sync::Mutex::new(Vec::new()),"),
                             AsyncRwLock => emit!(buffer, "{obj_ident}_free_list: async_std::sync::Mutex::new(Vec::new()),"),
                             Single => emit!(buffer, "{obj_ident}_free_list: Vec::new(),"),
                             store => panic!("{store} is not currently supported"),
@@ -1381,7 +1381,7 @@ impl CodeWriter for DomainStoreVec {
 
                         if object_has_name(obj, domain) {
                             match config.get_uber_store().unwrap() {
-                                AsyncRwLock | StdRwLock | NDRwLock => {
+                                AsyncRwLock | StdRwLock | ParkingLotRwLock| NDRwLock => {
                                     emit!(buffer, "{obj_ident}_id_by_name: Arc::new(RwLock::new(HashMap::default())),");
                                 }
                                 Single => {
@@ -1779,7 +1779,7 @@ fn generate_store_persistence(
                         let (read, _write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            AsyncRwLock | StdRwLock | NDRwLock => {
+                            AsyncRwLock | StdRwLock | ParkingLotRwLock | NDRwLock => {
                                 emit!(buffer, "for {obj_ident} in &*self.{obj_ident}{read} {{");
                             },
                             Single => {
@@ -1964,7 +1964,7 @@ fn generate_store_persistence(
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                AsyncRwLock | StdRwLock | NDRwLock => {
+                                AsyncRwLock | StdRwLock | ParkingLotRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.to_owned(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
@@ -2030,7 +2030,7 @@ fn generate_store_persistence(
                             let (read, write) = get_uber_read_write(config);
                             use UberStoreOptions::*;
                             match config.get_uber_store().unwrap() {
-                                AsyncRwLock| StdRwLock | NDRwLock => {
+                                AsyncRwLock| StdRwLock | ParkingLotRwLock | NDRwLock => {
                                     emit!(
                                         buffer,
                                         "store.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_owned(), {obj_ident}{read}.{id});"
@@ -2055,7 +2055,7 @@ fn generate_store_persistence(
                         let (read, write) = get_uber_read_write(config);
                         use UberStoreOptions::*;
                         match config.get_uber_store().unwrap() {
-                            AsyncRwLock | StdRwLock | NDRwLock => {
+                            AsyncRwLock | StdRwLock | ParkingLotRwLock |  NDRwLock => {
                                 emit!(
                                     buffer,
                                     "store.{obj_ident}{write}.insert({obj_ident}{read}.{id}, Some({obj_ident}.clone()));"
