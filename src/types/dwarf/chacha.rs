@@ -547,8 +547,6 @@ struct {domain_type}Store {{
     fn name(&self) -> RStr<'_> {{
         "merlin".into()
     }}
-
-    fn close(self) {{}}
 }}
 "#
         );
@@ -764,8 +762,6 @@ struct {domain_type}Store {{
     fn name(&self) -> RStr<'_> {{
         "{obj_type}".into()
     }}
-
-    fn close(self) {{}}
 }}
 "#
             );
