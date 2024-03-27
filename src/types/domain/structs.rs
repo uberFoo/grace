@@ -450,6 +450,10 @@ impl EqImpl {
 
 impl MethodImplementation for EqImpl {}
 
+/// Generate a PartialEq implementation for the object.
+///
+/// This generates a field-by-field comparison based on the object's attributes.
+///
 impl CodeWriter for EqImpl {
     fn write_code(
         &self,
@@ -465,7 +469,7 @@ impl CodeWriter for EqImpl {
         ensure!(
             obj_id.is_some(),
             CompilerSnafu {
-                description: "obj_id is required by DomainNewImpl"
+                description: "obj_id is required by EqImpl"
             }
         );
 

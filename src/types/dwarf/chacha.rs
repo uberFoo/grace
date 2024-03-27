@@ -202,8 +202,8 @@ impl CodeWriter for ChaChaFile {
         emit!(buffer, "use std::{{path::Path, fmt::{{self, Display}}}};");
         emit!(buffer, "");
 
-        emit!(buffer, "use abi_stable::{{export_root_module, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, ROption, RBox, RResult, RStr, RString, RVec}}}};");
-        emit!(buffer, "use dwarf::{{chacha::{{ffi_value::{{FfiProxy, FfiValue}}, value::Value}}, plug_in::{{Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
+        emit!(buffer, "use abi_stable::{{export_root_module, external_types::crossbeam_channel::RSender, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, ROption, RBox, RResult, RStr, RString, RVec}}}};");
+        emit!(buffer, "use dwarf::{{chacha::{{ffi_value::{{FfiProxy, FfiValue}}, value::Value}}, plug_in::{{LambdaCall, Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
         emit!(buffer, "use log::debug;");
         emit!(buffer, "use uuid::{{uuid, Uuid}};");
         emit!(buffer, "");
@@ -255,7 +255,7 @@ impl CodeWriter for ChaChaFile {
         emit!(
             buffer,
             r#"pub fn instantiate_root_module() -> PluginModRef {{
-    PluginModule {{ name, id, new }}.leak_into_prefix()
+    PluginModule {{ name, new }}.leak_into_prefix()
 }}
 "#
         );
@@ -271,18 +271,9 @@ pub fn name() -> RStr<'static> {{
 
         emit!(
             buffer,
-            r#"#[sabi_extern_fn]
-pub fn id() -> RStr<'static> {{
-    "{domain_name}".into()
-}}
-"#
-        );
-
-        emit!(
-            buffer,
             r#"/// Instantiates the plugin.
 #[sabi_extern_fn]
-pub fn new(args: RVec<FfiValue>) -> RResult<PluginType, Error> {{
+pub fn new(_: RSender<LambdaCall>, args: RVec<FfiValue>) -> RResult<PluginType, Error> {{
     match (|| {{
         if args.len() == 0 {{
             Ok({domain_type}Store {{
@@ -523,7 +514,7 @@ struct {domain_type}Store {{
 
                             instances.push(FfiValue::ProxyType(proxy));
                         }}
-                        Ok(FfiValue::Vector(instances.into()))
+                        Ok(FfiValue::List(instances.into()))
                     }}"#
             );
             // }
