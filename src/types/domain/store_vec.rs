@@ -995,35 +995,39 @@ impl CodeWriter for DomainStoreVec {
                     match config.get_uber_store().unwrap() {
                         Disabled => unreachable!(),
                         AsyncRwLock => {
-                            emit!(buffer, "use async_std::sync::Arc;");
+                            emit!(buffer, "use async_std::sync::{{Arc, Mutex}};");
                             emit!(buffer, "use async_std::sync::RwLock;");
                             emit!(buffer, "use std::fmt;");
                             emit!(buffer, "use serde::{{ser::SerializeStruct, Serializer, Deserializer, de::{{self, Visitor, MapAccess}}}};");
                             emit!(buffer, "use futures::stream::{{self, StreamExt}};");
+                            emit!(buffer, "use std::sync::Mutex;");
                         }
                         NDRwLock => {
                             emit!(buffer, "use std::sync::Arc;");
                             emit!(buffer, "use no_deadlocks::RwLock;");
+                            emit!(buffer, "use std::sync::Mutex;");
                         }
                         Single => {
                             emit!(buffer, "use std::cell::RefCell;");
-                            emit!(buffer, "use std::rc::Rc;")
+                            emit!(buffer, "use std::rc::Rc;");
                         },
                         StdRwLock => {
                             emit!(buffer, "use std::sync::Arc;");
-                            emit!(buffer, "use std::sync::RwLock;")
+                            emit!(buffer, "use std::sync::RwLock;");
+                            emit!(buffer, "use std::sync::Mutex;");
                         }
                         StdMutex => {
                             emit!(buffer, "use std::sync::Arc;");
-                            emit!(buffer, "use std::sync::Mutex;")
+                            emit!(buffer, "use std::sync::Mutex;");
                         }
                         ParkingLotRwLock => {
                             emit!(buffer, "use std::sync::Arc;");
-                            emit!(buffer, "use parking_lot::RwLock;")
+                            emit!(buffer, "use parking_lot::RwLock;");
+                            emit!(buffer, "use std::sync::Mutex;");
                         }
                         ParkingLotMutex => {
                             emit!(buffer, "use std::sync::Arc;");
-                            emit!(buffer, "use parking_lot::Mutex;")
+                            emit!(buffer, "use parking_lot::Mutex;");
                         }
                     };
                 }
@@ -1063,7 +1067,7 @@ impl CodeWriter for DomainStoreVec {
                     AsyncRwLock => emit!(buffer, "#[derive(Debug)]"),
                     Single | ParkingLotRwLock | StdRwLock => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]"),
                     NDRwLock=> emit!(buffer, "#[derive(Debug)]"),
-                    _ => emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]")
+                    _ => emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]")
                 }
 
                 emit!(buffer, "pub struct ObjectStore {{");
@@ -1156,6 +1160,22 @@ impl CodeWriter for DomainStoreVec {
                 }
                 emit!(buffer, "}}");
                 emit!(buffer, "");
+
+                emit!(buffer, "impl Clone for ObjectStore {{");
+                emit!(buffer, "fn clone(&self) -> Self {{");
+                emit!(buffer, "ObjectStore {{");
+                for obj in &objects {
+                    let obj_ident = obj.as_ident();
+
+                    emit!(buffer, "{obj_ident}_free_list: Mutex::new(self.{obj_ident}_free_list.lock().unwrap().clone()),");
+                    emit!(buffer, "{obj_ident}: self.{obj_ident}.clone(),");
+                    if object_has_name(obj, domain) {
+                        emit!(buffer, "{obj_ident}_id_by_name: self.{obj_ident}_id_by_name.clone(),");
+                    }
+                }
+                emit!(buffer, "}}");
+                emit!(buffer, "}}");
+                emit!(buffer, "}}");
 
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(buffer, "impl Serialize for ObjectStore {{");
@@ -1332,8 +1352,167 @@ impl CodeWriter for DomainStoreVec {
                     emit!(buffer, "];");
                     emit!(buffer, "deserializer.deserialize_struct(\"ObjectStore\", FIELDS, ObjectStoreVisitor)");
                     emit!(buffer, "}}}}\n");
-                }
+                } else {
+                    //
+                    // Not async
+                    //
+                    // emit!(buffer, "impl Serialize for ObjectStore {{");
+                    // emit!(buffer, "fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>");
+                    // emit!(buffer, "where S: Serializer, {{");
+                    // emit!(buffer, "let mut map = serializer.serialize_struct(\"ObjectStore\", {})?;", objects.len());
+                    // for obj in &objects {
+                    //     let obj_ident = obj.as_ident();
+                    //     let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+                    //     emit!(buffer, r#"
+                    //             let data = self.{obj_ident}_free_list.lock().unwrap();
+                    //             map.serialize_field(self.{obj_ident}_free_list, &*data)?;
+                    //             map.serialize_field(self.{obj_ident}, &self.{obj_ident})?;
+                    //     "#);
+                    // }
+                    // emit!(buffer, "map_end()");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "}}\n");
 
+                    // // Deserialize
+                    // emit!(buffer, "impl<'de> Deserialize<'de> for ObjectStore {{");
+                    // emit!(buffer, "fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>");
+                    // emit!(buffer, "where D: Deserializer<'de>, {{");
+                    // emit!(buffer, "enum SerdeField {{");
+                    // for obj in &objects {
+                    //     let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+                    //     emit!(
+                    //         buffer,
+                    //         "{obj_type},"
+                    //     );
+                    // }
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "impl<'de> Deserialize<'de> for SerdeField {{");
+                    // emit!(buffer, "fn deserialize<D>(deserializer: D) -> Result<SerdeField, D::Error>");
+                    // emit!(buffer, "where D: Deserializer<'de>, {{");
+                    // emit!(buffer, "struct FieldVisitor;");
+                    // emit!(buffer, "impl<'de> Visitor<'de> for FieldVisitor {{");
+                    // emit!(buffer, "type Value = SerdeField;");
+                    // emit!(buffer, "fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {{");
+                    // emit!(buffer, "formatter.write_str(\"field identifier\")");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "fn visit_str<E>(self, value: &str) -> Result<SerdeField, E>");
+                    // emit!(buffer, "where E: de::Error, {{");
+                    // emit!(buffer, "match value {{");
+                    // for obj in &objects {
+                    //     let obj_ident = obj.as_ident();
+                    //     let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+                    //     emit!(
+                    //         buffer,
+                    //         "\"{obj_ident}\" => Ok(SerdeField::{obj_type}),"
+                    //     );
+                    // }
+                    // emit!(buffer, "_ => Err(de::Error::unknown_field(value, FIELDS)),");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "deserializer.deserialize_identifier(FieldVisitor)");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "struct ObjectStoreVisitor;");
+                    // emit!(buffer, "impl<'de> Visitor<'de> for ObjectStoreVisitor {{");
+                    // emit!(buffer, "type Value = ObjectStore;");
+
+                    // emit!(buffer, "fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {{");
+                    // emit!(buffer, "formatter.write_str(\"struct ObjectStore\")");
+                    // emit!(buffer, "}}");
+
+                    // emit!(buffer, "fn visit_map<A>(self, mut map: A) -> Result<ObjectStore, A::Error>");
+                    // emit!(buffer, "where A: MapAccess<'de>, {{");
+                    // emit!(buffer, "let mut result = ObjectStore::new();");
+                    // emit!(buffer, "while let Some(key) = map.next_key()? {{");
+                    // emit!(buffer, "match key {{");
+                    // for obj in &objects {
+                    //     let obj_ident = obj.as_ident();
+                    //     let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+
+                    //     emit!(
+                    //         buffer,
+                    //         r#"SerdeField::{obj_type} => {{
+                    //             let mut guard = result.{obj_ident}.write();
+                    //             let values: Vec<{obj_type}> = map.next_value()?;
+                    //             for value in values {{
+                    //                 guard.push(Some(Arc::new(RwLock::new(value))));
+                    //             }}
+                    //         }}"#
+                    //     );
+                    // }
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "}}");
+                    // emit!(buffer, "Ok(result)");
+                    // emit!(buffer, "}}\n");
+
+                    // // emit!(buffer, "fn visit_seq<A>(self, mut seq: A) -> Result<ObjectStore, A::Error>");
+                    // // emit!(buffer, "where A: SeqAccess<'de>, {{");
+                    // // emit!(buffer, "let result = ObjectStore::new();");
+                    // // emit!(buffer, "let mut result = futures::executor::block_on(async {{ result.await }});");
+                    // // // for obj in &objects {
+                    // // //     let obj_ident = obj.as_ident();
+                    // // //     let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+
+                    // // //     emit!(
+                    // // //         buffer,
+                    // // //         r#"SerdeField::{obj_type} => futures::executor::block_on(async {{
+                    // // //         let guard = result.{obj_ident}.write().await;
+                    // // //         // This unwrap is unfortunate.
+                    // // //         for value in map.next_value::<Vec<Option<{obj_type}>>>().unwrap() {{
+                    // // //             let value = match value {{
+                    // // //                 Some(value) => Some(Arc::new(RwLock::new(value))),
+                    // // //                 None => None,
+                    // // //             }};
+                    // // //             guard.push(value);
+                    // // //         }}
+                    // // //     }}),"#,
+                    // // //     );
+                    // // // }
+                    // // for (n, obj) in objects.iter().enumerate() {
+                    // //     let obj_ident = obj.as_ident();
+
+                    // //     if n == 0 {
+                    // //         emit!(
+                    // //             buffer,
+                    // //             "result.{obj_ident} = Arc::new(RwLock::new(seq.next_element()?)).ok_or_else(|| de::Error::invalid_length({n}, &self))?;;",
+                    // //         );
+                    // //     }
+                    // // }
+                    // // emit!(buffer, "Ok(result)");
+                    // // emit!(buffer, "}}");
+                    // emit!(buffer, "}}\n");
+
+                    // for obj in &objects {
+                    //     let _obj_ident = obj.as_ident();
+                    //     let obj_type = obj.as_type(&Ownership::new_borrowed(), woog, domain);
+
+                    //     emit!(buffer, "struct {obj_type}Visitor;");
+                    //     emit!(buffer, "impl<'de> Visitor<'de> for {obj_type}Visitor {{");
+                    //     emit!(buffer, "type Value = Arc<RwLock<HashMap<Uuid, Arc<RwLock<{obj_type}>>>>>;");
+                    //     // emit!(buffer, "type Value = Arc<RwLock<HashMap<Uuid, (Arc<RwLock<{obj_type}>>, SystemTime)>>>;");
+                    //     emit!(buffer, "fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {{");
+                    //     emit!(buffer, "formatter.write_str(\"{obj_type} map\")");
+                    //     emit!(buffer, "}}");
+                    //     emit!(buffer, "fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>");
+                    //     emit!(buffer, "where M: MapAccess<'de>, {{");
+                    //     emit!(buffer, "let mut map = HashMap::default();");
+                    //     emit!(buffer, "while let Some((key, value)) = access.next_entry::<Uuid, {obj_type}>()? {{");
+                    //     // emit!(buffer, "while let Some((key, value)) = access.next_entry::<Uuid, ({obj_type}, SystemTime)>()? {{");
+                    //     emit!(buffer, "map.insert(key, Arc::new(RwLock::new(value)));");
+                    //     emit!(buffer, "}}");
+                    //     emit!(buffer, "Ok(Arc::new(RwLock::new(map)))");
+                    //     emit!(buffer, "}}}}\n");
+                    // }
+                    // emit!(buffer, "const FIELDS: &'static [&'static str] = &[");
+                    // for obj in &objects {
+                    //     let obj_ident = obj.as_ident();
+                    //     emit!(buffer, "\"{obj_ident}\",");
+                    // }
+                    // emit!(buffer, "];");
+                    // emit!(buffer, "deserializer.deserialize_struct(\"ObjectStore\", FIELDS, ObjectStoreVisitor)");
+                    // emit!(buffer, "}}}}\n");
+                }
 
                 // impl ObjectStore
                 emit!(buffer, "impl ObjectStore {{");
