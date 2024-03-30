@@ -322,7 +322,7 @@ struct {domain_type}Store {{
             buffer,
             r#"impl Plugin for {domain_type}Store {{
     fn invoke_func(
-        &mut self,
+        &self,
         module: RStr<'_>,
         ty: RStr<'_>,
         func: RStr<'_>,
@@ -535,6 +535,16 @@ struct {domain_type}Store {{
         .into()
     }}
 
+    fn invoke_func_mut(
+        &mut self,
+        module: RStr<'_>,
+        ty: RStr<'_>,
+        func: RStr<'_>,
+        mut args: RVec<FfiValue>,
+    ) -> RResult<FfiValue, Error> {{
+        (|| -> Result<FfiValue, Error> {{ Ok(FfiValue::Empty) }})().into()
+    }}
+
     fn name(&self) -> RStr<'_> {{
         "merlin".into()
     }}
@@ -584,7 +594,7 @@ struct {domain_type}Store {{
                 buffer,
                 r#"impl Plugin for {obj_type}Proxy {{
     fn invoke_func(
-        &mut self,
+        &self,
         module: RStr<'_>,
         ty: RStr<'_>,
         func: RStr<'_>,
@@ -748,6 +758,16 @@ struct {domain_type}Store {{
             }}
         }})()
         .into()
+    }}
+
+    fn invoke_func_mut(
+        &mut self,
+        module: RStr<'_>,
+        ty: RStr<'_>,
+        func: RStr<'_>,
+        mut args: RVec<FfiValue>,
+    ) -> RResult<FfiValue, Error> {{
+        (|| -> Result<FfiValue, Error> {{ Ok(FfiValue::Empty) }})().into()
     }}
 
     fn name(&self) -> RStr<'_> {{
