@@ -178,11 +178,11 @@ impl DomainStoreVec {
                         match config.get_uber_store().unwrap() {
                             AsyncRwLock => {
                                 emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.lock().await.pop() {{");
-                                emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
+                                emit!(buffer, "tracing::trace!(target: \"store\", \"recycling block {{_index}}.\");");
                                 emit!(buffer, "_index");
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "let _index = self.{obj_ident}{read}.len();");
-                                emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
+                                emit!(buffer, "tracing::trace!(target: \"store\", \"allocating block {{_index}}.\");");
                                 emit!(buffer, "self.{obj_ident}{write}.push(None);");
                                 emit!(buffer, "_index");
                                 emit!(buffer, "}};");
@@ -215,22 +215,22 @@ impl DomainStoreVec {
                                     emit!(buffer, "let {obj_ident} = ");
                                 }
                                 emit!(buffer, "if let Some({obj_ident}) = found {{");
-                                emit!(buffer, "log::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "tracing::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}_free_list.lock().await.push(_index);");
                                 emit!(buffer, "{obj_ident}.clone()");
                                 emit!(buffer, "}} else {{");
-                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "tracing::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
                             },
                             StdRwLock | ParkingLotRwLock | NDRwLock => {
                                 emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.lock().unwrap().pop() {{");
-                                emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
+                                emit!(buffer, "tracing::trace!(target: \"store\", \"recycling block {{_index}}.\");");
                                 emit!(buffer, "_index");
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "let _index = self.{obj_ident}{read}.len();");
-                                emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
+                                emit!(buffer, "tracing::trace!(target: \"store\", \"allocating block {{_index}}.\");");
                                 emit!(buffer, "self.{obj_ident}{write}.push(None);");
                                 emit!(buffer, "_index");
                                 emit!(buffer, "}};");
@@ -253,22 +253,22 @@ impl DomainStoreVec {
                                     emit!(buffer, "let {obj_ident} = ");
                                 }
                                 emit!(buffer, "if let Some({obj_ident}) = found {{");
-                                emit!(buffer, "log::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "tracing::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}_free_list.lock().unwrap().push(_index);");
                                 emit!(buffer, "{obj_ident}.clone()");
                                 emit!(buffer, "}} else {{");
-                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "tracing::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
                             },
                             Single => {
                                 emit!(buffer, "let _index = if let Some(_index) = self.{obj_ident}_free_list.pop() {{");
-                                emit!(buffer, "log::trace!(target: \"store\", \"recycling block {{_index}}.\");");
+                                emit!(buffer, "tracing::trace!(target: \"store\", \"recycling block {{_index}}.\");");
                                 emit!(buffer, "_index");
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "let _index = self.{obj_ident}.len();");
-                                emit!(buffer, "log::trace!(target: \"store\", \"allocating block {{_index}}.\");");
+                                emit!(buffer, "tracing::trace!(target: \"store\", \"allocating block {{_index}}.\");");
                                 emit!(buffer, "self.{obj_ident}.push(None);");
                                 emit!(buffer, "_index");
                                 emit!(buffer, "}};");
@@ -285,11 +285,11 @@ impl DomainStoreVec {
                                 emit!(buffer, "false");
                                 emit!(buffer, "}}");
                                 emit!(buffer, "}}) {{");
-                                emit!(buffer, "log::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "tracing::debug!(target: \"store\", \"found duplicate {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}_free_list.push(_index);");
                                 emit!(buffer, "{obj_ident}.clone()");
                                 emit!(buffer, "}} else {{");
-                                emit!(buffer, "log::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
+                                emit!(buffer, "tracing::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}[_index] = Some({obj_ident}.clone());");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
@@ -510,7 +510,7 @@ impl DomainStoreVec {
                         );
                     }
 
-                    emit!(buffer, "log::debug!(target: \"store\", \"exorcising {obj_ident} slot: {{id}}.\");");
+                    emit!(buffer, "tracing::debug!(target: \"store\", \"exorcising {obj_ident} slot: {{id}}.\");");
 
                     if is_uber {
                         let (_read, write) = get_uber_read_write(config);
