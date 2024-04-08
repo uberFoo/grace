@@ -286,10 +286,10 @@ pub fn new(_: RSender<LambdaCall>, args: RVec<FfiValue>) -> RResult<PluginType, 
                     store: {new_ref}(store)),
                 }})
             }} else {{
-                Err(Error::Uber("Invalid arguments".into()))
+                Err(Error::Plugin("Invalid arguments".into()))
             }}
         }} else {{
-            Err(Error::Uber("Invalid arguments".into()))
+            Err(Error::Plugin("Invalid arguments".into()))
         }}
     }})() {{
         Ok(this) => ROk(Plugin_TO::from_value(this, TD_Opaque)),
@@ -336,14 +336,14 @@ struct {domain_type}Store {{
                 "ObjectStore" => match func {{
                     "persist" => {{
                         if args.len() != 1 {{
-                            return Err(Error::Uber("Expected 1 argument".into()));
+                            return Err(Error::Plugin("Expected 1 argument".into()));
                         }}
 
                         if let FfiValue::String(path) = args.pop().unwrap() {{
                             self.store.{read}.persist(Path::new(&path.as_str())).unwrap();
                             Ok(FfiValue::Empty)
                         }} else {{
-                            Err(Error::Uber("Invalid path".into()))
+                            Err(Error::Plugin("Invalid path".into()))
                         }}
                     }}
 "#
@@ -369,7 +369,7 @@ struct {domain_type}Store {{
                 buffer,
                 r#""inter_{obj_ident}" => {{
                         if args.len() != 1 {{
-                            return Err(Error::Uber("Expected 1 argument".into()));
+                            return Err(Error::Plugin("Expected 1 argument".into()));
                         }}
 
                         if let FfiValue::PlugIn({obj_ident}) = args.pop().unwrap() {{
@@ -378,7 +378,7 @@ struct {domain_type}Store {{
                                 .inter_{obj_ident}({obj_ident}.inner.clone());
                             Ok(FfiValue::Empty)
                         }} else {{
-                            Err(Error::Uber("Invalid {obj_type}".into()))
+                            Err(Error::Plugin("Invalid {obj_type}".into()))
                         }}
                     }}"#
             );
@@ -387,7 +387,7 @@ struct {domain_type}Store {{
                 buffer,
                 r#""exhume_{obj_ident}" => {{
                 if args.len() != 1 {{
-                            return Err(Error::Uber("Expected 1 argument".into()));
+                            return Err(Error::Plugin("Expected 1 argument".into()));
                         }}
                         if let FfiValue::Uuid(id) = args.pop().unwrap() {{
                             let {obj_ident} = self.store.{read}.exhume_{obj_ident}(&id.into()).unwrap();
@@ -409,7 +409,7 @@ struct {domain_type}Store {{
 
                             Ok(FfiValue::ProxyType(proxy))
                         }} else {{
-                            Err(Error::Uber("Invalid id".into()))
+                            Err(Error::Plugin("Invalid id".into()))
                         }}
                     }}"#
             );
@@ -417,7 +417,7 @@ struct {domain_type}Store {{
 
         emit!(
             buffer,
-            r#"func => Err(Error::Uber(format!("Invalid function: {{func:?}}").into())),
+            r#"func => Err(Error::Plugin(format!("Invalid function: {{func:?}}").into())),
                 }},
 "#
         );
@@ -521,7 +521,7 @@ struct {domain_type}Store {{
 
             emit!(
                 buffer,
-                r#"func => Err(Error::Uber(format!("Invalid function: {{func:?}}").into())),
+                r#"func => Err(Error::Plugin(format!("Invalid function: {{func:?}}").into())),
                 }},
 "#
             );
@@ -529,7 +529,7 @@ struct {domain_type}Store {{
 
         emit!(
             buffer,
-            r#"ty => Err(Error::Uber(format!("Invalid type {{ty:?}}").into())),
+            r#"ty => Err(Error::Plugin(format!("Invalid type {{ty:?}}").into())),
             }}
         }})()
         .into()
@@ -608,7 +608,7 @@ struct {domain_type}Store {{
                 "self" => match func {{
                     "get_field_value" => {{
                         if args.len() != 1 {{
-                            return Err(Error::Uber("Expected 1 argument".into()));
+                            return Err(Error::Plugin("Expected 1 argument".into()));
                         }}
 
                         if let FfiValue::String(field) = args.pop().unwrap() {{
@@ -636,7 +636,7 @@ struct {domain_type}Store {{
                         ),
                         "Imported" => emit!(
                             buffer,
-                            r#"Err(Error::Uber("Imported object not supported.".into())),"#
+                            r#"Err(Error::Plugin("Imported object not supported.".into())),"#
                         ),
                         "Integer" => emit!(
                             buffer,
@@ -695,17 +695,17 @@ struct {domain_type}Store {{
                 }
             }
 
-            emit!(buffer, "_ => Err(Error::Uber(\"Invalid field\".into())),");
+            emit!(buffer, "_ => Err(Error::Plugin(\"Invalid field\".into())),");
             emit!(buffer, "}}");
             emit!(
                 buffer,
                 r#"}} else {{
-                            Err(Error::Uber("Invalid Object".into()))
+                            Err(Error::Plugin("Invalid Object".into()))
                         }}
                     }}
                     "set_field_value" => {{
                         if args.len() != 2 {{
-                            return Err(Error::Uber("Expected 2 arguments".into()));
+                            return Err(Error::Plugin("Expected 2 arguments".into()));
                         }}
 
                         args.reverse();
@@ -728,7 +728,7 @@ struct {domain_type}Store {{
                     buffer,
                     r#""{attr_ident}" => {{
                                     self.inner.{write}.{attr_ident} = value.try_into().map_err(|e| {{
-                                        Error::Uber(
+                                        Error::Plugin(
                                             format!("Error converting value: {{e}}").into(),
                                         )
                                     }})?
@@ -739,7 +739,7 @@ struct {domain_type}Store {{
             emit!(
                 buffer,
                 r#"field => {{
-                                    return Err(Error::Uber(
+                                    return Err(Error::Plugin(
                                         format!("Invalid field {{field}}").into(),
                                     ))
                                 }}
@@ -747,14 +747,14 @@ struct {domain_type}Store {{
 
                             Ok(FfiValue::Empty)
                         }} else {{
-                            Err(Error::Uber(
+                            Err(Error::Plugin(
                                 format!("Invalid field type: {{field:?}}").into(),
                             ))
                         }}
                     }}
-                    func => Err(Error::Uber(format!("Invalid function: {{func:?}}").into())),
+                    func => Err(Error::Plugin(format!("Invalid function: {{func:?}}").into())),
                 }},
-                ty => Err(Error::Uber(format!("Invalid type {{ty:?}}").into())),
+                ty => Err(Error::Plugin(format!("Invalid type {{ty:?}}").into())),
             }}
         }})()
         .into()
@@ -860,7 +860,7 @@ fn render_ctor(
     emit!(
         buffer,
         r#"if args.len() != {len} {{
-                            return Err(Error::Uber("Expected {len} arguments".into()));
+                            return Err(Error::Plugin("Expected {len} arguments".into()));
                         }}"#
     );
 
@@ -949,14 +949,14 @@ fn render_ctor(
                 emit!(
                     buffer,
                     r#"::{obj_type}(value_args.pop().unwrap().try_into().map_err(|e| {{
-                        Error::Uber(format!("Error converting value: {{e}}").into())
+                        Error::Plugin(format!("Error converting value: {{e}}").into())
                     }})?);"#
                 );
             } else {
                 emit!(
                     buffer,
                     r#"subtype: {parent_type}Enum::{obj_type}(value_args.pop().unwrap().try_into().map_err(|e| {{
-                        Error::Uber(format!("Error converting value: {{e}}").into())
+                        Error::Plugin(format!("Error converting value: {{e}}").into())
                     }})?),"#
                 );
             }
@@ -985,7 +985,7 @@ fn render_ctor(
                 emit!(
                     buffer,
                     r#"{attr_ident}: value_args.pop().unwrap().try_into().map_err(|e| {{
-                                    Error::Uber(format!("Error converting value: {{e}}").into())
+                                    Error::Plugin(format!("Error converting value: {{e}}").into())
                                 }})?,"#
                 );
             }
