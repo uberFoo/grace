@@ -990,6 +990,7 @@ impl CodeWriter for DomainStoreVec {
                         emit!(buffer, "use std::{{io::{{self, prelude::*}}, fs, path::Path}};");
                     }
                 }
+
                 if is_uber {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
@@ -1167,8 +1168,23 @@ impl CodeWriter for DomainStoreVec {
                 for obj in &objects {
                     let obj_ident = obj.as_ident();
 
-                    emit!(buffer, "{obj_ident}_free_list: Mutex::new(self.{obj_ident}_free_list.lock().unwrap().clone()),");
-                    emit!(buffer, "{obj_ident}: self.{obj_ident}.clone(),");
+                    if is_uber {
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => {
+                                emit!(buffer, "{obj_ident}_free_list: self.{obj_ident}_free_list.clone(),");
+                                emit!(buffer, "{obj_ident}: self.{obj_ident}.clone(),");
+                            }
+                            _ => {
+                                emit!(buffer, "{obj_ident}_free_list: Mutex::new(self.{obj_ident}_free_list.lock().unwrap().clone()),");
+                                emit!(buffer, "{obj_ident}: Arc::new(RwLock::new(self.{obj_ident}.read().unwrap().clone())),");
+                            }
+                        }
+                    } else {
+                        emit!(buffer, "{obj_ident}_free_list: self.{obj_ident}_free_list.clone(),");
+                        emit!(buffer, "{obj_ident}: self.{obj_ident}.clone(),");
+                    }
                     if object_has_name(obj, domain) {
                         emit!(buffer, "{obj_ident}_id_by_name: self.{obj_ident}_id_by_name.clone(),");
                     }
@@ -1516,6 +1532,37 @@ impl CodeWriter for DomainStoreVec {
 
                 // impl ObjectStore
                 emit!(buffer, "impl ObjectStore {{");
+                emit!(buffer, "pub fn merge(&mut self, other: &ObjectStore) {{");
+                for obj in &objects {
+                    let obj_ident = obj.as_ident();
+                    emit!(buffer, r#"
+                        let mut {obj_ident} = self.{obj_ident}.write().unwrap();
+                        other.{obj_ident}.read().unwrap().iter().for_each(|x| {{
+                            if let Some(x) = x {{
+                                // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
+                                if {obj_ident}
+                                    .iter()
+                                    .find(|&y| {{
+                                        if let Some(y) = y {{
+                                            *y.read().unwrap() == *x.read().unwrap()
+                                        }} else {{
+                                            false
+                                        }}
+                                    }})
+                                    .is_none()
+                                {{
+                                    let _index_ = {obj_ident}.len();
+                                    if x.read().unwrap().id != _index_ {{
+                                        x.write().unwrap().id = _index_;
+                                    }}
+                                    {obj_ident}.push(Some(x.clone()));
+                                }}
+                            }}
+                        }});
+                    "#);
+                }
+                emit!(buffer, "}}");
+
                 if is_uber {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
