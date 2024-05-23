@@ -1536,6 +1536,7 @@ impl CodeWriter for DomainStoreVec {
                 for obj in &objects {
                     let obj_ident = obj.as_ident();
                     emit!(buffer, r#"
+                    if self.{obj_ident}.read().unwrap().len() != other.{obj_ident}.read().unwrap().len() {{
                         let mut {obj_ident} = self.{obj_ident}.write().unwrap();
                         other.{obj_ident}.read().unwrap().iter().for_each(|x| {{
                             if let Some(x) = x {{
@@ -1559,6 +1560,7 @@ impl CodeWriter for DomainStoreVec {
                                 }}
                             }}
                         }});
+                    }}
                     "#);
                 }
                 emit!(buffer, "}}");
