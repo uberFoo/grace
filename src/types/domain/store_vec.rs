@@ -1535,33 +1535,81 @@ impl CodeWriter for DomainStoreVec {
                 emit!(buffer, "pub fn merge(&mut self, other: &ObjectStore) {{");
                 for obj in &objects {
                     let obj_ident = obj.as_ident();
-                    emit!(buffer, r#"
-                    if self.{obj_ident}.read().unwrap().len() != other.{obj_ident}.read().unwrap().len() {{
-                        let mut {obj_ident} = self.{obj_ident}.write().unwrap();
-                        other.{obj_ident}.read().unwrap().iter().for_each(|x| {{
-                            if let Some(x) = x {{
-                                // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
-                                if {obj_ident}
-                                    .iter()
-                                    .find(|&y| {{
-                                        if let Some(y) = y {{
-                                            *y.read().unwrap() == *x.read().unwrap()
-                                        }} else {{
-                                            false
-                                        }}
-                                    }})
-                                    .is_none()
-                                {{
-                                    let _index_ = {obj_ident}.len();
-                                    if x.read().unwrap().id != _index_ {{
-                                        x.write().unwrap().id = _index_;
+                    let thing = get_value_wrapper(is_uber, config, obj, woog, domain);
+
+                    if is_uber {
+                        let (read, write) = get_uber_read_write(config);
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => emit!(buffer, r#"
+                        // if self.{obj_ident}.len() != other.{obj_ident}.len() {{
+                            other.{obj_ident}.iter().for_each(|x| {{
+                                if let Some(x) = x {{
+                                    // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
+                                    if self.{obj_ident}{read}
+                                        .iter()
+                                        .find(|&y| {{
+                                            if let Some(y) = y {{
+                                                *y == *x
+                                            }} else {{
+                                                false
+                                            }}
+                                        }})
+                                        .is_none()
+                                    {{
+                                        // let _index_ = self.{obj_ident}{read}.len();
+                                        // if x{read}.id != _index_ {{
+                                        //     x{write}.id = _index_;
+                                        // }}
+                                        self.inter_{obj_ident}(|id| -> {thing} {{
+                                            if x{read}.id != id {{
+                                                panic!("id mismatch");
+                                            }}
+
+                                            x.clone()
+                                        }});
                                     }}
-                                    {obj_ident}.push(Some(x.clone()));
                                 }}
-                            }}
-                        }});
-                    }}
-                    "#);
+                            }});
+                        // }}
+                        "#),
+                            _ => emit!(buffer, r#"
+                        // if self.{obj_ident}{read}.len() != other.{obj_ident}{read}.len() {{
+                            other.{obj_ident}{read}.iter().for_each(|x| {{
+                                if let Some(x) = x {{
+                                    // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
+                                    if self.{obj_ident}{read}
+                                        .iter()
+                                        .find(|&y| {{
+                                            if let Some(y) = y {{
+                                                *y{read} == *x{read}
+                                            }} else {{
+                                                false
+                                            }}
+                                        }})
+                                        .is_none()
+                                    {{
+                                        // let _index_ = self.{obj_ident}{read}.len();
+                                        // if x{read}.id != _index_ {{
+                                        //     x{write}.id = _index_;
+                                        // }}
+                                        self.inter_{obj_ident}(|id| -> {thing} {{
+                                            if x{read}.id != id {{
+                                                dbg!(x, id);
+                                                // panic!("id mismatch");
+                                                x{write}.id = id;
+                                            }}
+
+                                            x.clone()
+                                        }});
+                                    }}
+                                }}
+                            }});
+                        // }}
+                        "#),
+                        }
+                    }
                 }
                 emit!(buffer, "}}");
 

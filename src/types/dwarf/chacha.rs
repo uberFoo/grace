@@ -203,7 +203,7 @@ impl CodeWriter for ChaChaFile {
         emit!(buffer, "");
 
         emit!(buffer, "use abi_stable::{{export_root_module, external_types::crossbeam_channel::RSender, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, ROption, RBox, RResult, RStr, RString, RVec}}}};");
-        emit!(buffer, "use dwarf::{{chacha::{{ffi_value::{{FfiProxy, FfiValue}}, value::Value}}, plug_in::{{LambdaCall, Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
+        emit!(buffer, "use dwarf::{{bubba::value::Value, chacha::{{ffi_value::{{FfiProxy, FfiValue}}}}, plug_in::{{LambdaCall, Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
         emit!(buffer, "use log::debug;");
         emit!(buffer, "use uuid::{{uuid, Uuid}};");
         emit!(buffer, "");
@@ -281,10 +281,14 @@ pub fn new(_: RSender<LambdaCall>, args: RVec<FfiValue>) -> RResult<PluginType, 
             }})
         }} else if args.len() == 1 {{
             if let FfiValue::String(path) = &args[0] {{
-                let store = ObjectStore::load(Path::new(&path.as_str())).unwrap();
-                Ok({domain_type}Store {{
-                    store: {new_ref}(store)),
-                }})
+                dbg!(&path);
+                let store = ObjectStore::load(Path::new(&path.as_str()));
+                match store {{
+                    Ok(store) => Ok({domain_type}Store {{
+                        store: {new_ref}(store)),
+                    }}),
+                    Err(e) => Err(Error::Plugin(e.to_string().into())),
+                }}
             }} else {{
                 Err(Error::Plugin("Invalid arguments".into()))
             }}
