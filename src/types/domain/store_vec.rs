@@ -259,6 +259,7 @@ impl DomainStoreVec {
                                 emit!(buffer, "}} else {{");
                                 emit!(buffer, "tracing::debug!(target: \"store\", \"interring {{{obj_ident}:?}}.\");");
                                 emit!(buffer, "self.{obj_ident}{write}[_index] = Some({obj_ident}.clone());");
+                                emit!(buffer, "self.{obj_ident}_dirty = true;");
                                 emit!(buffer, "{obj_ident}");
                                 emit!(buffer, "}}");
                             },
@@ -1107,7 +1108,9 @@ impl CodeWriter for DomainStoreVec {
                                     value_type
                                 ),
                             };
+
                             emit!( buffer, "{obj_ident}: {mother_of_all_types},");
+
                             if object_has_name(obj, domain) {
                                 use UberStoreOptions::*;
                                 let by_name_type = match config.get_uber_store().unwrap() {
@@ -1138,7 +1141,9 @@ impl CodeWriter for DomainStoreVec {
                             NDRwLock => format!("Arc<RwLock<Vec<Option<{value_type}>>>>"),
                             StdMutex | ParkingLotMutex => format!("Arc<Mutex<Vec<{value_type}>>>"),
                         };
+
                         emit!(buffer, "{obj_ident}: {mother_of_all_types},");
+
                         if object_has_name(obj, domain) {
                             use UberStoreOptions::*;
                             let by_name_type = match config.get_uber_store().unwrap() {
@@ -1158,6 +1163,8 @@ impl CodeWriter for DomainStoreVec {
                             emit!(buffer, "{obj_ident}_id_by_name: HashMap<String, usize>,");
                         }
                     }
+
+                    emit!(buffer, "{obj_ident}_dirty: bool,");
                 }
                 emit!(buffer, "}}");
                 emit!(buffer, "");
@@ -1188,6 +1195,8 @@ impl CodeWriter for DomainStoreVec {
                     if object_has_name(obj, domain) {
                         emit!(buffer, "{obj_ident}_id_by_name: self.{obj_ident}_id_by_name.clone(),");
                     }
+
+                    emit!(buffer, "{obj_ident}_dirty: false,");
                 }
                 emit!(buffer, "}}");
                 emit!(buffer, "}}");
@@ -1532,87 +1541,6 @@ impl CodeWriter for DomainStoreVec {
 
                 // impl ObjectStore
                 emit!(buffer, "impl ObjectStore {{");
-                emit!(buffer, "pub fn merge(&mut self, other: &ObjectStore) {{");
-                for obj in &objects {
-                    let obj_ident = obj.as_ident();
-                    let thing = get_value_wrapper(is_uber, config, obj, woog, domain);
-
-                    if is_uber {
-                        let (read, write) = get_uber_read_write(config);
-                        use UberStoreOptions::*;
-                        match config.get_uber_store().unwrap() {
-                            Disabled => unreachable!(),
-                            Single => emit!(buffer, r#"
-                        // if self.{obj_ident}.len() != other.{obj_ident}.len() {{
-                            other.{obj_ident}.iter().for_each(|x| {{
-                                if let Some(x) = x {{
-                                    // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
-                                    if self.{obj_ident}{read}
-                                        .iter()
-                                        .find(|&y| {{
-                                            if let Some(y) = y {{
-                                                *y == *x
-                                            }} else {{
-                                                false
-                                            }}
-                                        }})
-                                        .is_none()
-                                    {{
-                                        // let _index_ = self.{obj_ident}{read}.len();
-                                        // if x{read}.id != _index_ {{
-                                        //     x{write}.id = _index_;
-                                        // }}
-                                        self.inter_{obj_ident}(|id| -> {thing} {{
-                                            if x{read}.id != id {{
-                                                panic!("id mismatch");
-                                            }}
-
-                                            x.clone()
-                                        }});
-                                    }}
-                                }}
-                            }});
-                        // }}
-                        "#),
-                            _ => emit!(buffer, r#"
-                        // if self.{obj_ident}{read}.len() != other.{obj_ident}{read}.len() {{
-                            other.{obj_ident}{read}.iter().for_each(|x| {{
-                                if let Some(x) = x {{
-                                    // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
-                                    if self.{obj_ident}{read}
-                                        .iter()
-                                        .find(|&y| {{
-                                            if let Some(y) = y {{
-                                                *y{read} == *x{read}
-                                            }} else {{
-                                                false
-                                            }}
-                                        }})
-                                        .is_none()
-                                    {{
-                                        // let _index_ = self.{obj_ident}{read}.len();
-                                        // if x{read}.id != _index_ {{
-                                        //     x{write}.id = _index_;
-                                        // }}
-                                        self.inter_{obj_ident}(|id| -> {thing} {{
-                                            if x{read}.id != id {{
-                                                dbg!(x, id);
-                                                // panic!("id mismatch");
-                                                x{write}.id = id;
-                                            }}
-
-                                            x.clone()
-                                        }});
-                                    }}
-                                }}
-                            }});
-                        // }}
-                        "#),
-                        }
-                    }
-                }
-                emit!(buffer, "}}");
-
                 if is_uber {
                     use UberStoreOptions::*;
                     match config.get_uber_store().unwrap() {
@@ -1673,6 +1601,7 @@ impl CodeWriter for DomainStoreVec {
                         }
                     }
 
+                    emit!(buffer, "{obj_ident}_dirty: false,");
                 }
                 emit!(buffer, "}};");
                 emit!(buffer, "");
@@ -1750,6 +1679,89 @@ impl CodeWriter for DomainStoreVec {
                 emit!(buffer, "}}");
                 emit!(buffer, "");
                 // End of new
+
+                // beginning of merge
+                emit!(buffer, "pub fn merge(&mut self, other: &ObjectStore) {{");
+                for obj in &objects {
+                    let obj_ident = obj.as_ident();
+                    let thing = get_value_wrapper(is_uber, config, obj, woog, domain);
+
+                    if is_uber {
+                        let (read, write) = get_uber_read_write(config);
+                        use UberStoreOptions::*;
+                        match config.get_uber_store().unwrap() {
+                            Disabled => unreachable!(),
+                            Single => emit!(buffer, r#"
+                        if other.{obj_ident}_dirty {{
+                            other.{obj_ident}.iter().for_each(|x| {{
+                                if let Some(x) = x {{
+                                    // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
+                                    if self.{obj_ident}{read}
+                                        .iter()
+                                        .find(|&y| {{
+                                            if let Some(y) = y {{
+                                                *y == *x
+                                            }} else {{
+                                                false
+                                            }}
+                                        }})
+                                        .is_none()
+                                    {{
+                                        // let _index_ = self.{obj_ident}{read}.len();
+                                        // if x{read}.id != _index_ {{
+                                        //     x{write}.id = _index_;
+                                        // }}
+                                        self.inter_{obj_ident}(|id| -> {thing} {{
+                                            if x{read}.id != id {{
+                                                panic!("id mismatch");
+                                            }}
+
+                                            x.clone()
+                                        }});
+                                    }}
+                                }}
+                            }});
+                        }}
+                        "#),
+                            _ => emit!(buffer, r#"
+                        if other.{obj_ident}_dirty {{
+                            other.{obj_ident}{read}.iter().for_each(|x| {{
+                                if let Some(x) = x {{
+                                    // Look for other in {obj_ident}, if it's not there add it to {obj_ident}.
+                                    if self.{obj_ident}{read}
+                                        .iter()
+                                        .find(|&y| {{
+                                            if let Some(y) = y {{
+                                                *y{read} == *x{read}
+                                            }} else {{
+                                                false
+                                            }}
+                                        }})
+                                        .is_none()
+                                    {{
+                                        // let _index_ = self.{obj_ident}{read}.len();
+                                        // if x{read}.id != _index_ {{
+                                        //     x{write}.id = _index_;
+                                        // }}
+                                        self.inter_{obj_ident}(|id| -> {thing} {{
+                                            if x{read}.id != id {{
+                                                dbg!(x, id);
+                                                // panic!("id mismatch");
+                                                x{write}.id = id;
+                                            }}
+
+                                            x.clone()
+                                        }});
+                                    }}
+                                }}
+                            }});
+                        }}
+                        "#),
+                        }
+                    }
+                }
+                emit!(buffer, "}}");
+                // end of merge
 
                 self.generate_store(buffer, &objects, timestamp, module, config, woog, domain)?;
 
