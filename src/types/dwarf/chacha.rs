@@ -202,7 +202,7 @@ impl CodeWriter for ChaChaFile {
         emit!(buffer, "use std::{{path::Path, fmt::{{self, Display}}}};");
         emit!(buffer, "");
 
-        emit!(buffer, "use abi_stable::{{export_root_module, external_types::crossbeam_channel::RSender, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, ROption, RBox, RResult, RStr, RString, RVec}}}};");
+        emit!(buffer, "use abi_stable::{{external_types::crossbeam_channel::RSender, prefix_type::PrefixTypeTrait, sabi_extern_fn, sabi_trait::prelude::{{TD_CanDowncast, TD_Opaque}}, std_types::{{RErr, ROk, RNone, ROption, RBox, RResult, RStr, RVec}}}};");
         emit!(buffer, "use dwarf::{{bubba::value::Value, chacha::{{ffi_value::{{FfiProxy, FfiValue}}}}, plug_in::{{LambdaCall, Error, Plugin, PluginModRef, PluginModule, PluginType, Plugin_TO}}}};");
         emit!(buffer, "use log::debug;");
         emit!(buffer, "use uuid::{{uuid, Uuid}};");
@@ -518,7 +518,7 @@ struct {domain_type}Store {{
 
                             instances.push(FfiValue::ProxyType(proxy));
                         }}
-                        Ok(FfiValue::List(instances.into()))
+                        Ok(FfiValue::List(RNone, instances.into()))
                     }}"#
             );
             // }
