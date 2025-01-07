@@ -223,7 +223,7 @@ impl DomainStore {
                                 let (_read, write) = get_uber_read_write(config);
                                 emit!(
                                     buffer,
-                                    "self.{obj_ident}_id_by_name{write}.insert(read.name.to_upper_camel_case(), (read.{id}, value.1));",
+                                    "self.{obj_ident}_id_by_name{write}.insert(read.name.clone(), (read.{id}, value.1));",
                                 );
                                 emit!(
                                     buffer,
@@ -232,7 +232,7 @@ impl DomainStore {
                             } else {
                                 emit!(
                                     buffer,
-                                    "self.{obj_ident}_id_by_name.insert(value.0.name.to_upper_camel_case(), (value.0.{id}, value.1));",
+                                    "self.{obj_ident}_id_by_name.insert(value.0.name, (value.0.{id}, value.1));",
                                 );
                                 emit!(
                                     buffer,
@@ -258,7 +258,7 @@ impl DomainStore {
                             let (_read, write) = get_uber_read_write(config);
                             emit!(
                                 buffer,
-                                "self.{obj_ident}_id_by_name{write}.insert(read.name.to_upper_camel_case(), read.{id});",
+                                "self.{obj_ident}_id_by_name{write}.insert(read.name.clone(), read.{id});",
                             );
                             emit!(
                                 buffer,
@@ -267,7 +267,7 @@ impl DomainStore {
                         } else {
                             emit!(
                                 buffer,
-                                "self.{obj_ident}_id_by_name.insert({obj_ident}.name.to_upper_camel_case(), {obj_ident}.{id});",
+                                "self.{obj_ident}_id_by_name.insert({obj_ident}.name, {obj_ident}.{id});",
                             );
                             emit!(
                                 buffer,
@@ -333,7 +333,7 @@ impl DomainStore {
                                 buffer,
                                 "self.{obj_ident}{read}.get(id).map(|{obj_ident}| {obj_ident}.0.clone())",
 
-                            );//kts
+                            );
                         } else {
                             emit!(
                                 buffer,
@@ -797,10 +797,6 @@ impl CodeWriter for DomainStore {
 
         let timestamp = config.get_persist_timestamps();
         let is_meta = config.is_meta_model();
-        let has_name = objects
-            .iter()
-            .map(|obj| object_has_name(obj, domain))
-            .any(|x| x);
         let is_uber = config.is_uber_store();
 
         buffer.block(
@@ -853,20 +849,17 @@ impl CodeWriter for DomainStore {
                     };
                 }
                 emit!(buffer, "");
-                emit!(buffer, "use rustc_hash::FxHashMap as HashMap;");
+                emit!(buffer, "use ordered_hash_map::OrderedHashMap as HashMap;");
                 emit!(buffer, "use serde::{{Deserialize, Serialize}};");
                 emit!(buffer, "use uuid::Uuid;");
-                if has_name {
-                    emit!(buffer, "use heck::ToUpperCamelCase;");
-                }
-                #[allow(clippy::overly_complex_bool_expr)]
-                if timestamp && is_meta && false {
-                    emit!(buffer, "use snafu::prelude::*;");
-                    emit!(buffer, "");
-                    emit!(buffer, "use crate::mc::{{FileSnafu, Result}};");
-                } else {
-                    emit!(buffer, "");
-                }
+                // #[allow(clippy::overly_complex_bool_expr)]
+                // if timestamp && is_meta && false {
+                //     emit!(buffer, "use snafu::prelude::*;");
+                //     emit!(buffer, "");
+                //     emit!(buffer, "use crate::mc::{{FileSnafu, Result}};");
+                // } else {
+                //     emit!(buffer, "");
+                // }
                 emit!(buffer, "");
                 emit!(buffer, "use crate::{}::types::{{", module);
 
@@ -883,9 +876,9 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "}};");
                 emit!(buffer, "");
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
-                    emit!(buffer, "#[derive(Clone, Debug)]");
+                    emit!(buffer, "#[derive(Debug)]");
                 } else {
-                    emit!(buffer, "#[derive(Clone, Debug, Deserialize, Serialize)]");
+                    emit!(buffer, "#[derive(Debug, Deserialize, Serialize)]");
                 }
                 emit!(buffer, "pub struct ObjectStore {{");
                 for obj in &objects {
@@ -1009,6 +1002,35 @@ impl CodeWriter for DomainStore {
                 }
                 emit!(buffer, "}}");
                 emit!(buffer, "");
+
+                let (read, _write) = get_uber_read_write(config);
+
+                emit!(buffer, "impl Clone for ObjectStore {{");
+                emit!(buffer, "fn clone(&self) -> Self {{");
+                emit!(buffer, "ObjectStore {{");
+                for obj in &objects {
+                    let obj_ident = obj.as_ident();
+
+                    use UberStoreOptions::*;
+                    match config.get_uber_store().unwrap() {
+                        Disabled => unreachable!(),
+                        Single => {
+                            emit!(buffer, "{obj_ident}: Rc::new(RefCell::new(self.{obj_ident}.borrow().clone())),");
+                            if object_has_name(obj, domain) {
+                                emit!(buffer, "{obj_ident}_id_by_name: Rc::new(RefCell::new(self.{obj_ident}_id_by_name.borrow().clone())),");
+                            }
+                        }
+                        _ => {
+                            emit!(buffer, "{obj_ident}: Arc::new(RwLock::new(self.{obj_ident}{read}.clone())),");
+                            if object_has_name(obj, domain) {
+                                emit!(buffer, "{obj_ident}_id_by_name: self.{obj_ident}_id_by_name.clone(),");
+                            }
+                        }
+                    }
+                }
+                emit!(buffer, "}}");
+                emit!(buffer, "}}");
+                emit!(buffer, "}}");
 
                 if let UberStoreOptions::AsyncRwLock = config.get_uber_store().unwrap() {
                     emit!(buffer, "impl Serialize for ObjectStore {{");
@@ -1213,6 +1235,17 @@ impl CodeWriter for DomainStore {
                 emit!(buffer, "}}");
                 emit!(buffer, "");
                 // End of new
+
+                let (read, write) = get_uber_read_write(config);
+                emit!(buffer, "pub fn merge(&mut self, other: &ObjectStore) {{");
+                for obj in &objects {
+                    let obj_ident = obj.as_ident();
+                    emit!(buffer, "self.{obj_ident}{write}.extend(other.{obj_ident}{read}.iter().map(|(k, v)| (*k, v.clone())));",);
+                    if object_has_name(obj, domain) {
+                        emit!(buffer, "self.{obj_ident}_id_by_name{write}.extend(other.{obj_ident}_id_by_name{read}.iter().map(|(k, v)| (k.clone(), v.clone())));",);
+                    }
+                }
+                emit!(buffer, "}}");
 
                 self.generate_store(buffer, &objects, timestamp, module, config, woog, domain)?;
 
@@ -1688,12 +1721,12 @@ fn generate_store_persistence(
                             let (read, write) = get_uber_read_write(config);
                             emit!(
                                 buffer,
-                                "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.to_upper_camel_case(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
+                                "store.{obj_ident}_id_by_name{write}.insert({obj_ident}.0{read}.name.clone(), ({obj_ident}.0{read}.{id}, {obj_ident}.1));"
                             );
                         } else {
                             emit!(
                                 buffer,
-                                "store.{obj_ident}_id_by_name.insert({obj_ident}.0.name.to_upper_camel_case(), ({obj_ident}.0.{id}, {obj_ident}.1));"
+                                "store.{obj_ident}_id_by_name.insert({obj_ident}.0.name.clone(), ({obj_ident}.0.{id}, {obj_ident}.1));"
                             );
                         }
                     }
@@ -1743,12 +1776,12 @@ fn generate_store_persistence(
 let (read, write) = get_uber_read_write(config);
                             emit!(
                                 buffer,
-                                "store.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.to_upper_camel_case(), {obj_ident}{read}.{id});"
+                                "store.{obj_ident}_id_by_name{write}.insert({obj_ident}{read}.name.clone(), {obj_ident}{read}.{id});"
                             );
                         } else {
                             emit!(
                                 buffer,
-                                "store.{obj_ident}_id_by_name.insert({obj_ident}.name.to_upper_camel_case(), {obj_ident}.{id});"
+                                "store.{obj_ident}_id_by_name.insert({obj_ident}.name.clone(), {obj_ident}.{id});"
                             );
                         }
                     }
